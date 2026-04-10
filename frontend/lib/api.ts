@@ -57,6 +57,10 @@ export function getApiBaseUrl(): string {
   return getRequiredPublicApiUrl();
 }
 
+function createApiConnectionError(baseUrl: string): Error {
+  return new Error(`Unable to reach the API at ${baseUrl}. Check that the backend is running and reachable.`);
+}
+
 
 async function parseError(response: Response): Promise<string> {
   try {
@@ -105,11 +109,18 @@ function buildHeaders(body: ApiRequestOptions["body"], auth: boolean, headers?: 
 
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
   const { body, auth = false, headers, ...rest } = options;
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
-    ...rest,
-    headers: buildHeaders(body, auth, headers),
-    body: normalizeBody(body)
-  });
+  const baseUrl = getApiBaseUrl();
+  let response: Response;
+
+  try {
+    response = await fetch(`${baseUrl}${path}`, {
+      ...rest,
+      headers: buildHeaders(body, auth, headers),
+      body: normalizeBody(body)
+    });
+  } catch {
+    throw createApiConnectionError(baseUrl);
+  }
 
   if (!response.ok) {
     throw new ApiError(response.status, await parseError(response));
@@ -125,10 +136,11 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 
 export function uploadRequest<T>(path: string, formData: FormData, options: UploadRequestOptions = {}): Promise<T> {
   const { auth = false, onProgress } = options;
+  const baseUrl = getApiBaseUrl();
 
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest();
-    request.open("POST", `${getApiBaseUrl()}${path}`);
+    request.open("POST", `${baseUrl}${path}`);
     request.responseType = "json";
 
     const token = getStoredToken();
@@ -158,7 +170,7 @@ export function uploadRequest<T>(path: string, formData: FormData, options: Uplo
     });
 
     request.addEventListener("error", () => {
-      reject(new ApiError(0, "Network error while uploading the file."));
+      reject(createApiConnectionError(baseUrl));
     });
 
     request.send(formData);

@@ -45,12 +45,12 @@ class Settings:
     environment: str
     debug: bool
     database_url: str
-    openai_api_key: str
+    openai_api_key: str | None
     openai_rewrite_model: str
     jwt_secret: str
     allowed_origin: str
-    redis_url: str
-    stripe_secret_key: str
+    redis_url: str | None
+    stripe_secret_key: str | None
 
     def allowed_origins(self) -> list[str]:
         """Build an explicit allowlist for frontend origins.
@@ -79,11 +79,8 @@ def build_settings() -> Settings:
     """Construct settings and report all missing required variables at once."""
     required_names = (
         "DATABASE_URL",
-        "OPENAI_API_KEY",
         "JWT_SECRET",
         "ALLOWED_ORIGIN",
-        "REDIS_URL",
-        "STRIPE_SECRET_KEY",
     )
     missing_names = [name for name in required_names if not os.getenv(name)]
 
@@ -101,12 +98,12 @@ def build_settings() -> Settings:
         environment=get_optional_env("ENVIRONMENT", "development"),
         debug=get_bool_env("DEBUG", False),
         database_url=get_required_env("DATABASE_URL"),
-        openai_api_key=get_required_env("OPENAI_API_KEY"),
+        openai_api_key=get_optional_env("OPENAI_API_KEY", "").strip() or None,
         openai_rewrite_model=get_optional_env("OPENAI_REWRITE_MODEL", "gpt-5-mini"),
         jwt_secret=get_required_env("JWT_SECRET"),
         allowed_origin=get_required_env("ALLOWED_ORIGIN"),
-        redis_url=get_required_env("REDIS_URL"),
-        stripe_secret_key=get_required_env("STRIPE_SECRET_KEY"),
+        redis_url=get_optional_env("REDIS_URL", "").strip() or None,
+        stripe_secret_key=get_optional_env("STRIPE_SECRET_KEY", "").strip() or None,
     )
 
 

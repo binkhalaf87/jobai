@@ -42,11 +42,11 @@ Environment templates are provided for each deployable app.
 - `ENVIRONMENT` - Runtime environment name, such as `development` or `production`
 - `DEBUG` - Enables FastAPI debug mode when set to `true`
 - `DATABASE_URL` - Primary database connection string
-- `OPENAI_API_KEY` - OpenAI credential reserved for future analysis features
+- `OPENAI_API_KEY` - Optional OpenAI credential for rewrite generation features
 - `JWT_SECRET` - Secret used for future authentication tokens
 - `ALLOWED_ORIGIN` - Frontend origin allowed to access the backend
-- `REDIS_URL` - Redis connection string for cache or task infrastructure
-- `STRIPE_SECRET_KEY` - Stripe secret key reserved for future billing features
+- `REDIS_URL` - Optional Redis connection string for future cache or task infrastructure
+- `STRIPE_SECRET_KEY` - Optional Stripe secret key reserved for future billing features
 - `PORT` - Runtime port used by the server process; usually injected by the hosting platform
 
 ## Deployment notes

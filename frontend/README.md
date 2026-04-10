@@ -27,7 +27,7 @@ Copy `.env.example` to `.env.local` for local development.
 
 - `NEXT_PUBLIC_API_URL` - Public URL of the backend API, including the API prefix
 
-The shared helper at `lib/config.ts` validates this variable early so missing values fail with a clear message.
+The shared helper at `lib/config.ts` falls back to `http://localhost:8000/api/v1` during local development. Production deployments still require `NEXT_PUBLIC_API_URL` to be set explicitly.
 
 ## Vercel deployment
 

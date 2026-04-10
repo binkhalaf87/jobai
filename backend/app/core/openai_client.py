@@ -9,4 +9,10 @@ from app.core.config import get_settings
 def get_openai_client() -> OpenAI:
     """Create and cache the OpenAI client once per process."""
     settings = get_settings()
+
+    if not settings.openai_api_key:
+        raise RuntimeError(
+            "OPENAI_API_KEY is not configured. Add it to backend/.env or your deployment provider settings to use rewrite generation."
+        )
+
     return OpenAI(api_key=settings.openai_api_key)

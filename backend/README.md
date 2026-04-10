@@ -31,15 +31,15 @@ Copy `.env.example` to `.env` for local development.
 - `ENVIRONMENT` - Runtime environment label
 - `DEBUG` - Enables FastAPI debug mode when set to `true`
 - `DATABASE_URL` - Database connection string for the primary application datastore
-- `OPENAI_API_KEY` - API key used for AI-powered rewrite generation
+- `OPENAI_API_KEY` - Optional until AI-powered rewrite generation is used
 - `OPENAI_REWRITE_MODEL` - Optional model name override for rewrite suggestions, defaults to `gpt-5-mini`
 - `JWT_SECRET` - Secret used for future token signing and verification
 - `ALLOWED_ORIGIN` - Comma-separated frontend origins allowed to call the API. In production this should include your Vercel frontend URL.
-- `REDIS_URL` - Redis connection string for caching, queues, or background coordination
-- `STRIPE_SECRET_KEY` - Secret key reserved for future billing integration
+- `REDIS_URL` - Optional Redis connection string for future caching, queues, or background coordination
+- `STRIPE_SECRET_KEY` - Optional secret key reserved for future billing integration
 - `PORT` - Port used by Uvicorn locally or by the hosting platform
 
-The backend settings loader validates all required variables together and raises a clear startup error if any are missing.
+The backend settings loader validates the core runtime variables together and raises a clear startup error if any are missing.
 The CORS setup also adds common localhost frontend origins automatically when `ENVIRONMENT` is not `production`.
 
 ## Deployment

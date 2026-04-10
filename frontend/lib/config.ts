@@ -2,29 +2,38 @@ type PublicConfig = {
   apiUrl: string;
 };
 
-function getOptionalPublicEnv(name: string): string {
-  const value = process.env[name];
-  return value?.trim() ?? "";
+const LOCAL_DEV_API_URL = "http://localhost:8000/api/v1";
+
+function getBundledPublicApiUrl(): string {
+  return process.env.NEXT_PUBLIC_API_URL?.trim() ?? "";
+}
+
+function getLocalDevelopmentApiUrl(): string {
+  return LOCAL_DEV_API_URL;
 }
 
 export function getRequiredPublicApiUrl(): string {
-  const value = getOptionalPublicEnv("NEXT_PUBLIC_API_URL");
+  const value = getBundledPublicApiUrl();
 
-  if (!value) {
-    throw new Error(
-      "Missing required frontend environment variable: NEXT_PUBLIC_API_URL. Add it to frontend/.env.local or your Vercel project settings."
-    );
+  if (value) {
+    return value;
   }
 
-  return value;
+  if (process.env.NODE_ENV !== "production") {
+    return getLocalDevelopmentApiUrl();
+  }
+
+  throw new Error(
+    "Missing required frontend environment variable: NEXT_PUBLIC_API_URL. Add it to frontend/.env.local or your Vercel project settings."
+  );
 }
 
 function createPublicConfig(): PublicConfig {
   return {
-    apiUrl: getOptionalPublicEnv("NEXT_PUBLIC_API_URL")
+    apiUrl: getBundledPublicApiUrl()
   };
 }
 
 // This helper centralizes access to public frontend environment variables.
-// The app shell can render even if the API URL is missing, while API calls still fail with a clear message.
+// Local development falls back to the default backend URL, while production still requires explicit configuration.
 export const publicConfig = createPublicConfig();
