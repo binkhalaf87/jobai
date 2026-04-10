@@ -19,6 +19,7 @@ resume_processing_status = postgresql.ENUM(
     "parsed",
     "failed",
     name="resume_processing_status",
+    create_type=False,
 )
 employment_type = postgresql.ENUM(
     "full_time",
@@ -27,6 +28,7 @@ employment_type = postgresql.ENUM(
     "internship",
     "temporary",
     name="employment_type",
+    create_type=False,
 )
 analysis_status = postgresql.ENUM(
     "queued",
@@ -34,6 +36,7 @@ analysis_status = postgresql.ENUM(
     "completed",
     "failed",
     name="analysis_status",
+    create_type=False,
 )
 suggestion_section = postgresql.ENUM(
     "summary",
@@ -42,6 +45,7 @@ suggestion_section = postgresql.ENUM(
     "education",
     "general",
     name="suggestion_section",
+    create_type=False,
 )
 subscription_status = postgresql.ENUM(
     "trialing",
@@ -49,6 +53,7 @@ subscription_status = postgresql.ENUM(
     "past_due",
     "canceled",
     name="subscription_status",
+    create_type=False,
 )
 usage_event_type = postgresql.ENUM(
     "analysis_requested",
@@ -56,6 +61,7 @@ usage_event_type = postgresql.ENUM(
     "rewrite_generated",
     "auth_login",
     name="usage_event_type",
+    create_type=False,
 )
 
 
