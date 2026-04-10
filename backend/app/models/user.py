@@ -1,0 +1,25 @@
+from datetime import datetime
+
+from sqlalchemy import Boolean, DateTime, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.db.base_class import Base
+from app.models.mixins import TimestampMixin, UUIDPrimaryKeyMixin
+
+
+class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """Application user account used for authentication and ownership."""
+
+    __tablename__ = "users"
+
+    email: Mapped[str] = mapped_column(String(320), unique=True, index=True, nullable=False)
+    full_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    resumes = relationship("Resume", back_populates="user", cascade="all, delete-orphan")
+    job_descriptions = relationship("JobDescription", back_populates="user", cascade="all, delete-orphan")
+    analyses = relationship("Analysis", back_populates="user", cascade="all, delete-orphan")
+    subscriptions = relationship("Subscription", back_populates="user", cascade="all, delete-orphan")
+    usage_logs = relationship("UsageLog", back_populates="user", cascade="all, delete-orphan")

@@ -1,0 +1,26 @@
+# Node.js dependencies and build output
+node_modules/
+.next/
+out/
+.vercel/
+
+# Python caches and virtual environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Tooling output
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+dist/
+build/
