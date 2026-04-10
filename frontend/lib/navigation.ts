@@ -1,19 +1,44 @@
 import type { NavItem } from "@/types";
 
-// This file keeps lightweight route metadata in one place for shared layout components.
+export type DashboardNavGroup = {
+  label: string;
+  items: NavItem[];
+};
+
+// Site header navigation for public-facing routes.
 export const NAV_LINKS: NavItem[] = [
   { label: "Home", href: "/" },
   { label: "Login", href: "/login" },
   { label: "Register", href: "/register" },
-  { label: "Dashboard", href: "/dashboard" }
 ];
 
-// These links define the left-side workspace navigation shared by all dashboard routes.
-export const DASHBOARD_LINKS: NavItem[] = [
-  { label: "Overview", href: "/dashboard" },
-  { label: "My Resumes", href: "/dashboard/resumes" },
-  { label: "My Analyses", href: "/dashboard/analyses" },
-  { label: "New Analysis", href: "/dashboard/new-analysis" },
-  { label: "Billing", href: "/dashboard/billing" },
-  { label: "Settings", href: "/dashboard/settings" }
+// Dashboard sidebar navigation grouped by functional area.
+export const DASHBOARD_NAV_GROUPS: DashboardNavGroup[] = [
+  {
+    label: "Core",
+    items: [
+      { label: "Dashboard", href: "/dashboard", icon: "home" },
+      { label: "My Resumes", href: "/dashboard/resumes", icon: "file-text" },
+      { label: "Analysis", href: "/dashboard/analysis", icon: "bar-chart" },
+    ],
+  },
+  {
+    label: "AI Tools",
+    items: [
+      { label: "Enhancement", href: "/dashboard/enhancement", icon: "sparkles" },
+      { label: "AI Interview", href: "/dashboard/ai-interview", icon: "mic" },
+      { label: "Job Matching", href: "/dashboard/job-matching", icon: "target" },
+      { label: "Smart Send", href: "/dashboard/smart-send", icon: "send" },
+    ],
+  },
+  {
+    label: "Account",
+    items: [
+      { label: "Points", href: "/dashboard/points", icon: "star" },
+      { label: "Profile", href: "/dashboard/profile", icon: "user" },
+    ],
+  },
 ];
+
+// Flat list for components that need all dashboard links without grouping.
+export const DASHBOARD_LINKS: NavItem[] = DASHBOARD_NAV_GROUPS.flatMap((g) => g.items);

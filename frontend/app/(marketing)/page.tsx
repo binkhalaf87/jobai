@@ -18,36 +18,36 @@ const STARTER_SECTIONS = [
   }
 ];
 
-// This landing page introduces the product shell without committing to business logic yet.
+// Landing page: introduces the product and routes visitors to auth or the dashboard.
 export default function HomePage() {
   return (
     <PageContainer className="space-y-8">
       <Panel className="grid gap-10 p-8 md:grid-cols-[1.2fr_0.8fr] md:p-12">
         <div className="space-y-6">
           <div className="inline-flex rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-600">
-            Resume Analysis Platform
+            AI Career Platform
           </div>
           <div className="space-y-4">
             <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-slate-950 md:text-5xl">
-              A clean frontend starter for a Jobscan-like experience.
+              Land the right job with AI-powered resume intelligence.
             </h1>
             <p className="max-w-xl text-base leading-7 text-slate-600 md:text-lg">
-              This starter gives you a simple foundation for authentication, analysis flows, and dashboard
-              surfaces without locking in product behavior too early.
+              Analyze your resume against job descriptions, get AI-driven enhancements, prep for interviews, and
+              send smarter applications — all from one dashboard.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <Link
-              href="/login"
+              href="/register"
               className="rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
             >
-              Open Login
+              Get started free
             </Link>
             <Link
-              href="/dashboard"
+              href="/login"
               className="rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-950"
             >
-              View Dashboard
+              Sign in
             </Link>
           </div>
         </div>
@@ -63,24 +63,24 @@ export default function HomePage() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <Panel className="p-6">
-          <p className="text-sm font-medium text-slate-500">App Router</p>
-          <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">Route-first structure</h2>
+          <p className="text-sm font-medium text-slate-500">Analysis</p>
+          <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">Resume scoring</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Keep landing, auth, and dashboard areas separated so future flows stay easy to reason about.
+            Match your resume to any job description and get a detailed ATS and keyword fit score.
           </p>
         </Panel>
         <Panel className="p-6">
-          <p className="text-sm font-medium text-slate-500">Minimal UI</p>
-          <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">Clean by default</h2>
+          <p className="text-sm font-medium text-slate-500">Enhancement</p>
+          <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">AI rewriting</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Shared layout and surface components are in place, but the visual system is still intentionally light.
+            Get section-by-section rewrite suggestions tailored to your target role.
           </p>
         </Panel>
         <Panel className="p-6">
-          <p className="text-sm font-medium text-slate-500">Scalable</p>
-          <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">Ready for product growth</h2>
+          <p className="text-sm font-medium text-slate-500">Interview Prep</p>
+          <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">AI mock interviews</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Hooks, types, components, and utility folders are prepared for deeper implementation later.
+            Practice answers to role-specific questions and sharpen your delivery before the real call.
           </p>
         </Panel>
       </div>
