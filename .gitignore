@@ -3,6 +3,7 @@ node_modules/
 .next/
 out/
 .vercel/
+frontend/next-env.d.ts
 
 # Python caches and virtual environments
 __pycache__/

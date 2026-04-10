@@ -30,7 +30,7 @@ export function getRequiredPublicApiUrl(): string {
 
 function createPublicConfig(): PublicConfig {
   return {
-    apiUrl: getBundledPublicApiUrl()
+    apiUrl: getRequiredPublicApiUrl()
   };
 }
 

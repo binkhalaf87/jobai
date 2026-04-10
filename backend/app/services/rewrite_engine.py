@@ -13,7 +13,7 @@ from app.models.rewrite_suggestion import RewriteSuggestion
 
 REWRITE_SUGGESTION_COUNT = 3
 MAX_MISSING_KEYWORDS = 8
-DEFAULT_REWRITE_MODEL = "gpt-5-mini"
+DEFAULT_REWRITE_MODEL = "gpt-4o-mini"
 JSON_BLOCK_PATTERN = re.compile(r"```json\s*(\{.*?\})\s*```", re.DOTALL)
 
 
@@ -123,7 +123,7 @@ def parse_generated_suggestions(raw_output: str) -> list[GeneratedRewriteSuggest
 
 
 def generate_rewrite_suggestions(source_text: str, missing_keywords: list[str]) -> list[GeneratedRewriteSuggestion]:
-    """Call the OpenAI Responses API to generate three natural rewrite suggestions."""
+    """Call the OpenAI chat completions API to generate three natural rewrite suggestions."""
     normalized_keywords = normalize_missing_keywords(missing_keywords)
     cleaned_source_text = source_text.strip()
 
@@ -135,14 +135,14 @@ def generate_rewrite_suggestions(source_text: str, missing_keywords: list[str]) 
 
     client = get_openai_client()
     try:
-        response = client.responses.create(
+        response = client.chat.completions.create(
             model=get_rewrite_model_name(),
-            input=build_rewrite_prompt(cleaned_source_text, normalized_keywords),
+            messages=[{"role": "user", "content": build_rewrite_prompt(cleaned_source_text, normalized_keywords)}],
         )
     except Exception as exc:
         raise RuntimeError("OpenAI request failed while generating rewrite suggestions.") from exc
 
-    raw_output = (response.output_text or "").strip()
+    raw_output = (response.choices[0].message.content or "").strip()
 
     if not raw_output:
         raise RuntimeError("OpenAI did not return any rewrite text.")

@@ -99,7 +99,7 @@ def build_settings() -> Settings:
         debug=get_bool_env("DEBUG", False),
         database_url=get_required_env("DATABASE_URL"),
         openai_api_key=get_optional_env("OPENAI_API_KEY", "").strip() or None,
-        openai_rewrite_model=get_optional_env("OPENAI_REWRITE_MODEL", "gpt-5-mini"),
+        openai_rewrite_model=get_optional_env("OPENAI_REWRITE_MODEL", "gpt-4o-mini"),
         jwt_secret=get_required_env("JWT_SECRET"),
         allowed_origin=get_required_env("ALLOWED_ORIGIN"),
         redis_url=get_optional_env("REDIS_URL", "").strip() or None,
