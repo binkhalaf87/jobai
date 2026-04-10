@@ -1,4 +1,4 @@
-import { publicConfig } from "@/lib/config";
+import { getRequiredPublicApiUrl } from "@/lib/config";
 
 const AUTH_TOKEN_KEY = "jobai_access_token";
 
@@ -54,7 +54,7 @@ export function hasApiToken(): boolean {
 
 
 export function getApiBaseUrl(): string {
-  return publicConfig.apiUrl;
+  return getRequiredPublicApiUrl();
 }
 
 
@@ -105,7 +105,7 @@ function buildHeaders(body: ApiRequestOptions["body"], auth: boolean, headers?: 
 
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
   const { body, auth = false, headers, ...rest } = options;
-  const response = await fetch(`${publicConfig.apiUrl}${path}`, {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     ...rest,
     headers: buildHeaders(body, auth, headers),
     body: normalizeBody(body)

@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 
 import { PageContainer } from "@/components/page-container";
 import { SiteHeader } from "@/components/site-header";
-import { publicConfig } from "@/lib/config";
 
 // This root layout defines shared metadata and wraps every route in the application.
 export const metadata: Metadata = {
@@ -17,9 +16,6 @@ type RootLayoutProps = {
 };
 
 export default function RootLayout({ children }: RootLayoutProps) {
-  // Accessing the shared config here makes missing public env values fail early and clearly.
-  void publicConfig.apiUrl;
-
   return (
     <html lang="en">
       <body className="min-h-screen bg-slate-50 text-slate-900 antialiased">
