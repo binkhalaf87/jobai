@@ -31,3 +31,4 @@ class Resume(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     user = relationship("User", back_populates="resumes")
     analyses = relationship("Analysis", back_populates="resume", cascade="all, delete-orphan")
+    ai_reports = relationship("AIAnalysisReport", back_populates="resume", cascade="all, delete-orphan")

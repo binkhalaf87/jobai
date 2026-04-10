@@ -22,4 +22,4 @@ class AIAnalysisReport(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     user = relationship("User", back_populates="ai_analysis_reports")
-    resume = relationship("Resume")
+    resume = relationship("Resume", back_populates="ai_reports")
