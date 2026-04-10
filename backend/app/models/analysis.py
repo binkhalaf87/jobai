@@ -21,7 +21,7 @@ class Analysis(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         ForeignKey("job_descriptions.id", ondelete="CASCADE"), nullable=False, index=True
     )
     status: Mapped[AnalysisStatus] = mapped_column(
-        SqlEnum(AnalysisStatus, name="analysis_status"),
+        SqlEnum(AnalysisStatus, name="analysis_status", values_callable=lambda e: [m.value for m in e]),
         nullable=False,
         default=AnalysisStatus.QUEUED,
         server_default=AnalysisStatus.QUEUED.value,

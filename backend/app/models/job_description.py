@@ -21,7 +21,7 @@ class JobDescription(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     normalized_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     keyword_data: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     employment_type: Mapped[EmploymentType | None] = mapped_column(
-        SqlEnum(EmploymentType, name="employment_type"), nullable=True
+        SqlEnum(EmploymentType, name="employment_type", values_callable=lambda e: [m.value for m in e]), nullable=True
     )
     location_text: Mapped[str | None] = mapped_column(String(255), nullable=True)
 

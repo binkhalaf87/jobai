@@ -18,7 +18,7 @@ class UsageLog(UUIDPrimaryKeyMixin, Base):
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     analysis_id: Mapped[str | None] = mapped_column(ForeignKey("analyses.id", ondelete="SET NULL"), nullable=True)
     event_type: Mapped[UsageEventType] = mapped_column(
-        SqlEnum(UsageEventType, name="usage_event_type"), nullable=False, index=True
+        SqlEnum(UsageEventType, name="usage_event_type", values_callable=lambda e: [m.value for m in e]), nullable=False, index=True
     )
     request_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
     credits_used: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")

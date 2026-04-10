@@ -17,7 +17,7 @@ class Subscription(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     plan_name: Mapped[str] = mapped_column(String(100), nullable=False)
     status: Mapped[SubscriptionStatus] = mapped_column(
-        SqlEnum(SubscriptionStatus, name="subscription_status"),
+        SqlEnum(SubscriptionStatus, name="subscription_status", values_callable=lambda e: [m.value for m in e]),
         nullable=False,
         default=SubscriptionStatus.TRIALING,
         server_default=SubscriptionStatus.TRIALING.value,

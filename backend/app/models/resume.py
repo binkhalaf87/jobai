@@ -23,7 +23,7 @@ class Resume(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     structured_data: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     processing_status: Mapped[ResumeProcessingStatus] = mapped_column(
-        SqlEnum(ResumeProcessingStatus, name="resume_processing_status"),
+        SqlEnum(ResumeProcessingStatus, name="resume_processing_status", values_callable=lambda e: [m.value for m in e]),
         nullable=False,
         default=ResumeProcessingStatus.UPLOADED,
         server_default=ResumeProcessingStatus.UPLOADED.value,

@@ -14,7 +14,7 @@ class RewriteSuggestion(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     analysis_id: Mapped[str] = mapped_column(ForeignKey("analyses.id", ondelete="CASCADE"), nullable=False, index=True)
     section: Mapped[SuggestionSection] = mapped_column(
-        SqlEnum(SuggestionSection, name="suggestion_section"), nullable=False
+        SqlEnum(SuggestionSection, name="suggestion_section", values_callable=lambda e: [m.value for m in e]), nullable=False
     )
     original_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     suggested_text: Mapped[str] = mapped_column(Text, nullable=False)
