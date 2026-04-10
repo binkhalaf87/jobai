@@ -27,11 +27,8 @@ def wrap_with_cors(application: ASGIApp) -> CORSMiddleware:
 
 def create_unavailable_application(startup_error: Exception) -> ASGIApp:
     """Serve a CORS-enabled fallback response when startup fails before the real app is ready."""
-    expose_error_details = get_optional_env("ENVIRONMENT", "development").lower() != "production"
+    error_message = str(startup_error)
     response_payload: dict[str, Any] = {"detail": "Backend failed to start."}
-
-    if expose_error_details:
-        response_payload["error"] = str(startup_error)
 
     fallback_app = FastAPI(
         title="JobAI Backend Unavailable",
@@ -42,7 +39,8 @@ def create_unavailable_application(startup_error: Exception) -> ASGIApp:
 
     @fallback_app.get("/health", tags=["system"])
     async def degraded_health_check() -> JSONResponse:
-        return JSONResponse(status_code=503, content={"status": "error", **response_payload})
+        # Always expose the error on /health so startup failures are diagnosable in production.
+        return JSONResponse(status_code=503, content={"status": "error", "error": error_message})
 
     @fallback_app.api_route(
         "/{path:path}",
