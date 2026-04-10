@@ -19,12 +19,12 @@ export const DASHBOARD_NAV_GROUPS: DashboardNavGroup[] = [
     items: [
       { label: "Dashboard", href: "/dashboard", icon: "home" },
       { label: "My Resumes", href: "/dashboard/resumes", icon: "file-text" },
-      { label: "Analysis", href: "/dashboard/analysis", icon: "bar-chart" },
     ],
   },
   {
     label: "AI Tools",
     items: [
+      { label: "Analysis", href: "/dashboard/analysis", icon: "bar-chart" },
       { label: "Enhancement", href: "/dashboard/enhancement", icon: "sparkles" },
       { label: "AI Interview", href: "/dashboard/ai-interview", icon: "mic" },
       { label: "Job Matching", href: "/dashboard/job-matching", icon: "target" },

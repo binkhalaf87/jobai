@@ -198,18 +198,10 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
       {/* ─── Main area ────────────────────────────────────────── */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Top header */}
-        <header className="flex h-16 flex-shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6 md:px-8">
+        <header className="flex h-16 flex-shrink-0 items-center border-b border-slate-200 bg-white px-6 md:px-8">
           <h1 className="text-base font-semibold text-slate-900">
             {currentPage?.label ?? "Dashboard"}
           </h1>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/dashboard/analysis"
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
-            >
-              New Analysis
-            </Link>
-          </div>
         </header>
 
         {/* Scrollable page content */}
