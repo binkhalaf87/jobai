@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.api.deps.auth import get_current_user
@@ -31,9 +32,16 @@ from app.services.analysis_matching import (
     get_user_resume_for_analysis,
 )
 from app.services.rewrite_engine import get_user_analysis_for_rewrite, replace_rewrite_suggestions
+from app.schemas.ai_report import AIReportFull, AIReportListItem, AIReportRequest
+from app.services.ai_report_service import (
+    create_pending_report,
+    get_user_report,
+    list_user_reports,
+    stream_report_to_client,
+)
 from app.services.analysis_scoring import create_scoring_analysis
 from app.services.job_descriptions import create_job_description
-from app.services.resume_preview import build_text_preview
+from app.services.resume_preview import build_text_preview, get_user_resume
 
 # This router is reserved for analysis preparation, requests, and result retrieval.
 router = APIRouter(prefix="/analysis", tags=["analysis"])
@@ -309,3 +317,56 @@ def generate_resume_rewrite_suggestions(
         section=payload.section,
         suggestions=[RewriteSuggestionRead.model_validate(suggestion) for suggestion in suggestions],
     )
+
+
+# ─── AI Report endpoints ──────────────────────────────────────────────────────
+
+@router.post("/ai-report", status_code=status.HTTP_200_OK)
+def create_ai_report(
+    payload: AIReportRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> StreamingResponse:
+    """
+    Stream a GPT-powered full resume analysis report via Server-Sent Events.
+    Creates a pending DB record first, then streams chunks, then saves the completed text.
+    """
+    resume = get_user_resume(db, current_user.id, payload.resume_id)
+    if not resume:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume not found.")
+
+    if not resume.raw_text:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Resume has no extracted text. Make sure the file was parsed successfully.",
+        )
+
+    report = create_pending_report(db, current_user.id, resume, payload.job_description)
+
+    return StreamingResponse(
+        stream_report_to_client(report.id, resume.raw_text, payload.job_description),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+@router.get("/ai-reports", response_model=list[AIReportListItem])
+def list_ai_reports(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[AIReportListItem]:
+    """Return all AI analysis reports belonging to the current user, newest first."""
+    return list_user_reports(db, current_user.id)
+
+
+@router.get("/ai-report/{report_id}", response_model=AIReportFull)
+def get_ai_report(
+    report_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> AIReportFull:
+    """Return the full content of a single AI analysis report."""
+    report = get_user_report(db, current_user.id, report_id)
+    if not report:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found.")
+    return report

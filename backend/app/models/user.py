@@ -23,3 +23,4 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     analyses = relationship("Analysis", back_populates="user", cascade="all, delete-orphan")
     subscriptions = relationship("Subscription", back_populates="user", cascade="all, delete-orphan")
     usage_logs = relationship("UsageLog", back_populates="user", cascade="all, delete-orphan")
+    ai_analysis_reports = relationship("AIAnalysisReport", back_populates="user", cascade="all, delete-orphan")

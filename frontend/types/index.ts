@@ -53,6 +53,21 @@ export type ResumePreview = {
   normalized_text_preview: string;
 };
 
+export type AIReportListItem = {
+  id: string;
+  resume_id: string;
+  resume_title: string | null;
+  status: string;
+  created_at: string;
+  completed_at: string | null;
+};
+
+export type AIReportFull = AIReportListItem & {
+  job_description_text: string | null;
+  model_name: string | null;
+  report_text: string | null;
+};
+
 export type JobDescriptionPayload = {
   title: string;
   company_name?: string;
