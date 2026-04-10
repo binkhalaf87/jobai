@@ -1,10 +1,33 @@
+import os
+import re
 from dataclasses import dataclass
 from functools import lru_cache
-import os
+from urllib.parse import urlsplit
 
 
 class MissingEnvironmentVariablesError(RuntimeError):
     """Raised when one or more required environment variables are not configured."""
+
+
+def normalize_origin(origin: str) -> str:
+    """Normalize a configured browser origin into `scheme://host[:port]` form."""
+    candidate = origin.strip()
+
+    if not candidate:
+        return ""
+
+    if "://" not in candidate:
+        if candidate.startswith(("localhost", "127.0.0.1")):
+            candidate = f"http://{candidate}"
+        else:
+            candidate = f"https://{candidate}"
+
+    parsed_origin = urlsplit(candidate)
+
+    if parsed_origin.scheme and parsed_origin.netloc:
+        return f"{parsed_origin.scheme}://{parsed_origin.netloc}"
+
+    return candidate.rstrip("/")
 
 
 def get_optional_env(name: str, default: str) -> str:
@@ -59,7 +82,11 @@ class Settings:
         During local development we also allow common localhost frontend ports so a local
         Next.js app can call the Railway-hosted or local FastAPI backend.
         """
-        configured_origins = [origin.strip() for origin in self.allowed_origin.split(",") if origin.strip()]
+        configured_origins = [
+            normalized_origin
+            for origin in self.allowed_origin.split(",")
+            if (normalized_origin := normalize_origin(origin))
+        ]
 
         if self.environment.lower() != "production":
             configured_origins.extend(
@@ -73,6 +100,27 @@ class Settings:
 
         # Preserve order while removing duplicates so the final CORS list stays predictable.
         return list(dict.fromkeys(configured_origins))
+
+    def allowed_origin_regex(self) -> str | None:
+        """Allow Vercel preview deployments that belong to configured production hosts."""
+        regex_patterns: list[str] = []
+
+        for origin in self.allowed_origins():
+            parsed_origin = urlsplit(origin)
+
+            if parsed_origin.scheme != "https" or not parsed_origin.netloc.endswith(".vercel.app"):
+                continue
+
+            project_host = parsed_origin.netloc.removesuffix(".vercel.app")
+            preview_pattern = (
+                rf"^https://{re.escape(project_host)}(?:-[a-z0-9-]+)?\.vercel\.app$"
+            )
+            regex_patterns.append(preview_pattern)
+
+        if not regex_patterns:
+            return None
+
+        return "|".join(regex_patterns)
 
 
 def build_settings() -> Settings:
