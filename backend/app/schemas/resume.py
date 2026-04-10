@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import Field
 
 from app.models.enums import ResumeProcessingStatus
@@ -33,6 +35,16 @@ class ResumeRead(ResumeBase, TimestampedSchema):
     raw_text: str | None = None
     normalized_text: str | None = None
     structured_data: ResumeStructuredData | None = None
+
+
+class ResumeListItem(ORMBaseSchema):
+    id: str
+    title: str
+    source_filename: str | None = None
+    file_type: str | None = None
+    page_count: int | None = None
+    processing_status: ResumeProcessingStatus
+    created_at: datetime
 
 
 class ResumeUploadResponse(ORMBaseSchema):

@@ -34,6 +34,25 @@ export type ResumeUploadResponse = {
   resume_id: string;
 };
 
+export type ResumeListItem = {
+  id: string;
+  title: string;
+  source_filename: string | null;
+  file_type: string | null;
+  page_count: number | null;
+  processing_status: string;
+  created_at: string;
+};
+
+export type ResumePreview = {
+  id: string;
+  title: string;
+  source_filename: string | null;
+  processing_status: string;
+  raw_text_preview: string;
+  normalized_text_preview: string;
+};
+
 export type JobDescriptionPayload = {
   title: string;
   company_name?: string;

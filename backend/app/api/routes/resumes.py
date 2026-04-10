@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 from app.api.deps.auth import get_current_user
 from app.api.deps.db import get_db
 from app.models.user import User
-from app.schemas.resume import ResumeTextPreviewResponse, ResumeUploadResponse
-from app.services.resume_preview import build_text_preview, get_user_resume
+from app.schemas.resume import ResumeListItem, ResumeTextPreviewResponse, ResumeUploadResponse
+from app.services.resume_preview import build_text_preview, get_user_resume, list_user_resumes
 from app.services.resume_upload import save_resume_upload
 
 # This router keeps resume ingestion separate from downstream analysis logic.
@@ -16,6 +16,15 @@ router = APIRouter(prefix="/resume", tags=["resume"])
 def resumes_status() -> dict[str, str]:
     """Placeholder endpoint confirming the resumes route group is wired."""
     return {"status": "resume routes ready"}
+
+
+@router.get("/", response_model=list[ResumeListItem])
+def list_resumes(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[ResumeListItem]:
+    """Return all resumes belonging to the authenticated user, newest first."""
+    return list_user_resumes(db, current_user.id)
 
 
 @router.post("/upload", response_model=ResumeUploadResponse, status_code=status.HTTP_201_CREATED)
@@ -54,3 +63,19 @@ def get_resume(
         normalized_text_preview=build_text_preview(resume.normalized_text),
         structured_data=resume.structured_data,
     )
+
+
+@router.delete("/{resume_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_resume(
+    resume_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    """Delete a resume owned by the current user. Associated analyses are also removed."""
+    resume = get_user_resume(db, current_user.id, resume_id)
+
+    if not resume:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume not found.")
+
+    db.delete(resume)
+    db.commit()
