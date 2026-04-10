@@ -54,4 +54,4 @@ Environment templates are provided for each deployable app.
 - The frontend is prepared for Vercel deployment from the `frontend/` directory.
 - The backend includes a `Dockerfile` and `railway.toml` for Railway deployment.
 - The repository root also includes a Railway-ready `Dockerfile` and `railway.toml` so the backend can deploy directly from the monorepo root without extra monorepo build configuration.
-- The FastAPI service exposes `main:app` at the backend root so the runtime command can stay simple.
+- The backend bootstrap now runs through `python serve.py`, which applies Alembic migrations before serving and falls back to a CORS-enabled 503 app if startup fails.

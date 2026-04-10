@@ -46,9 +46,10 @@ The CORS setup also adds common localhost frontend origins automatically when `E
 
 This backend is prepared for container-based deployment.
 
-- `Dockerfile` builds a minimal Python image and starts FastAPI with `uvicorn main:app --host 0.0.0.0 --port $PORT`
-- `railway.toml` configures Railway to build from the Dockerfile and run the same command
-- `main.py` at the backend root re-exports the ASGI app so the deployment command does not need an internal module path
+- `serve.py` runs Alembic migrations, then starts Uvicorn; if startup fails it serves a CORS-enabled fallback app so browsers still receive a clear 503 response
+- `Dockerfile` builds a minimal Python image and starts the backend with `python serve.py`
+- `railway.toml` configures Railway to build from the Dockerfile and run the same bootstrap command
+- `main.py` at the backend root still exposes `main:app` for local Uvicorn compatibility and wraps startup failures in the same fallback behavior
 
 ### Frontend to backend flow
 
@@ -70,3 +71,5 @@ Once dependencies are installed and `DATABASE_URL` is set, typical commands are:
 
 1. `alembic upgrade head`
 2. `alembic downgrade -1`
+
+`DATABASE_URL` can use SQLAlchemy's psycopg3 dialect, for example `postgresql+psycopg://...?...sslmode=require`, and the same value is used by both the app engine and Alembic.

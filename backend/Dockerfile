@@ -12,5 +12,4 @@ COPY . .
 EXPOSE 8000
 
 # Railway provides PORT at runtime; the fallback keeps local container runs predictable.
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
-
+CMD ["python", "serve.py"]

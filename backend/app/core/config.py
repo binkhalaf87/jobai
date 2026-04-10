@@ -30,6 +30,58 @@ def normalize_origin(origin: str) -> str:
     return candidate.rstrip("/")
 
 
+def build_allowed_origins(allowed_origin: str, environment: str) -> list[str]:
+    """Build an explicit allowlist for frontend origins."""
+    configured_origins = [
+        normalized_origin
+        for origin in allowed_origin.split(",")
+        if (normalized_origin := normalize_origin(origin))
+    ]
+
+    if environment.lower() != "production":
+        configured_origins.extend(
+            [
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "http://localhost:3001",
+                "http://127.0.0.1:3001",
+            ]
+        )
+
+    return list(dict.fromkeys(configured_origins))
+
+
+def build_allowed_origin_regex(origins: list[str]) -> str | None:
+    """Allow Vercel preview deployments that belong to configured production hosts."""
+    regex_patterns: list[str] = []
+
+    for origin in origins:
+        parsed_origin = urlsplit(origin)
+
+        if parsed_origin.scheme != "https" or not parsed_origin.netloc.endswith(".vercel.app"):
+            continue
+
+        project_host = parsed_origin.netloc.removesuffix(".vercel.app")
+        preview_pattern = rf"^https://{re.escape(project_host)}(?:-[a-z0-9-]+)?\.vercel\.app$"
+        regex_patterns.append(preview_pattern)
+
+    if not regex_patterns:
+        return None
+
+    return "|".join(regex_patterns)
+
+
+def resolve_cors_configuration(
+    allowed_origin: str | None = None,
+    environment: str | None = None,
+) -> tuple[list[str], str | None]:
+    """Resolve CORS origins from explicit values or the current environment."""
+    resolved_allowed_origin = allowed_origin if allowed_origin is not None else get_optional_env("ALLOWED_ORIGIN", "")
+    resolved_environment = environment if environment is not None else get_optional_env("ENVIRONMENT", "development")
+    origins = build_allowed_origins(resolved_allowed_origin, resolved_environment)
+    return origins, build_allowed_origin_regex(origins)
+
+
 def get_optional_env(name: str, default: str) -> str:
     """Read an environment variable and fall back to a default when it is unset."""
     return os.getenv(name, default)
@@ -76,51 +128,12 @@ class Settings:
     stripe_secret_key: str | None
 
     def allowed_origins(self) -> list[str]:
-        """Build an explicit allowlist for frontend origins.
-
-        `ALLOWED_ORIGIN` should point at the deployed Vercel frontend in production.
-        During local development we also allow common localhost frontend ports so a local
-        Next.js app can call the Railway-hosted or local FastAPI backend.
-        """
-        configured_origins = [
-            normalized_origin
-            for origin in self.allowed_origin.split(",")
-            if (normalized_origin := normalize_origin(origin))
-        ]
-
-        if self.environment.lower() != "production":
-            configured_origins.extend(
-                [
-                    "http://localhost:3000",
-                    "http://127.0.0.1:3000",
-                    "http://localhost:3001",
-                    "http://127.0.0.1:3001",
-                ]
-            )
-
-        # Preserve order while removing duplicates so the final CORS list stays predictable.
-        return list(dict.fromkeys(configured_origins))
+        """Build an explicit allowlist for frontend origins."""
+        return build_allowed_origins(self.allowed_origin, self.environment)
 
     def allowed_origin_regex(self) -> str | None:
         """Allow Vercel preview deployments that belong to configured production hosts."""
-        regex_patterns: list[str] = []
-
-        for origin in self.allowed_origins():
-            parsed_origin = urlsplit(origin)
-
-            if parsed_origin.scheme != "https" or not parsed_origin.netloc.endswith(".vercel.app"):
-                continue
-
-            project_host = parsed_origin.netloc.removesuffix(".vercel.app")
-            preview_pattern = (
-                rf"^https://{re.escape(project_host)}(?:-[a-z0-9-]+)?\.vercel\.app$"
-            )
-            regex_patterns.append(preview_pattern)
-
-        if not regex_patterns:
-            return None
-
-        return "|".join(regex_patterns)
+        return build_allowed_origin_regex(self.allowed_origins())
 
 
 def build_settings() -> Settings:
