@@ -6,12 +6,14 @@ from app.schemas.base import ORMBaseSchema
 class AIReportRequest(ORMBaseSchema):
     resume_id: str
     job_description: str | None = None
+    report_type: str = "analysis"
 
 
 class AIReportListItem(ORMBaseSchema):
     id: str
     resume_id: str
     resume_title: str | None
+    report_type: str
     status: str
     created_at: datetime
     completed_at: datetime | None

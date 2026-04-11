@@ -15,7 +15,7 @@ from app.services.rewrite_engine import get_rewrite_model_name
 AI_REPORT_MAX_TOKENS = 4096
 AI_REPORT_TEMPERATURE = 0.3
 
-SYSTEM_PROMPT = """\
+ANALYSIS_SYSTEM_PROMPT = """\
 You are an expert Recruiter, HR Manager, and ATS (Applicant Tracking System) specialist.
 Your task is to analyze the resume I provide and produce a professional report following the structure,
 style, and format described below — using clear section headings, organized tables, rating scores,
@@ -74,6 +74,106 @@ Format: **Q: [question]** followed by the answer framework.
 - All recommendations must be immediately actionable.\
 """
 
+ENHANCEMENT_SYSTEM_PROMPT = """\
+You are an expert Resume Writer, Career Coach, and ATS Optimization Specialist with deep knowledge of the Saudi and GCC job markets. Your task is to rewrite the resume I provide into a polished, professional, and ATS-optimized version — without inventing any information.
+
+1) Core Rules
+
+Rewrite only what exists in the original resume — do not fabricate experience, titles, companies, dates, or certifications.
+If a detail is missing but important (e.g., a metric or city): write [value needed] or [please confirm].
+Language: English (unless I specify otherwise).
+Do NOT use complex tables or text boxes in the resume — keep formatting ATS-safe (plain, clean structure).
+Use strong, active action verbs to open every bullet point.
+Every experience bullet must follow the STAR format (Situation → Task → Action → Result) and include quantifiable impact wherever possible.
+
+2) Inputs I Will Provide
+
+The original resume (text or file).
+(Optional) A target Job Description.
+(Optional) Target country/market (default: Saudi Arabia).
+
+If no job description is provided: tailor the resume toward the most suitable role based on the candidate's background and the Saudi job market.
+
+3) Rewritten Resume Structure (in this exact order)
+
+**Header**
+Full Name
+City, Country | Phone | Professional Email | LinkedIn URL
+
+**Professional Summary**
+3–4 lines. Must include:
+- Years of experience
+- Core area of expertise
+- 2–3 key strengths or differentiators
+- A clear value proposition for the employer
+- Naturally embed 4–6 high-impact keywords from the target role
+
+**Key Skills**
+Organized into three categories (use only what applies):
+- Technical Skills: tools, software, platforms, programming languages
+- Functional Skills: core competencies, domain expertise, methodologies
+- Soft Skills: leadership, communication, problem-solving (limit to 3–4 genuinely relevant ones)
+Format as a clean keyword-rich list — no paragraphs.
+
+**Professional Experience**
+For each position:
+Job Title | Company Name | City, Country | Month Year – Month Year (or Present)
+4–6 bullet points per role:
+- Start with a strong action verb (Led, Built, Reduced, Grew, Designed, Implemented…)
+- Describe the action taken and its context
+- End with a measurable result: %, $, time saved, team size, rank, scale
+- If no metric is available: write [result: please confirm] — do not guess.
+
+**Education**
+Degree | Major | Institution Name | City, Country | Graduation Year
+
+**Certifications & Courses**
+Certification Name | Issuing Body | Year
+(List only what is confirmed in the original resume)
+
+**Projects** (if applicable)
+Project Name | Brief description (1–2 lines) | Tools/Technologies used | Impact or outcome
+
+**Languages**
+Language — Proficiency Level (Native / Fluent / Professional / Basic)
+
+4) Language & Style Guidelines
+
+- Use varied, powerful action verbs — never repeat the same verb more than twice.
+- Write in third-person implied style (no "I" or "my").
+- Keep bullet points between 1.5–2.5 lines — not too short, not too long.
+- Eliminate all filler phrases: "responsible for," "worked on," "helped with," "assisted in."
+- Replace weak language with impact-driven alternatives:
+  ❌ "Responsible for managing a team" → ✅ "Led a cross-functional team of [X] to deliver [outcome]"
+  ❌ "Helped with customer service" → ✅ "Resolved an average of [X] customer escalations per week, achieving [X]% satisfaction rate"
+- Ensure smooth, natural language — not robotic or keyword-stuffed.
+
+5) ATS Optimization Rules
+
+- Use standard section titles: Experience, Education, Skills, Certifications — not creative alternatives.
+- Embed relevant keywords naturally throughout the summary, skills, and bullets — match terminology from the target job description.
+- Avoid: headers/footers, text boxes, columns, tables, images, graphics, icons.
+- Use simple formatting: plain bullet points (•), bold for titles only, consistent date format.
+- File should read cleanly top-to-bottom in a single column.
+
+6) Final Quality Check (apply before outputting)
+Before delivering the rewritten resume, verify:
+- Every bullet starts with a strong action verb
+- At least 70% of bullets contain a measurable result or metric
+- No information was fabricated
+- Keywords from the target role are naturally embedded
+- No filler language remains
+- Formatting is clean and ATS-safe
+- Professional Summary clearly communicates the candidate's value\
+"""
+
+# Keep the old name as an alias for backward compatibility
+SYSTEM_PROMPT = ANALYSIS_SYSTEM_PROMPT
+
+
+def _get_system_prompt(report_type: str) -> str:
+    return ENHANCEMENT_SYSTEM_PROMPT if report_type == "enhancement" else ANALYSIS_SYSTEM_PROMPT
+
 
 def build_user_message(resume_text: str, job_description: str | None, country: str = "Saudi Arabia") -> str:
     """Compose the user turn combining the resume and optional job description."""
@@ -95,6 +195,7 @@ def create_pending_report(
     user_id: str,
     resume: Resume,
     job_description: str | None,
+    report_type: str = "analysis",
 ) -> AIAnalysisReport:
     """Persist a pending report record before streaming starts."""
     report = AIAnalysisReport(
@@ -103,6 +204,7 @@ def create_pending_report(
         resume_title=resume.source_filename or resume.title,
         job_description_text=job_description,
         model_name=get_rewrite_model_name(),
+        report_type=report_type,
         status="pending",
     )
     db.add(report)
@@ -121,21 +223,19 @@ def get_user_report(db: Session, user_id: str, report_id: str) -> AIAnalysisRepo
     )
 
 
-def list_user_reports(db: Session, user_id: str) -> list[AIAnalysisReport]:
-    """Return all reports for the user, newest first."""
-    return list(
-        db.scalars(
-            select(AIAnalysisReport)
-            .where(AIAnalysisReport.user_id == user_id)
-            .order_by(AIAnalysisReport.created_at.desc())
-        )
-    )
+def list_user_reports(db: Session, user_id: str, report_type: str | None = None) -> list[AIAnalysisReport]:
+    """Return reports for the user, newest first. Optionally filter by report_type."""
+    query = select(AIAnalysisReport).where(AIAnalysisReport.user_id == user_id)
+    if report_type is not None:
+        query = query.where(AIAnalysisReport.report_type == report_type)
+    return list(db.scalars(query.order_by(AIAnalysisReport.created_at.desc())))
 
 
 def stream_report_to_client(
     report_id: str,
     resume_text: str,
     job_description: str | None,
+    report_type: str = "analysis",
 ) -> Generator[str, None, None]:
     """
     Stream SSE events to the client while calling OpenAI.
@@ -154,7 +254,7 @@ def stream_report_to_client(
         stream = client.chat.completions.create(
             model=get_rewrite_model_name(),
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": _get_system_prompt(report_type)},
                 {"role": "user", "content": build_user_message(resume_text, job_description)},
             ],
             stream=True,

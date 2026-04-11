@@ -7,8 +7,11 @@ function getToken(): string {
 }
 
 
-export async function listAIReports(): Promise<AIReportListItem[]> {
-  const res = await fetch(`${getApiBaseUrl()}/analysis/ai-reports`, {
+export async function listAIReports(reportType?: string): Promise<AIReportListItem[]> {
+  const url = reportType
+    ? `${getApiBaseUrl()}/analysis/ai-reports?report_type=${encodeURIComponent(reportType)}`
+    : `${getApiBaseUrl()}/analysis/ai-reports`;
+  const res = await fetch(url, {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   if (!res.ok) throw new Error("Failed to load reports.");
@@ -39,6 +42,7 @@ export async function streamAIReport(
   resumeId: string,
   jobDescription: string,
   onEvent: (event: SSEEvent) => void,
+  reportType: "analysis" | "enhancement" = "analysis",
 ): Promise<void> {
   const res = await fetch(`${getApiBaseUrl()}/analysis/ai-report`, {
     method: "POST",
@@ -46,7 +50,7 @@ export async function streamAIReport(
       "Content-Type": "application/json",
       Authorization: `Bearer ${getToken()}`,
     },
-    body: JSON.stringify({ resume_id: resumeId, job_description: jobDescription || null }),
+    body: JSON.stringify({ resume_id: resumeId, job_description: jobDescription || null, report_type: reportType }),
   });
 
   if (!res.ok) {

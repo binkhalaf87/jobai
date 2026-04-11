@@ -57,6 +57,7 @@ export type AIReportListItem = {
   id: string;
   resume_id: string;
   resume_title: string | null;
+  report_type: string;
   status: string;
   created_at: string;
   completed_at: string | null;

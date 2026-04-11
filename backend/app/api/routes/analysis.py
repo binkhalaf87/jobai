@@ -341,10 +341,11 @@ def create_ai_report(
             detail="Resume has no extracted text. Make sure the file was parsed successfully.",
         )
 
-    report = create_pending_report(db, current_user.id, resume, payload.job_description)
+    report_type = payload.report_type if payload.report_type in ("analysis", "enhancement") else "analysis"
+    report = create_pending_report(db, current_user.id, resume, payload.job_description, report_type=report_type)
 
     return StreamingResponse(
-        stream_report_to_client(report.id, resume.raw_text, payload.job_description),
+        stream_report_to_client(report.id, resume.raw_text, payload.job_description, report_type=report_type),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
@@ -352,11 +353,12 @@ def create_ai_report(
 
 @router.get("/ai-reports", response_model=list[AIReportListItem])
 def list_ai_reports(
+    report_type: str | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[AIReportListItem]:
-    """Return all AI analysis reports belonging to the current user, newest first."""
-    return list_user_reports(db, current_user.id)
+    """Return AI reports belonging to the current user. Filter by report_type if provided."""
+    return list_user_reports(db, current_user.id, report_type=report_type)
 
 
 @router.get("/ai-report/{report_id}", response_model=AIReportFull)

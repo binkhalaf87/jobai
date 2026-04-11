@@ -17,6 +17,7 @@ class AIAnalysisReport(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     resume_title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     job_description_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     model_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    report_type: Mapped[str] = mapped_column(String(20), nullable=False, default="analysis", server_default="analysis", index=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending", server_default="pending")
     report_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

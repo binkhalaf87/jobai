@@ -54,7 +54,7 @@ export default function DashboardAnalysisPage() {
   const loadData = useCallback(async () => {
     const [resumeList, reportList] = await Promise.all([
       listResumes().catch(() => [] as ResumeListItem[]),
-      listAIReports().catch(() => [] as AIReportListItem[]),
+      listAIReports("analysis").catch(() => [] as AIReportListItem[]),
     ]);
     setResumes(resumeList);
     setReports(reportList);
