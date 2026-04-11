@@ -177,3 +177,75 @@ export type RewriteSuggestionResponse = {
   section: SuggestionSection;
   suggestions: RewriteSuggestion[];
 };
+
+// ─── Interview ────────────────────────────────────────────────────────────────
+
+export type ExperienceLevel = "entry" | "mid" | "senior";
+export type InterviewType = "hr" | "technical" | "mixed";
+export type InterviewLanguage = "en" | "ar";
+export type QuestionCount = 3 | 5 | 10;
+
+export type InterviewQuestion = {
+  index: number;
+  question: string;
+  type: "hr" | "technical";
+};
+
+export type AnswerEvaluation = {
+  score: number;
+  strengths: string[];
+  weaknesses: string[];
+  improved_answer: string;
+};
+
+export type InterviewAnswer = {
+  index: number;
+  question: string;
+  answer: string;
+  evaluation: AnswerEvaluation;
+};
+
+export type ScoreBreakdown = {
+  relevance: number;
+  clarity: number;
+  professionalism: number;
+  confidence: number;
+  role_fit: number;
+};
+
+export type InterviewFinalReport = {
+  overall_score: number;
+  readiness: "Needs Improvement" | "Good Progress" | "Interview Ready";
+  summary: string;
+  breakdown: ScoreBreakdown;
+};
+
+export type InterviewSessionResponse = {
+  id: string;
+  job_title: string;
+  experience_level: ExperienceLevel;
+  interview_type: InterviewType;
+  language: InterviewLanguage;
+  question_count: number;
+  questions: InterviewQuestion[];
+  status: string;
+  created_at: string;
+};
+
+export type InterviewCompleteResponse = InterviewSessionResponse & {
+  answers: InterviewAnswer[];
+  overall_score: number;
+  final_report: InterviewFinalReport;
+};
+
+export type InterviewListItem = {
+  id: string;
+  job_title: string;
+  experience_level: ExperienceLevel;
+  interview_type: InterviewType;
+  language: InterviewLanguage;
+  question_count: number;
+  overall_score: number | null;
+  status: string;
+  created_at: string;
+};
