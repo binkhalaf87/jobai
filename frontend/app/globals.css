@@ -31,24 +31,39 @@ a {
 
 /* ─── Print / PDF export ─────────────────────────────────────────────────── */
 @media print {
-  /* Hide interactive controls only — keep the report visible */
-  [data-no-print] { display: none !important; }
+  /* Hide entire page, then reveal only the report root */
+  body { visibility: hidden; background: white; margin: 0; }
+
+  #analysis-print-root {
+    visibility: visible;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    padding: 24pt 32pt;
+    background: white;
+  }
+
+  /* Every descendant of the root is visible by default */
+  #analysis-print-root * { visibility: visible; }
+
+  /* Except interactive controls */
+  #analysis-print-root [data-no-print],
+  #analysis-print-root [data-no-print] * { visibility: hidden; display: none !important; }
 
   /* Typography */
-  body { background: white; color: #0f172a; font-size: 11pt; }
+  #analysis-print-root { color: #0f172a; font-size: 11pt; font-family: ui-sans-serif, system-ui, sans-serif; }
+  #analysis-print-root h2 { font-size: 14pt; font-weight: 700; margin-top: 18pt; }
+  #analysis-print-root h3 { font-size: 12pt; font-weight: 600; margin-top: 12pt; }
+  #analysis-print-root p, #analysis-print-root li { font-size: 10.5pt; line-height: 1.6; }
 
-  h2 { font-size: 14pt; font-weight: 700; margin-top: 18pt; }
-  h3 { font-size: 12pt; font-weight: 600; margin-top: 12pt; }
-  p, li { font-size: 10.5pt; line-height: 1.6; }
+  #analysis-print-root table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+  #analysis-print-root th, #analysis-print-root td { border: 1px solid #cbd5e1; padding: 5pt 8pt; }
+  #analysis-print-root th { background: #f1f5f9 !important; font-weight: 600; }
 
-  table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
-  th, td { border: 1px solid #cbd5e1; padding: 5pt 8pt; }
-  th { background: #f1f5f9 !important; font-weight: 600; }
-
-  /* Section page breaks */
+  /* Page breaks between sections */
   [data-print-section] { break-before: page; }
   [data-print-section]:first-child { break-before: avoid; }
 
-  /* Score ring colors print correctly */
+  /* Preserve colors */
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
