@@ -27,7 +27,7 @@ export const DASHBOARD_NAV_GROUPS: DashboardNavGroup[] = [
       { label: "Analysis", href: "/dashboard/analysis", icon: "bar-chart" },
       { label: "Enhancement", href: "/dashboard/enhancement", icon: "sparkles" },
       { label: "AI Interview", href: "/dashboard/ai-interview", icon: "mic" },
-      { label: "Job Matching", href: "/dashboard/job-matching", icon: "target" },
+      { label: "Job Search", href: "/dashboard/job-search", icon: "search" },
       { label: "Smart Send", href: "/dashboard/smart-send", icon: "send" },
     ],
   },

@@ -65,6 +65,17 @@ export default function DashboardAnalysisPage() {
 
   useEffect(() => { void loadData(); }, [loadData]);
 
+  // Pre-fill job description from Job Search page (sessionStorage handoff)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const prefill = sessionStorage.getItem("jobai_prefill_jd");
+    if (prefill) {
+      setJobDescription(prefill);
+      sessionStorage.removeItem("jobai_prefill_jd");
+      sessionStorage.removeItem("jobai_prefill_jd_title");
+    }
+  }, []);
+
   // Auto-scroll output as text streams in
   useEffect(() => {
     if (pageState === "streaming") {

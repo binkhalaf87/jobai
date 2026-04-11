@@ -238,6 +238,53 @@ export type InterviewCompleteResponse = InterviewSessionResponse & {
   final_report: InterviewFinalReport;
 };
 
+// ─── Job Search ───────────────────────────────────────────────────────────────
+
+export type JobResult = {
+  job_id: string;
+  job_title: string;
+  company_name: string;
+  employer_logo: string | null;
+  location: string | null;
+  employment_type: string | null;
+  job_description: string | null;
+  apply_link: string | null;
+  salary_min: number | null;
+  salary_max: number | null;
+  salary_currency: string | null;
+  source: string | null;
+  posted_at: string | null;
+  fit_score: number | null;
+  is_saved: boolean;
+};
+
+export type JobSearchResponse = {
+  query: string;
+  location: string;
+  page: number;
+  total_found: number;
+  results: JobResult[];
+};
+
+export type SavedJob = {
+  id: string;
+  job_id: string;
+  job_title: string;
+  company_name: string;
+  employer_logo: string | null;
+  location: string | null;
+  employment_type: string | null;
+  job_description: string | null;
+  apply_link: string | null;
+  salary_min: number | null;
+  salary_max: number | null;
+  salary_currency: string | null;
+  source: string | null;
+  fit_score: number | null;
+  posted_at: string | null;
+  created_at: string;
+};
+
 export type InterviewListItem = {
   id: string;
   job_title: string;

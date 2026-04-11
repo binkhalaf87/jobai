@@ -126,6 +126,7 @@ class Settings:
     allowed_origin: str
     redis_url: str | None
     stripe_secret_key: str | None
+    rapidapi_key: str | None
 
     def allowed_origins(self) -> list[str]:
         """Build an explicit allowlist for frontend origins."""
@@ -165,6 +166,7 @@ def build_settings() -> Settings:
         allowed_origin=get_required_env("ALLOWED_ORIGIN"),
         redis_url=get_optional_env("REDIS_URL", "").strip() or None,
         stripe_secret_key=get_optional_env("STRIPE_SECRET_KEY", "").strip() or None,
+        rapidapi_key=get_optional_env("RAPIDAPI_KEY", "").strip() or None,
     )
 
 
