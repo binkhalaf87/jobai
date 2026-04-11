@@ -31,14 +31,7 @@ a {
 
 /* ─── Print / PDF export ─────────────────────────────────────────────────── */
 @media print {
-  /* Hide everything outside the printable report */
-  body > * { display: none !important; }
-  #analysis-print-root { display: block !important; position: static !important; }
-
-  /* Show ALL tab panels when printing */
-  [data-tab-panel] { display: block !important; }
-
-  /* Hide interactive controls */
+  /* Hide interactive controls only — keep the report visible */
   [data-no-print] { display: none !important; }
 
   /* Typography */

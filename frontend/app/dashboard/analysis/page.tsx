@@ -138,11 +138,6 @@ function StructuredReport({
 }) {
   const sections = parseReportSections(text);
   const atsScore = extractAtsScore(text);
-  const [activeTab, setActiveTab] = useState(0);
-
-  function handleExport() {
-    window.print();
-  }
 
   // If the report has no recognisable sections, fall back to plain markdown
   if (sections.length === 0) {
@@ -155,48 +150,21 @@ function StructuredReport({
 
   return (
     <div id="analysis-print-root">
-      {/* ── Print header (hidden on screen) ── */}
-      <div className="hidden print:block mb-6">
+      {/* ── Print header ── */}
+      <div className="mb-5 hidden print:block">
         <h1 className="text-2xl font-bold text-slate-900">AI Resume Analysis Report</h1>
-        {resumeTitle && <p className="text-sm text-slate-500 mt-1">Resume: {resumeTitle}{date ? ` · ${date}` : ""}</p>}
-      </div>
-
-      {/* ── ATS Score banner ── */}
-      {atsScore !== null && (
-        <div className="mb-5" data-no-print>
-          <AtsScoreRing score={atsScore} />
-        </div>
-      )}
-      {/* Print-only ATS score */}
-      {atsScore !== null && (
-        <div className="hidden print:block mb-4 p-4 border border-slate-200 rounded">
-          <span className="font-bold text-lg">ATS Match Score: {atsScore}/100</span>
-        </div>
-      )}
-
-      {/* ── Tab bar ── */}
-      <div className="mb-1 flex flex-wrap gap-1 border-b border-slate-200" data-no-print>
-        {sections.map((s, i) => (
-          <button
-            key={s.id}
-            type="button"
-            onClick={() => setActiveTab(i)}
-            className={`rounded-t-lg border-b-2 px-4 py-2 text-xs font-semibold transition-colors ${
-              activeTab === i
-                ? "border-slate-900 text-slate-900"
-                : "border-transparent text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            {s.shortTitle}
-          </button>
-        ))}
+        {resumeTitle && (
+          <p className="mt-1 text-sm text-slate-500">
+            Resume: {resumeTitle}{date ? ` · ${date}` : ""}
+          </p>
+        )}
       </div>
 
       {/* ── Export button ── */}
-      <div className="mb-4 flex justify-end" data-no-print>
+      <div className="mb-5 flex justify-end" data-no-print>
         <button
           type="button"
-          onClick={handleExport}
+          onClick={() => window.print()}
           className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 hover:text-slate-900"
         >
           <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
@@ -207,43 +175,26 @@ function StructuredReport({
         </button>
       </div>
 
-      {/* ── Section panels ── */}
-      {sections.map((s, i) => (
-        <div
-          key={s.id}
-          data-tab-panel
-          data-print-section
-          className={activeTab === i ? "block" : "hidden"}
-        >
-          {/* Section heading visible on screen */}
-          <div className="mb-4">
-            <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
-              Section {i + 1} of {sections.length}
-            </p>
-            <h2 className="mt-0.5 text-lg font-semibold text-slate-900">{s.title}</h2>
-          </div>
-
-          {/* Special card for ATS section */}
-          {i === 1 && atsScore !== null && (
-            <div className="mb-4">
-              <AtsScoreRing score={atsScore} />
-            </div>
-          )}
-
-          <Panel className="p-5 md:p-6">
-            <SectionContent content={s.content} />
-          </Panel>
+      {/* ── ATS Score banner ── */}
+      {atsScore !== null && (
+        <div className="mb-6">
+          <AtsScoreRing score={atsScore} />
         </div>
-      ))}
+      )}
 
-      {/* ── Print: all sections stacked ── */}
-      <div className="hidden print:block space-y-8">
+      {/* ── All sections stacked ── */}
+      <div className="space-y-6">
         {sections.map((s, i) => (
-          <div key={s.id}>
-            <h2 className="text-base font-bold text-slate-900 border-b border-slate-200 pb-1 mb-3">
-              {i + 1}. {s.title}
-            </h2>
-            <SectionContent content={s.content} />
+          <div key={s.id} data-print-section>
+            <div className="mb-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+                Section {i + 1} of {sections.length}
+              </p>
+              <h2 className="mt-0.5 text-lg font-semibold text-slate-900">{s.title}</h2>
+            </div>
+            <Panel className="p-5 md:p-6">
+              <SectionContent content={s.content} />
+            </Panel>
           </div>
         ))}
       </div>
