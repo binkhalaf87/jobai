@@ -26,3 +26,6 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     ai_analysis_reports = relationship("AIAnalysisReport", back_populates="user", cascade="all, delete-orphan")
     interview_sessions = relationship("InterviewSession", back_populates="user", cascade="all, delete-orphan")
     saved_jobs = relationship("SavedJob", back_populates="user", cascade="all, delete-orphan")
+    smtp_connection = relationship("SmtpConnection", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    send_campaigns = relationship("SendCampaign", back_populates="user", cascade="all, delete-orphan")
+    recipient_lists = relationship("RecipientList", back_populates="user", cascade="all, delete-orphan")
