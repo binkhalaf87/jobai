@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { InterviewAnswerComposer } from "@/components/interview-answer-composer";
 import { Panel } from "@/components/panel";
 import { ApiError } from "@/lib/api";
 import { completeInterview, getInterview, listInterviews, startInterview, submitAnswer } from "@/lib/interviews";
@@ -113,6 +114,7 @@ export default function DashboardAiInterviewPage() {
   const [pageState, setPageState] = useState<PageState>("setup");
   const [pageError, setPageError] = useState("");
   const [answerError, setAnswerError] = useState("");
+  const [answerMode, setAnswerMode] = useState<"text" | "video">("text");
   const [resumes, setResumes] = useState<ResumeListItem[]>([]);
   const [sessions, setSessions] = useState<InterviewListItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -213,6 +215,7 @@ export default function DashboardAiInterviewPage() {
     setPageState("setup");
     setPageError("");
     setAnswerError("");
+    setAnswerMode("text");
     setSessionId(null);
     setQuestions([]);
     setCurrentIndex(0);
@@ -290,11 +293,17 @@ export default function DashboardAiInterviewPage() {
             <p className="text-base font-semibold leading-snug text-slate-900">{currentQuestion.question}</p>
           </div>
           {!currentEvaluation ? (
-            <div className="mt-5 space-y-4">
-              <textarea value={currentAnswer} onChange={(e) => setCurrentAnswer(e.target.value)} rows={7} disabled={pageState === "evaluating"} placeholder="Answer naturally, but be specific. Use STAR, numbers, and your exact contribution when possible." className="w-full resize-y rounded-xl border border-slate-300 px-4 py-3 text-sm" />
-              {answerError && <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{answerError}</div>}
-              <button type="button" disabled={!currentAnswer.trim() || pageState === "evaluating"} onClick={() => void handleSubmitAnswer()} className="rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white disabled:opacity-50">{pageState === "evaluating" ? "Evaluating answer..." : "Submit Answer"}</button>
-            </div>
+            <InterviewAnswerComposer
+              answerMode={answerMode}
+              onAnswerModeChange={setAnswerMode}
+              answerValue={currentAnswer}
+              onAnswerChange={setCurrentAnswer}
+              language={setup.language}
+              questionKey={`${sessionId ?? "session"}:${currentIndex}:${currentQuestion.index}`}
+              isSubmitting={pageState === "evaluating"}
+              error={answerError}
+              onSubmit={() => void handleSubmitAnswer()}
+            />
           ) : (
             <div className="mt-5 space-y-4 rounded-2xl border border-slate-100 bg-slate-50 p-5">
               <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700"><p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Interviewer Reply</p><p className="mt-2">{currentEvaluation.interviewer_reply}</p></div>
