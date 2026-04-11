@@ -8,7 +8,9 @@ import logging
 from openai import AsyncOpenAI
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
+from app.core.config import get_settings
+
+settings = get_settings()
 from app.models.resume import Resume
 
 logger = logging.getLogger(__name__)

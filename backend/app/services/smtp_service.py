@@ -11,7 +11,9 @@ from email.mime.text import MIMEText
 from cryptography.fernet import Fernet
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
+from app.core.config import get_settings
+
+settings = get_settings()
 from app.models.smtp_connection import SmtpConnection
 from app.schemas.smart_send import SmtpConnectionCreate
 
