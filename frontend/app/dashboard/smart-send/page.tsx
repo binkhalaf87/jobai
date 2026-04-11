@@ -1,5 +1,5 @@
 "use client";
-
+// Smart Send — Gmail SMTP + AI cover letters + live send stream
 import { useEffect, useRef, useState } from "react";
 
 import { Panel } from "@/components/panel";
