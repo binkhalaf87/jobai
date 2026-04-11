@@ -1,108 +1,393 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { Panel } from "@/components/panel";
+import { loadDashboardOverview, type DashboardActivityItem, type DashboardOverviewData } from "@/lib/dashboard";
 
-const OVERVIEW_METRICS = [
-  {
-    label: "Total analyses",
-    value: "0",
-    note: "Analyses will appear here once full runs are saved."
-  },
-  {
-    label: "Average score",
-    value: "0%",
-    note: "This average will update as analysis history grows."
-  },
-  {
-    label: "Latest activity",
-    value: "No runs yet",
-    note: "Start a new analysis to populate your dashboard timeline."
+type MetricCardProps = {
+  label: string;
+  value: string;
+  note: string;
+};
+
+type QuickAction = {
+  label: string;
+  href: string;
+  description: string;
+};
+
+const ACTIVITY_STYLES: Record<DashboardActivityItem["kind"], string> = {
+  resume: "bg-sky-50 text-sky-700 border-sky-200",
+  "saved-job": "bg-amber-50 text-amber-700 border-amber-200",
+  "analysis-report": "bg-emerald-50 text-emerald-700 border-emerald-200",
+  "enhancement-report": "bg-violet-50 text-violet-700 border-violet-200",
+  interview: "bg-rose-50 text-rose-700 border-rose-200",
+};
+
+function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function formatCount(count: number | null, suffix = ""): string {
+  if (count === null) {
+    return "—";
   }
-];
 
-const QUICK_ACTIONS = [
-  {
-    label: "New Analysis",
-    href: "/dashboard/new-analysis",
-    description: "Upload a resume and pair it with a target role."
-  },
-  {
-    label: "My Resumes",
-    href: "/dashboard/resumes",
-    description: "Manage uploaded resumes and keep source files organized."
-  },
-  {
-    label: "My Analyses",
-    href: "/dashboard/analyses",
-    description: "Review completed analysis runs and revisit result pages."
-  },
-  {
-    label: "Settings",
-    href: "/dashboard/settings",
-    description: "Adjust profile and account preferences."
+  return `${count.toLocaleString()}${suffix}`;
+}
+
+function formatPercentage(value: number | null): string {
+  if (value === null) {
+    return "—";
   }
-];
 
-// This overview screen gives the dashboard a practical empty-state home before analytics APIs are added.
+  return `${Math.round(value)}%`;
+}
+
+function pluralize(count: number, singular: string, plural = `${singular}s`): string {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function DashboardMetricCard({ label, value, note }: MetricCardProps) {
+  return (
+    <Panel className="p-6">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
+      <p className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">{value}</p>
+      <p className="mt-3 text-sm leading-6 text-slate-600">{note}</p>
+    </Panel>
+  );
+}
+
+function DashboardLoadingState() {
+  return (
+    <div className="space-y-6">
+      <Panel className="p-8 md:p-10">
+        <div className="animate-pulse space-y-4">
+          <div className="h-4 w-40 rounded bg-slate-200" />
+          <div className="h-10 w-72 rounded bg-slate-200" />
+          <div className="h-4 w-full max-w-3xl rounded bg-slate-100" />
+          <div className="h-4 w-full max-w-2xl rounded bg-slate-100" />
+        </div>
+      </Panel>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }, (_, index) => (
+          <Panel key={index} className="p-6">
+            <div className="animate-pulse space-y-4">
+              <div className="h-3 w-24 rounded bg-slate-200" />
+              <div className="h-8 w-16 rounded bg-slate-200" />
+              <div className="h-4 w-full rounded bg-slate-100" />
+              <div className="h-4 w-3/4 rounded bg-slate-100" />
+            </div>
+          </Panel>
+        ))}
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        {Array.from({ length: 2 }, (_, index) => (
+          <Panel key={index} className="p-6 md:p-8">
+            <div className="animate-pulse space-y-4">
+              <div className="h-3 w-28 rounded bg-slate-200" />
+              <div className="h-8 w-64 rounded bg-slate-200" />
+              <div className="h-20 rounded bg-slate-100" />
+              <div className="h-20 rounded bg-slate-100" />
+            </div>
+          </Panel>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function buildQuickActions(overview: DashboardOverviewData): QuickAction[] {
+  const resumes = overview.resumes.data;
+  const savedJobs = overview.savedJobs.data;
+  const analysisReports = overview.analysisReports.data;
+  const interviews = overview.interviews.data;
+
+  const parsedResumes = resumes?.filter((resume) => resume.processing_status === "parsed").length ?? 0;
+  const completedAnalysisReports = analysisReports?.filter((report) => report.status === "completed").length ?? 0;
+  const completedInterviews = interviews?.filter((interview) => interview.status === "completed").length ?? 0;
+
+  return [
+    {
+      label: "New Analysis",
+      href: "/dashboard/analysis",
+      description:
+        resumes == null
+          ? "Resume data is unavailable right now."
+          : parsedResumes > 0
+            ? `${pluralize(parsedResumes, "resume")} ready for analysis.`
+            : "Upload and parse a resume to start your first report.",
+    },
+    {
+      label: "My Resumes",
+      href: "/dashboard/resumes",
+      description:
+        resumes == null
+          ? "Resume library is temporarily unavailable."
+          : resumes.length > 0
+            ? `${pluralize(resumes.length, "resume")} stored in your workspace.`
+            : "No resumes uploaded yet.",
+    },
+    {
+      label: "Job Search",
+      href: "/dashboard/job-search",
+      description:
+        savedJobs == null
+          ? "Saved job data is unavailable right now."
+          : savedJobs.length > 0
+            ? `${pluralize(savedJobs.length, "saved job")} ready to revisit.`
+            : "Search and save roles you want to track.",
+    },
+    {
+      label: "AI Interview",
+      href: "/dashboard/ai-interview",
+      description:
+        interviews == null
+          ? "Interview history is unavailable right now."
+          : completedInterviews > 0
+            ? `${pluralize(completedInterviews, "completed interview")} on record.`
+            : completedAnalysisReports > 0
+              ? "Use your current reports to prepare for interviews."
+              : "Practice your first interview when you are ready.",
+    },
+  ];
+}
+
 export function DashboardOverview() {
+  const [overview, setOverview] = useState<DashboardOverviewData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshIndex, setRefreshIndex] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadOverview() {
+      setIsLoading(true);
+      const nextOverview = await loadDashboardOverview();
+
+      if (!cancelled) {
+        setOverview(nextOverview);
+        setIsLoading(false);
+      }
+    }
+
+    void loadOverview();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshIndex]);
+
+  if (isLoading || !overview) {
+    return <DashboardLoadingState />;
+  }
+
+  const failedCollections = [
+    overview.resumes,
+    overview.savedJobs,
+    overview.analysisReports,
+    overview.enhancementReports,
+    overview.interviews,
+  ].filter((collection) => collection.error);
+
+  const allCollectionsFailed = failedCollections.length === 5;
+
+  if (allCollectionsFailed) {
+    return (
+      <Panel className="p-8 md:p-10">
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Dashboard Overview</p>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
+          Live workspace data could not be loaded
+        </h1>
+        <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
+          The dashboard is configured to show only real data. Every data source failed to respond, so no placeholder
+          values are being shown.
+        </p>
+        <button
+          type="button"
+          onClick={() => setRefreshIndex((value) => value + 1)}
+          className="mt-6 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+        >
+          Retry loading dashboard
+        </button>
+      </Panel>
+    );
+  }
+
+  const resumeCount = overview.resumes.data?.length ?? null;
+  const parsedResumeCount = overview.resumes.data?.filter((resume) => resume.processing_status === "parsed").length ?? null;
+  const savedJobsCount = overview.savedJobs.data?.length ?? null;
+  const completedReportCount =
+    overview.analysisReports.data == null || overview.enhancementReports.data == null
+      ? null
+      : [...overview.analysisReports.data, ...overview.enhancementReports.data].filter(
+          (report) => report.status === "completed",
+        ).length;
+  const totalReportCount =
+    overview.analysisReports.data == null || overview.enhancementReports.data == null
+      ? null
+      : overview.analysisReports.data.length + overview.enhancementReports.data.length;
+  const completedInterviews = overview.interviews.data?.filter((interview) => interview.status === "completed") ?? null;
+  const averageInterviewScore =
+    completedInterviews && completedInterviews.length > 0
+      ? completedInterviews.reduce((total, interview) => total + (interview.overall_score ?? 0), 0) /
+        completedInterviews.length
+      : null;
+  const latestActivity = overview.recentActivity[0] ?? null;
+  const quickActions = buildQuickActions(overview);
+
   return (
     <div className="space-y-6">
       <Panel className="p-8 md:p-10">
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Dashboard Overview</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
-          A clean control center for your resume workflow
+          Your workspace snapshot is live
         </h1>
         <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
-          This overview is designed for day-to-day use: quick actions are up front, the headline metrics are easy to
-          scan, and recent analysis activity has a clear place to live once the history API is connected.
+          {resumeCount != null && savedJobsCount != null && totalReportCount != null && overview.interviews.data != null
+            ? `You currently have ${pluralize(resumeCount, "resume")}, ${pluralize(savedJobsCount, "saved job")}, ${pluralize(totalReportCount, "AI report")}, and ${pluralize(overview.interviews.data.length, "interview session")} in your account.`
+            : "This overview is showing live workspace data only. Any section that could not be loaded is marked as unavailable instead of showing placeholder numbers."}
         </p>
+        {latestActivity && (
+          <p className="mt-3 text-sm leading-7 text-slate-500">
+            Latest activity: <span className="font-semibold text-slate-800">{latestActivity.title}</span> on{" "}
+            {formatDateTime(latestActivity.createdAt)}.
+          </p>
+        )}
       </Panel>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        {OVERVIEW_METRICS.map((metric) => (
-          <Panel key={metric.label} className="p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{metric.label}</p>
-            <p className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">{metric.value}</p>
-            <p className="mt-3 text-sm leading-6 text-slate-600">{metric.note}</p>
-          </Panel>
-        ))}
+      {failedCollections.length > 0 && (
+        <div className="rounded-3xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+          Some dashboard sections are temporarily unavailable:{" "}
+          {failedCollections.map((collection) => collection.label).join(", ")}.
+        </div>
+      )}
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <DashboardMetricCard
+          label="Resumes Uploaded"
+          value={formatCount(resumeCount)}
+          note={
+            overview.resumes.error
+              ? "Resume library could not be loaded."
+              : parsedResumeCount === 0
+                ? "No parsed resumes are ready yet."
+                : `${formatCount(parsedResumeCount)} parsed and ready to use.`
+          }
+        />
+        <DashboardMetricCard
+          label="Saved Jobs"
+          value={formatCount(savedJobsCount)}
+          note={
+            overview.savedJobs.error
+              ? "Saved job data could not be loaded."
+              : savedJobsCount === 0
+                ? "No jobs saved yet."
+                : "Saved roles are ready in Job Search."
+          }
+        />
+        <DashboardMetricCard
+          label="Completed Reports"
+          value={formatCount(completedReportCount)}
+          note={
+            overview.analysisReports.error || overview.enhancementReports.error
+              ? "Report history is partially unavailable."
+              : totalReportCount === 0
+                ? "No AI reports have been generated yet."
+                : `${formatCount(totalReportCount)} total reports across analysis and enhancement.`
+          }
+        />
+        <DashboardMetricCard
+          label="Interview Average"
+          value={formatPercentage(averageInterviewScore)}
+          note={
+            overview.interviews.error
+              ? "Interview history could not be loaded."
+              : completedInterviews == null || completedInterviews.length === 0
+                ? "No completed interview sessions yet."
+                : `${pluralize(completedInterviews.length, "completed session")} contributing to this average.`
+          }
+        />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <Panel className="p-6 md:p-8">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Latest Analyses</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Recent runs will show up here</h2>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Recent Activity</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+                Latest actions in your workspace
+              </h2>
             </div>
-            <Link
-              href="/dashboard/analyses"
+            <button
+              type="button"
+              onClick={() => setRefreshIndex((value) => value + 1)}
               className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-950"
             >
-              View all analyses
-            </Link>
+              Refresh
+            </button>
           </div>
 
-          <div className="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-6">
-            <p className="text-base font-semibold text-slate-900">No analysis history yet</p>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-              Once users begin running analyses, this section is ready to show recent scores, timestamps, and direct
-              links back into each result page.
-            </p>
-            <Link
-              href="/dashboard/new-analysis"
-              className="mt-5 inline-flex rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
-            >
-              Start your first analysis
-            </Link>
-          </div>
+          {overview.recentActivity.length === 0 ? (
+            <div className="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-6">
+              <p className="text-base font-semibold text-slate-900">No workspace activity yet</p>
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+                When you upload resumes, save jobs, generate reports, or finish interviews, the latest activity will
+                appear here.
+              </p>
+              <Link
+                href="/dashboard/resumes"
+                className="mt-5 inline-flex rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+              >
+                Upload your first resume
+              </Link>
+            </div>
+          ) : (
+            <div className="mt-6 space-y-3">
+              {overview.recentActivity.map((activity) => (
+                <Link
+                  key={activity.id}
+                  href={activity.href}
+                  className="block rounded-3xl border border-slate-200 bg-slate-50 p-5 transition hover:border-slate-300 hover:bg-white"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize ${ACTIVITY_STYLES[activity.kind]}`}
+                        >
+                          {activity.kind.replace("-", " ")}
+                        </span>
+                        {activity.status && (
+                          <span className="text-xs font-medium capitalize text-slate-500">{activity.status}</span>
+                        )}
+                      </div>
+                      <p className="mt-3 text-base font-semibold text-slate-950">{activity.title}</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">{activity.description}</p>
+                    </div>
+                    <span className="text-xs font-medium text-slate-500">{formatDateTime(activity.createdAt)}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </Panel>
 
         <Panel className="p-6 md:p-8">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Quick Actions</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Jump to the next useful step</h2>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Continue from real progress</h2>
           <div className="mt-6 space-y-3">
-            {QUICK_ACTIONS.map((action) => (
+            {quickActions.map((action) => (
               <Link
                 key={action.href}
                 href={action.href}
