@@ -424,7 +424,7 @@ export default function DashboardJobSearchPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   const canSearch = query.trim().length > 0 && pageState !== "searching";
-  const hasMore = results.length < totalFound && pageState === "results";
+  const hasMore = results.length > 0 && results.length < totalFound;
 
   return (
     <div className="space-y-6">
