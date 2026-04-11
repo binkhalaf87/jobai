@@ -206,9 +206,17 @@ function ComposePanel({
     job_title: "",
     company_name: "",
     job_description: "",
+    resume_id: "",
   });
+  const [resumes, setResumes] = useState<import("@/types").ResumeListItem[]>([]);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    import("@/lib/resumes").then(({ listResumes }) =>
+      listResumes().then(setResumes).catch(() => {})
+    );
+  }, []);
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
@@ -219,6 +227,7 @@ function ComposePanel({
         job_title: form.job_title,
         company_name: form.company_name || undefined,
         job_description: form.job_description || undefined,
+        resume_id: form.resume_id || undefined,
       });
       onGenerated(res.campaign_id, res.letters);
     } catch (err: unknown) {
@@ -259,6 +268,25 @@ function ComposePanel({
             onChange={(e) => setForm({ ...form, company_name: e.target.value })}
           />
         </div>
+        {resumes.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Resume <span className="text-gray-400 font-normal">(optional — helps tailor the letter)</span>
+            </label>
+            <select
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={form.resume_id}
+              onChange={(e) => setForm({ ...form, resume_id: e.target.value })}
+            >
+              <option value="">No resume</option>
+              {resumes.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.source_filename ?? r.title}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div>
           <label className="block text-sm font-medium mb-1">Job Description</label>
           <textarea

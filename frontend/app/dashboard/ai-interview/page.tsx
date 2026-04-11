@@ -212,6 +212,8 @@ export default function DashboardAiInterviewPage() {
   }
 
   function handleRetry() {
+    const isActive = pageState === "interviewing" || pageState === "evaluating";
+    if (isActive && !window.confirm("End this session? Your progress will be lost.")) return;
     setPageState("setup");
     setPageError("");
     setAnswerError("");
@@ -231,10 +233,33 @@ export default function DashboardAiInterviewPage() {
     setHistoryLoading(true);
     try {
       const session = await getInterview(id);
-      setCompletedSession(session);
       setOpeningMessage(session.opening_message ?? null);
       setContextSummary(session.context_summary ?? null);
-      setPageState("completed");
+
+      if (session.status === "active") {
+        // Resume the unfinished session
+        const answeredCount = (session.answers ?? []).length;
+        setSessionId(session.id);
+        setQuestionCount(session.question_count);
+        setQuestions(session.questions);
+        setCurrentIndex(answeredCount);
+        setCurrentAnswer("");
+        setCurrentEvaluation(null);
+        setNextQuestion(null);
+        setCompletedSession(null);
+        setSetup((prev) => ({
+          ...prev,
+          jobTitle: session.job_title,
+          level: session.experience_level as typeof prev.level,
+          type: session.interview_type as typeof prev.type,
+          language: session.language as typeof prev.language,
+          count: session.question_count as typeof prev.count,
+        }));
+        setPageState("interviewing");
+      } else {
+        setCompletedSession(session);
+        setPageState("completed");
+      }
     } finally {
       setHistoryLoading(false);
     }
@@ -249,6 +274,25 @@ export default function DashboardAiInterviewPage() {
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">AI Interview</h1>
         <p className="mt-1 max-w-3xl text-sm text-slate-500">A more realistic mock interview: role-aware, resume-aware, and adaptive to your answers.</p>
       </div>
+
+      {pageState === "setup" && sessions.some((s) => s.status === "active") && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
+          <p className="text-sm font-semibold text-amber-800">You have an unfinished session</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {sessions.filter((s) => s.status === "active").map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                disabled={historyLoading}
+                onClick={() => void handleViewHistory(s.id)}
+                className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-50"
+              >
+                {s.job_title} — {s.question_count}Q
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {(pageState === "setup" || pageState === "generating") && (
         <Panel className="p-6 md:p-8">
@@ -278,8 +322,21 @@ export default function DashboardAiInterviewPage() {
       {(pageState === "interviewing" || pageState === "evaluating" || pageState === "completing") && currentQuestion && (
         <Panel className="p-6 md:p-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div><p className="text-sm font-semibold text-slate-900">{setup.jobTitle}</p><p className="text-xs text-slate-400">Question {currentIndex + 1} of {questionCount}</p></div>
+            <div>
+              <p className="text-sm font-semibold text-slate-900">{setup.jobTitle}</p>
+              <p className="text-xs text-slate-400">Question {currentIndex + 1} of {questionCount}</p>
+            </div>
             <button type="button" onClick={handleRetry} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs text-slate-500">End Session</button>
+          </div>
+          <div className="mt-3 flex gap-1.5">
+            {Array.from({ length: questionCount }).map((_, i) => (
+              <div
+                key={i}
+                className={`h-1.5 flex-1 rounded-full transition-colors ${
+                  i < currentIndex ? "bg-slate-700" : i === currentIndex ? "bg-blue-500" : "bg-slate-200"
+                }`}
+              />
+            ))}
           </div>
           <div className="mt-4 space-y-3">
             {openingMessage && currentIndex === 0 && <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">{openingMessage}</div>}
