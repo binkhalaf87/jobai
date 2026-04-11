@@ -8,6 +8,7 @@ VALID_EXPERIENCE_LEVELS = {"entry", "mid", "senior"}
 VALID_INTERVIEW_TYPES = {"hr", "technical", "mixed"}
 VALID_LANGUAGES = {"en", "ar"}
 VALID_QUESTION_COUNTS = {3, 5, 10}
+VALID_INTERVIEWER_STYLES = {"supportive", "direct", "challenging"}
 
 
 class InterviewSetupRequest(BaseModel):
@@ -16,6 +17,10 @@ class InterviewSetupRequest(BaseModel):
     interview_type: str = "mixed"
     language: str = "en"
     question_count: int = 5
+    resume_id: str | None = None
+    company_name: str | None = None
+    job_description: str | None = None
+    interviewer_style: str = "supportive"
 
     @field_validator("experience_level")
     @classmethod
@@ -53,11 +58,39 @@ class InterviewSetupRequest(BaseModel):
             raise ValueError("job_title cannot be empty")
         return v
 
+    @field_validator("interviewer_style")
+    @classmethod
+    def validate_interviewer_style(cls, v: str) -> str:
+        if v not in VALID_INTERVIEWER_STYLES:
+            raise ValueError(f"interviewer_style must be one of {VALID_INTERVIEWER_STYLES}")
+        return v
+
+    @field_validator("company_name", "job_description")
+    @classmethod
+    def normalize_optional_text(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+
+        normalized = v.strip()
+        return normalized or None
+
 
 class InterviewQuestion(BaseModel):
     index: int
     question: str
     type: str  # hr | technical
+    source: str | None = None
+    focus_area: str | None = None
+
+
+class InterviewContextSummary(BaseModel):
+    resume_id: str | None = None
+    resume_title: str | None = None
+    company_name: str | None = None
+    interviewer_style: str | None = None
+    has_job_description: bool = False
+    focus_areas: list[str] = []
+    target_role_summary: str | None = None
 
 
 class InterviewSessionResponse(ORMBaseSchema):
@@ -68,6 +101,8 @@ class InterviewSessionResponse(ORMBaseSchema):
     language: str
     question_count: int
     questions: list[dict]
+    opening_message: str | None = None
+    context_summary: InterviewContextSummary | None = None
     status: str
     created_at: datetime
 
@@ -91,11 +126,15 @@ class AnswerEvaluation(BaseModel):
     strengths: list[str]
     weaknesses: list[str]
     improved_answer: str
+    interviewer_reply: str
+    communication_tip: str | None = None
 
 
 class AnswerEvaluationResponse(BaseModel):
     question_index: int
     evaluation: AnswerEvaluation
+    questions: list[InterviewQuestion]
+    next_question: InterviewQuestion | None = None
 
 
 class ScoreBreakdown(BaseModel):
@@ -111,6 +150,9 @@ class FinalReport(BaseModel):
     readiness: str  # "Needs Improvement" | "Good Progress" | "Interview Ready"
     summary: str
     breakdown: ScoreBreakdown
+    top_strengths: list[str] = []
+    priority_improvements: list[str] = []
+    recommended_drills: list[str] = []
 
 
 class InterviewCompleteResponse(ORMBaseSchema):
@@ -122,6 +164,8 @@ class InterviewCompleteResponse(ORMBaseSchema):
     question_count: int
     questions: list[dict]
     answers: list[dict]
+    opening_message: str | None = None
+    context_summary: InterviewContextSummary | None = None
     overall_score: float
     final_report: dict
     status: str

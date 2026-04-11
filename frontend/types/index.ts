@@ -184,11 +184,14 @@ export type ExperienceLevel = "entry" | "mid" | "senior";
 export type InterviewType = "hr" | "technical" | "mixed";
 export type InterviewLanguage = "en" | "ar";
 export type QuestionCount = 3 | 5 | 10;
+export type InterviewerStyle = "supportive" | "direct" | "challenging";
 
 export type InterviewQuestion = {
   index: number;
   question: string;
   type: "hr" | "technical";
+  source?: "opening" | "planned" | "follow_up" | null;
+  focus_area?: string | null;
 };
 
 export type AnswerEvaluation = {
@@ -196,6 +199,8 @@ export type AnswerEvaluation = {
   strengths: string[];
   weaknesses: string[];
   improved_answer: string;
+  interviewer_reply: string;
+  communication_tip?: string | null;
 };
 
 export type InterviewAnswer = {
@@ -213,11 +218,24 @@ export type ScoreBreakdown = {
   role_fit: number;
 };
 
+export type InterviewContextSummary = {
+  resume_id?: string | null;
+  resume_title?: string | null;
+  company_name?: string | null;
+  interviewer_style?: InterviewerStyle | null;
+  has_job_description: boolean;
+  focus_areas: string[];
+  target_role_summary?: string | null;
+};
+
 export type InterviewFinalReport = {
   overall_score: number;
   readiness: "Needs Improvement" | "Good Progress" | "Interview Ready";
   summary: string;
   breakdown: ScoreBreakdown;
+  top_strengths: string[];
+  priority_improvements: string[];
+  recommended_drills: string[];
 };
 
 export type InterviewSessionResponse = {
@@ -228,6 +246,8 @@ export type InterviewSessionResponse = {
   language: InterviewLanguage;
   question_count: number;
   questions: InterviewQuestion[];
+  opening_message?: string | null;
+  context_summary?: InterviewContextSummary | null;
   status: string;
   created_at: string;
 };

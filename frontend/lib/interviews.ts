@@ -3,8 +3,10 @@ import type {
   AnswerEvaluation,
   ExperienceLevel,
   InterviewCompleteResponse,
+  InterviewerStyle,
   InterviewLanguage,
   InterviewListItem,
+  InterviewQuestion,
   InterviewSessionResponse,
   InterviewType,
   QuestionCount,
@@ -16,11 +18,17 @@ export type StartInterviewPayload = {
   interview_type: InterviewType;
   language: InterviewLanguage;
   question_count: QuestionCount;
+  resume_id?: string;
+  company_name?: string;
+  job_description?: string;
+  interviewer_style: InterviewerStyle;
 };
 
 export type AnswerEvaluationResponse = {
   question_index: number;
   evaluation: AnswerEvaluation;
+  questions: InterviewQuestion[];
+  next_question: InterviewQuestion | null;
 };
 
 export async function startInterview(payload: StartInterviewPayload): Promise<InterviewSessionResponse> {

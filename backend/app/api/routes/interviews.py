@@ -8,19 +8,73 @@ from app.schemas.interview import (
     AnswerEvaluationResponse,
     AnswerSubmitRequest,
     InterviewCompleteResponse,
+    InterviewContextSummary,
     InterviewListItem,
+    InterviewQuestion,
     InterviewSessionResponse,
     InterviewSetupRequest,
 )
 from app.services.interview_service import (
     complete_session,
+    create_session,
     evaluate_answer,
     get_session,
     list_sessions,
-    create_session,
 )
 
 router = APIRouter(prefix="/interviews", tags=["interviews"])
+
+
+def _get_questions(session) -> list[dict]:
+    return list((session.questions or {}).get("items", []))
+
+
+def _get_answers(session) -> list[dict]:
+    return list((session.answers or {}).get("items", []))
+
+
+def _get_opening_message(session) -> str | None:
+    return (session.questions or {}).get("opening_message")
+
+
+def _get_context_summary(session) -> InterviewContextSummary | None:
+    payload = (session.questions or {}).get("context_summary")
+    return InterviewContextSummary.model_validate(payload) if payload else None
+
+
+def _build_session_response(session) -> InterviewSessionResponse:
+    return InterviewSessionResponse(
+        id=session.id,
+        job_title=session.job_title,
+        experience_level=session.experience_level,
+        interview_type=session.interview_type,
+        language=session.language,
+        question_count=session.question_count,
+        questions=_get_questions(session),
+        opening_message=_get_opening_message(session),
+        context_summary=_get_context_summary(session),
+        status=session.status,
+        created_at=session.created_at,
+    )
+
+
+def _build_complete_response(session) -> InterviewCompleteResponse:
+    return InterviewCompleteResponse(
+        id=session.id,
+        job_title=session.job_title,
+        experience_level=session.experience_level,
+        interview_type=session.interview_type,
+        language=session.language,
+        question_count=session.question_count,
+        questions=_get_questions(session),
+        answers=_get_answers(session),
+        opening_message=_get_opening_message(session),
+        context_summary=_get_context_summary(session),
+        overall_score=session.overall_score or 0.0,
+        final_report=session.final_report or {},
+        status=session.status,
+        created_at=session.created_at,
+    )
 
 
 @router.post("/sessions", response_model=InterviewSessionResponse, status_code=status.HTTP_201_CREATED)
@@ -29,7 +83,7 @@ def start_interview_session(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> InterviewSessionResponse:
-    """Create a new interview session and generate role-specific questions via AI."""
+    """Create a new interview session and generate the opening question via AI."""
     try:
         session = create_session(
             db=db,
@@ -39,25 +93,20 @@ def start_interview_session(
             interview_type=payload.interview_type,
             language=payload.language,
             question_count=payload.question_count,
+            resume_id=payload.resume_id,
+            company_name=payload.company_name,
+            job_description=payload.job_description,
+            interviewer_style=payload.interviewer_style,
         )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Failed to generate interview questions. Please try again.",
         ) from exc
 
-    questions = (session.questions or {}).get("items", [])
-    return InterviewSessionResponse(
-        id=session.id,
-        job_title=session.job_title,
-        experience_level=session.experience_level,
-        interview_type=session.interview_type,
-        language=session.language,
-        question_count=session.question_count,
-        questions=questions,
-        status=session.status,
-        created_at=session.created_at,
-    )
+    return _build_session_response(session)
 
 
 @router.post(
@@ -71,7 +120,7 @@ def submit_answer(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> AnswerEvaluationResponse:
-    """Submit a candidate answer and receive AI evaluation for that question."""
+    """Submit a candidate answer, evaluate it, and generate the next question."""
     session = get_session(db, current_user.id, session_id)
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interview session not found.")
@@ -83,7 +132,7 @@ def submit_answer(
         )
 
     try:
-        evaluation = evaluate_answer(
+        evaluation_result = evaluate_answer(
             db=db,
             session=session,
             question_index=payload.question_index,
@@ -98,7 +147,16 @@ def submit_answer(
 
     return AnswerEvaluationResponse(
         question_index=payload.question_index,
-        evaluation=evaluation,  # type: ignore[arg-type]
+        evaluation=evaluation_result["evaluation"],  # type: ignore[arg-type]
+        questions=[
+            InterviewQuestion.model_validate(question)
+            for question in evaluation_result.get("questions", [])
+        ],
+        next_question=(
+            InterviewQuestion.model_validate(evaluation_result["next_question"])
+            if evaluation_result.get("next_question")
+            else None
+        ),
     )
 
 
@@ -118,23 +176,7 @@ def complete_interview_session(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interview session not found.")
 
     if session.status == "completed":
-        # Idempotent — return the existing completed session
-        questions = (session.questions or {}).get("items", [])
-        answers = (session.answers or {}).get("items", [])
-        return InterviewCompleteResponse(
-            id=session.id,
-            job_title=session.job_title,
-            experience_level=session.experience_level,
-            interview_type=session.interview_type,
-            language=session.language,
-            question_count=session.question_count,
-            questions=questions,
-            answers=answers,
-            overall_score=session.overall_score or 0.0,
-            final_report=session.final_report or {},
-            status=session.status,
-            created_at=session.created_at,
-        )
+        return _build_complete_response(session)
 
     try:
         session = complete_session(db, session)
@@ -146,22 +188,7 @@ def complete_interview_session(
             detail="Failed to generate final report. Please try again.",
         ) from exc
 
-    questions = (session.questions or {}).get("items", [])
-    answers = (session.answers or {}).get("items", [])
-    return InterviewCompleteResponse(
-        id=session.id,
-        job_title=session.job_title,
-        experience_level=session.experience_level,
-        interview_type=session.interview_type,
-        language=session.language,
-        question_count=session.question_count,
-        questions=questions,
-        answers=answers,
-        overall_score=session.overall_score or 0.0,
-        final_report=session.final_report or {},
-        status=session.status,
-        created_at=session.created_at,
-    )
+    return _build_complete_response(session)
 
 
 @router.get("/sessions", response_model=list[InterviewListItem])
@@ -184,19 +211,4 @@ def get_interview_session(
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interview session not found.")
 
-    questions = (session.questions or {}).get("items", [])
-    answers = (session.answers or {}).get("items", [])
-    return InterviewCompleteResponse(
-        id=session.id,
-        job_title=session.job_title,
-        experience_level=session.experience_level,
-        interview_type=session.interview_type,
-        language=session.language,
-        question_count=session.question_count,
-        questions=questions,
-        answers=answers,
-        overall_score=session.overall_score or 0.0,
-        final_report=session.final_report or {},
-        status=session.status,
-        created_at=session.created_at,
-    )
+    return _build_complete_response(session)
