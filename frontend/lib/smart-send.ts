@@ -6,7 +6,7 @@ import type {
   SmtpConnection,
 } from "@/types";
 
-const BASE_PATH = "/api/v1/smart-send";
+const BASE_PATH = "/smart-send";
 
 function getToken(): string {
   if (typeof window === "undefined") return "";
