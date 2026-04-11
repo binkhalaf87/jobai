@@ -17,13 +17,21 @@ function authHeaders(extra?: Record<string, string>): Record<string, string> {
   return { Authorization: `Bearer ${getToken()}`, ...extra };
 }
 
+async function parseDetail(response: Response, fallback: string): Promise<string> {
+  const payload = await response.json().catch(() => ({})) as { detail?: string };
+  return payload.detail || fallback;
+}
+
 // ── SMTP ──────────────────────────────────────────────────────────────────────
 
 export async function getSmtpConnection(): Promise<SmtpConnection | null> {
   const res = await fetch(`${getApiBaseUrl()}${BASE_PATH}/smtp`, {
     headers: authHeaders(),
   });
-  if (res.status === 404 || !res.ok) return null;
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    throw new Error(await parseDetail(res, "Failed to load SMTP connection"));
+  }
   return res.json();
 }
 
@@ -38,8 +46,7 @@ export async function saveSmtpConnection(data: {
     body: JSON.stringify(data),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { detail?: string };
-    throw new Error(err.detail || "Failed to save SMTP connection");
+    throw new Error(await parseDetail(res, "Failed to save SMTP connection"));
   }
   return res.json();
 }
@@ -50,8 +57,7 @@ export async function verifySmtpConnection(): Promise<void> {
     headers: authHeaders(),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { detail?: string };
-    throw new Error(err.detail || "Verification failed");
+    throw new Error(await parseDetail(res, "Verification failed"));
   }
 }
 
@@ -77,8 +83,7 @@ export async function generateLetters(data: {
     body: JSON.stringify(data),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { detail?: string };
-    throw new Error(err.detail || "Failed to generate letters");
+    throw new Error(await parseDetail(res, "Failed to generate letters"));
   }
   return res.json();
 }
@@ -103,8 +108,7 @@ export async function confirmCampaign(
     }
   );
   if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { detail?: string };
-    throw new Error(err.detail || "Failed to confirm campaign");
+    throw new Error(await parseDetail(res, "Failed to confirm campaign"));
   }
   return res.json();
 }
@@ -145,8 +149,7 @@ export async function streamCampaignSend(
   );
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { detail?: string };
-    throw new Error(err.detail || "Failed to start send");
+    throw new Error(await parseDetail(res, "Failed to start send"));
   }
 
   const reader = res.body?.getReader();

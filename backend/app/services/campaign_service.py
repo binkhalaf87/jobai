@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import time
 import uuid
 from datetime import datetime, timezone
 
@@ -178,7 +177,7 @@ async def stream_campaign_send(db: Session, user_id: str, campaign_id: str):
         # Small delay to stay inside Gmail rate limits
         await asyncio.sleep(1.2)
 
-    campaign.status = "completed"
+    campaign.status = "failed" if (campaign.sent_count or 0) == 0 and (campaign.failed_count or 0) > 0 else "completed"
     campaign.completed_at = datetime.now(timezone.utc)
     db.commit()
 

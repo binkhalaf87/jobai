@@ -9,13 +9,9 @@ from openai import AsyncOpenAI
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-
-settings = get_settings()
 from app.models.resume import Resume
 
 logger = logging.getLogger(__name__)
-
-_client = AsyncOpenAI(api_key=settings.openai_api_key)
 
 _SYSTEM_PROMPT = """\
 You are an expert career coach who writes concise, compelling outreach emails for job seekers.
@@ -38,6 +34,24 @@ Respond ONLY with valid JSON matching this exact schema:
 """
 
 
+def get_openai_client() -> AsyncOpenAI:
+    """Create the async OpenAI client only when Smart Send generation is used."""
+    settings = get_settings()
+
+    if not settings.openai_api_key:
+        raise ValueError("OPENAI_API_KEY is not configured for Smart Send cover letter generation.")
+
+    return AsyncOpenAI(api_key=settings.openai_api_key)
+
+
+def get_resume_context_text(resume: Resume | None) -> str:
+    """Prefer normalized text and fall back to raw text for older resume rows."""
+    if not resume:
+        return ""
+
+    return (resume.normalized_text or resume.raw_text or "").strip()
+
+
 async def generate_cover_letters(
     db: Session,
     user_id: str,
@@ -53,8 +67,7 @@ async def generate_cover_letters(
     resume_text = ""
     if resume_id:
         resume = db.query(Resume).filter(Resume.id == resume_id, Resume.user_id == user_id).first()
-        if resume and resume.extracted_text:
-            resume_text = resume.extracted_text[:3000]  # cap tokens
+        resume_text = get_resume_context_text(resume)[:3000]
 
     user_prompt_parts = [f"Job Title: {job_title}"]
     if company_name:
@@ -66,7 +79,8 @@ async def generate_cover_letters(
 
     user_prompt = "\n".join(user_prompt_parts)
 
-    response = await _client.chat.completions.create(
+    client = get_openai_client()
+    response = await client.chat.completions.create(
         model="gpt-4o-mini",
         temperature=0.7,
         response_format={"type": "json_object"},

@@ -667,12 +667,19 @@ export default function SmartSendPage() {
   const [step, setStep] = useState<Step>("compose");
   const [smtpConn, setSmtpConn] = useState<SmtpConnection | null>(null);
   const [smtpLoading, setSmtpLoading] = useState(true);
+  const [smtpLoadError, setSmtpLoadError] = useState("");
   const [campaignId, setCampaignId] = useState<string | null>(null);
   const [letters, setLetters] = useState<GeneratedLetters | null>(null);
 
   useEffect(() => {
     getSmtpConnection()
-      .then(setSmtpConn)
+      .then((connection) => {
+        setSmtpConn(connection);
+        setSmtpLoadError("");
+      })
+      .catch((err: unknown) => {
+        setSmtpLoadError(err instanceof Error ? err.message : "Failed to load Gmail setup.");
+      })
       .finally(() => setSmtpLoading(false));
   }, []);
 
@@ -715,6 +722,12 @@ export default function SmartSendPage() {
           AI-generated outreach emails sent directly from your Gmail.
         </p>
       </div>
+
+      {smtpLoadError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          Unable to load Gmail setup right now: {smtpLoadError}
+        </div>
+      )}
 
       {step !== "preview" && step !== "sending" && (
         <div className="flex gap-1 border-b">
