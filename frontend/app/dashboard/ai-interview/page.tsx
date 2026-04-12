@@ -141,6 +141,22 @@ export default function DashboardAiInterviewPage() {
     }).catch(() => {});
   }, []);
 
+  // Pre-fill from Analysis or Job Search navigation
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const jd = sessionStorage.getItem("jobai_interview_jd");
+    const title = sessionStorage.getItem("jobai_interview_jd_title");
+    if (jd) {
+      setSetup((prev) => ({
+        ...prev,
+        jobDescription: jd,
+        jobTitle: title || prev.jobTitle,
+      }));
+      sessionStorage.removeItem("jobai_interview_jd");
+      sessionStorage.removeItem("jobai_interview_jd_title");
+    }
+  }, []);
+
   async function handleStart() {
     setPageError("");
     setPageState("generating");

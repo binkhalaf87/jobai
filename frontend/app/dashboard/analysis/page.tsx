@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -202,6 +203,74 @@ function StructuredReport({
   );
 }
 
+// ─── Next Steps panel ────────────────────────────────────────────────────────
+
+function NextStepsPanel({
+  atsScore,
+  jobDescription,
+  jobTitle,
+}: {
+  atsScore: number | null;
+  jobDescription: string;
+  jobTitle?: string;
+}) {
+  function goToInterview() {
+    if (typeof window !== "undefined") {
+      if (jobDescription) sessionStorage.setItem("jobai_interview_jd", jobDescription);
+      if (jobTitle) sessionStorage.setItem("jobai_interview_jd_title", jobTitle);
+    }
+    window.location.href = "/dashboard/ai-interview";
+  }
+
+  const scoreMsg =
+    atsScore === null
+      ? null
+      : atsScore >= 80
+      ? "Your score is strong. Apply with confidence."
+      : atsScore >= 60
+      ? "Good score. A few quick improvements can push you higher."
+      : "Your score needs work. Consider improving your CV before applying.";
+
+  return (
+    <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6" data-no-print>
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">What's next?</p>
+      <h2 className="mt-1 text-lg font-semibold text-slate-900">Continue your job search journey</h2>
+      {scoreMsg && (
+        <p className="mt-2 text-sm text-slate-500">{scoreMsg}</p>
+      )}
+      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        <Link
+          href="/dashboard/job-search"
+          className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300 hover:bg-white"
+        >
+          <span className="text-base">🔍</span>
+          <p className="text-sm font-semibold text-slate-900">Find Matching Jobs</p>
+          <p className="text-xs text-slate-500">Search roles that fit your profile.</p>
+        </Link>
+        <button
+          type="button"
+          onClick={goToInterview}
+          className="flex flex-col items-start gap-2 rounded-xl border border-violet-200 bg-violet-50 p-4 text-left transition hover:border-violet-300 hover:bg-violet-100"
+        >
+          <span className="text-base">🎤</span>
+          <p className="text-sm font-semibold text-violet-900">Practice Interview</p>
+          <p className="text-xs text-violet-600">
+            {jobDescription ? "JD will be pre-loaded automatically." : "Simulate a mock interview session."}
+          </p>
+        </button>
+        <Link
+          href="/dashboard/smart-send"
+          className="flex flex-col gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4 transition hover:border-emerald-300 hover:bg-emerald-100"
+        >
+          <span className="text-base">📬</span>
+          <p className="text-sm font-semibold text-emerald-900">Apply with SmartSend</p>
+          <p className="text-xs text-emerald-600">Send your CV to companies in bulk.</p>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 // ─── Status badge ─────────────────────────────────────────────────────────────
 
 const STATUS_BADGE: Record<string, string> = {
@@ -397,12 +466,18 @@ export default function DashboardAnalysisPage() {
               <span className="font-medium text-slate-600">{activeReport.resume_title}</span>
               <span>·</span>
               <span>{formatDate(activeReport.created_at)}</span>
+
             </div>
           )}
           <StructuredReport
             text={streamText}
             resumeTitle={activeReport?.resume_title ?? undefined}
             date={activeReport ? formatDate(activeReport.created_at) : undefined}
+          />
+          <NextStepsPanel
+            atsScore={extractAtsScore(streamText)}
+            jobDescription={jobDescription}
+            jobTitle={sessionStorage.getItem?.("jobai_prefill_jd_title") ?? undefined}
           />
         </div>
       )}

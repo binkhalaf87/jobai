@@ -6,6 +6,98 @@ import { useEffect, useState } from "react";
 import { Panel } from "@/components/panel";
 import { loadDashboardOverview, type DashboardActivityItem, type DashboardOverviewData } from "@/lib/dashboard";
 
+// ─── Journey Progress ────────────────────────────────────────────────────────
+
+type JourneyStep = {
+  num: number;
+  label: string;
+  href: string;
+  done: boolean;
+  active: boolean;
+};
+
+function JourneyProgress({ overview }: { overview: DashboardOverviewData }) {
+  const hasResume = (overview.resumes.data?.length ?? 0) > 0;
+  const hasReport = (overview.analysisReports.data?.filter((r) => r.status === "completed").length ?? 0) > 0;
+  const hasSavedJob = (overview.savedJobs.data?.length ?? 0) > 0;
+  const hasInterview = (overview.interviews.data?.filter((i) => i.status === "completed").length ?? 0) > 0;
+
+  // First incomplete step determines the active one
+  const steps: JourneyStep[] = [
+    { num: 1, label: "Upload CV",       href: "/dashboard/resumes",     done: hasResume,    active: false },
+    { num: 2, label: "Analyze CV",      href: "/dashboard/analysis",    done: hasReport,    active: false },
+    { num: 3, label: "Improve CV",      href: "/dashboard/enhancement", done: false,        active: false },
+    { num: 4, label: "Match Jobs",      href: "/dashboard/job-search",  done: hasSavedJob,  active: false },
+    { num: 5, label: "Apply",           href: "/dashboard/smart-send",  done: false,        active: false },
+    { num: 6, label: "Practice Interview", href: "/dashboard/ai-interview", done: hasInterview, active: false },
+  ];
+
+  const firstIncomplete = steps.findIndex((s) => !s.done);
+  if (firstIncomplete !== -1) steps[firstIncomplete]!.active = true;
+
+  const doneCount = steps.filter((s) => s.done).length;
+
+  return (
+    <div className="rounded-3xl border border-slate-200 bg-white p-5">
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Your Journey</p>
+          <p className="mt-0.5 text-sm font-semibold text-slate-900">
+            {doneCount === 0
+              ? "Start your job search journey"
+              : doneCount === steps.length
+              ? "Journey complete — keep it up!"
+              : `${doneCount} of ${steps.length} steps completed`}
+          </p>
+        </div>
+        <div className="shrink-0">
+          <div className="flex items-center gap-1">
+            {steps.map((s) => (
+              <div
+                key={s.num}
+                className={`h-1.5 w-7 rounded-full transition-all ${
+                  s.done ? "bg-emerald-500" : s.active ? "bg-violet-400" : "bg-slate-200"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+        {steps.map((s) => (
+          <Link
+            key={s.num}
+            href={s.href}
+            className={`flex flex-col items-center gap-1.5 rounded-2xl border px-2 py-3 text-center transition ${
+              s.done
+                ? "border-emerald-200 bg-emerald-50 hover:bg-emerald-100"
+                : s.active
+                ? "border-violet-300 bg-violet-50 hover:bg-violet-100"
+                : "border-slate-200 bg-slate-50 hover:bg-white"
+            }`}
+          >
+            <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${
+              s.done
+                ? "bg-emerald-500 text-white"
+                : s.active
+                ? "bg-violet-500 text-white"
+                : "bg-slate-200 text-slate-500"
+            }`}>
+              {s.done ? "✓" : s.num}
+            </span>
+            <p className={`text-[10px] font-semibold leading-tight ${
+              s.done ? "text-emerald-700" : s.active ? "text-violet-700" : "text-slate-500"
+            }`}>
+              {s.label}
+            </p>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 type MetricCardProps = {
   label: string;
   value: string;
@@ -272,6 +364,8 @@ export function DashboardOverview() {
           {failedCollections.map((collection) => collection.label).join(", ")}.
         </div>
       )}
+
+      <JourneyProgress overview={overview} />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <DashboardMetricCard
