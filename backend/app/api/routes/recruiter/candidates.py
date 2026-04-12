@@ -67,6 +67,7 @@ class CandidateDetail(BaseModel):
     file_type: str | None
     file_available: bool
     source_filename: str | None
+    raw_text: str | None
     matches: list[JobMatchDetail]
     top_recommendation: TopRecommendation | None
     analysis_completed_at: datetime | None
@@ -382,6 +383,7 @@ def get_candidate(
         file_type=resume.file_type,
         file_available=file_available,
         source_filename=resume.source_filename,
+        raw_text=resume.raw_text,
         matches=matches,
         top_recommendation=top_recommendation,
         analysis_completed_at=analysis_completed_at,

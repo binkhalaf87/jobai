@@ -36,6 +36,7 @@ type CandidateDetail = {
   file_type: string | null;
   file_available: boolean;
   source_filename: string | null;
+  raw_text: string | null;
   matches: JobMatch[];
   top_recommendation: TopRecommendation | null;
   analysis_completed_at: string | null;
@@ -486,13 +487,30 @@ function TabPreview({ detail }: { detail: CandidateDetail }) {
     if (blobUrl) window.open(blobUrl, "_blank");
   }
 
-  // ── File not available on server ──────────────────────────────────────────
+  // ── File not available — fall back to extracted text ─────────────────────
   if (!detail.file_available) {
+    if (detail.raw_text) {
+      return (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+            <span className="text-amber-600">⚠</span>
+            <p className="text-xs text-amber-800">
+              Original file is no longer on the server. Showing extracted text instead.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+            <pre className="whitespace-pre-wrap font-mono text-xs leading-6 text-slate-700">
+              {detail.raw_text}
+            </pre>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
-        <p className="text-sm font-semibold text-slate-700">File not available</p>
+        <p className="text-sm font-semibold text-slate-700">Preview not available</p>
         <p className="mt-2 text-xs text-slate-500">
-          The original file has been removed from the server. Re-upload to enable preview.
+          The original file is no longer on the server and no extracted text was saved.
         </p>
       </div>
     );
