@@ -17,6 +17,7 @@ type JobMatch = {
   overall_score: number;
   matching_keywords: string[];
   missing_keywords: string[];
+  raw_payload?: Record<string, unknown>;
 };
 
 type TopRecommendation = {
@@ -112,8 +113,8 @@ function computeNextStep(detail: CandidateDetail, hasJobs: boolean): NextStep | 
   // 0% on all jobs = likely a language mismatch, not a bad candidate
   if (detail.matches.length > 0 && detail.matches.every((m) => m.overall_score === 0)) {
     return {
-      message: "All match scores are 0%. This usually means the resume and job description are in different languages. Try writing your job description in Arabic, or include English technical keywords in the resume.",
-      action: "Re-run Analysis",
+      message: "All match scores are 0%. The resume and job description may be in different languages. Use Deep AI Analysis for cross-language semantic matching.",
+      action: "Deep AI Analysis",
       variant: "warning",
     };
   }
@@ -207,9 +208,23 @@ function ScoreBar({ score }: { score: number }) {
 
 // ─── Tab: AI Analysis ─────────────────────────────────────────────────────────
 
+type GptPayload = {
+  strengths?: string[];
+  gaps?: string[];
+  hiring_suggestion?: string;
+  recommendation?: string;
+};
+
+function isGptPayload(payload: unknown): payload is GptPayload {
+  return typeof payload === "object" && payload !== null && "hiring_suggestion" in payload;
+}
+
 function TabAnalysis({ detail }: { detail: CandidateDetail }) {
   const bestMatch = detail.matches[0] ?? null;
   const freshness = analysisFreshness(detail.analysis_completed_at);
+  const gptData = bestMatch?.raw_payload && isGptPayload(bestMatch.raw_payload)
+    ? bestMatch.raw_payload
+    : null;
 
   if (!bestMatch) {
     return (
@@ -256,10 +271,34 @@ function TabAnalysis({ detail }: { detail: CandidateDetail }) {
       </div>
 
       {/* Strengths + Gaps side by side */}
+      {/* GPT badge */}
+      {gptData && (
+        <div className="flex items-center gap-2 rounded-2xl border border-violet-200 bg-violet-50 px-4 py-2">
+          <span className="text-xs font-bold text-violet-600">✦ Deep AI Analysis</span>
+          {gptData.hiring_suggestion && (
+            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+              gptData.hiring_suggestion === "shortlist" ? "bg-emerald-100 text-emerald-700" :
+              gptData.hiring_suggestion === "interview" ? "bg-violet-100 text-violet-700" :
+              gptData.hiring_suggestion === "reject" ? "bg-rose-100 text-rose-700" :
+              "bg-slate-100 text-slate-600"
+            }`}>
+              {String(gptData.hiring_suggestion)}
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-emerald-600">✦ Strengths</p>
-          {strengths.length > 0 ? (
+          {/* GPT provides narrative strengths; TF-IDF provides keyword list */}
+          {gptData?.strengths && gptData.strengths.length > 0 ? (
+            <ul className="space-y-1.5">
+              {gptData.strengths.map((s, i) => (
+                <li key={i} className="text-xs leading-5 text-emerald-800">· {String(s)}</li>
+              ))}
+            </ul>
+          ) : strengths.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {strengths.map((k) => (
                 <span key={k} className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800">
@@ -274,7 +313,13 @@ function TabAnalysis({ detail }: { detail: CandidateDetail }) {
 
         <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-amber-600">⚠ Gaps</p>
-          {gaps.length > 0 ? (
+          {gptData?.gaps && gptData.gaps.length > 0 ? (
+            <ul className="space-y-1.5">
+              {gptData.gaps.map((g, i) => (
+                <li key={i} className="text-xs leading-5 text-amber-800">· {String(g)}</li>
+              ))}
+            </ul>
+          ) : gaps.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {gaps.map((k) => (
                 <span key={k} className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
@@ -517,7 +562,7 @@ export default function CandidateProfilePage() {
     void load();
   }, [id]);
 
-  async function handleRunAnalysis() {
+  async function handleRunAnalysis(mode: "tfidf" | "gpt" = "tfidf") {
     if (!detail || analyzing) return;
     setAnalyzing(true);
     setAnalyzeError(null);
@@ -525,8 +570,9 @@ export default function CandidateProfilePage() {
       const result = await api.post<{
         analyses_created: number;
         has_resume_text: boolean;
+        mode: string;
         warning: string | null;
-      }>(`/recruiter/candidates/${id}/analyze`, undefined, { auth: true });
+      }>(`/recruiter/candidates/${id}/analyze?mode=${mode}`, undefined, { auth: true });
 
       if (!result.has_resume_text) {
         setAnalyzeError(result.warning ?? "No text found in resume.");
@@ -712,10 +758,20 @@ export default function CandidateProfilePage() {
                   <button
                     type="button"
                     disabled={analyzing}
-                    onClick={() => void handleRunAnalysis()}
+                    onClick={() => void handleRunAnalysis("tfidf")}
                     className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
                   >
                     {analyzing ? "Running…" : nextStep.action}
+                  </button>
+                )}
+                {nextStep.action === "Deep AI Analysis" && (
+                  <button
+                    type="button"
+                    disabled={analyzing}
+                    onClick={() => void handleRunAnalysis("gpt")}
+                    className="rounded-xl bg-violet-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50"
+                  >
+                    {analyzing ? "Running…" : "✦ Deep AI Analysis"}
                   </button>
                 )}
                 {nextStep.action === "Go to Jobs →" && (
@@ -757,16 +813,24 @@ export default function CandidateProfilePage() {
         </div>
       )}
 
-      {/* ── Re-run analysis button (when matches already exist) ─ */}
+      {/* ── Analysis action buttons ─────────────────────────── */}
       {detail.matches.length > 0 && (
-        <div className="flex justify-end">
+        <div className="flex flex-wrap justify-end gap-2">
           <button
             type="button"
             disabled={analyzing}
-            onClick={() => void handleRunAnalysis()}
+            onClick={() => void handleRunAnalysis("tfidf")}
             className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-500 transition hover:border-slate-300 hover:text-slate-700 disabled:opacity-40"
           >
-            {analyzing ? "Running analysis…" : "⟳ Re-run Analysis"}
+            {analyzing ? "Running…" : "⟳ Re-run Analysis"}
+          </button>
+          <button
+            type="button"
+            disabled={analyzing}
+            onClick={() => void handleRunAnalysis("gpt")}
+            className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 transition hover:bg-violet-100 disabled:opacity-40"
+          >
+            {analyzing ? "Running…" : "✦ Deep AI Analysis"}
           </button>
         </div>
       )}

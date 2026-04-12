@@ -13,6 +13,7 @@ from app.models.job_description import JobDescription
 from app.models.resume import Resume
 from app.models.user import User
 from app.services.analysis_matching import MATCH_MODEL_NAME, compute_match_result
+from app.services.gpt_matching_service import GPT_MATCH_MODEL_NAME, gpt_match_resume_to_job
 from app.services.resume_upload import save_resume_upload
 
 router = APIRouter(prefix="/recruiter/candidates", tags=["recruiter-candidates"])
@@ -47,6 +48,7 @@ class JobMatchDetail(BaseModel):
     overall_score: float
     matching_keywords: list[str]
     missing_keywords: list[str]
+    raw_payload: dict | None = None
 
 
 class TopRecommendation(BaseModel):
@@ -121,6 +123,46 @@ def _run_and_save_analysis(
             f"TF-IDF match: {result.match_score:.2f}% similarity, "
             f"{len(result.matching_keywords)} matching keywords."
         ),
+        result_payload=result.to_payload(),
+        completed_at=datetime.now(timezone.utc),
+    )
+    db.add(analysis)
+    db.commit()
+    db.refresh(analysis)
+    return analysis
+
+
+def _run_gpt_analysis(
+    db: Session,
+    recruiter_id: str,
+    resume: Resume,
+    job: JobDescription,
+) -> Analysis | None:
+    """Run GPT semantic matching and persist the result."""
+    resume_text = resume.normalized_text or resume.raw_text or ""
+    job_text = job.normalized_text or job.source_text or ""
+
+    if not resume_text or not job_text:
+        return None
+
+    try:
+        result = gpt_match_resume_to_job(resume_text, job_text)
+    except Exception:
+        return None
+
+    summary = result.recommendation or (
+        f"GPT match: {result.match_score:.1f}% — {result.hiring_suggestion}. "
+        f"{len(result.matching_keywords)} matching skills."
+    )
+
+    analysis = Analysis(
+        user_id=recruiter_id,
+        resume_id=resume.id,
+        job_description_id=job.id,
+        status=AnalysisStatus.COMPLETED,
+        model_name=GPT_MATCH_MODEL_NAME,
+        overall_score=result.match_score,
+        summary_text=summary,
         result_payload=result.to_payload(),
         completed_at=datetime.now(timezone.utc),
     )
@@ -267,6 +309,7 @@ def get_candidate(
                 overall_score=float(analysis.overall_score),
                 matching_keywords=_keywords_from_payload(payload, "matching_keywords"),
                 missing_keywords=_keywords_from_payload(payload, "missing_keywords"),
+                raw_payload=payload if payload else None,
             )
         )
 
@@ -320,12 +363,14 @@ class AnalyzeResponse(BaseModel):
     analyses_created: int
     analyses_skipped: int
     has_resume_text: bool
+    mode: str
     warning: str | None = None
 
 
 @router.post("/{resume_id}/analyze", response_model=AnalyzeResponse)
 def analyze_candidate(
     resume_id: str,
+    mode: str = "tfidf",
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_recruiter),
 ) -> AnalyzeResponse:
@@ -340,6 +385,7 @@ def analyze_candidate(
             analyses_created=0,
             analyses_skipped=0,
             has_resume_text=False,
+            mode=mode,
             warning=(
                 "No text could be extracted from this resume. "
                 "The file may be a scanned image (not searchable PDF). "
@@ -355,28 +401,35 @@ def analyze_candidate(
             detail="No jobs found. Add at least one job before running analysis.",
         )
 
+    use_gpt = mode == "gpt"
     created = 0
     skipped = 0
+
     for job in jobs:
-        result = _run_and_save_analysis(db, current_user.id, resume, job)
+        if use_gpt:
+            result = _run_gpt_analysis(db, current_user.id, resume, job)
+        else:
+            result = _run_and_save_analysis(db, current_user.id, resume, job)
+
         if result:
             created += 1
         else:
             skipped += 1
 
     warning: str | None = None
-    if created == 0 and skipped > 0:
+    if created == 0 and skipped > 0 and not use_gpt:
         warning = (
             "Analysis ran but produced no results. "
             "This usually means the resume and job description are in different languages "
-            "with no shared technical terms. Try writing both in the same language, "
-            "or ensure the resume contains English technical keywords."
+            "with no shared technical terms. Try 'Deep AI Analysis' for cross-language matching, "
+            "or ensure both texts share common technical keywords."
         )
 
     return AnalyzeResponse(
         analyses_created=created,
         analyses_skipped=skipped,
         has_resume_text=has_resume_text,
+        mode=mode,
         warning=warning,
     )
 
