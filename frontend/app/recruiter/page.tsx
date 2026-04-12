@@ -145,7 +145,7 @@ export default function RecruiterDashboardPage() {
     async function load() {
       try {
         const data = await api.get<DashboardStats>(
-          "/api/v1/recruiter/dashboard/stats",
+          "/recruiter/dashboard/stats",
           { auth: true },
         );
         if (!cancelled) setStats(data);
