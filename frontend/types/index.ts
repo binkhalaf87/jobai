@@ -29,6 +29,7 @@ export type LoginPayload = {
 
 export type RegisterPayload = LoginPayload & {
   full_name?: string;
+  role?: "jobseeker" | "recruiter";
 };
 
 export type ResumeUploadResponse = {

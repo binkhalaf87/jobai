@@ -17,6 +17,7 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState<"jobseeker" | "recruiter">("jobseeker");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -33,12 +34,15 @@ export function AuthForm({ mode }: AuthFormProps) {
 
     try {
       if (isRegister) {
-        await register({
+        const response = await register({
           email,
           password,
-          full_name: fullName || undefined
+          full_name: fullName || undefined,
+          role,
         });
-        router.push("/dashboard");
+        const registeredRole = response.user.role;
+        setUserRole(registeredRole);
+        router.push(registeredRole === "recruiter" ? "/recruiter" : "/dashboard");
       } else {
         const response = await login({ email, password });
         const role = response.user.role;
@@ -64,16 +68,46 @@ export function AuthForm({ mode }: AuthFormProps) {
 
       <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
         {isRegister ? (
-          <label className="block">
-            <span className="mb-2 block text-sm font-medium text-slate-700">Full name</span>
-            <input
-              value={fullName}
-              onChange={(event) => setFullName(event.target.value)}
-              type="text"
-              placeholder="Jane Doe"
-              className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-500"
-            />
-          </label>
+          <>
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-slate-700">Full name</span>
+              <input
+                value={fullName}
+                onChange={(event) => setFullName(event.target.value)}
+                type="text"
+                placeholder="Jane Doe"
+                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-500"
+              />
+            </label>
+
+            <div>
+              <span className="mb-2 block text-sm font-medium text-slate-700">I am a</span>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setRole("jobseeker")}
+                  className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                    role === "jobseeker"
+                      ? "border-slate-900 bg-slate-900 text-white"
+                      : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
+                  }`}
+                >
+                  🎯 Job Seeker
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole("recruiter")}
+                  className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                    role === "recruiter"
+                      ? "border-slate-900 bg-slate-900 text-white"
+                      : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
+                  }`}
+                >
+                  🏢 Recruiter
+                </button>
+              </div>
+            </div>
+          </>
         ) : null}
 
         <label className="block">
