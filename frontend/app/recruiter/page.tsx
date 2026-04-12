@@ -166,7 +166,8 @@ export default function RecruiterDashboardPage() {
 
   if (error || !stats) {
     return (
-      <Panel className="p-8 md:p-10" dir="rtl">
+      <div dir="rtl">
+      <Panel className="p-8 md:p-10">
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">
           لوحة التحكم
         </p>
@@ -185,6 +186,7 @@ export default function RecruiterDashboardPage() {
           إعادة المحاولة
         </button>
       </Panel>
+      </div>
     );
   }
 
