@@ -65,7 +65,7 @@ function isAccepted(file: File): boolean {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("ar-SA", {
+  return new Date(iso).toLocaleDateString("en-US", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -130,13 +130,13 @@ function UploadZone({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-            رفع السير الذاتية
+            Resume Upload
           </p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-            رفع ملفات المرشحين
+            Upload candidate resumes
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            يمكنك اختيار ملفات متعددة دفعةً واحدة. الصيغ المدعومة: PDF وDOCX.
+            Select multiple files at once. Supported formats: PDF and DOCX.
           </p>
         </div>
         <button
@@ -144,7 +144,7 @@ function UploadZone({
           onClick={() => inputRef.current?.click()}
           className="flex-shrink-0 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:text-slate-950"
         >
-          اختر ملفات
+          Choose files
         </button>
       </div>
 
@@ -179,10 +179,10 @@ function UploadZone({
           }}
         />
         <p className="text-base font-semibold text-slate-900">
-          اسحب وأفلت الملفات هنا
+          Drag and drop files here
         </p>
         <p className="mt-2 text-sm text-slate-500">
-          أو اضغط لاختيار ملفات PDF أو DOCX
+          Or click to browse — PDF and DOCX supported
         </p>
       </div>
     </Panel>
@@ -197,7 +197,7 @@ function UploadQueue({ items }: { items: FileUploadItem[] }) {
   return (
     <Panel className="p-6">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-        قائمة الرفع
+        Upload Queue
       </p>
       <ul className="mt-4 space-y-3">
         {items.map((item) => (
@@ -266,10 +266,10 @@ function CandidateDetailPanel({ detail }: { detail: CandidateDetail }) {
       {detail.top_recommendation && (
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-600">
-            التوصية
+            Top Recommendation
           </p>
           <p className="mt-1.5 text-sm font-semibold text-emerald-900">
-            الأنسب لـ {detail.top_recommendation.job_title}
+            Best fit for {detail.top_recommendation.job_title}
           </p>
           <p className="mt-1 text-sm leading-6 text-emerald-800">
             {detail.top_recommendation.reason}
@@ -281,7 +281,7 @@ function CandidateDetailPanel({ detail }: { detail: CandidateDetail }) {
       {detail.skills.length > 0 && (
         <div>
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-            المهارات المستخرجة
+            Extracted Skills
           </p>
           <div className="flex flex-wrap gap-2">
             {detail.skills.map((skill) => (
@@ -294,7 +294,7 @@ function CandidateDetailPanel({ detail }: { detail: CandidateDetail }) {
             ))}
           </div>
           <p className="mt-2 text-xs text-slate-400">
-            أخضر = متطابق · أصفر = مفقود · رمادي = غير محدد
+            Green = matched · Amber = missing · Gray = unclassified
           </p>
         </div>
       )}
@@ -303,7 +303,7 @@ function CandidateDetailPanel({ detail }: { detail: CandidateDetail }) {
       {detail.matches.length > 0 && (
         <div>
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-            التطابق مع الوظائف
+            Job Match Scores
           </p>
           <ul className="space-y-2">
             {detail.matches.map((match) => (
@@ -327,9 +327,9 @@ function CandidateDetailPanel({ detail }: { detail: CandidateDetail }) {
                 {match.matching_keywords.length > 0 && (
                   <p className="mt-2 text-xs text-slate-500">
                     <span className="font-semibold text-emerald-700">
-                      متطابق:
+                      Matched:
                     </span>{" "}
-                    {match.matching_keywords.slice(0, 5).join("، ")}
+                    {match.matching_keywords.slice(0, 5).join(", ")}
                     {match.matching_keywords.length > 5 &&
                       ` +${match.matching_keywords.length - 5}`}
                   </p>
@@ -337,9 +337,9 @@ function CandidateDetailPanel({ detail }: { detail: CandidateDetail }) {
                 {match.missing_keywords.length > 0 && (
                   <p className="mt-1 text-xs text-slate-500">
                     <span className="font-semibold text-amber-700">
-                      مفقود:
+                      Missing:
                     </span>{" "}
-                    {match.missing_keywords.slice(0, 5).join("، ")}
+                    {match.missing_keywords.slice(0, 5).join(", ")}
                     {match.missing_keywords.length > 5 &&
                       ` +${match.missing_keywords.length - 5}`}
                   </p>
@@ -352,7 +352,7 @@ function CandidateDetailPanel({ detail }: { detail: CandidateDetail }) {
 
       {detail.matches.length === 0 && (
         <p className="text-sm text-slate-500">
-          لا توجد وظائف لمقارنتها. أضف وظائف من صفحة الوظائف أولاً.
+          No jobs to compare against. Add jobs from the Jobs page first.
         </p>
       )}
     </div>
@@ -401,7 +401,7 @@ function CandidateRow({
             </span>
           </div>
           <p className="mt-0.5 text-xs text-slate-500">
-            {candidate.best_match_job ?? "لا توجد وظيفة مطابقة بعد"}
+            {candidate.best_match_job ?? "No matching job yet"}
           </p>
           {candidate.best_match_score !== null && (
             <div className="mt-2 max-w-xs">
@@ -416,17 +416,14 @@ function CandidateRow({
           </span>
 
           {/* Delete / confirm */}
-          <div
-            className="flex gap-2"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
             {!confirmDelete ? (
               <button
                 type="button"
                 onClick={onConfirmDelete}
                 className="rounded-xl px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
               >
-                حذف
+                Delete
               </button>
             ) : (
               <>
@@ -436,21 +433,21 @@ function CandidateRow({
                   disabled={deleting}
                   className="rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700 disabled:opacity-50"
                 >
-                  {deleting ? "جارٍ الحذف…" : "تأكيد الحذف"}
+                  {deleting ? "Deleting…" : "Confirm delete"}
                 </button>
                 <button
                   type="button"
                   onClick={onCancelDelete}
                   className="rounded-xl px-3 py-1.5 text-xs font-medium text-slate-500 transition hover:bg-slate-100"
                 >
-                  إلغاء
+                  Cancel
                 </button>
               </>
             )}
           </div>
 
           <span className="text-xs text-slate-400">
-            {isExpanded ? "▲ إخفاء" : "▼ تفاصيل"}
+            {isExpanded ? "▲ Hide" : "▼ Details"}
           </span>
         </div>
       </div>
@@ -472,7 +469,7 @@ function CandidateRow({
             <CandidateDetailPanel detail={detail} />
           ) : (
             <p className="py-4 text-sm text-slate-500">
-              تعذّر تحميل التفاصيل.
+              Failed to load details.
             </p>
           )}
         </div>
@@ -508,7 +505,7 @@ export default function RecruiterCandidatesPage() {
       );
       setCandidates(data);
     } catch {
-      setListError("تعذّر تحميل قائمة المرشحين.");
+      setListError("Failed to load candidates.");
     } finally {
       setListLoading(false);
     }
@@ -520,52 +517,48 @@ export default function RecruiterCandidatesPage() {
 
   // --- Upload queue processing ---
 
-  function updateItem(uid: string, patch: Partial<FileUploadItem>) {
+  function updateItem(itemUid: string, patch: Partial<FileUploadItem>) {
     setUploadQueue((prev) =>
-      prev.map((item) => (item.uid === uid ? { ...item, ...patch } : item)),
+      prev.map((item) => (item.uid === itemUid ? { ...item, ...patch } : item)),
     );
   }
 
-  const processQueue = useCallback(
-    async (queue: FileUploadItem[]) => {
-      if (uploadingRef.current) return;
-      uploadingRef.current = true;
+  const processQueue = useCallback(async (queue: FileUploadItem[]) => {
+    if (uploadingRef.current) return;
+    uploadingRef.current = true;
 
-      for (const item of queue) {
-        if (item.status !== "pending") continue;
+    for (const item of queue) {
+      if (item.status !== "pending") continue;
 
-        updateItem(item.uid, { status: "uploading", progress: 0 });
+      updateItem(item.uid, { status: "uploading", progress: 0 });
 
-        const formData = new FormData();
-        formData.append("files", item.file);
+      const formData = new FormData();
+      formData.append("files", item.file);
 
-        try {
-          await uploadRequest<{ resume_ids: string[] }>(
-            "/recruiter/candidates/upload",
-            formData,
-            {
-              auth: true,
-              onProgress: (p) => updateItem(item.uid, { progress: p }),
-            },
-          );
-          updateItem(item.uid, { status: "done", progress: 100 });
-        } catch (err) {
-          updateItem(item.uid, {
-            status: "error",
-            error:
-              err instanceof Error ? err.message : "فشل الرفع، حاول مجدداً.",
-          });
-        }
+      try {
+        await uploadRequest<{ resume_ids: string[] }>(
+          "/recruiter/candidates/upload",
+          formData,
+          {
+            auth: true,
+            onProgress: (p) => updateItem(item.uid, { progress: p }),
+          },
+        );
+        updateItem(item.uid, { status: "done", progress: 100 });
+      } catch (err) {
+        updateItem(item.uid, {
+          status: "error",
+          error: err instanceof Error ? err.message : "Upload failed. Please try again.",
+        });
       }
+    }
 
-      uploadingRef.current = false;
+    uploadingRef.current = false;
 
-      // Refresh list after all uploads
-      setListLoading(true);
-      void loadCandidates();
-    },
-    [],
-  );
+    // Refresh list after all uploads
+    setListLoading(true);
+    void loadCandidates();
+  }, []);
 
   function handleFilesAdded(files: File[]) {
     const newItems: FileUploadItem[] = files.map((file) => ({
@@ -635,7 +628,7 @@ export default function RecruiterCandidatesPage() {
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-6">
       {/* Upload zone */}
       <UploadZone onFilesAdded={handleFilesAdded} />
 
@@ -647,10 +640,10 @@ export default function RecruiterCandidatesPage() {
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-              المرشحون
+              Candidates
             </p>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
-              قائمة المرشحين
+              Candidate list
             </h2>
           </div>
           {candidates.length > 0 && (
@@ -673,10 +666,10 @@ export default function RecruiterCandidatesPage() {
         ) : candidates.length === 0 ? (
           <div className="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
             <p className="text-base font-semibold text-slate-900">
-              لا يوجد مرشحون بعد
+              No candidates yet
             </p>
             <p className="mt-2 text-sm leading-7 text-slate-600">
-              ارفع السير الذاتية من المنطقة أعلاه لتبدأ التحليل.
+              Upload resumes using the zone above to start analysis.
             </p>
           </div>
         ) : (

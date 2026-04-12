@@ -35,11 +35,11 @@ type DashboardStats = {
 
 function fmt(value: number | null, suffix = ""): string {
   if (value === null) return "—";
-  return `${value.toLocaleString("ar-SA")}${suffix}`;
+  return `${value.toLocaleString("en-US")}${suffix}`;
 }
 
 function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("ar-SA", {
+  return new Date(iso).toLocaleDateString("en-US", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -103,7 +103,7 @@ function ScoreBar({ score }: { score: number }) {
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }, (_, i) => (
           <Panel key={i} className="p-6">
@@ -150,7 +150,7 @@ export default function RecruiterDashboardPage() {
         );
         if (!cancelled) setStats(data);
       } catch {
-        if (!cancelled) setError("تعذّر تحميل بيانات لوحة التحكم.");
+        if (!cancelled) setError("Failed to load dashboard data.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -166,13 +166,12 @@ export default function RecruiterDashboardPage() {
 
   if (error || !stats) {
     return (
-      <div dir="rtl">
       <Panel className="p-8 md:p-10">
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">
-          لوحة التحكم
+          Dashboard
         </p>
         <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
-          {error ?? "لا توجد بيانات"}
+          {error ?? "No data available"}
         </h1>
         <button
           type="button"
@@ -183,74 +182,73 @@ export default function RecruiterDashboardPage() {
           }}
           className="mt-6 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
         >
-          إعادة المحاولة
+          Retry
         </button>
       </Panel>
-      </div>
     );
   }
 
   const topScore = stats.top_matches[0]?.score ?? null;
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-6">
       {/* ─── Hero banner ───────────────────────────────────────── */}
       <Panel className="p-8 md:p-10">
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">
-          لوحة التحكم
+          Recruiter Dashboard
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
-          مرحباً بك في لوحة التوظيف
+          Welcome to your hiring workspace
         </h1>
         <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
-          لديك حالياً{" "}
+          You currently have{" "}
           <span className="font-semibold text-slate-900">
-            {stats.total_candidates} مرشح
+            {stats.total_candidates} candidate{stats.total_candidates !== 1 ? "s" : ""}
           </span>{" "}
-          و{" "}
+          and{" "}
           <span className="font-semibold text-slate-900">
-            {stats.total_jobs} وظيفة
+            {stats.total_jobs} job{stats.total_jobs !== 1 ? "s" : ""}
           </span>{" "}
-          في حسابك.
+          in your account.
         </p>
       </Panel>
 
       {/* ─── Stat cards ────────────────────────────────────────── */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="إجمالي المرشحين"
+          label="Total Candidates"
           value={fmt(stats.total_candidates)}
           note={
             stats.total_candidates === 0
-              ? "لم يُرفع أي مرشح بعد."
-              : "إجمالي السير الذاتية المرفوعة."
+              ? "No resumes uploaded yet."
+              : "Total resumes uploaded to your workspace."
           }
         />
         <StatCard
-          label="إجمالي الوظائف"
+          label="Total Jobs"
           value={fmt(stats.total_jobs)}
           note={
             stats.total_jobs === 0
-              ? "لم تُنشر أي وظيفة بعد."
-              : "الوظائف المنشورة في حسابك."
+              ? "No jobs posted yet."
+              : "Active job postings in your account."
           }
         />
         <StatCard
-          label="متوسط نسبة التطابق"
+          label="Avg. Match Score"
           value={
             stats.avg_match_score > 0
               ? `${stats.avg_match_score.toFixed(1)}%`
               : "—"
           }
-          note="متوسط درجات جميع تحليلات التطابق."
+          note="Average across all completed match analyses."
         />
         <StatCard
-          label="أعلى تطابق"
+          label="Top Match"
           value={topScore !== null ? `${topScore.toFixed(1)}%` : "—"}
           note={
             stats.top_matches[0]
               ? `${stats.top_matches[0].candidate_name} — ${stats.top_matches[0].job_title}`
-              : "لا توجد تحليلات مكتملة بعد."
+              : "No completed analyses yet."
           }
         />
       </div>
@@ -260,19 +258,19 @@ export default function RecruiterDashboardPage() {
         {/* Top matches */}
         <Panel className="p-6 md:p-8">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
-            أفضل المطابقات
+            Top Matches
           </p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-            أعلى ٥ تطابقات بين المرشحين والوظائف
+            Top 5 candidate–job pairs by score
           </h2>
 
           {stats.top_matches.length === 0 ? (
             <div className="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-6">
               <p className="text-base font-semibold text-slate-900">
-                لا توجد مطابقات بعد
+                No matches yet
               </p>
               <p className="mt-2 text-sm leading-7 text-slate-600">
-                ارفع سيرًا ذاتية وقم بتحليلها مقابل الوظائف لتظهر النتائج هنا.
+                Upload resumes and run analyses against jobs to see results here.
               </p>
             </div>
           ) : (
@@ -307,19 +305,19 @@ export default function RecruiterDashboardPage() {
         {/* Recent candidates */}
         <Panel className="p-6 md:p-8">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
-            آخر المرشحين
+            Recent Candidates
           </p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-            أحدث ٥ سير ذاتية مرفوعة
+            Last 5 resumes uploaded
           </h2>
 
           {stats.recent_candidates.length === 0 ? (
             <div className="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-6">
               <p className="text-base font-semibold text-slate-900">
-                لا يوجد مرشحون بعد
+                No candidates yet
               </p>
               <p className="mt-2 text-sm leading-7 text-slate-600">
-                ارفع السير الذاتية للمرشحين من صفحة المرشحين.
+                Upload candidate resumes from the Candidates page.
               </p>
             </div>
           ) : (
@@ -335,7 +333,7 @@ export default function RecruiterDashboardPage() {
                         {candidate.title}
                       </p>
                       <p className="mt-0.5 truncate text-xs text-slate-500">
-                        {candidate.best_job ?? "لا توجد مطابقة بعد"}
+                        {candidate.best_job ?? "No match yet"}
                       </p>
                     </div>
                     <span className="flex-shrink-0 text-xs text-slate-400">
@@ -349,7 +347,7 @@ export default function RecruiterDashboardPage() {
                     </div>
                   ) : (
                     <p className="mt-2 text-xs text-slate-400">
-                      في انتظار التحليل
+                      Pending analysis
                     </p>
                   )}
                 </li>

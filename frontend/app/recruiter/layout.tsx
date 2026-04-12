@@ -11,9 +11,9 @@ import { clearApiToken } from "@/lib/api";
 const TOKEN_KEY = "jobai_access_token";
 
 const NAV_ITEMS = [
-  { label: "الرئيسية", href: "/recruiter", icon: "home" },
-  { label: "المرشحون", href: "/recruiter/candidates", icon: "users" },
-  { label: "الوظائف", href: "/recruiter/jobs", icon: "briefcase" },
+  { label: "Dashboard", href: "/recruiter", icon: "home" },
+  { label: "Candidates", href: "/recruiter/candidates", icon: "users" },
+  { label: "Jobs", href: "/recruiter/jobs", icon: "briefcase" },
 ] as const;
 
 // ─── JWT decode (no external dependency) ─────────────────────────────────────
@@ -117,12 +117,12 @@ export default function RecruiterLayout({ children }: { children: ReactNode }) {
   if (!ready) {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-50">
-        <div className="text-center" dir="rtl">
+        <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-            جارٍ التحميل
+            Loading
           </p>
           <h1 className="mt-2 text-xl font-semibold tracking-tight text-slate-900">
-            جارٍ تحضير لوحة التحكم…
+            Preparing recruiter workspace…
           </h1>
         </div>
       </div>
@@ -131,7 +131,7 @@ export default function RecruiterLayout({ children }: { children: ReactNode }) {
 
   const currentLabel =
     [...NAV_ITEMS].reverse().find((item) => isActive(pathname, item.href))
-      ?.label ?? "لوحة التحكم";
+      ?.label ?? "Dashboard";
 
   function handleSignOut() {
     clearApiToken();
@@ -139,23 +139,23 @@ export default function RecruiterLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50" dir="rtl">
+    <div className="flex h-screen overflow-hidden bg-slate-50">
       {/* ─── Sidebar ─────────────────────────────────────────── */}
-      <aside className="hidden w-64 flex-shrink-0 flex-col border-l border-slate-200 bg-white md:flex">
+      <aside className="hidden w-64 flex-shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
         {/* Brand */}
         <div className="flex h-16 items-center border-b border-slate-100 px-6">
           <Link
             href="/recruiter"
             className="text-lg font-bold tracking-tight text-slate-900"
           >
-            JobAI — مُوظِّف
+            JobAI Recruiter
           </Link>
         </div>
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-5">
           <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-            القائمة
+            Navigation
           </p>
           <ul className="space-y-0.5">
             {NAV_ITEMS.map((item) => {
@@ -184,9 +184,9 @@ export default function RecruiterLayout({ children }: { children: ReactNode }) {
           <button
             type="button"
             onClick={handleSignOut}
-            className="w-full rounded-xl px-3 py-2 text-right text-sm text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+            className="w-full rounded-xl px-3 py-2 text-left text-sm text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
           >
-            تسجيل الخروج
+            Sign out
           </button>
         </div>
       </aside>

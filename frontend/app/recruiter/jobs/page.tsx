@@ -62,11 +62,11 @@ const EMPTY_FORM: CreateJobForm = {
 };
 
 const EMPLOYMENT_TYPE_LABELS: Record<EmploymentType, string> = {
-  full_time: "دوام كامل",
-  part_time: "دوام جزئي",
-  contract: "عقد",
-  internship: "تدريب",
-  temporary: "مؤقت",
+  full_time: "Full Time",
+  part_time: "Part Time",
+  contract: "Contract",
+  internship: "Internship",
+  temporary: "Temporary",
 };
 
 const EMPLOYMENT_TYPE_COLORS: Record<EmploymentType, string> = {
@@ -80,7 +80,7 @@ const EMPLOYMENT_TYPE_COLORS: Record<EmploymentType, string> = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("ar-SA", {
+  return new Date(iso).toLocaleDateString("en-US", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -150,7 +150,7 @@ function AddJobForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.title.trim() || !form.description.trim()) {
-      setError("العنوان والوصف حقلان مطلوبان.");
+      setError("Title and description are required.");
       return;
     }
 
@@ -173,9 +173,7 @@ function AddJobForm({
       );
       onSave(created);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "تعذّر حفظ الوظيفة.",
-      );
+      setError(err instanceof Error ? err.message : "Failed to save job.");
     } finally {
       setSaving(false);
     }
@@ -187,13 +185,13 @@ function AddJobForm({
         {/* Title */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-slate-700">
-            عنوان الوظيفة <span className="text-rose-500">*</span>
+            Job Title <span className="text-rose-500">*</span>
           </label>
           <input
             type="text"
             value={form.title}
             onChange={(e) => set("title", e.target.value)}
-            placeholder="مثال: مهندس برمجيات أول"
+            placeholder="e.g. Senior Software Engineer"
             className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
           />
         </div>
@@ -201,13 +199,13 @@ function AddJobForm({
         {/* Company */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-slate-700">
-            اسم الشركة
+            Company Name
           </label>
           <input
             type="text"
             value={form.company_name}
             onChange={(e) => set("company_name", e.target.value)}
-            placeholder="اختياري"
+            placeholder="Optional"
             className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
           />
         </div>
@@ -215,13 +213,13 @@ function AddJobForm({
         {/* Location */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-slate-700">
-            الموقع
+            Location
           </label>
           <input
             type="text"
             value={form.location}
             onChange={(e) => set("location", e.target.value)}
-            placeholder="مثال: الرياض، السعودية"
+            placeholder="e.g. New York, USA"
             className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
           />
         </div>
@@ -229,7 +227,7 @@ function AddJobForm({
         {/* Employment type */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-slate-700">
-            نوع الوظيفة
+            Employment Type
           </label>
           <select
             value={form.employment_type}
@@ -238,7 +236,7 @@ function AddJobForm({
             }
             className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
           >
-            <option value="">— اختر —</option>
+            <option value="">— Select —</option>
             {(Object.entries(EMPLOYMENT_TYPE_LABELS) as [EmploymentType, string][]).map(
               ([val, label]) => (
                 <option key={val} value={val}>
@@ -253,13 +251,13 @@ function AddJobForm({
       {/* Description */}
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-semibold text-slate-700">
-          وصف الوظيفة <span className="text-rose-500">*</span>
+          Job Description <span className="text-rose-500">*</span>
         </label>
         <textarea
           value={form.description}
           onChange={(e) => set("description", e.target.value)}
           rows={5}
-          placeholder="أدخل متطلبات الوظيفة، المهارات المطلوبة، والمسؤوليات…"
+          placeholder="Enter job requirements, required skills, and responsibilities…"
           className="resize-y rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
         />
       </div>
@@ -276,14 +274,14 @@ function AddJobForm({
           disabled={saving}
           className="rounded-2xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-50"
         >
-          {saving ? "جارٍ الحفظ…" : "حفظ الوظيفة"}
+          {saving ? "Saving…" : "Save job"}
         </button>
         <button
           type="button"
           onClick={onCancel}
           className="rounded-2xl border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-400"
         >
-          إلغاء
+          Cancel
         </button>
       </div>
     </form>
@@ -342,8 +340,7 @@ function JobCard({
   onCancelDelete: () => void;
   onDelete: () => void;
 }) {
-  const topScore =
-    detail?.top_candidates[0]?.overall_score ?? null;
+  const topScore = detail?.top_candidates[0]?.overall_score ?? null;
 
   return (
     <li className="rounded-3xl border border-slate-200 bg-white transition hover:border-slate-300">
@@ -375,11 +372,11 @@ function JobCard({
               <span className="font-semibold text-slate-700">
                 {job.candidate_count}
               </span>{" "}
-              مرشح
+              candidate{job.candidate_count !== 1 ? "s" : ""}
             </span>
             {topScore !== null && (
               <span>
-                أعلى تطابق:{" "}
+                Top match:{" "}
                 <span className={`font-semibold ${scoreText(topScore)}`}>
                   {topScore.toFixed(1)}%
                 </span>
@@ -399,7 +396,7 @@ function JobCard({
               onClick={onConfirmDelete}
               className="rounded-xl px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
             >
-              حذف
+              Delete
             </button>
           ) : (
             <div className="flex gap-2">
@@ -409,19 +406,19 @@ function JobCard({
                 disabled={deleting}
                 className="rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700 disabled:opacity-50"
               >
-                {deleting ? "جارٍ الحذف…" : "تأكيد الحذف"}
+                {deleting ? "Deleting…" : "Confirm delete"}
               </button>
               <button
                 type="button"
                 onClick={onCancelDelete}
                 className="rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
               >
-                إلغاء
+                Cancel
               </button>
             </div>
           )}
           <span className="mt-1 text-xs text-slate-400">
-            {isExpanded ? "▲ إخفاء" : "▼ المرشحون"}
+            {isExpanded ? "▲ Hide" : "▼ Candidates"}
           </span>
         </div>
       </div>
@@ -436,14 +433,14 @@ function JobCard({
               ))}
             </div>
           ) : !detail ? (
-            <p className="text-sm text-slate-500">تعذّر تحميل المرشحين.</p>
+            <p className="text-sm text-slate-500">Failed to load candidates.</p>
           ) : detail.top_candidates.length === 0 ? (
             <div className="rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
               <p className="text-sm font-semibold text-slate-900">
-                لا يوجد مرشحون بعد
+                No candidates yet
               </p>
               <p className="mt-1 text-xs text-slate-500">
-                ارفع سيراً ذاتية من صفحة المرشحين لتظهر هنا.
+                Upload resumes from the Candidates page to see matches here.
               </p>
             </div>
           ) : (
@@ -487,7 +484,7 @@ export default function RecruiterJobsPage() {
         });
         if (!cancelled) setJobs(data);
       } catch {
-        if (!cancelled) setListError("تعذّر تحميل قائمة الوظائف.");
+        if (!cancelled) setListError("Failed to load jobs.");
       } finally {
         if (!cancelled) setListLoading(false);
       }
@@ -555,16 +552,16 @@ export default function RecruiterJobsPage() {
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-6">
       {/* Header panel with add button + inline form */}
       <Panel className="p-6 md:p-8">
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-              الوظائف
+              Jobs
             </p>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
-              إدارة الوظائف
+              Manage job postings
             </h2>
           </div>
           <button
@@ -576,7 +573,7 @@ export default function RecruiterJobsPage() {
                 : "bg-slate-900 text-white hover:bg-slate-700"
             }`}
           >
-            {showForm ? "إلغاء" : "إضافة وظيفة"}
+            {showForm ? "Cancel" : "Add job"}
           </button>
         </div>
 
@@ -594,7 +591,7 @@ export default function RecruiterJobsPage() {
       <Panel className="p-6 md:p-8">
         <div className="flex items-center gap-3">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-            قائمة الوظائف
+            Job List
           </p>
           {jobs.length > 0 && (
             <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600">
@@ -616,10 +613,10 @@ export default function RecruiterJobsPage() {
         ) : jobs.length === 0 ? (
           <div className="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
             <p className="text-base font-semibold text-slate-900">
-              لا توجد وظائف بعد
+              No jobs yet
             </p>
             <p className="mt-2 text-sm leading-7 text-slate-600">
-              اضغط "إضافة وظيفة" أعلاه لنشر أول وظيفة.
+              Click &ldquo;Add job&rdquo; above to post your first opening.
             </p>
           </div>
         ) : (
