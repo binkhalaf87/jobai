@@ -316,6 +316,39 @@ def update_stage(
     return StageUpdateResponse(id=resume.id, stage=resume.recruiter_stage)
 
 
+class AnalyzeResponse(BaseModel):
+    analyses_created: int
+    analyses_skipped: int
+
+
+@router.post("/{resume_id}/analyze", response_model=AnalyzeResponse)
+def analyze_candidate(
+    resume_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_recruiter),
+) -> AnalyzeResponse:
+    """Run (or re-run) matching between this resume and all recruiter jobs."""
+    resume = _get_owned_resume(db, resume_id, current_user.id)
+    jobs = _get_recruiter_jobs(db, current_user.id)
+
+    if not jobs:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="No jobs found. Add at least one job before running analysis.",
+        )
+
+    created = 0
+    skipped = 0
+    for job in jobs:
+        result = _run_and_save_analysis(db, current_user.id, resume, job)
+        if result:
+            created += 1
+        else:
+            skipped += 1
+
+    return AnalyzeResponse(analyses_created=created, analyses_skipped=skipped)
+
+
 @router.delete("/{resume_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_candidate(
     resume_id: str,

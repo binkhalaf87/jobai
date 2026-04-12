@@ -83,15 +83,22 @@ function initials(name: string) {
 
 type NextStep = { message: string; action: string; variant: "primary" | "warning" | "neutral" };
 
-function computeNextStep(detail: CandidateDetail): NextStep | null {
+function computeNextStep(detail: CandidateDetail, hasJobs: boolean): NextStep | null {
   if (detail.status !== "parsed") {
     return { message: "Resume is being processed. Analysis will run automatically.", action: "", variant: "neutral" };
   }
-  if (detail.matches.length === 0) {
+  if (detail.matches.length === 0 && !hasJobs) {
     return {
-      message: "No AI analysis yet. Add jobs first, then re-upload this resume to run matching.",
+      message: "No jobs yet. Add at least one job, then run analysis to see match scores.",
       action: "Go to Jobs →",
       variant: "warning",
+    };
+  }
+  if (detail.matches.length === 0 && hasJobs) {
+    return {
+      message: "Jobs exist but no analysis has been run for this candidate yet.",
+      action: "Run Analysis",
+      variant: "primary",
     };
   }
   const freshness = analysisFreshness(detail.analysis_completed_at);
@@ -479,12 +486,19 @@ export default function CandidateProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("analysis");
   const [stagePending, setStagePending] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
+  const [hasJobs, setHasJobs] = useState(false);
 
   useEffect(() => {
     async function load() {
       try {
-        const data = await api.get<CandidateDetail>(`/recruiter/candidates/${id}`, { auth: true });
+        const [data, jobs] = await Promise.all([
+          api.get<CandidateDetail>(`/recruiter/candidates/${id}`, { auth: true }),
+          api.get<{ id: string }[]>("/recruiter/jobs/", { auth: true }),
+        ]);
         setDetail(data);
+        setHasJobs(jobs.length > 0);
       } catch {
         setError("Failed to load candidate profile.");
       } finally {
@@ -493,6 +507,22 @@ export default function CandidateProfilePage() {
     }
     void load();
   }, [id]);
+
+  async function handleRunAnalysis() {
+    if (!detail || analyzing) return;
+    setAnalyzing(true);
+    setAnalyzeError(null);
+    try {
+      await api.post(`/recruiter/candidates/${id}/analyze`, undefined, { auth: true });
+      // Reload detail to get fresh matches
+      const data = await api.get<CandidateDetail>(`/recruiter/candidates/${id}`, { auth: true });
+      setDetail(data);
+    } catch (err) {
+      setAnalyzeError(err instanceof Error ? err.message : "Analysis failed.");
+    } finally {
+      setAnalyzing(false);
+    }
+  }
 
   async function handleStageChange(stage: Stage) {
     if (!detail || stagePending) return;
@@ -531,7 +561,7 @@ export default function CandidateProfilePage() {
     );
   }
 
-  const nextStep = computeNextStep(detail);
+  const nextStep = computeNextStep(detail, hasJobs);
   const topScore = detail.matches[0]?.overall_score ?? null;
   const stageOption = STAGE_OPTIONS.find((s) => s.value === detail.stage)!;
 
@@ -658,6 +688,16 @@ export default function CandidateProfilePage() {
                     Move to Interview →
                   </button>
                 )}
+                {nextStep.action === "Run Analysis" && (
+                  <button
+                    type="button"
+                    disabled={analyzing}
+                    onClick={() => void handleRunAnalysis()}
+                    className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                  >
+                    {analyzing ? "Running…" : "Run Analysis"}
+                  </button>
+                )}
                 {nextStep.action === "Go to Jobs →" && (
                   <Link
                     href="/recruiter/jobs"
@@ -687,6 +727,27 @@ export default function CandidateProfilePage() {
               </>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ── Analyze error ──────────────────────────────────────── */}
+      {analyzeError && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700">
+          {analyzeError}
+        </div>
+      )}
+
+      {/* ── Re-run analysis button (when matches already exist) ─ */}
+      {detail.matches.length > 0 && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            disabled={analyzing}
+            onClick={() => void handleRunAnalysis()}
+            className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-500 transition hover:border-slate-300 hover:text-slate-700 disabled:opacity-40"
+          >
+            {analyzing ? "Running analysis…" : "⟳ Re-run Analysis"}
+          </button>
         </div>
       )}
 
