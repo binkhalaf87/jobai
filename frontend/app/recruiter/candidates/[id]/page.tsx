@@ -28,11 +28,13 @@ type TopRecommendation = {
 type CandidateDetail = {
   id: string;
   title: string;
+  parsed_name: string | null;
   email: string | null;
   created_at: string;
   stage: Stage;
   status: string;
   skills: string[];
+  experience_summary: string[];
   file_type: string | null;
   file_available: boolean;
   source_filename: string | null;
@@ -47,7 +49,7 @@ type Tab = "analysis" | "matches" | "preview" | "notes";
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const STAGE_OPTIONS: { value: Stage; label: string; cls: string }[] = [
-  { value: "new", label: "New", cls: "text-sky-700 bg-sky-50 border-sky-200" },
+  { value: "new", label: "Applied", cls: "text-sky-700 bg-sky-50 border-sky-200" },
   { value: "shortlisted", label: "Shortlisted ★", cls: "text-emerald-700 bg-emerald-50 border-emerald-200" },
   { value: "interview", label: "Interview →", cls: "text-violet-700 bg-violet-50 border-violet-200" },
   { value: "rejected", label: "Rejected ✕", cls: "text-rose-600 bg-rose-50 border-rose-200" },
@@ -789,6 +791,7 @@ export default function CandidateProfilePage() {
   const nextStep = computeNextStep(detail, hasJobs);
   const topScore = detail.matches[0]?.overall_score ?? null;
   const stageOption = STAGE_OPTIONS.find((s) => s.value === detail.stage)!;
+  const displayName = detail.parsed_name ?? detail.title;
 
   const TABS: { key: Tab; label: string }[] = [
     { key: "analysis", label: "AI Analysis" },
@@ -817,10 +820,13 @@ export default function CandidateProfilePage() {
           {/* Avatar + info */}
           <div className="flex items-start gap-4 flex-1 min-w-0">
             <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-slate-800 text-sm font-bold text-white">
-              {initials(detail.title)}
+              {initials(displayName)}
             </div>
             <div className="min-w-0">
-              <h1 className="text-lg font-semibold tracking-tight text-slate-950">{detail.title}</h1>
+              <h1 className="text-lg font-semibold tracking-tight text-slate-950">{displayName}</h1>
+              {detail.parsed_name && detail.parsed_name !== detail.title && (
+                <p className="text-xs text-slate-400">Resume file: {detail.title}</p>
+              )}
               {detail.email && (
                 <p className="text-xs text-slate-400">{detail.email}</p>
               )}

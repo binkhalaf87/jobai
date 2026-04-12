@@ -13,6 +13,7 @@ type Stage = "new" | "shortlisted" | "interview" | "rejected";
 type CandidateListItem = {
   id: string;
   title: string;
+  parsed_name: string | null;
   email: string | null;
   created_at: string;
   stage: Stage;
@@ -41,7 +42,7 @@ const ACCEPTED_MIME = new Set([
 ]);
 
 const STAGE_LABELS: Record<Stage, string> = {
-  new: "New",
+  new: "Applied",
   shortlisted: "Shortlisted",
   interview: "Interview",
   rejected: "Rejected",
@@ -136,7 +137,7 @@ function StatPills({
 
   const pills: { key: Stage | "all" | "no_analysis"; label: string; count: number; cls: string }[] = [
     { key: "all", label: "All", count: candidates.length, cls: "bg-slate-100 text-slate-700 hover:bg-slate-200" },
-    { key: "new", label: "New", count: counts.new, cls: "bg-sky-50 text-sky-700 hover:bg-sky-100" },
+    { key: "new", label: "Applied", count: counts.new, cls: "bg-sky-50 text-sky-700 hover:bg-sky-100" },
     { key: "shortlisted", label: "Shortlisted", count: counts.shortlisted, cls: "bg-emerald-50 text-emerald-700 hover:bg-emerald-100" },
     { key: "interview", label: "Interview", count: counts.interview, cls: "bg-violet-50 text-violet-700 hover:bg-violet-100" },
     { key: "no_analysis", label: "Awaiting Analysis", count: counts.no_analysis, cls: "bg-amber-50 text-amber-700 hover:bg-amber-100" },
@@ -268,6 +269,7 @@ function CandidateCard({
 
   const freshness = analysisFreshness(candidate.analysis_completed_at);
   const hasAnalysis = !!candidate.analysis_completed_at;
+  const displayName = candidate.parsed_name ?? candidate.title;
 
   async function handleStageChange(stage: Stage) {
     if (stagePending) return;
@@ -306,12 +308,15 @@ function CandidateCard({
               candidate.stage === "interview" ? "bg-violet-500" :
               candidate.stage === "rejected" ? "bg-slate-300" : "bg-slate-700"
             }`}>
-              {initials(candidate.title)}
+              {initials(displayName)}
             </div>
 
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-sm font-semibold text-slate-950">{candidate.title}</p>
+                <p className="text-sm font-semibold text-slate-950">{displayName}</p>
+                {candidate.parsed_name && candidate.parsed_name !== candidate.title && (
+                  <p className="text-[11px] text-slate-400">Resume file: {candidate.title}</p>
+                )}
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${STAGE_COLORS[candidate.stage]}`}>
                   {STAGE_LABELS[candidate.stage]}
                 </span>
@@ -595,8 +600,8 @@ export default function RecruiterCandidatesPage() {
       {/* ── Header ──────────────────────────────────────────────── */}
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Recruiter</p>
-          <h1 className="mt-0.5 text-2xl font-semibold tracking-tight text-slate-950">Candidates</h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Recruiter ATS</p>
+          <h1 className="mt-0.5 text-2xl font-semibold tracking-tight text-slate-950">Candidate pipeline</h1>
         </div>
       </div>
 

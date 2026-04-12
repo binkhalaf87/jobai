@@ -5,8 +5,7 @@ import { useEffect, useState } from "react";
 
 import { Panel } from "@/components/panel";
 import { loadDashboardOverview, type DashboardActivityItem, type DashboardOverviewData } from "@/lib/dashboard";
-
-// ─── Journey Progress ────────────────────────────────────────────────────────
+import { atsLabel, interviewReadinessLabel } from "@/lib/product-insights";
 
 type JourneyStep = {
   num: number;
@@ -15,88 +14,6 @@ type JourneyStep = {
   done: boolean;
   active: boolean;
 };
-
-function JourneyProgress({ overview }: { overview: DashboardOverviewData }) {
-  const hasResume = (overview.resumes.data?.length ?? 0) > 0;
-  const hasReport = (overview.analysisReports.data?.filter((r) => r.status === "completed").length ?? 0) > 0;
-  const hasSavedJob = (overview.savedJobs.data?.length ?? 0) > 0;
-  const hasInterview = (overview.interviews.data?.filter((i) => i.status === "completed").length ?? 0) > 0;
-
-  // First incomplete step determines the active one
-  const steps: JourneyStep[] = [
-    { num: 1, label: "Upload CV",       href: "/dashboard/resumes",     done: hasResume,    active: false },
-    { num: 2, label: "Analyze CV",      href: "/dashboard/analysis",    done: hasReport,    active: false },
-    { num: 3, label: "Improve CV",      href: "/dashboard/enhancement", done: false,        active: false },
-    { num: 4, label: "Match Jobs",      href: "/dashboard/job-search",  done: hasSavedJob,  active: false },
-    { num: 5, label: "Apply",           href: "/dashboard/smart-send",  done: false,        active: false },
-    { num: 6, label: "Practice Interview", href: "/dashboard/ai-interview", done: hasInterview, active: false },
-  ];
-
-  const firstIncomplete = steps.findIndex((s) => !s.done);
-  if (firstIncomplete !== -1) steps[firstIncomplete]!.active = true;
-
-  const doneCount = steps.filter((s) => s.done).length;
-
-  return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-5">
-      <div className="flex items-center justify-between gap-3 mb-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Your Journey</p>
-          <p className="mt-0.5 text-sm font-semibold text-slate-900">
-            {doneCount === 0
-              ? "Start your job search journey"
-              : doneCount === steps.length
-              ? "Journey complete — keep it up!"
-              : `${doneCount} of ${steps.length} steps completed`}
-          </p>
-        </div>
-        <div className="shrink-0">
-          <div className="flex items-center gap-1">
-            {steps.map((s) => (
-              <div
-                key={s.num}
-                className={`h-1.5 w-7 rounded-full transition-all ${
-                  s.done ? "bg-emerald-500" : s.active ? "bg-violet-400" : "bg-slate-200"
-                }`}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-        {steps.map((s) => (
-          <Link
-            key={s.num}
-            href={s.href}
-            className={`flex flex-col items-center gap-1.5 rounded-2xl border px-2 py-3 text-center transition ${
-              s.done
-                ? "border-emerald-200 bg-emerald-50 hover:bg-emerald-100"
-                : s.active
-                ? "border-violet-300 bg-violet-50 hover:bg-violet-100"
-                : "border-slate-200 bg-slate-50 hover:bg-white"
-            }`}
-          >
-            <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${
-              s.done
-                ? "bg-emerald-500 text-white"
-                : s.active
-                ? "bg-violet-500 text-white"
-                : "bg-slate-200 text-slate-500"
-            }`}>
-              {s.done ? "✓" : s.num}
-            </span>
-            <p className={`text-[10px] font-semibold leading-tight ${
-              s.done ? "text-emerald-700" : s.active ? "text-violet-700" : "text-slate-500"
-            }`}>
-              {s.label}
-            </p>
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 type MetricCardProps = {
   label: string;
@@ -116,7 +33,16 @@ const ACTIVITY_STYLES: Record<DashboardActivityItem["kind"], string> = {
   "analysis-report": "bg-emerald-50 text-emerald-700 border-emerald-200",
   "enhancement-report": "bg-violet-50 text-violet-700 border-violet-200",
   interview: "bg-rose-50 text-rose-700 border-rose-200",
+  campaign: "bg-cyan-50 text-cyan-700 border-cyan-200",
 };
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
 
 function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString(undefined, {
@@ -129,23 +55,131 @@ function formatDateTime(iso: string): string {
 }
 
 function formatCount(count: number | null, suffix = ""): string {
-  if (count === null) {
-    return "—";
-  }
-
+  if (count === null) return "-";
   return `${count.toLocaleString()}${suffix}`;
 }
 
 function formatPercentage(value: number | null): string {
-  if (value === null) {
-    return "—";
-  }
-
+  if (value === null) return "-";
   return `${Math.round(value)}%`;
 }
 
 function pluralize(count: number, singular: string, plural = `${singular}s`): string {
   return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function JourneyProgress({ overview }: { overview: DashboardOverviewData }) {
+  const steps: JourneyStep[] = [
+    {
+      num: 1,
+      label: "Upload CV",
+      href: "/dashboard/resumes",
+      done: (overview.resumes.data?.length ?? 0) > 0,
+      active: false,
+    },
+    {
+      num: 2,
+      label: "Analyze CV",
+      href: "/dashboard/analysis",
+      done: (overview.analysisReports.data?.filter((report) => report.status === "completed").length ?? 0) > 0,
+      active: false,
+    },
+    {
+      num: 3,
+      label: "Improve CV",
+      href: "/dashboard/enhancement",
+      done: (overview.enhancementReports.data?.filter((report) => report.status === "completed").length ?? 0) > 0,
+      active: false,
+    },
+    {
+      num: 4,
+      label: "Match Jobs",
+      href: "/dashboard/job-search",
+      done: (overview.metrics.jobsMatched ?? 0) > 0,
+      active: false,
+    },
+    {
+      num: 5,
+      label: "Send Campaign",
+      href: "/dashboard/smart-send",
+      done: (overview.metrics.applicationsSent ?? 0) > 0,
+      active: false,
+    },
+    {
+      num: 6,
+      label: "Practice Interview",
+      href: "/dashboard/ai-interview",
+      done: (overview.interviews.data?.filter((item) => item.status === "completed").length ?? 0) > 0,
+      active: false,
+    },
+  ];
+
+  const firstIncompleteIndex = steps.findIndex((step) => !step.done);
+  if (firstIncompleteIndex >= 0) {
+    steps[firstIncompleteIndex].active = true;
+  }
+
+  const completedCount = steps.filter((step) => step.done).length;
+
+  return (
+    <div className="rounded-3xl border border-slate-200 bg-white p-5">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Journey</p>
+          <p className="mt-0.5 text-sm font-semibold text-slate-900">
+            {completedCount === steps.length
+              ? "All major steps have activity."
+              : `${completedCount} of ${steps.length} steps completed`}
+          </p>
+        </div>
+        <div className="flex items-center gap-1">
+          {steps.map((step) => (
+            <div
+              key={step.num}
+              className={`h-1.5 w-7 rounded-full ${
+                step.done ? "bg-emerald-500" : step.active ? "bg-slate-900" : "bg-slate-200"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+        {steps.map((step) => (
+          <Link
+            key={step.num}
+            href={step.href}
+            className={`flex flex-col items-center gap-1.5 rounded-2xl border px-2 py-3 text-center transition ${
+              step.done
+                ? "border-emerald-200 bg-emerald-50 hover:bg-emerald-100"
+                : step.active
+                  ? "border-slate-300 bg-slate-100 hover:bg-white"
+                  : "border-slate-200 bg-slate-50 hover:bg-white"
+            }`}
+          >
+            <span
+              className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${
+                step.done
+                  ? "bg-emerald-500 text-white"
+                  : step.active
+                    ? "bg-slate-900 text-white"
+                    : "bg-slate-200 text-slate-500"
+              }`}
+            >
+              {step.done ? "OK" : step.num}
+            </span>
+            <p
+              className={`text-[10px] font-semibold leading-tight ${
+                step.done ? "text-emerald-700" : step.active ? "text-slate-900" : "text-slate-500"
+              }`}
+            >
+              {step.label}
+            </p>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function DashboardMetricCard({ label, value, note }: MetricCardProps) {
@@ -211,46 +245,36 @@ function buildQuickActions(overview: DashboardOverviewData): QuickAction[] {
 
   return [
     {
-      label: "New Analysis",
+      label: "Analyze CV",
       href: "/dashboard/analysis",
       description:
         resumes == null
           ? "Resume data is unavailable right now."
           : parsedResumes > 0
             ? `${pluralize(parsedResumes, "resume")} ready for analysis.`
-            : "Upload and parse a resume to start your first report.",
+            : "Upload and parse a resume to unlock your first ATS report.",
     },
     {
-      label: "My Resumes",
-      href: "/dashboard/resumes",
-      description:
-        resumes == null
-          ? "Resume library is temporarily unavailable."
-          : resumes.length > 0
-            ? `${pluralize(resumes.length, "resume")} stored in your workspace.`
-            : "No resumes uploaded yet.",
-    },
-    {
-      label: "Job Search",
+      label: "Match Jobs",
       href: "/dashboard/job-search",
       description:
         savedJobs == null
           ? "Saved job data is unavailable right now."
           : savedJobs.length > 0
-            ? `${pluralize(savedJobs.length, "saved job")} ready to revisit.`
-            : "Search and save roles you want to track.",
+            ? `${pluralize(savedJobs.length, "saved job")} ready to revisit and prioritize.`
+            : "Search live roles and score them against your resume.",
     },
     {
-      label: "AI Interview",
+      label: "Practice Interview",
       href: "/dashboard/ai-interview",
       description:
         interviews == null
           ? "Interview history is unavailable right now."
           : completedInterviews > 0
-            ? `${pluralize(completedInterviews, "completed interview")} on record.`
+            ? `${pluralize(completedInterviews, "completed interview")} already contributing to readiness.`
             : completedAnalysisReports > 0
-              ? "Use your current reports to prepare for interviews."
-              : "Practice your first interview when you are ready.",
+              ? "Use your latest analysis context to rehearse before you apply."
+              : "Build analysis first, then practice with stronger role context.",
     },
   ];
 }
@@ -290,20 +314,19 @@ export function DashboardOverview() {
     overview.analysisReports,
     overview.enhancementReports,
     overview.interviews,
+    overview.campaigns,
   ].filter((collection) => collection.error);
 
-  const allCollectionsFailed = failedCollections.length === 5;
-
-  if (allCollectionsFailed) {
+  if (failedCollections.length === 6) {
     return (
       <Panel className="p-8 md:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Dashboard Overview</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Career Command Center</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
           Live workspace data could not be loaded
         </h1>
         <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
-          The dashboard is configured to show only real data. Every data source failed to respond, so no placeholder
-          values are being shown.
+          The dashboard only uses real account data. Every connected source failed to respond, so nothing is being
+          approximated.
         </p>
         <button
           type="button"
@@ -316,39 +339,22 @@ export function DashboardOverview() {
     );
   }
 
-  const resumeCount = overview.resumes.data?.length ?? null;
-  const parsedResumeCount = overview.resumes.data?.filter((resume) => resume.processing_status === "parsed").length ?? null;
-  const savedJobsCount = overview.savedJobs.data?.length ?? null;
-  const completedReportCount =
-    overview.analysisReports.data == null || overview.enhancementReports.data == null
-      ? null
-      : [...overview.analysisReports.data, ...overview.enhancementReports.data].filter(
-          (report) => report.status === "completed",
-        ).length;
-  const totalReportCount =
-    overview.analysisReports.data == null || overview.enhancementReports.data == null
-      ? null
-      : overview.analysisReports.data.length + overview.enhancementReports.data.length;
-  const completedInterviews = overview.interviews.data?.filter((interview) => interview.status === "completed") ?? null;
-  const averageInterviewScore =
-    completedInterviews && completedInterviews.length > 0
-      ? completedInterviews.reduce((total, interview) => total + (interview.overall_score ?? 0), 0) /
-        completedInterviews.length
-      : null;
   const latestActivity = overview.recentActivity[0] ?? null;
+  const parsedResumeCount = overview.resumes.data?.filter((resume) => resume.processing_status === "parsed").length ?? null;
   const quickActions = buildQuickActions(overview);
+  const latestAnalysisDate = overview.latestAnalysisReport?.completed_at ?? overview.latestAnalysisReport?.created_at ?? null;
 
   return (
     <div className="space-y-6">
       <Panel className="p-8 md:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Dashboard Overview</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Career Command Center</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
-          Your workspace snapshot is live
+          Move from CV quality to interview confidence
         </h1>
         <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
-          {resumeCount != null && savedJobsCount != null && totalReportCount != null && overview.interviews.data != null
-            ? `You currently have ${pluralize(resumeCount, "resume")}, ${pluralize(savedJobsCount, "saved job")}, ${pluralize(totalReportCount, "AI report")}, and ${pluralize(overview.interviews.data.length, "interview session")} in your account.`
-            : "This overview is showing live workspace data only. Any section that could not be loaded is marked as unavailable instead of showing placeholder numbers."}
+          {overview.metrics.activeResumeTitle
+            ? `Your active resume is ${overview.metrics.activeResumeTitle}. Work through the journey below to improve fit, send outreach, and practice before recruiter conversations begin.`
+            : "This overview only uses live workspace data. Missing sources are shown as unavailable instead of placeholders."}
         </p>
         {latestActivity && (
           <p className="mt-3 text-sm leading-7 text-slate-500">
@@ -369,47 +375,45 @@ export function DashboardOverview() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <DashboardMetricCard
-          label="Resumes Uploaded"
-          value={formatCount(resumeCount)}
+          label="ATS Score"
+          value={formatPercentage(overview.metrics.atsScore)}
           note={
-            overview.resumes.error
-              ? "Resume library could not be loaded."
-              : parsedResumeCount === 0
-                ? "No parsed resumes are ready yet."
-                : `${formatCount(parsedResumeCount)} parsed and ready to use.`
+            latestAnalysisDate
+              ? `${atsLabel(overview.metrics.atsScore)} based on your latest completed analysis from ${formatDate(latestAnalysisDate)}.`
+              : "Run an analysis to calculate your latest ATS score."
           }
         />
         <DashboardMetricCard
-          label="Saved Jobs"
-          value={formatCount(savedJobsCount)}
+          label="Jobs Matched"
+          value={formatCount(overview.metrics.jobsMatched)}
           note={
             overview.savedJobs.error
-              ? "Saved job data could not be loaded."
-              : savedJobsCount === 0
-                ? "No jobs saved yet."
-                : "Saved roles are ready in Job Search."
+              ? "Matched job data could not be loaded."
+              : (overview.metrics.jobsMatched ?? 0) === 0
+                ? "Search and save roles to build your scored match list."
+                : "Counted from saved opportunities scored against your resume."
           }
         />
         <DashboardMetricCard
-          label="Completed Reports"
-          value={formatCount(completedReportCount)}
+          label="Applications Sent"
+          value={formatCount(overview.metrics.applicationsSent)}
           note={
-            overview.analysisReports.error || overview.enhancementReports.error
-              ? "Report history is partially unavailable."
-              : totalReportCount === 0
-                ? "No AI reports have been generated yet."
-                : `${formatCount(totalReportCount)} total reports across analysis and enhancement.`
+            overview.campaigns.error
+              ? "Campaign history could not be loaded."
+              : (overview.metrics.applicationsSent ?? 0) === 0
+                ? "Launch SmartSend when your CV is ready to reach companies in batches."
+                : "Total emails sent across completed outreach campaigns."
           }
         />
         <DashboardMetricCard
-          label="Interview Average"
-          value={formatPercentage(averageInterviewScore)}
+          label="Interview Readiness"
+          value={formatPercentage(overview.metrics.interviewReadiness)}
           note={
             overview.interviews.error
               ? "Interview history could not be loaded."
-              : completedInterviews == null || completedInterviews.length === 0
-                ? "No completed interview sessions yet."
-                : `${pluralize(completedInterviews.length, "completed session")} contributing to this average.`
+              : overview.metrics.interviewReadiness === null
+                ? "Complete at least one mock interview to unlock readiness scoring."
+                : `${interviewReadinessLabel(overview.metrics.interviewReadiness)} based on completed interview sessions.`
           }
         />
       </div>
@@ -436,8 +440,8 @@ export function DashboardOverview() {
             <div className="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-6">
               <p className="text-base font-semibold text-slate-900">No workspace activity yet</p>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-                When you upload resumes, save jobs, generate reports, or finish interviews, the latest activity will
-                appear here.
+                Upload resumes, run analyses, save jobs, send campaigns, or complete interviews to start building your
+                progress trail.
               </p>
               <Link
                 href="/dashboard/resumes"
@@ -478,14 +482,40 @@ export function DashboardOverview() {
         </Panel>
 
         <Panel className="p-6 md:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Quick Actions</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Continue from real progress</h2>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Recommended Next Step</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{overview.nextStep.label}</h2>
+          <p className="mt-3 text-sm leading-7 text-slate-600">{overview.nextStep.description}</p>
+          <Link
+            href={overview.nextStep.href}
+            className="mt-5 inline-flex rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+          >
+            Continue journey
+          </Link>
+
+          <div className="mt-6 rounded-[2rem] border border-slate-200 bg-slate-50 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Workspace Signals</p>
+            <div className="mt-4 space-y-3 text-sm text-slate-600">
+              <div className="flex items-center justify-between gap-3">
+                <span>Active resume</span>
+                <span className="font-semibold text-slate-900">{overview.metrics.activeResumeTitle ?? "Not set"}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span>Journey completed</span>
+                <span className="font-semibold text-slate-900">{overview.metrics.completedJourneySteps}/6</span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span>Parsed resumes</span>
+                <span className="font-semibold text-slate-900">{formatCount(parsedResumeCount)}</span>
+              </div>
+            </div>
+          </div>
+
           <div className="mt-6 space-y-3">
             {quickActions.map((action) => (
               <Link
                 key={action.href}
                 href={action.href}
-                className="block rounded-3xl border border-slate-200 bg-slate-50 p-5 transition hover:border-slate-300 hover:bg-white"
+                className="block rounded-3xl border border-slate-200 bg-white p-5 transition hover:border-slate-300 hover:bg-slate-50"
               >
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="text-base font-semibold text-slate-950">{action.label}</h3>

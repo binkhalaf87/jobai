@@ -31,6 +31,7 @@ class CandidateUploadResponse(BaseModel):
 class CandidateListItem(BaseModel):
     id: str
     title: str
+    parsed_name: str | None
     email: str | None
     created_at: datetime
     stage: CandidateStage
@@ -59,11 +60,13 @@ class TopRecommendation(BaseModel):
 class CandidateDetail(BaseModel):
     id: str
     title: str
+    parsed_name: str | None
     email: str | None
     created_at: datetime
     stage: CandidateStage
     status: ResumeProcessingStatus
     skills: list[str]
+    experience_summary: list[str]
     file_type: str | None
     file_available: bool
     source_filename: str | None
@@ -188,6 +191,8 @@ def _email_from_structured(structured: dict | None) -> str | None:
 
 
 def _build_list_item(db: Session, resume: Resume) -> CandidateListItem:
+    structured = resume.structured_data if isinstance(resume.structured_data, dict) else {}
+
     best_analysis = db.scalar(
         select(Analysis)
         .where(
@@ -217,6 +222,7 @@ def _build_list_item(db: Session, resume: Resume) -> CandidateListItem:
     return CandidateListItem(
         id=resume.id,
         title=resume.title,
+        parsed_name=structured.get("name"),
         email=_email_from_structured(resume.structured_data),
         created_at=resume.created_at,
         stage=resume.recruiter_stage,
@@ -322,6 +328,7 @@ def get_candidate(
 
     structured = resume.structured_data or {}
     skills: list[str] = structured.get("skills", []) if isinstance(structured, dict) else []
+    experience_summary: list[str] = structured.get("experience", []) if isinstance(structured, dict) else []
 
     analyses = list(
         db.scalars(
@@ -375,11 +382,13 @@ def get_candidate(
     return CandidateDetail(
         id=resume.id,
         title=resume.title,
+        parsed_name=structured.get("name") if isinstance(structured, dict) else None,
         email=_email_from_structured(resume.structured_data),
         created_at=resume.created_at,
         stage=resume.recruiter_stage,
         status=resume.processing_status,
         skills=skills,
+        experience_summary=experience_summary,
         file_type=resume.file_type,
         file_available=file_available,
         source_filename=resume.source_filename,

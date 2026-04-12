@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.api.deps.auth import get_current_recruiter
 from app.api.deps.db import get_db
 from app.models.analysis import Analysis
-from app.models.enums import AnalysisStatus
+from app.models.enums import AnalysisStatus, CandidateStage, ResumeProcessingStatus
 from app.models.job_description import JobDescription
 from app.models.resume import Resume
 from app.models.user import User
@@ -41,6 +41,8 @@ class DashboardStats(BaseModel):
     total_candidates: int
     total_jobs: int
     avg_match_score: float
+    pipeline_counts: dict[str, int]
+    awaiting_analysis: int
     top_matches: list[TopMatch]
     recent_candidates: list[RecentCandidate]
 
@@ -78,6 +80,41 @@ def get_dashboard_stats(
             Analysis.overall_score.is_not(None),
         )
     ) or 0.0
+
+    pipeline_counts = {
+        "applied": db.scalar(
+            select(func.count(Resume.id)).where(
+                Resume.user_id == recruiter_id,
+                Resume.recruiter_stage == CandidateStage.NEW,
+            )
+        ) or 0,
+        "shortlisted": db.scalar(
+            select(func.count(Resume.id)).where(
+                Resume.user_id == recruiter_id,
+                Resume.recruiter_stage == CandidateStage.SHORTLISTED,
+            )
+        ) or 0,
+        "interview": db.scalar(
+            select(func.count(Resume.id)).where(
+                Resume.user_id == recruiter_id,
+                Resume.recruiter_stage == CandidateStage.INTERVIEW,
+            )
+        ) or 0,
+        "rejected": db.scalar(
+            select(func.count(Resume.id)).where(
+                Resume.user_id == recruiter_id,
+                Resume.recruiter_stage == CandidateStage.REJECTED,
+            )
+        ) or 0,
+    }
+
+    awaiting_analysis: int = db.scalar(
+        select(func.count(Resume.id)).where(
+            Resume.user_id == recruiter_id,
+            Resume.processing_status == ResumeProcessingStatus.PARSED,
+            ~Resume.analyses.any(),
+        )
+    ) or 0
 
     # --- top 5 resume-job pairs by score ---
 
@@ -145,6 +182,8 @@ def get_dashboard_stats(
         total_candidates=total_candidates,
         total_jobs=total_jobs,
         avg_match_score=round(float(avg_match_score), 2),
+        pipeline_counts=pipeline_counts,
+        awaiting_analysis=awaiting_analysis,
         top_matches=top_matches,
         recent_candidates=recent_candidates,
     )

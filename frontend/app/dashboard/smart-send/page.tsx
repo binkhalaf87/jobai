@@ -218,6 +218,27 @@ function ComposePanel({
     );
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const jobTitle = sessionStorage.getItem("jobai_smartsend_job_title");
+    const companyName = sessionStorage.getItem("jobai_smartsend_company_name");
+    const jobDescription = sessionStorage.getItem("jobai_smartsend_job_description");
+
+    if (jobTitle || companyName || jobDescription) {
+      setForm((prev) => ({
+        ...prev,
+        job_title: jobTitle ?? prev.job_title,
+        company_name: companyName ?? prev.company_name,
+        job_description: jobDescription ?? prev.job_description,
+      }));
+    }
+
+    sessionStorage.removeItem("jobai_smartsend_job_title");
+    sessionStorage.removeItem("jobai_smartsend_company_name");
+    sessionStorage.removeItem("jobai_smartsend_job_description");
+  }, []);
+
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
     setError("");

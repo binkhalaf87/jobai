@@ -40,3 +40,10 @@ export function prefillAnalysisWithJob(jobTitle: string, jobDescription: string)
   sessionStorage.setItem("jobai_prefill_jd", jobDescription);
   sessionStorage.setItem("jobai_prefill_jd_title", jobTitle);
 }
+
+export function prefillSmartSendWithJob(job: Pick<JobResult, "job_title" | "company_name" | "job_description">): void {
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem("jobai_smartsend_job_title", job.job_title);
+  sessionStorage.setItem("jobai_smartsend_company_name", job.company_name);
+  sessionStorage.setItem("jobai_smartsend_job_description", job.job_description ?? "");
+}

@@ -1,11 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { api } from "@/lib/api";
 import { Panel } from "@/components/panel";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { api } from "@/lib/api";
 
 type TopMatch = {
   candidate_name: string;
@@ -27,18 +26,13 @@ type DashboardStats = {
   total_candidates: number;
   total_jobs: number;
   avg_match_score: number;
+  pipeline_counts: Record<"applied" | "shortlisted" | "interview" | "rejected", number>;
+  awaiting_analysis: number;
   top_matches: TopMatch[];
   recent_candidates: RecentCandidate[];
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function fmt(value: number | null, suffix = ""): string {
-  if (value === null) return "—";
-  return `${value.toLocaleString("en-US")}${suffix}`;
-}
-
-function fmtDate(iso: string): string {
+function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
     day: "numeric",
     month: "short",
@@ -46,21 +40,27 @@ function fmtDate(iso: string): string {
   });
 }
 
-function scoreColor(score: number): string {
-  if (score >= 70) return "bg-emerald-500";
-  if (score >= 40) return "bg-amber-400";
-  return "bg-rose-400";
-}
-
-function scoreTextColor(score: number): string {
+function scoreClass(score: number): string {
   if (score >= 70) return "text-emerald-700";
   if (score >= 40) return "text-amber-700";
   return "text-rose-600";
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+function ScoreBar({ score }: { score: number }) {
+  const clamped = Math.max(0, Math.min(100, score));
+  const fill = clamped >= 70 ? "bg-emerald-500" : clamped >= 40 ? "bg-amber-400" : "bg-rose-400";
 
-function StatCard({
+  return (
+    <div className="flex items-center gap-3">
+      <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
+        <div className={`h-full rounded-full ${fill}`} style={{ width: `${clamped}%` }} />
+      </div>
+      <span className={`w-12 text-right text-xs font-semibold ${scoreClass(clamped)}`}>{clamped.toFixed(1)}%</span>
+    </div>
+  );
+}
+
+function MetricCard({
   label,
   value,
   note,
@@ -71,42 +71,19 @@ function StatCard({
 }) {
   return (
     <Panel className="p-6">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-        {label}
-      </p>
-      <p className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
-        {value}
-      </p>
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
+      <p className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">{value}</p>
       <p className="mt-3 text-sm leading-6 text-slate-600">{note}</p>
     </Panel>
   );
 }
 
-function ScoreBar({ score }: { score: number }) {
-  const clamped = Math.min(100, Math.max(0, score));
-  return (
-    <div className="flex items-center gap-3">
-      <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
-        <div
-          className={`h-full rounded-full transition-all ${scoreColor(clamped)}`}
-          style={{ width: `${clamped}%` }}
-        />
-      </div>
-      <span
-        className={`w-12 text-left text-xs font-semibold tabular-nums ${scoreTextColor(clamped)}`}
-      >
-        {clamped.toFixed(1)}%
-      </span>
-    </div>
-  );
-}
-
-function LoadingSkeleton() {
+function LoadingState() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 4 }, (_, i) => (
-          <Panel key={i} className="p-6">
+        {Array.from({ length: 4 }, (_, index) => (
+          <Panel key={index} className="p-6">
             <div className="animate-pulse space-y-4">
               <div className="h-3 w-24 rounded bg-slate-200" />
               <div className="h-8 w-16 rounded bg-slate-200" />
@@ -115,15 +92,13 @@ function LoadingSkeleton() {
           </Panel>
         ))}
       </div>
-      <div className="grid gap-6 xl:grid-cols-2">
-        {Array.from({ length: 2 }, (_, i) => (
-          <Panel key={i} className="p-6 md:p-8">
+      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        {Array.from({ length: 2 }, (_, index) => (
+          <Panel key={index} className="p-6 md:p-8">
             <div className="animate-pulse space-y-4">
-              <div className="h-3 w-28 rounded bg-slate-200" />
-              <div className="h-6 w-48 rounded bg-slate-200" />
-              {Array.from({ length: 3 }, (_, j) => (
-                <div key={j} className="h-14 rounded-2xl bg-slate-100" />
-              ))}
+              <div className="h-3 w-24 rounded bg-slate-200" />
+              <div className="h-6 w-52 rounded bg-slate-200" />
+              <div className="h-32 rounded bg-slate-100" />
             </div>
           </Panel>
         ))}
@@ -131,8 +106,6 @@ function LoadingSkeleton() {
     </div>
   );
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function RecruiterDashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -144,10 +117,7 @@ export default function RecruiterDashboardPage() {
 
     async function load() {
       try {
-        const data = await api.get<DashboardStats>(
-          "/recruiter/dashboard/stats",
-          { auth: true },
-        );
+        const data = await api.get<DashboardStats>("/recruiter/dashboard/stats", { auth: true });
         if (!cancelled) setStats(data);
       } catch {
         if (!cancelled) setError("Failed to load dashboard data.");
@@ -162,136 +132,105 @@ export default function RecruiterDashboardPage() {
     };
   }, []);
 
-  if (loading) return <LoadingSkeleton />;
+  if (loading) return <LoadingState />;
 
   if (error || !stats) {
     return (
       <Panel className="p-8 md:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">
-          Dashboard
-        </p>
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
-          {error ?? "No data available"}
-        </h1>
-        <button
-          type="button"
-          onClick={() => {
-            setError(null);
-            setLoading(true);
-            setStats(null);
-          }}
-          className="mt-6 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
-        >
-          Retry
-        </button>
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Recruiter Dashboard</p>
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{error ?? "No data available"}</h1>
       </Panel>
     );
   }
 
-  const topScore = stats.top_matches[0]?.score ?? null;
-
   return (
     <div className="space-y-6">
-      {/* ─── Hero banner ───────────────────────────────────────── */}
       <Panel className="p-8 md:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">
-          Recruiter Dashboard
-        </p>
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Recruiter Dashboard</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
-          Welcome to your hiring workspace
+          Operate your hiring pipeline from one workspace
         </h1>
-        <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
-          You currently have{" "}
-          <span className="font-semibold text-slate-900">
-            {stats.total_candidates} candidate{stats.total_candidates !== 1 ? "s" : ""}
-          </span>{" "}
-          and{" "}
-          <span className="font-semibold text-slate-900">
-            {stats.total_jobs} job{stats.total_jobs !== 1 ? "s" : ""}
-          </span>{" "}
-          in your account.
+        <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
+          Track applicants, identify strong fits, and move people through the pipeline without leaving the ATS flow.
         </p>
       </Panel>
 
-      {/* ─── Stat cards ────────────────────────────────────────── */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label="Total Candidates"
-          value={fmt(stats.total_candidates)}
-          note={
-            stats.total_candidates === 0
-              ? "No resumes uploaded yet."
-              : "Total resumes uploaded to your workspace."
-          }
+        <MetricCard
+          label="Candidates"
+          value={stats.total_candidates.toString()}
+          note={stats.total_candidates === 0 ? "Upload resumes to start building your candidate pool." : "Total resumes available to rank and review."}
         />
-        <StatCard
-          label="Total Jobs"
-          value={fmt(stats.total_jobs)}
-          note={
-            stats.total_jobs === 0
-              ? "No jobs posted yet."
-              : "Active job postings in your account."
-          }
+        <MetricCard
+          label="Open Jobs"
+          value={stats.total_jobs.toString()}
+          note={stats.total_jobs === 0 ? "Add at least one job to unlock candidate ranking." : "Jobs currently feeding your ATS workflow."}
         />
-        <StatCard
-          label="Avg. Match Score"
-          value={
-            stats.avg_match_score > 0
-              ? `${stats.avg_match_score.toFixed(1)}%`
-              : "—"
-          }
-          note="Average across all completed match analyses."
+        <MetricCard
+          label="Avg Match Score"
+          value={stats.avg_match_score > 0 ? `${stats.avg_match_score.toFixed(1)}%` : "-"}
+          note="Average across completed candidate-job analyses."
         />
-        <StatCard
-          label="Top Match"
-          value={topScore !== null ? `${topScore.toFixed(1)}%` : "—"}
-          note={
-            stats.top_matches[0]
-              ? `${stats.top_matches[0].candidate_name} — ${stats.top_matches[0].job_title}`
-              : "No completed analyses yet."
-          }
+        <MetricCard
+          label="Awaiting Analysis"
+          value={stats.awaiting_analysis.toString()}
+          note="Parsed resumes that still need AI analysis against your jobs."
         />
       </div>
 
-      {/* ─── Two-column panels ─────────────────────────────────── */}
-      <div className="grid gap-6 xl:grid-cols-2">
-        {/* Top matches */}
+      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <Panel className="p-6 md:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
-            Top Matches
-          </p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-            Top 5 candidate–job pairs by score
-          </h2>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Pipeline</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Applied to hired-ready</h2>
+            </div>
+            <Link href="/recruiter/candidates" className="text-sm font-semibold text-slate-700 hover:text-slate-950">
+              Open candidates
+            </Link>
+          </div>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-700">Applied</p>
+              <p className="mt-3 text-2xl font-semibold text-slate-950">{stats.pipeline_counts.applied}</p>
+            </div>
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">Shortlisted</p>
+              <p className="mt-3 text-2xl font-semibold text-slate-950">{stats.pipeline_counts.shortlisted}</p>
+            </div>
+            <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-700">Interview</p>
+              <p className="mt-3 text-2xl font-semibold text-slate-950">{stats.pipeline_counts.interview}</p>
+            </div>
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-700">Rejected</p>
+              <p className="mt-3 text-2xl font-semibold text-slate-950">{stats.pipeline_counts.rejected}</p>
+            </div>
+          </div>
+        </Panel>
+
+        <Panel className="p-6 md:p-8">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Top Matches</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Candidates worth reviewing next</h2>
 
           {stats.top_matches.length === 0 ? (
             <div className="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-6">
-              <p className="text-base font-semibold text-slate-900">
-                No matches yet
-              </p>
+              <p className="text-base font-semibold text-slate-900">No ranked matches yet</p>
               <p className="mt-2 text-sm leading-7 text-slate-600">
-                Upload resumes and run analyses against jobs to see results here.
+                Upload candidates and run AI analysis against your jobs to see ranking here.
               </p>
             </div>
           ) : (
             <ul className="mt-5 space-y-3">
-              {stats.top_matches.map((match, i) => (
-                <li
-                  key={`${match.resume_id}-${match.job_id}`}
-                  className="rounded-3xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300 hover:bg-white"
-                >
+              {stats.top_matches.map((match) => (
+                <li key={`${match.resume_id}-${match.job_id}`} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-slate-950">
-                        {match.candidate_name}
-                      </p>
-                      <p className="mt-0.5 truncate text-xs text-slate-500">
-                        {match.job_title}
-                      </p>
+                      <p className="truncate text-sm font-semibold text-slate-950">{match.candidate_name}</p>
+                      <p className="mt-0.5 truncate text-xs text-slate-500">{match.job_title}</p>
                     </div>
-                    <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-slate-200 text-[11px] font-bold text-slate-600">
-                      {i + 1}
-                    </span>
+                    <span className={`text-sm font-bold ${scoreClass(match.score)}`}>{match.score.toFixed(1)}%</span>
                   </div>
                   <div className="mt-3">
                     <ScoreBar score={match.score} />
@@ -301,61 +240,47 @@ export default function RecruiterDashboardPage() {
             </ul>
           )}
         </Panel>
-
-        {/* Recent candidates */}
-        <Panel className="p-6 md:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
-            Recent Candidates
-          </p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-            Last 5 resumes uploaded
-          </h2>
-
-          {stats.recent_candidates.length === 0 ? (
-            <div className="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-6">
-              <p className="text-base font-semibold text-slate-900">
-                No candidates yet
-              </p>
-              <p className="mt-2 text-sm leading-7 text-slate-600">
-                Upload candidate resumes from the Candidates page.
-              </p>
-            </div>
-          ) : (
-            <ul className="mt-5 space-y-3">
-              {stats.recent_candidates.map((candidate) => (
-                <li
-                  key={candidate.resume_id}
-                  className="rounded-3xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300 hover:bg-white"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-slate-950">
-                        {candidate.title}
-                      </p>
-                      <p className="mt-0.5 truncate text-xs text-slate-500">
-                        {candidate.best_job ?? "No match yet"}
-                      </p>
-                    </div>
-                    <span className="flex-shrink-0 text-xs text-slate-400">
-                      {fmtDate(candidate.uploaded_at)}
-                    </span>
-                  </div>
-
-                  {candidate.best_score !== null ? (
-                    <div className="mt-3">
-                      <ScoreBar score={candidate.best_score} />
-                    </div>
-                  ) : (
-                    <p className="mt-2 text-xs text-slate-400">
-                      Pending analysis
-                    </p>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </Panel>
       </div>
+
+      <Panel className="p-6 md:p-8">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Recent Candidates</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Latest uploaded resumes</h2>
+          </div>
+          <Link href="/recruiter/candidates" className="text-sm font-semibold text-slate-700 hover:text-slate-950">
+            Open pipeline
+          </Link>
+        </div>
+
+        {stats.recent_candidates.length === 0 ? (
+          <div className="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-6">
+            <p className="text-base font-semibold text-slate-900">No candidates yet</p>
+            <p className="mt-2 text-sm leading-7 text-slate-600">Upload candidate resumes from the Candidates page.</p>
+          </div>
+        ) : (
+          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {stats.recent_candidates.map((candidate) => (
+              <div key={candidate.resume_id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-slate-950">{candidate.title}</p>
+                    <p className="mt-1 text-xs text-slate-500">{candidate.best_job ?? "No ranked job yet"}</p>
+                  </div>
+                  <span className="text-xs text-slate-400">{formatDate(candidate.uploaded_at)}</span>
+                </div>
+                {candidate.best_score !== null ? (
+                  <div className="mt-3">
+                    <ScoreBar score={candidate.best_score} />
+                  </div>
+                ) : (
+                  <p className="mt-3 text-xs text-amber-600">Awaiting analysis</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </Panel>
     </div>
   );
 }

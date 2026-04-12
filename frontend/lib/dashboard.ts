@@ -2,7 +2,9 @@ import { listAIReports } from "@/lib/ai-reports";
 import { listInterviews } from "@/lib/interviews";
 import { getSavedJobs } from "@/lib/jobs";
 import { listResumes } from "@/lib/resumes";
-import type { AIReportListItem, InterviewListItem, ResumeListItem, SavedJob } from "@/types";
+import { listCampaigns } from "@/lib/smart-send";
+import { extractAtsScore } from "@/lib/product-insights";
+import type { AIReportFull, AIReportListItem, Campaign, InterviewListItem, ResumeListItem, SavedJob } from "@/types";
 
 type DashboardCollection<T> = {
   label: string;
@@ -12,12 +14,36 @@ type DashboardCollection<T> = {
 
 export type DashboardActivityItem = {
   id: string;
-  kind: "resume" | "saved-job" | "analysis-report" | "enhancement-report" | "interview";
+  kind: "resume" | "saved-job" | "analysis-report" | "enhancement-report" | "interview" | "campaign";
   title: string;
   description: string;
   createdAt: string;
   href: string;
   status?: string | null;
+};
+
+export type DashboardJourneyStep =
+  | "upload"
+  | "analyze"
+  | "improve"
+  | "match"
+  | "send"
+  | "interview";
+
+export type DashboardMetrics = {
+  atsScore: number | null;
+  jobsMatched: number | null;
+  applicationsSent: number | null;
+  interviewReadiness: number | null;
+  activeResumeTitle: string | null;
+  completedJourneySteps: number;
+};
+
+export type DashboardNextStep = {
+  label: string;
+  href: string;
+  description: string;
+  journeyStep: DashboardJourneyStep;
 };
 
 export type DashboardOverviewData = {
@@ -26,7 +52,11 @@ export type DashboardOverviewData = {
   analysisReports: DashboardCollection<AIReportListItem>;
   enhancementReports: DashboardCollection<AIReportListItem>;
   interviews: DashboardCollection<InterviewListItem>;
+  campaigns: DashboardCollection<Campaign>;
   recentActivity: DashboardActivityItem[];
+  latestAnalysisReport: AIReportFull | null;
+  metrics: DashboardMetrics;
+  nextStep: DashboardNextStep;
 };
 
 async function loadCollection<T>(
@@ -112,33 +142,203 @@ function createActivityFeed(data: DashboardOverviewData): DashboardActivityItem[
     status: interview.status,
   }));
 
+  const campaigns = (data.campaigns.data ?? []).map((campaign) => ({
+    id: `campaign:${campaign.id}`,
+    kind: "campaign" as const,
+    title: campaign.company_name ? `${campaign.job_title} at ${campaign.company_name}` : campaign.job_title,
+    description:
+      campaign.status === "completed"
+        ? `Campaign completed with ${campaign.sent_count} sent and ${campaign.failed_count} failed.`
+        : `Campaign is ${campaign.status}.`,
+    createdAt: campaign.created_at,
+    href: "/dashboard/smart-send",
+    status: campaign.status,
+  }));
+
   return sortNewestFirst([
     ...resumes,
     ...savedJobs,
     ...analysisReports,
     ...enhancementReports,
     ...interviews,
+    ...campaigns,
   ]).slice(0, 6);
 }
 
+function toReadinessScore(score: number | null): number | null {
+  if (score === null) return null;
+  return score <= 10 ? score * 10 : score;
+}
+
+async function loadLatestCompletedAnalysisReport(
+  reports: AIReportListItem[] | null,
+): Promise<AIReportFull | null> {
+  const completedReport = reports?.find((report) => report.status === "completed") ?? null;
+  if (!completedReport) return null;
+
+  const { getAIReport } = await import("@/lib/ai-reports");
+  try {
+    return await getAIReport(completedReport.id);
+  } catch {
+    return null;
+  }
+}
+
+function buildDashboardMetrics(overview: Omit<DashboardOverviewData, "metrics" | "nextStep">): DashboardMetrics {
+  const parsedResumes = (overview.resumes.data ?? []).filter((resume) => resume.processing_status === "parsed");
+  const savedJobs = overview.savedJobs.data ?? [];
+  const interviews = overview.interviews.data ?? [];
+  const campaigns = overview.campaigns.data ?? [];
+  const completedInterviews = interviews.filter((item) => item.status === "completed" && item.overall_score != null);
+  const readinessAverage =
+    completedInterviews.length > 0
+      ? completedInterviews.reduce((total, item) => total + (item.overall_score ?? 0), 0) / completedInterviews.length
+      : null;
+
+  const jobsWithFitScores = savedJobs.filter((job) => job.fit_score != null);
+  const matchedJobsCount =
+    jobsWithFitScores.length > 0
+      ? jobsWithFitScores.filter((job) => (job.fit_score ?? 0) >= 55).length
+      : savedJobs.length;
+
+  const latestCompletedAnalysisText = overview.latestAnalysisReport?.report_text ?? null;
+  const atsScore = extractAtsScore(latestCompletedAnalysisText);
+
+  const hasImprovementReport = (overview.enhancementReports.data ?? []).some((report) => report.status === "completed");
+  const applicationsSent = campaigns.reduce((total, campaign) => total + campaign.sent_count, 0);
+
+  const completedJourneySteps = [
+    parsedResumes.length > 0,
+    (overview.analysisReports.data ?? []).some((report) => report.status === "completed"),
+    hasImprovementReport,
+    matchedJobsCount > 0,
+    applicationsSent > 0,
+    completedInterviews.length > 0,
+  ].filter(Boolean).length;
+
+  return {
+    atsScore,
+    jobsMatched: overview.savedJobs.data ? matchedJobsCount : null,
+    applicationsSent: overview.campaigns.data ? applicationsSent : null,
+    interviewReadiness: toReadinessScore(readinessAverage),
+    activeResumeTitle: parsedResumes[0]?.source_filename ?? parsedResumes[0]?.title ?? null,
+    completedJourneySteps,
+  };
+}
+
+function buildNextStep(overview: Omit<DashboardOverviewData, "metrics" | "nextStep">): DashboardNextStep {
+  const parsedResumes = (overview.resumes.data ?? []).filter((resume) => resume.processing_status === "parsed");
+  const hasAnalysis = (overview.analysisReports.data ?? []).some((report) => report.status === "completed");
+  const hasEnhancement = (overview.enhancementReports.data ?? []).some((report) => report.status === "completed");
+  const hasSavedJobs = (overview.savedJobs.data?.length ?? 0) > 0;
+  const sentApplications = (overview.campaigns.data ?? []).reduce((total, campaign) => total + campaign.sent_count, 0);
+  const hasInterview = (overview.interviews.data ?? []).some((item) => item.status === "completed");
+
+  if (parsedResumes.length === 0) {
+    return {
+      label: "Upload CV",
+      href: "/dashboard/resumes",
+      description: "Start by uploading a resume so the platform can parse and personalize the rest of the journey.",
+      journeyStep: "upload",
+    };
+  }
+
+  if (!hasAnalysis) {
+    return {
+      label: "Analyze CV",
+      href: "/dashboard/analysis",
+      description: "Run your first AI analysis to surface ATS quality, match readiness, and keyword gaps.",
+      journeyStep: "analyze",
+    };
+  }
+
+  if (!hasEnhancement) {
+    return {
+      label: "Improve CV",
+      href: "/dashboard/enhancement",
+      description: "Generate an improved rewrite before you start reaching out to companies.",
+      journeyStep: "improve",
+    };
+  }
+
+  if (!hasSavedJobs) {
+    return {
+      label: "Match Jobs",
+      href: "/dashboard/job-search",
+      description: "Search live jobs and save the strongest matches against your active resume.",
+      journeyStep: "match",
+    };
+  }
+
+  if (sentApplications === 0) {
+    return {
+      label: "Launch SmartSend",
+      href: "/dashboard/smart-send",
+      description: "Turn your saved opportunities into an outreach campaign and track delivery in one place.",
+      journeyStep: "send",
+    };
+  }
+
+  if (!hasInterview) {
+    return {
+      label: "Practice Interview",
+      href: "/dashboard/ai-interview",
+      description: "Use your role context and resume to rehearse before recruiter conversations begin.",
+      journeyStep: "interview",
+    };
+  }
+
+  return {
+    label: "Review Dashboard",
+    href: "/dashboard",
+    description: "Your core journey is active. Review progress, then keep improving your strongest opportunities.",
+    journeyStep: "interview",
+  };
+}
+
 export async function loadDashboardOverview(): Promise<DashboardOverviewData> {
-  const [resumes, savedJobs, analysisReports, enhancementReports, interviews] = await Promise.all([
+  const [resumes, savedJobs, analysisReports, enhancementReports, interviews, campaigns] = await Promise.all([
     loadCollection("Resumes", listResumes),
     loadCollection("Saved jobs", getSavedJobs),
     loadCollection("Analysis reports", () => listAIReports("analysis")),
     loadCollection("Enhancement reports", () => listAIReports("enhancement")),
     loadCollection("Interviews", listInterviews),
+    loadCollection("Campaigns", listCampaigns),
   ]);
 
-  const overview: DashboardOverviewData = {
+  const latestAnalysisReport = await loadLatestCompletedAnalysisReport(analysisReports.data);
+
+  const overviewBase = {
     resumes,
     savedJobs,
     analysisReports,
     enhancementReports,
     interviews,
+    campaigns,
     recentActivity: [],
+    latestAnalysisReport,
+  };
+
+  const overview: DashboardOverviewData = {
+    ...overviewBase,
+    metrics: {
+      atsScore: null,
+      jobsMatched: null,
+      applicationsSent: null,
+      interviewReadiness: null,
+      activeResumeTitle: null,
+      completedJourneySteps: 0,
+    },
+    nextStep: {
+      label: "Upload CV",
+      href: "/dashboard/resumes",
+      description: "Start by uploading a resume.",
+      journeyStep: "upload",
+    },
   };
 
   overview.recentActivity = createActivityFeed(overview);
+  overview.metrics = buildDashboardMetrics(overview);
+  overview.nextStep = buildNextStep(overview);
   return overview;
 }
