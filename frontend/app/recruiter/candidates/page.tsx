@@ -500,7 +500,7 @@ export default function RecruiterCandidatesPage() {
   async function loadCandidates() {
     try {
       const data = await api.get<CandidateListItem[]>(
-        "/recruiter/candidates",
+        "/recruiter/candidates/",
         { auth: true },
       );
       setCandidates(data);

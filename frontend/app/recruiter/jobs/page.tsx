@@ -479,7 +479,7 @@ export default function RecruiterJobsPage() {
 
     async function load() {
       try {
-        const data = await api.get<JobListItem[]>("/recruiter/jobs", {
+        const data = await api.get<JobListItem[]>("/recruiter/jobs/", {
           auth: true,
         });
         if (!cancelled) setJobs(data);
