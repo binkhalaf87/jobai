@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -63,7 +64,9 @@ class CandidateDetail(BaseModel):
     stage: CandidateStage
     status: ResumeProcessingStatus
     skills: list[str]
-    raw_text: str | None
+    file_type: str | None
+    file_available: bool
+    source_filename: str | None
     matches: list[JobMatchDetail]
     top_recommendation: TopRecommendation | None
     analysis_completed_at: datetime | None
@@ -365,6 +368,9 @@ def get_candidate(
                 reason=reason,
             )
 
+    from pathlib import Path as _Path
+    file_available = bool(resume.storage_key and _Path(resume.storage_key).exists())
+
     return CandidateDetail(
         id=resume.id,
         title=resume.title,
@@ -373,7 +379,9 @@ def get_candidate(
         stage=resume.recruiter_stage,
         status=resume.processing_status,
         skills=skills,
-        raw_text=resume.raw_text,
+        file_type=resume.file_type,
+        file_available=file_available,
+        source_filename=resume.source_filename,
         matches=matches,
         top_recommendation=top_recommendation,
         analysis_completed_at=analysis_completed_at,
@@ -439,6 +447,39 @@ def analyze_candidate(
         analyses_created=created,
         analyses_skipped=skipped,
         has_resume_text=has_resume_text,
+    )
+
+
+@router.get("/{resume_id}/file")
+def get_resume_file(
+    resume_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_recruiter),
+) -> FileResponse:
+    """Serve the original uploaded resume file for inline preview or download."""
+    from pathlib import Path as _Path
+    resume = _get_owned_resume(db, resume_id, current_user.id)
+
+    if not resume.storage_key:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No file stored for this resume.")
+
+    path = _Path(resume.storage_key)
+    if not path.exists():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume file not found on disk.")
+
+    file_type = (resume.file_type or "").lower()
+    if file_type == "pdf":
+        media_type = "application/pdf"
+        disposition = "inline"
+    else:
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        disposition = "attachment"
+
+    filename = resume.source_filename or f"resume.{file_type}"
+    return FileResponse(
+        path=str(path),
+        media_type=media_type,
+        headers={"Content-Disposition": f'{disposition}; filename="{filename}"'},
     )
 
 
