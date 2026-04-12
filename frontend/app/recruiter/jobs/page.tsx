@@ -167,7 +167,7 @@ function AddJobForm({
       if (form.employment_type) payload.employment_type = form.employment_type;
 
       const created = await api.post<JobListItem>(
-        "/recruiter/jobs",
+        "/recruiter/jobs/",
         payload,
         { auth: true },
       );
