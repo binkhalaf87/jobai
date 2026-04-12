@@ -63,3 +63,12 @@ class UserRole(str, Enum):
     JOBSEEKER = "jobseeker"
     RECRUITER = "recruiter"
 
+
+class CandidateStage(str, Enum):
+    """Hiring pipeline stage set by a recruiter for a candidate resume."""
+
+    NEW = "new"
+    SHORTLISTED = "shortlisted"
+    INTERVIEW = "interview"
+    REJECTED = "rejected"
+

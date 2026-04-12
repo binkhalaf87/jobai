@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.api.deps.auth import get_current_recruiter
 from app.api.deps.db import get_db
 from app.models.analysis import Analysis
-from app.models.enums import AnalysisStatus, ResumeProcessingStatus
+from app.models.enums import AnalysisStatus, CandidateStage, ResumeProcessingStatus
 from app.models.job_description import JobDescription
 from app.models.resume import Resume
 from app.models.user import User
@@ -30,10 +30,15 @@ class CandidateUploadResponse(BaseModel):
 class CandidateListItem(BaseModel):
     id: str
     title: str
+    email: str | None
     created_at: datetime
+    stage: CandidateStage
+    status: ResumeProcessingStatus
     best_match_job: str | None
     best_match_score: float | None
-    status: ResumeProcessingStatus
+    best_match_keywords: list[str]
+    best_missing_keywords: list[str]
+    analysis_completed_at: datetime | None
 
 
 class JobMatchDetail(BaseModel):
@@ -52,10 +57,24 @@ class TopRecommendation(BaseModel):
 class CandidateDetail(BaseModel):
     id: str
     title: str
+    email: str | None
     created_at: datetime
+    stage: CandidateStage
+    status: ResumeProcessingStatus
     skills: list[str]
+    raw_text: str | None
     matches: list[JobMatchDetail]
     top_recommendation: TopRecommendation | None
+    analysis_completed_at: datetime | None
+
+
+class StageUpdatePayload(BaseModel):
+    stage: CandidateStage
+
+
+class StageUpdateResponse(BaseModel):
+    id: str
+    stage: CandidateStage
 
 
 # ---------------------------------------------------------------------------
@@ -80,7 +99,6 @@ def _run_and_save_analysis(
     resume: Resume,
     job: JobDescription,
 ) -> Analysis | None:
-    """Compute a match and persist it. Returns None if text is unavailable."""
     resume_text = resume.normalized_text or resume.raw_text or ""
     job_text = job.normalized_text or job.source_text or ""
 
@@ -119,6 +137,54 @@ def _keywords_from_payload(payload: dict | None, key: str) -> list[str]:
     return [str(k) for k in value if k] if isinstance(value, list) else []
 
 
+def _email_from_structured(structured: dict | None) -> str | None:
+    if not isinstance(structured, dict):
+        return None
+    return structured.get("email") or structured.get("contact", {}).get("email") if isinstance(structured.get("contact"), dict) else structured.get("email")
+
+
+def _build_list_item(db: Session, resume: Resume) -> CandidateListItem:
+    best_analysis = db.scalar(
+        select(Analysis)
+        .where(
+            Analysis.resume_id == resume.id,
+            Analysis.status == AnalysisStatus.COMPLETED,
+            Analysis.overall_score.is_not(None),
+        )
+        .order_by(Analysis.overall_score.desc())
+        .limit(1)
+    )
+
+    best_job_title: str | None = None
+    best_score: float | None = None
+    best_match_keywords: list[str] = []
+    best_missing_keywords: list[str] = []
+    analysis_completed_at: datetime | None = None
+
+    if best_analysis:
+        job = db.get(JobDescription, best_analysis.job_description_id)
+        best_job_title = job.title if job else None
+        best_score = float(best_analysis.overall_score)
+        payload = best_analysis.result_payload or {}
+        best_match_keywords = _keywords_from_payload(payload, "matching_keywords")[:5]
+        best_missing_keywords = _keywords_from_payload(payload, "missing_keywords")[:5]
+        analysis_completed_at = best_analysis.completed_at
+
+    return CandidateListItem(
+        id=resume.id,
+        title=resume.title,
+        email=_email_from_structured(resume.structured_data),
+        created_at=resume.created_at,
+        stage=resume.recruiter_stage,
+        status=resume.processing_status,
+        best_match_job=best_job_title,
+        best_match_score=best_score,
+        best_match_keywords=best_match_keywords,
+        best_missing_keywords=best_missing_keywords,
+        analysis_completed_at=analysis_completed_at,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -130,7 +196,6 @@ async def upload_candidates(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_recruiter),
 ) -> CandidateUploadResponse:
-    """Upload one or more resume files, extract text, and analyze against all recruiter jobs."""
     if not files:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No files provided.")
 
@@ -156,7 +221,6 @@ def list_candidates(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_recruiter),
 ) -> list[CandidateListItem]:
-    """List all resumes uploaded by this recruiter with their best-matching job."""
     resumes = list(
         db.scalars(
             select(Resume)
@@ -164,40 +228,7 @@ def list_candidates(
             .order_by(Resume.created_at.desc())
         )
     )
-
-    result: list[CandidateListItem] = []
-    for resume in resumes:
-        best_analysis = db.scalar(
-            select(Analysis)
-            .where(
-                Analysis.resume_id == resume.id,
-                Analysis.status == AnalysisStatus.COMPLETED,
-                Analysis.overall_score.is_not(None),
-            )
-            .order_by(Analysis.overall_score.desc())
-            .limit(1)
-        )
-
-        best_job_title: str | None = None
-        best_score: float | None = None
-
-        if best_analysis:
-            job = db.get(JobDescription, best_analysis.job_description_id)
-            best_job_title = job.title if job else None
-            best_score = float(best_analysis.overall_score)
-
-        result.append(
-            CandidateListItem(
-                id=resume.id,
-                title=resume.title,
-                created_at=resume.created_at,
-                best_match_job=best_job_title,
-                best_match_score=best_score,
-                status=resume.processing_status,
-            )
-        )
-
-    return result
+    return [_build_list_item(db, resume) for resume in resumes]
 
 
 @router.get("/{resume_id}", response_model=CandidateDetail)
@@ -206,7 +237,6 @@ def get_candidate(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_recruiter),
 ) -> CandidateDetail:
-    """Return full candidate detail with scores against all recruiter jobs."""
     resume = _get_owned_resume(db, resume_id, current_user.id)
 
     structured = resume.structured_data or {}
@@ -241,8 +271,11 @@ def get_candidate(
         )
 
     top_recommendation: TopRecommendation | None = None
+    analysis_completed_at: datetime | None = None
+
     if matches and analyses:
         best = analyses[0]
+        analysis_completed_at = best.completed_at
         best_job = db.get(JobDescription, best.job_description_id)
         if best_job:
             reason = best.summary_text or (
@@ -257,11 +290,30 @@ def get_candidate(
     return CandidateDetail(
         id=resume.id,
         title=resume.title,
+        email=_email_from_structured(resume.structured_data),
         created_at=resume.created_at,
+        stage=resume.recruiter_stage,
+        status=resume.processing_status,
         skills=skills,
+        raw_text=resume.raw_text,
         matches=matches,
         top_recommendation=top_recommendation,
+        analysis_completed_at=analysis_completed_at,
     )
+
+
+@router.patch("/{resume_id}/stage", response_model=StageUpdateResponse)
+def update_stage(
+    resume_id: str,
+    payload: StageUpdatePayload,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_recruiter),
+) -> StageUpdateResponse:
+    resume = _get_owned_resume(db, resume_id, current_user.id)
+    resume.recruiter_stage = payload.stage
+    db.commit()
+    db.refresh(resume)
+    return StageUpdateResponse(id=resume.id, stage=resume.recruiter_stage)
 
 
 @router.delete("/{resume_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -270,7 +322,6 @@ def delete_candidate(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_recruiter),
 ) -> None:
-    """Delete a candidate resume and all associated analyses."""
     resume = _get_owned_resume(db, resume_id, current_user.id)
     db.delete(resume)
     db.commit()

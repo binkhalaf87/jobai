@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api, uploadRequest } from "@/lib/api";
@@ -7,35 +8,20 @@ import { Panel } from "@/components/panel";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+type Stage = "new" | "shortlisted" | "interview" | "rejected";
+
 type CandidateListItem = {
   id: string;
   title: string;
+  email: string | null;
   created_at: string;
+  stage: Stage;
+  status: string;
   best_match_job: string | null;
   best_match_score: number | null;
-  status: string;
-};
-
-type JobMatch = {
-  job_id: string;
-  job_title: string;
-  overall_score: number;
-  matching_keywords: string[];
-  missing_keywords: string[];
-};
-
-type TopRecommendation = {
-  job_title: string;
-  reason: string;
-};
-
-type CandidateDetail = {
-  id: string;
-  title: string;
-  created_at: string;
-  skills: string[];
-  matches: JobMatch[];
-  top_recommendation: TopRecommendation | null;
+  best_match_keywords: string[];
+  best_missing_keywords: string[];
+  analysis_completed_at: string | null;
 };
 
 type FileUploadItem = {
@@ -47,14 +33,37 @@ type FileUploadItem = {
   error?: string;
 };
 
-// ─── Accepted file types ──────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const ACCEPTED_MIME = new Set([
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ]);
 
-function isAccepted(file: File): boolean {
+const STAGE_LABELS: Record<Stage, string> = {
+  new: "New",
+  shortlisted: "Shortlisted",
+  interview: "Interview",
+  rejected: "Rejected",
+};
+
+const STAGE_COLORS: Record<Stage, string> = {
+  new: "bg-sky-100 text-sky-700",
+  shortlisted: "bg-emerald-100 text-emerald-700",
+  interview: "bg-violet-100 text-violet-700",
+  rejected: "bg-rose-100 text-rose-600",
+};
+
+const STAGE_BORDER: Record<Stage, string> = {
+  new: "",
+  shortlisted: "border-l-4 border-l-emerald-400",
+  interview: "border-l-4 border-l-violet-400",
+  rejected: "opacity-60",
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function isAccepted(file: File) {
   return (
     ACCEPTED_MIME.has(file.type) ||
     file.name.toLowerCase().endsWith(".pdf") ||
@@ -62,14 +71,28 @@ function isAccepted(file: File): boolean {
   );
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+function uid() {
+  return Math.random().toString(36).slice(2);
+}
 
-function fmtDate(iso: string): string {
+function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
     day: "numeric",
     month: "short",
     year: "numeric",
   });
+}
+
+function analysisFreshness(completedAt: string | null): {
+  label: string;
+  color: string;
+} {
+  if (!completedAt) return { label: "No analysis", color: "text-amber-600 bg-amber-50" };
+  const hours = (Date.now() - new Date(completedAt).getTime()) / 3_600_000;
+  if (hours < 24) return { label: `Fresh · ${Math.round(hours)}h ago`, color: "text-emerald-700 bg-emerald-50" };
+  const days = Math.floor(hours / 24);
+  if (days <= 7) return { label: `${days}d ago`, color: "text-slate-600 bg-slate-100" };
+  return { label: `Stale · ${days}d ago`, color: "text-amber-700 bg-amber-50" };
 }
 
 function scoreColor(s: number) {
@@ -84,26 +107,73 @@ function scoreText(s: number) {
   return "text-rose-600";
 }
 
-function uid() {
-  return Math.random().toString(36).slice(2);
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
 }
 
-// ─── Shared sub-components ────────────────────────────────────────────────────
+// ─── Stat pills ───────────────────────────────────────────────────────────────
+
+function StatPills({
+  candidates,
+  activeFilter,
+  onFilter,
+}: {
+  candidates: CandidateListItem[];
+  activeFilter: Stage | "all" | "no_analysis";
+  onFilter: (f: Stage | "all" | "no_analysis") => void;
+}) {
+  const counts = {
+    new: candidates.filter((c) => c.stage === "new").length,
+    shortlisted: candidates.filter((c) => c.stage === "shortlisted").length,
+    interview: candidates.filter((c) => c.stage === "interview").length,
+    rejected: candidates.filter((c) => c.stage === "rejected").length,
+    no_analysis: candidates.filter((c) => !c.analysis_completed_at).length,
+  };
+
+  const pills: { key: Stage | "all" | "no_analysis"; label: string; count: number; cls: string }[] = [
+    { key: "all", label: "All", count: candidates.length, cls: "bg-slate-100 text-slate-700 hover:bg-slate-200" },
+    { key: "new", label: "New", count: counts.new, cls: "bg-sky-50 text-sky-700 hover:bg-sky-100" },
+    { key: "shortlisted", label: "Shortlisted", count: counts.shortlisted, cls: "bg-emerald-50 text-emerald-700 hover:bg-emerald-100" },
+    { key: "interview", label: "Interview", count: counts.interview, cls: "bg-violet-50 text-violet-700 hover:bg-violet-100" },
+    { key: "no_analysis", label: "Awaiting Analysis", count: counts.no_analysis, cls: "bg-amber-50 text-amber-700 hover:bg-amber-100" },
+  ];
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {pills.map((p) => (
+        <button
+          key={p.key}
+          type="button"
+          onClick={() => onFilter(p.key)}
+          className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${p.cls} ${
+            activeFilter === p.key ? "ring-2 ring-offset-1 ring-slate-400" : ""
+          }`}
+        >
+          {p.label}
+          <span className="rounded-full bg-white/60 px-1.5 py-0.5 text-[10px] font-bold">
+            {p.count}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ─── Score bar ────────────────────────────────────────────────────────────────
 
 function ScoreBar({ score }: { score: number }) {
   const c = Math.min(100, Math.max(0, score));
   return (
-    <div className="flex items-center gap-3">
-      <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
-        <div
-          className={`h-full rounded-full transition-all ${scoreColor(c)}`}
-          style={{ width: `${c}%` }}
-        />
+    <div className="flex items-center gap-2">
+      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+        <div className={`h-full rounded-full ${scoreColor(c)}`} style={{ width: `${c}%` }} />
       </div>
-      <span
-        className={`w-12 text-left text-xs font-semibold tabular-nums ${scoreText(c)}`}
-      >
-        {c.toFixed(1)}%
+      <span className={`w-10 text-right text-[11px] font-bold tabular-nums ${scoreText(c)}`}>
+        {c.toFixed(0)}%
       </span>
     </div>
   );
@@ -111,11 +181,7 @@ function ScoreBar({ score }: { score: number }) {
 
 // ─── Upload zone ──────────────────────────────────────────────────────────────
 
-function UploadZone({
-  onFilesAdded,
-}: {
-  onFilesAdded: (files: File[]) => void;
-}) {
+function UploadZone({ onFilesAdded }: { onFilesAdded: (files: File[]) => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
 
@@ -126,66 +192,29 @@ function UploadZone({
   }
 
   return (
-    <Panel className="p-6 md:p-8">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-            Resume Upload
-          </p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-            Upload candidate resumes
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            Select multiple files at once. Supported formats: PDF and DOCX.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          className="flex-shrink-0 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:text-slate-950"
-        >
-          Choose files
-        </button>
-      </div>
-
-      <div
-        onDragEnter={() => setDragging(true)}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragging(true);
-        }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragging(false);
-          collect(e.dataTransfer.files);
-        }}
-        onClick={() => inputRef.current?.click()}
-        className={`mt-6 cursor-pointer rounded-3xl border border-dashed px-6 py-10 text-center transition ${
-          dragging
-            ? "border-slate-900 bg-slate-100"
-            : "border-slate-300 bg-slate-50 hover:border-slate-400"
-        }`}
-      >
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-          multiple
-          className="hidden"
-          onChange={(e) => {
-            collect(e.target.files);
-            e.currentTarget.value = "";
-          }}
-        />
-        <p className="text-base font-semibold text-slate-900">
-          Drag and drop files here
-        </p>
-        <p className="mt-2 text-sm text-slate-500">
-          Or click to browse — PDF and DOCX supported
-        </p>
-      </div>
-    </Panel>
+    <div
+      onDragEnter={() => setDragging(true)}
+      onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={(e) => { e.preventDefault(); setDragging(false); collect(e.dataTransfer.files); }}
+      onClick={() => inputRef.current?.click()}
+      className={`cursor-pointer rounded-3xl border-2 border-dashed px-8 py-6 text-center transition ${
+        dragging ? "border-slate-700 bg-slate-100" : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white"
+      }`}
+    >
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".pdf,.docx"
+        multiple
+        className="hidden"
+        onChange={(e) => { collect(e.target.files); e.currentTarget.value = ""; }}
+      />
+      <p className="text-sm font-semibold text-slate-700">
+        Drop resumes here or <span className="text-slate-900 underline underline-offset-2">browse files</span>
+      </p>
+      <p className="mt-1 text-xs text-slate-400">PDF and DOCX · multiple files at once</p>
+    </div>
   );
 }
 
@@ -193,46 +222,28 @@ function UploadZone({
 
 function UploadQueue({ items }: { items: FileUploadItem[] }) {
   if (items.length === 0) return null;
-
   return (
-    <Panel className="p-6">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-        Upload Queue
-      </p>
-      <ul className="mt-4 space-y-3">
+    <Panel className="p-4">
+      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Uploading</p>
+      <ul className="space-y-2">
         {items.map((item) => (
-          <li key={item.uid}>
-            <div className="flex items-center justify-between gap-3 text-sm">
-              <span className="min-w-0 truncate font-medium text-slate-800">
-                {item.name}
-              </span>
-              <span className="flex-shrink-0 text-xs font-semibold tabular-nums text-slate-500">
-                {item.status === "done"
-                  ? "✓"
-                  : item.status === "error"
-                    ? "✗"
-                    : `${item.progress}%`}
-              </span>
+          <li key={item.uid} className="flex items-center gap-3 text-sm">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <span className="truncate font-medium text-slate-700">{item.name}</span>
+                <span className="flex-shrink-0 text-xs font-semibold text-slate-400">
+                  {item.status === "done" ? "✓" : item.status === "error" ? "✗" : `${item.progress}%`}
+                </span>
+              </div>
+              {item.status !== "done" && item.status !== "error" && (
+                <div className="mt-1 h-1 overflow-hidden rounded-full bg-slate-200">
+                  <div className="h-full rounded-full bg-slate-800 transition-all" style={{ width: `${item.progress}%` }} />
+                </div>
+              )}
+              {item.status === "error" && (
+                <p className="mt-0.5 text-xs text-rose-600">{item.error}</p>
+              )}
             </div>
-
-            {item.status !== "done" && item.status !== "error" && (
-              <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-200">
-                <div
-                  className="h-full rounded-full bg-slate-900 transition-all"
-                  style={{ width: `${item.progress}%` }}
-                />
-              </div>
-            )}
-
-            {item.status === "done" && (
-              <div className="mt-1 h-2 overflow-hidden rounded-full bg-emerald-100">
-                <div className="h-full w-full rounded-full bg-emerald-500" />
-              </div>
-            )}
-
-            {item.status === "error" && (
-              <p className="mt-1 text-xs text-rose-600">{item.error}</p>
-            )}
           </li>
         ))}
       </ul>
@@ -240,240 +251,201 @@ function UploadQueue({ items }: { items: FileUploadItem[] }) {
   );
 }
 
-// ─── Candidate detail panel ───────────────────────────────────────────────────
+// ─── Candidate card (3-zone) ──────────────────────────────────────────────────
 
-function CandidateDetailPanel({ detail }: { detail: CandidateDetail }) {
-  const bestMatch = detail.matches[0] ?? null;
-  const matchingSet = new Set(
-    (bestMatch?.matching_keywords ?? []).map((k) => k.toLowerCase()),
-  );
-  const missingSet = new Set(
-    (bestMatch?.missing_keywords ?? []).map((k) => k.toLowerCase()),
-  );
+function CandidateCard({
+  candidate,
+  onStageChange,
+  onDelete,
+}: {
+  candidate: CandidateListItem;
+  onStageChange: (id: string, stage: Stage) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [stagePending, setStagePending] = useState(false);
 
-  function skillClass(skill: string): string {
-    const key = skill.toLowerCase();
-    if (matchingSet.has(key))
-      return "bg-emerald-50 text-emerald-700 border-emerald-200";
-    if (missingSet.has(key))
-      return "bg-amber-50 text-amber-700 border-amber-200";
-    return "bg-slate-50 text-slate-600 border-slate-200";
+  const freshness = analysisFreshness(candidate.analysis_completed_at);
+  const hasAnalysis = !!candidate.analysis_completed_at;
+
+  async function handleStageChange(stage: Stage) {
+    if (stagePending) return;
+    setStagePending(true);
+    try {
+      await api.patch(`/recruiter/candidates/${candidate.id}/stage`, { stage }, { auth: true });
+      onStageChange(candidate.id, stage);
+    } catch {
+      // revert handled by parent
+    } finally {
+      setStagePending(false);
+    }
+  }
+
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      await api.delete(`/recruiter/candidates/${candidate.id}`, undefined, { auth: true });
+      onDelete(candidate.id);
+    } catch {
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
   }
 
   return (
-    <div className="space-y-5 pb-2 pt-4">
-      {/* Recommendation box */}
-      {detail.top_recommendation && (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-600">
-            Top Recommendation
-          </p>
-          <p className="mt-1.5 text-sm font-semibold text-emerald-900">
-            Best fit for {detail.top_recommendation.job_title}
-          </p>
-          <p className="mt-1 text-sm leading-6 text-emerald-800">
-            {detail.top_recommendation.reason}
-          </p>
-        </div>
-      )}
+    <li className={`rounded-3xl border border-slate-200 bg-white transition hover:border-slate-300 hover:shadow-sm ${STAGE_BORDER[candidate.stage]}`}>
+      <div className="grid grid-cols-1 gap-0 md:grid-cols-[1fr_auto_auto]">
 
-      {/* Skills */}
-      {detail.skills.length > 0 && (
-        <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-            Extracted Skills
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {detail.skills.map((skill) => (
-              <span
-                key={skill}
-                className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${skillClass(skill)}`}
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
-          <p className="mt-2 text-xs text-slate-400">
-            Green = matched · Amber = missing · Gray = unclassified
-          </p>
-        </div>
-      )}
-
-      {/* Job matches */}
-      {detail.matches.length > 0 && (
-        <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-            Job Match Scores
-          </p>
-          <ul className="space-y-2">
-            {detail.matches.map((match) => (
-              <li
-                key={match.job_id}
-                className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-slate-900">
-                    {match.job_title}
-                  </p>
-                  <span
-                    className={`text-xs font-bold tabular-nums ${scoreText(match.overall_score)}`}
-                  >
-                    {match.overall_score.toFixed(1)}%
-                  </span>
-                </div>
-                <div className="mt-2">
-                  <ScoreBar score={match.overall_score} />
-                </div>
-                {match.matching_keywords.length > 0 && (
-                  <p className="mt-2 text-xs text-slate-500">
-                    <span className="font-semibold text-emerald-700">
-                      Matched:
-                    </span>{" "}
-                    {match.matching_keywords.slice(0, 5).join(", ")}
-                    {match.matching_keywords.length > 5 &&
-                      ` +${match.matching_keywords.length - 5}`}
-                  </p>
-                )}
-                {match.missing_keywords.length > 0 && (
-                  <p className="mt-1 text-xs text-slate-500">
-                    <span className="font-semibold text-amber-700">
-                      Missing:
-                    </span>{" "}
-                    {match.missing_keywords.slice(0, 5).join(", ")}
-                    {match.missing_keywords.length > 5 &&
-                      ` +${match.missing_keywords.length - 5}`}
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {detail.matches.length === 0 && (
-        <p className="text-sm text-slate-500">
-          No jobs to compare against. Add jobs from the Jobs page first.
-        </p>
-      )}
-    </div>
-  );
-}
-
-// ─── Candidate row ────────────────────────────────────────────────────────────
-
-function CandidateRow({
-  candidate,
-  isExpanded,
-  detail,
-  loadingDetail,
-  confirmDelete,
-  deleting,
-  onToggle,
-  onDelete,
-  onConfirmDelete,
-  onCancelDelete,
-}: {
-  candidate: CandidateListItem;
-  isExpanded: boolean;
-  detail: CandidateDetail | undefined;
-  loadingDetail: boolean;
-  confirmDelete: boolean;
-  deleting: boolean;
-  onToggle: () => void;
-  onDelete: () => void;
-  onConfirmDelete: () => void;
-  onCancelDelete: () => void;
-}) {
-  return (
-    <li className="rounded-3xl border border-slate-200 bg-white transition hover:border-slate-300">
-      {/* Row header */}
-      <div
-        className="flex cursor-pointer items-start gap-4 p-5"
-        onClick={onToggle}
-      >
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-semibold text-slate-950">
-              {candidate.title}
-            </p>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500">
-              {candidate.status}
-            </span>
-          </div>
-          <p className="mt-0.5 text-xs text-slate-500">
-            {candidate.best_match_job ?? "No matching job yet"}
-          </p>
-          {candidate.best_match_score !== null && (
-            <div className="mt-2 max-w-xs">
-              <ScoreBar score={candidate.best_match_score} />
+        {/* ── Zone A: WHO ─────────────────────────────────── */}
+        <div className="p-5">
+          <div className="flex items-start gap-3">
+            {/* Avatar */}
+            <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl text-sm font-bold text-white ${
+              candidate.stage === "shortlisted" ? "bg-emerald-500" :
+              candidate.stage === "interview" ? "bg-violet-500" :
+              candidate.stage === "rejected" ? "bg-slate-300" : "bg-slate-700"
+            }`}>
+              {initials(candidate.title)}
             </div>
-          )}
+
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm font-semibold text-slate-950">{candidate.title}</p>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${STAGE_COLORS[candidate.stage]}`}>
+                  {STAGE_LABELS[candidate.stage]}
+                </span>
+              </div>
+
+              {candidate.email && (
+                <p className="mt-0.5 truncate text-xs text-slate-400">{candidate.email}</p>
+              )}
+
+              {candidate.best_match_job && candidate.best_match_score !== null && (
+                <div className="mt-2">
+                  <p className="mb-1 text-[11px] text-slate-500">
+                    Best match: <span className="font-semibold text-slate-700">{candidate.best_match_job}</span>
+                  </p>
+                  <ScoreBar score={candidate.best_match_score} />
+                </div>
+              )}
+
+              {!hasAnalysis && candidate.status === "parsed" && (
+                <p className="mt-2 text-xs font-medium text-amber-600">No jobs to match against yet</p>
+              )}
+            </div>
+          </div>
         </div>
 
-        <div className="flex flex-shrink-0 flex-col items-end gap-2">
-          <span className="text-xs text-slate-400">
-            {fmtDate(candidate.created_at)}
-          </span>
+        {/* ── Zone B: AI SIGNAL ───────────────────────────── */}
+        <div className="border-t border-slate-100 p-5 md:w-56 md:border-l md:border-t-0">
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">AI Signal</p>
 
-          {/* Delete / confirm */}
-          <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+          {hasAnalysis ? (
+            <>
+              {candidate.best_match_keywords.length > 0 && (
+                <div className="mb-2">
+                  <p className="text-[10px] font-semibold text-emerald-600">✦ Strengths</p>
+                  <p className="text-xs text-slate-600 leading-5">
+                    {candidate.best_match_keywords.slice(0, 2).join(" · ")}
+                  </p>
+                </div>
+              )}
+              {candidate.best_missing_keywords.length > 0 && (
+                <div className="mb-3">
+                  <p className="text-[10px] font-semibold text-amber-600">⚠ Gaps</p>
+                  <p className="text-xs text-slate-600 leading-5">
+                    {candidate.best_missing_keywords.slice(0, 2).join(" · ")}
+                  </p>
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="mb-3 text-xs text-amber-600 font-medium">
+              {candidate.status === "parsed" ? "Add jobs to run analysis" : "Awaiting analysis…"}
+            </p>
+          )}
+
+          <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${freshness.color}`}>
+            {freshness.label}
+          </span>
+        </div>
+
+        {/* ── Zone C: ACT ─────────────────────────────────── */}
+        <div className="flex flex-row items-center gap-2 border-t border-slate-100 p-5 md:w-44 md:flex-col md:items-stretch md:border-l md:border-t-0">
+          {/* View profile */}
+          <Link
+            href={`/recruiter/candidates/${candidate.id}`}
+            className="rounded-xl bg-slate-900 px-3 py-2 text-center text-xs font-semibold text-white transition hover:bg-slate-700"
+          >
+            View Profile
+          </Link>
+
+          {/* Stage quick actions */}
+          {candidate.stage !== "shortlisted" && (
+            <button
+              type="button"
+              disabled={stagePending}
+              onClick={() => void handleStageChange("shortlisted")}
+              className="rounded-xl border border-emerald-300 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-40"
+            >
+              Shortlist ★
+            </button>
+          )}
+          {candidate.stage === "shortlisted" && (
+            <button
+              type="button"
+              disabled={stagePending}
+              onClick={() => void handleStageChange("new")}
+              className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-500 transition hover:bg-slate-50 disabled:opacity-40"
+            >
+              Unshortlist
+            </button>
+          )}
+          {candidate.stage !== "rejected" && (
+            <button
+              type="button"
+              disabled={stagePending}
+              onClick={() => void handleStageChange("rejected")}
+              className="rounded-xl px-3 py-2 text-xs font-semibold text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40"
+            >
+              Reject
+            </button>
+          )}
+
+          {/* Delete */}
+          <div className="mt-auto pt-1" onClick={(e) => e.stopPropagation()}>
             {!confirmDelete ? (
               <button
                 type="button"
-                onClick={onConfirmDelete}
-                className="rounded-xl px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
+                onClick={() => setConfirmDelete(true)}
+                className="w-full rounded-xl px-3 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-rose-50 hover:text-rose-400"
               >
                 Delete
               </button>
             ) : (
-              <>
+              <div className="flex flex-col gap-1">
                 <button
                   type="button"
-                  onClick={onDelete}
                   disabled={deleting}
-                  className="rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700 disabled:opacity-50"
+                  onClick={() => void handleDelete()}
+                  className="rounded-xl bg-rose-600 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-rose-700 disabled:opacity-50"
                 >
-                  {deleting ? "Deleting…" : "Confirm delete"}
+                  {deleting ? "…" : "Confirm"}
                 </button>
                 <button
                   type="button"
-                  onClick={onCancelDelete}
-                  className="rounded-xl px-3 py-1.5 text-xs font-medium text-slate-500 transition hover:bg-slate-100"
+                  onClick={() => setConfirmDelete(false)}
+                  className="rounded-xl px-3 py-1.5 text-[11px] font-medium text-slate-400 transition hover:bg-slate-100"
                 >
                   Cancel
                 </button>
-              </>
+              </div>
             )}
           </div>
-
-          <span className="text-xs text-slate-400">
-            {isExpanded ? "▲ Hide" : "▼ Details"}
-          </span>
         </div>
+
       </div>
-
-      {/* Inline detail panel */}
-      {isExpanded && (
-        <div className="border-t border-slate-100 px-5">
-          {loadingDetail ? (
-            <div className="animate-pulse space-y-3 py-5">
-              <div className="h-16 rounded-2xl bg-slate-100" />
-              <div className="flex gap-2">
-                {Array.from({ length: 4 }, (_, i) => (
-                  <div key={i} className="h-7 w-20 rounded-full bg-slate-100" />
-                ))}
-              </div>
-              <div className="h-24 rounded-2xl bg-slate-100" />
-            </div>
-          ) : detail ? (
-            <CandidateDetailPanel detail={detail} />
-          ) : (
-            <p className="py-4 text-sm text-slate-500">
-              Failed to load details.
-            </p>
-          )}
-        </div>
-      )}
     </li>
   );
 }
@@ -488,21 +460,12 @@ export default function RecruiterCandidatesPage() {
   const [uploadQueue, setUploadQueue] = useState<FileUploadItem[]>([]);
   const uploadingRef = useRef(false);
 
-  const [details, setDetails] = useState<Record<string, CandidateDetail>>({});
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [loadingDetailId, setLoadingDetailId] = useState<string | null>(null);
-
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  // --- Load candidates list ---
+  const [search, setSearch] = useState("");
+  const [stageFilter, setStageFilter] = useState<Stage | "all" | "no_analysis">("all");
 
   async function loadCandidates() {
     try {
-      const data = await api.get<CandidateListItem[]>(
-        "/recruiter/candidates/",
-        { auth: true },
-      );
+      const data = await api.get<CandidateListItem[]>("/recruiter/candidates/", { auth: true });
       setCandidates(data);
     } catch {
       setListError("Failed to load candidates.");
@@ -511,11 +474,9 @@ export default function RecruiterCandidatesPage() {
     }
   }
 
-  useEffect(() => {
-    void loadCandidates();
-  }, []);
+  useEffect(() => { void loadCandidates(); }, []);
 
-  // --- Upload queue processing ---
+  // --- Upload ---
 
   function updateItem(itemUid: string, patch: Partial<FileUploadItem>) {
     setUploadQueue((prev) =>
@@ -529,46 +490,32 @@ export default function RecruiterCandidatesPage() {
 
     for (const item of queue) {
       if (item.status !== "pending") continue;
-
       updateItem(item.uid, { status: "uploading", progress: 0 });
-
       const formData = new FormData();
       formData.append("files", item.file);
-
       try {
-        await uploadRequest<{ resume_ids: string[] }>(
-          "/recruiter/candidates/upload",
-          formData,
-          {
-            auth: true,
-            onProgress: (p) => updateItem(item.uid, { progress: p }),
-          },
-        );
+        await uploadRequest<{ resume_ids: string[] }>("/recruiter/candidates/upload", formData, {
+          auth: true,
+          onProgress: (p) => updateItem(item.uid, { progress: p }),
+        });
         updateItem(item.uid, { status: "done", progress: 100 });
       } catch (err) {
         updateItem(item.uid, {
           status: "error",
-          error: err instanceof Error ? err.message : "Upload failed. Please try again.",
+          error: err instanceof Error ? err.message : "Upload failed.",
         });
       }
     }
 
     uploadingRef.current = false;
-
-    // Refresh list after all uploads
     setListLoading(true);
     void loadCandidates();
   }, []);
 
   function handleFilesAdded(files: File[]) {
     const newItems: FileUploadItem[] = files.map((file) => ({
-      uid: uid(),
-      name: file.name,
-      file,
-      progress: 0,
-      status: "pending",
+      uid: uid(), name: file.name, file, progress: 0, status: "pending",
     }));
-
     setUploadQueue((prev) => {
       const updated = [...prev, ...newItems];
       void processQueue(updated);
@@ -576,122 +523,114 @@ export default function RecruiterCandidatesPage() {
     });
   }
 
-  // --- Expand / detail ---
+  // --- Stage update ---
 
-  async function handleToggle(id: string) {
-    if (expandedId === id) {
-      setExpandedId(null);
-      return;
-    }
-
-    setExpandedId(id);
-
-    if (details[id]) return;
-
-    setLoadingDetailId(id);
-    try {
-      const data = await api.get<CandidateDetail>(
-        `/recruiter/candidates/${id}`,
-        { auth: true },
-      );
-      setDetails((prev) => ({ ...prev, [id]: data }));
-    } catch {
-      // detail will be undefined, panel shows error message
-    } finally {
-      setLoadingDetailId(null);
-    }
+  function handleStageChange(id: string, stage: Stage) {
+    setCandidates((prev) => prev.map((c) => (c.id === id ? { ...c, stage } : c)));
   }
 
-  // --- Delete ---
-
-  async function handleDelete(id: string) {
-    setDeletingId(id);
-    try {
-      await api.delete(`/recruiter/candidates/${id}`, undefined, {
-        auth: true,
-      });
-      setCandidates((prev) => prev.filter((c) => c.id !== id));
-      setDetails((prev) => {
-        const next = { ...prev };
-        delete next[id];
-        return next;
-      });
-      if (expandedId === id) setExpandedId(null);
-    } catch {
-      // leave in list on failure
-    } finally {
-      setDeletingId(null);
-      setConfirmDeleteId(null);
-    }
+  function handleDelete(id: string) {
+    setCandidates((prev) => prev.filter((c) => c.id !== id));
   }
+
+  // --- Filtering ---
+
+  const filtered = candidates.filter((c) => {
+    const q = search.toLowerCase();
+    const matchesSearch =
+      !q ||
+      c.title.toLowerCase().includes(q) ||
+      (c.email ?? "").toLowerCase().includes(q) ||
+      (c.best_match_job ?? "").toLowerCase().includes(q);
+
+    const matchesStage =
+      stageFilter === "all" ||
+      (stageFilter === "no_analysis" ? !c.analysis_completed_at : c.stage === stageFilter);
+
+    return matchesSearch && matchesStage;
+  });
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
-      {/* Upload zone */}
-      <UploadZone onFilesAdded={handleFilesAdded} />
+    <div className="space-y-5">
 
-      {/* Upload queue */}
+      {/* ── Header ──────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Recruiter</p>
+          <h1 className="mt-0.5 text-2xl font-semibold tracking-tight text-slate-950">Candidates</h1>
+        </div>
+      </div>
+
+      {/* ── Upload zone ─────────────────────────────────────────── */}
+      <UploadZone onFilesAdded={handleFilesAdded} />
       <UploadQueue items={uploadQueue} />
 
-      {/* Candidates list */}
-      <Panel className="p-6 md:p-8">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-              Candidates
-            </p>
-            <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
-              Candidate list
-            </h2>
-          </div>
-          {candidates.length > 0 && (
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600">
-              {candidates.length}
-            </span>
-          )}
+      {/* ── Stat pills + search ─────────────────────────────────── */}
+      {!listLoading && !listError && candidates.length > 0 && (
+        <div className="space-y-3">
+          <StatPills candidates={candidates} activeFilter={stageFilter} onFilter={setStageFilter} />
+          <input
+            type="text"
+            placeholder="Search by name, email, or job…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-slate-400"
+          />
         </div>
+      )}
 
-        {listLoading ? (
-          <div className="mt-6 animate-pulse space-y-3">
-            {Array.from({ length: 3 }, (_, i) => (
-              <div key={i} className="h-20 rounded-3xl bg-slate-100" />
-            ))}
-          </div>
-        ) : listError ? (
-          <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
-            {listError}
-          </div>
-        ) : candidates.length === 0 ? (
-          <div className="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-            <p className="text-base font-semibold text-slate-900">
-              No candidates yet
-            </p>
-            <p className="mt-2 text-sm leading-7 text-slate-600">
-              Upload resumes using the zone above to start analysis.
-            </p>
-          </div>
-        ) : (
-          <ul className="mt-6 space-y-3">
-            {candidates.map((candidate) => (
-              <CandidateRow
-                key={candidate.id}
-                candidate={candidate}
-                isExpanded={expandedId === candidate.id}
-                detail={details[candidate.id]}
-                loadingDetail={loadingDetailId === candidate.id}
-                confirmDelete={confirmDeleteId === candidate.id}
-                deleting={deletingId === candidate.id}
-                onToggle={() => void handleToggle(candidate.id)}
-                onDelete={() => void handleDelete(candidate.id)}
-                onConfirmDelete={() => setConfirmDeleteId(candidate.id)}
-                onCancelDelete={() => setConfirmDeleteId(null)}
-              />
-            ))}
-          </ul>
-        )}
-      </Panel>
+      {/* ── Candidate list ──────────────────────────────────────── */}
+      {listLoading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 3 }, (_, i) => (
+            <div key={i} className="h-36 animate-pulse rounded-3xl bg-slate-100" />
+          ))}
+        </div>
+      ) : listError ? (
+        <Panel className="p-6">
+          <p className="text-sm font-semibold text-rose-600">{listError}</p>
+          <button
+            type="button"
+            onClick={() => { setListError(null); setListLoading(true); void loadCandidates(); }}
+            className="mt-4 rounded-xl bg-slate-900 px-4 py-2 text-xs font-semibold text-white"
+          >
+            Retry
+          </button>
+        </Panel>
+      ) : candidates.length === 0 ? (
+        <Panel className="p-10 text-center">
+          <p className="text-base font-semibold text-slate-900">No candidates yet</p>
+          <p className="mt-2 text-sm text-slate-500">Upload resumes using the zone above to start.</p>
+        </Panel>
+      ) : filtered.length === 0 ? (
+        <Panel className="p-8 text-center">
+          <p className="text-sm font-semibold text-slate-700">No candidates match this filter</p>
+          <button
+            type="button"
+            onClick={() => { setSearch(""); setStageFilter("all"); }}
+            className="mt-3 text-xs font-medium text-slate-500 underline underline-offset-2"
+          >
+            Clear filters
+          </button>
+        </Panel>
+      ) : (
+        <ul className="space-y-3">
+          {filtered.map((c) => (
+            <CandidateCard
+              key={c.id}
+              candidate={c}
+              onStageChange={handleStageChange}
+              onDelete={handleDelete}
+            />
+          ))}
+          <p className="pt-1 text-center text-xs text-slate-400">
+            {filtered.length} of {candidates.length} candidate{candidates.length !== 1 ? "s" : ""}
+            {stageFilter !== "all" || search ? ` · ${fmtDate(new Date().toISOString())}` : ""}
+          </p>
+        </ul>
+      )}
     </div>
   );
 }

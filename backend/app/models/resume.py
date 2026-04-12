@@ -4,7 +4,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
-from app.models.enums import ResumeProcessingStatus
+from app.models.enums import CandidateStage, ResumeProcessingStatus
 from app.models.mixins import TimestampMixin, UUIDPrimaryKeyMixin
 
 
@@ -27,6 +27,12 @@ class Resume(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         nullable=False,
         default=ResumeProcessingStatus.UPLOADED,
         server_default=ResumeProcessingStatus.UPLOADED.value,
+    )
+    recruiter_stage: Mapped[CandidateStage] = mapped_column(
+        SqlEnum(CandidateStage, name="candidate_stage", values_callable=lambda e: [m.value for m in e]),
+        nullable=False,
+        default=CandidateStage.NEW,
+        server_default=CandidateStage.NEW.value,
     )
 
     user = relationship("User", back_populates="resumes")
