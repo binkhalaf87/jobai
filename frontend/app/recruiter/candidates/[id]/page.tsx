@@ -109,6 +109,15 @@ function computeNextStep(detail: CandidateDetail, hasJobs: boolean): NextStep | 
       variant: "warning",
     };
   }
+  // 0% on all jobs = likely a language mismatch, not a bad candidate
+  if (detail.matches.length > 0 && detail.matches.every((m) => m.overall_score === 0)) {
+    return {
+      message: "All match scores are 0%. This usually means the resume and job description are in different languages. Try writing your job description in Arabic, or include English technical keywords in the resume.",
+      action: "Re-run Analysis",
+      variant: "warning",
+    };
+  }
+
   if (detail.matches.every((m) => m.overall_score < 40)) {
     return {
       message: "All job match scores are below 40%. This candidate may not be a good fit.",
@@ -513,8 +522,19 @@ export default function CandidateProfilePage() {
     setAnalyzing(true);
     setAnalyzeError(null);
     try {
-      await api.post(`/recruiter/candidates/${id}/analyze`, undefined, { auth: true });
-      // Reload detail to get fresh matches
+      const result = await api.post<{
+        analyses_created: number;
+        has_resume_text: boolean;
+        warning: string | null;
+      }>(`/recruiter/candidates/${id}/analyze`, undefined, { auth: true });
+
+      if (!result.has_resume_text) {
+        setAnalyzeError(result.warning ?? "No text found in resume.");
+      } else if (result.warning) {
+        setAnalyzeError(result.warning);
+      }
+
+      // Reload detail regardless — even 0% scores should show
       const data = await api.get<CandidateDetail>(`/recruiter/candidates/${id}`, { auth: true });
       setDetail(data);
     } catch (err) {
@@ -688,14 +708,14 @@ export default function CandidateProfilePage() {
                     Move to Interview →
                   </button>
                 )}
-                {nextStep.action === "Run Analysis" && (
+                {(nextStep.action === "Run Analysis" || nextStep.action === "Re-run Analysis") && (
                   <button
                     type="button"
                     disabled={analyzing}
                     onClick={() => void handleRunAnalysis()}
                     className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
                   >
-                    {analyzing ? "Running…" : "Run Analysis"}
+                    {analyzing ? "Running…" : nextStep.action}
                   </button>
                 )}
                 {nextStep.action === "Go to Jobs →" && (
@@ -732,8 +752,8 @@ export default function CandidateProfilePage() {
 
       {/* ── Analyze error ──────────────────────────────────────── */}
       {analyzeError && (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700">
-          {analyzeError}
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">
+          <span className="mr-1.5 font-bold">⚠</span>{analyzeError}
         </div>
       )}
 

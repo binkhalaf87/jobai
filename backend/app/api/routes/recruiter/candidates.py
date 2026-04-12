@@ -107,7 +107,7 @@ def _run_and_save_analysis(
 
     try:
         result = compute_match_result(resume_text, job_text)
-    except ValueError:
+    except Exception:
         return None
 
     analysis = Analysis(
@@ -319,6 +319,8 @@ def update_stage(
 class AnalyzeResponse(BaseModel):
     analyses_created: int
     analyses_skipped: int
+    has_resume_text: bool
+    warning: str | None = None
 
 
 @router.post("/{resume_id}/analyze", response_model=AnalyzeResponse)
@@ -329,6 +331,22 @@ def analyze_candidate(
 ) -> AnalyzeResponse:
     """Run (or re-run) matching between this resume and all recruiter jobs."""
     resume = _get_owned_resume(db, resume_id, current_user.id)
+
+    resume_text = resume.normalized_text or resume.raw_text or ""
+    has_resume_text = bool(resume_text.strip())
+
+    if not has_resume_text:
+        return AnalyzeResponse(
+            analyses_created=0,
+            analyses_skipped=0,
+            has_resume_text=False,
+            warning=(
+                "No text could be extracted from this resume. "
+                "The file may be a scanned image (not searchable PDF). "
+                "Try uploading a text-based PDF or DOCX file."
+            ),
+        )
+
     jobs = _get_recruiter_jobs(db, current_user.id)
 
     if not jobs:
@@ -346,7 +364,21 @@ def analyze_candidate(
         else:
             skipped += 1
 
-    return AnalyzeResponse(analyses_created=created, analyses_skipped=skipped)
+    warning: str | None = None
+    if created == 0 and skipped > 0:
+        warning = (
+            "Analysis ran but produced no results. "
+            "This usually means the resume and job description are in different languages "
+            "with no shared technical terms. Try writing both in the same language, "
+            "or ensure the resume contains English technical keywords."
+        )
+
+    return AnalyzeResponse(
+        analyses_created=created,
+        analyses_skipped=skipped,
+        has_resume_text=has_resume_text,
+        warning=warning,
+    )
 
 
 @router.delete("/{resume_id}", status_code=status.HTTP_204_NO_CONTENT)
