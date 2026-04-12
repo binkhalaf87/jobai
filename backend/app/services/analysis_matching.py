@@ -11,8 +11,20 @@ from app.models.enums import AnalysisStatus
 from app.models.job_description import JobDescription
 from app.models.resume import Resume
 
-MATCH_MODEL_NAME = "tfidf-cosine-v1"
+MATCH_MODEL_NAME = "tfidf-cosine-v2"
 KEYWORD_LIMIT = 15
+
+# Common Arabic stop words that carry no discriminative value in matching.
+_ARABIC_STOP_WORDS = {
+    "في", "من", "إلى", "على", "عن", "مع", "هذا", "هذه", "التي", "الذي",
+    "كان", "كانت", "يكون", "تكون", "هو", "هي", "أن", "إن", "لا", "لم",
+    "ما", "له", "لها", "لنا", "لكم", "لهم", "قد", "أو", "إذا", "كما",
+    "بعد", "قبل", "حتى", "كل", "بين", "عند", "عبر", "خلال", "ذلك", "تلك",
+    "هنا", "هناك", "أيضا", "فقط", "جدا", "بشكل", "يتم", "تم", "بما",
+    "نحو", "حول", "لدى", "وفي", "وعلى", "لقد", "بعض", "أكثر", "أقل",
+    "وهو", "وهي", "وهذا", "وهذه", "وكان", "وكانت", "وقد", "وأن",
+    "ان", "اذا", "الا", "انه", "انها", "اما", "حيث", "كذلك",
+}
 
 
 @dataclass(frozen=True)
@@ -42,12 +54,24 @@ def get_user_job_description_for_analysis(db: Session, user_id: str, job_descrip
 
 
 def build_vectorizer() -> TfidfVectorizer:
-    """Create a deterministic TF-IDF vectorizer for resume and role matching."""
+    """Create a bilingual TF-IDF vectorizer that handles both Latin and Arabic text.
+
+    Token pattern:
+    - Latin tokens: standard word characters including common tech symbols (. + # / -)
+    - Arabic tokens: sequences of 2+ Arabic/Extended-Arabic Unicode characters
+
+    Stop words combine sklearn's English list with a curated Arabic set.
+    """
+    from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
+
+    combined_stop_words = list(ENGLISH_STOP_WORDS) + list(_ARABIC_STOP_WORDS)
+
     return TfidfVectorizer(
-        stop_words="english",
+        stop_words=combined_stop_words,
         lowercase=True,
         ngram_range=(1, 2),
-        token_pattern=r"(?u)\b[a-zA-Z][a-zA-Z0-9.+#/-]{1,}\b",
+        # Matches Latin tech tokens OR Arabic word sequences (≥2 chars)
+        token_pattern=r"(?u)(?:[a-zA-Z][a-zA-Z0-9.+#\-/]{1,}|[\u0600-\u06FF\u0750-\u077F]{2,})",
     )
 
 

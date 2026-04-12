@@ -4,34 +4,73 @@ import re
 
 SECTION_ALIASES = {
     "summary": {
+        # English
         "summary",
         "professional summary",
         "profile",
         "objective",
         "career objective",
         "professional profile",
+        # Arabic
+        "ملخص",
+        "الملخص",
+        "الملخص المهني",
+        "نبذة",
+        "نبذة شخصية",
+        "الهدف الوظيفي",
+        "نبذة مختصرة",
+        "المقدمة",
     },
     "skills": {
+        # English
         "skills",
         "technical skills",
         "core competencies",
         "competencies",
         "strengths",
         "technologies",
+        # Arabic
+        "المهارات",
+        "مهارات",
+        "الكفاءات",
+        "الكفاءات الأساسية",
+        "الخبرات التقنية",
+        "المهارات التقنية",
+        "المهارات الفنية",
+        "القدرات",
     },
     "experience": {
+        # English
         "experience",
         "work experience",
         "professional experience",
         "employment history",
         "work history",
+        # Arabic
+        "الخبرة",
+        "خبرة العمل",
+        "الخبرة العملية",
+        "الخبرة المهنية",
+        "المسيرة المهنية",
+        "تاريخ العمل",
+        "الوظائف السابقة",
+        "الخبرات",
     },
     "education": {
+        # English
         "education",
         "academic background",
         "academic history",
         "qualifications",
         "education and training",
+        # Arabic
+        "التعليم",
+        "المؤهلات",
+        "الشهادات",
+        "المؤهلات العلمية",
+        "التعليم والتدريب",
+        "الخلفية الأكاديمية",
+        "الدراسة",
     },
 }
 
@@ -52,9 +91,13 @@ class StructuredResumeData:
 
 
 def normalize_heading(line: str) -> str:
-    """Normalize a heading line for robust section matching."""
+    """Normalize a heading line for robust section matching.
+
+    Preserves Arabic characters while stripping punctuation and extra spaces.
+    """
     lowered = line.lower().strip().rstrip(":")
-    lowered = re.sub(r"[^a-z0-9\s]", " ", lowered)
+    # Keep Latin alphanumerics, Arabic characters, and whitespace
+    lowered = re.sub(r"[^a-z0-9\s\u0600-\u06FF\u0750-\u077F]", " ", lowered)
     return re.sub(r"\s+", " ", lowered).strip()
 
 
@@ -83,7 +126,12 @@ def looks_like_name(line: str) -> bool:
     if not 1 < len(words) <= 5:
         return False
 
-    return all(re.fullmatch(r"[A-Za-z][A-Za-z'.-]*", word) for word in words)
+    # Accept Latin names or Arabic names (Arabic Unicode block)
+    return all(
+        re.fullmatch(r"[A-Za-z][A-Za-z'.-]*", word)
+        or re.fullmatch(r"[\u0600-\u06FF]+", word)
+        for word in words
+    )
 
 
 def strip_list_marker(line: str) -> str:
