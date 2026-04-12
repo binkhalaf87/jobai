@@ -1,4 +1,4 @@
-import { api, ApiError, clearApiToken, hasApiToken, setApiToken } from "@/lib/api";
+import { api, ApiError, clearApiToken, clearUserRole, hasApiToken, setApiToken } from "@/lib/api";
 import type { AuthResponse, AuthUser, LoginPayload, RegisterPayload } from "@/types";
 
 export function storeAccessToken(token: string): void {
@@ -51,4 +51,5 @@ export function hasStoredSession(): boolean {
 
 export function signOut(): void {
   clearAccessToken();
+  clearUserRole();
 }

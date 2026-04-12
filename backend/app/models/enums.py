@@ -56,3 +56,10 @@ class UsageEventType(str, Enum):
     REWRITE_GENERATED = "rewrite_generated"
     AUTH_LOGIN = "auth_login"
 
+
+class UserRole(str, Enum):
+    """User role determining access level and feature set."""
+
+    JOBSEEKER = "jobseeker"
+    RECRUITER = "recruiter"
+

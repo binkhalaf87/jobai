@@ -4,6 +4,7 @@ from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
+from app.models.enums import UserRole
 from app.models.mixins import TimestampMixin, UUIDPrimaryKeyMixin
 
 
@@ -17,6 +18,7 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    role: Mapped[UserRole] = mapped_column(String(20), nullable=False, default=UserRole.JOBSEEKER, server_default="jobseeker")
 
     resumes = relationship("Resume", back_populates="user", cascade="all, delete-orphan")
     job_descriptions = relationship("JobDescription", back_populates="user", cascade="all, delete-orphan")

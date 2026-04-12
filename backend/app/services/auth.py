@@ -45,7 +45,7 @@ def authenticate_user(db: Session, payload: LoginRequest) -> User | None:
 def build_auth_response(user: User) -> dict[str, object]:
     """Return a normalized auth response payload."""
     return {
-        "access_token": create_access_token(user.id),
+        "access_token": create_access_token(user.id, role=user.role),
         "token_type": "bearer",
         "user": user,
     }

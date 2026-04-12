@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps.db import get_db
 from app.core.security import decode_access_token
+from app.models.enums import UserRole
 from app.models.user import User
 
 bearer_scheme = HTTPBearer()
@@ -35,4 +36,14 @@ def get_current_user(
     if not user or not user.is_active:
         raise credentials_exception
 
+    return user
+
+
+def get_current_recruiter(user: User = Depends(get_current_user)) -> User:
+    """Restrict access to authenticated users with the recruiter role."""
+    if user.role != UserRole.RECRUITER:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Recruiter access required.",
+        )
     return user

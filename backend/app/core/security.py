@@ -22,11 +22,11 @@ def verify_password(password: str, password_hash: str | None) -> bool:
     return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
 
 
-def create_access_token(subject: str) -> str:
+def create_access_token(subject: str, role: str = "jobseeker") -> str:
     """Create a short-lived JWT for authenticated API access."""
     settings = get_settings()
     expire_at = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    payload = {"sub": subject, "exp": expire_at, "type": "access"}
+    payload = {"sub": subject, "exp": expire_at, "type": "access", "role": role}
     return jwt.encode(payload, settings.jwt_secret, algorithm=ALGORITHM)
 
 

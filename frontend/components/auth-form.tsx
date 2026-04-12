@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { login, register } from "@/lib/auth";
+import { setUserRole } from "@/lib/api";
 
 type AuthFormProps = {
   mode: "login" | "register";
@@ -37,11 +38,14 @@ export function AuthForm({ mode }: AuthFormProps) {
           password,
           full_name: fullName || undefined
         });
+        router.push("/dashboard");
       } else {
-        await login({ email, password });
+        const response = await login({ email, password });
+        const role = response.user.role;
+        setUserRole(role);
+        router.push(role === "recruiter" ? "/recruiter" : "/dashboard");
       }
 
-      router.push("/dashboard");
       router.refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Authentication failed.");
