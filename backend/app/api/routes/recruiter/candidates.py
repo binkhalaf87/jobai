@@ -114,15 +114,35 @@ def _run_gpt_analysis(
     resume: Resume,
     job: JobDescription,
 ) -> Analysis | None:
-    """Run GPT semantic matching and persist. Returns None if text missing or GPT fails."""
-    resume_text = resume.normalized_text or resume.raw_text or ""
-    job_text = job.normalized_text or job.source_text or ""
+    """Run GPT semantic matching and persist. Returns None if text missing or GPT fails.
 
-    if not resume_text or not job_text:
+    Uses vision (PDF pages as images) when the original file is still on disk.
+    Falls back to extracted text for DOCX or missing files.
+    """
+    job_text = job.normalized_text or job.source_text or ""
+    if not job_text:
+        return None
+
+    resume_text = resume.normalized_text or resume.raw_text or ""
+    file_type = (resume.file_type or "").lower()
+    pdf_path: str | None = None
+
+    # Use vision for PDFs if the file is still on disk
+    if file_type == "pdf" and resume.storage_key:
+        from pathlib import Path as _Path
+        if _Path(resume.storage_key).exists():
+            pdf_path = resume.storage_key
+
+    # Need either a file or text
+    if not pdf_path and not resume_text:
         return None
 
     try:
-        result = gpt_match_resume_to_job(resume_text, job_text)
+        result = gpt_match_resume_to_job(
+            job_text,
+            pdf_path=pdf_path,
+            resume_text=resume_text,
+        )
     except Exception:
         return None
 

@@ -1,20 +1,33 @@
 """GPT-powered semantic matching between a resume and a job description.
 
-Complements the TF-IDF vectorizer with deep language understanding:
-- Works across Arabic, English, and mixed-language documents
-- Returns structured JSON with score, strengths, gaps, and hiring suggestion
-- Uses gpt-4o-mini for cost efficiency
+Primary mode  — Vision (PDF):
+  PDF pages are rendered to PNG images and sent to GPT-4o-mini vision.
+  This reads the actual visual layout, handles Arabic RTL, and works on
+  scanned PDFs that contain no extractable text.
+
+Fallback mode — Text (DOCX or missing file):
+  Extracted/normalized text is sent as a plain-text message.
+
+Both modes return the same structured JSON result.
 """
 
 from __future__ import annotations
 
+import base64
 import json
 from dataclasses import asdict, dataclass
+from pathlib import Path
+
+import fitz  # PyMuPDF — already a project dependency
 
 from app.core.openai_client import get_openai_client
 
 GPT_MATCH_MODEL = "gpt-4o-mini"
-GPT_MATCH_MODEL_NAME = "gpt-match-v1"
+GPT_MATCH_MODEL_NAME = "gpt-match-v2"
+
+# Render at 1.5× zoom — good quality without oversized payloads (~400 KB/page)
+_VISION_ZOOM = 1.5
+_MAX_PAGES = 3  # first 3 pages cover ~95% of resume content
 
 _SYSTEM_PROMPT = """\
 You are an expert HR analyst and ATS system specialist.
@@ -45,6 +58,53 @@ Score guidelines:
 """
 
 
+def _pdf_to_base64_images(pdf_path: str) -> list[str]:
+    """Render up to _MAX_PAGES PDF pages to base64-encoded PNG images."""
+    images: list[str] = []
+    try:
+        mat = fitz.Matrix(_VISION_ZOOM, _VISION_ZOOM)
+        with fitz.open(pdf_path) as doc:
+            for i in range(min(_MAX_PAGES, len(doc))):
+                pix = doc[i].get_pixmap(matrix=mat)
+                images.append(base64.b64encode(pix.tobytes("png")).decode("utf-8"))
+    except Exception:
+        pass
+    return images
+
+
+def _build_vision_content(images: list[str], job_text: str) -> list[dict]:
+    """Build the multipart content list for a GPT-4o vision message."""
+    content: list[dict] = [
+        {"type": "text", "text": "Resume (PDF — read all pages carefully):"},
+    ]
+    for img_b64 in images:
+        content.append({
+            "type": "image_url",
+            "image_url": {
+                "url": f"data:image/png;base64,{img_b64}",
+                "detail": "high",
+            },
+        })
+    content.append({
+        "type": "text",
+        "text": f"\n---\n\nJob Description:\n\n{job_text.strip()}",
+    })
+    return content
+
+
+def _build_text_content(resume_text: str, job_text: str) -> list[dict]:
+    """Build the content list for a plain-text resume message."""
+    return [
+        {
+            "type": "text",
+            "text": (
+                f"Resume:\n\n{resume_text.strip()}"
+                f"\n\n---\n\nJob Description:\n\n{job_text.strip()}"
+            ),
+        }
+    ]
+
+
 @dataclass(frozen=True)
 class GptMatchResult:
     match_score: float
@@ -71,25 +131,52 @@ class GptMatchResult:
         )
 
 
-def gpt_match_resume_to_job(resume_text: str, job_text: str) -> GptMatchResult:
-    """Call GPT to semantically match a resume against a job description.
+def gpt_match_resume_to_job(
+    job_text: str,
+    *,
+    pdf_path: str | None = None,
+    resume_text: str = "",
+) -> GptMatchResult:
+    """Match a resume against a job description using GPT-4o-mini.
 
-    Raises RuntimeError if the OpenAI key is missing.
-    Raises ValueError if the response cannot be parsed.
+    Strategy (in priority order):
+    1. PDF file available  → render pages to PNG → send to GPT vision
+       (handles scanned PDFs, Arabic RTL, complex layouts)
+    2. Text available      → send plain text
+    3. Nothing available   → raises ValueError
+
+    Args:
+        job_text:     Normalized job description text.
+        pdf_path:     Path to the original PDF file (optional).
+        resume_text:  Pre-extracted text fallback (optional).
     """
-    client = get_openai_client()
+    if not job_text.strip():
+        raise ValueError("Job description text is required.")
 
-    user_message = (
-        f"**Resume:**\n\n{resume_text.strip()}\n\n"
-        f"---\n\n"
-        f"**Job Description:**\n\n{job_text.strip()}"
-    )
+    client = get_openai_client()
+    used_vision = False
+
+    # --- Try vision first ---
+    if pdf_path and Path(pdf_path).exists():
+        images = _pdf_to_base64_images(pdf_path)
+        if images:
+            content = _build_vision_content(images, job_text)
+            used_vision = True
+
+    # --- Fall back to text ---
+    if not used_vision:
+        if not resume_text.strip():
+            raise ValueError(
+                "No PDF file and no resume text available. "
+                "Cannot run analysis."
+            )
+        content = _build_text_content(resume_text, job_text)
 
     response = client.chat.completions.create(
         model=GPT_MATCH_MODEL,
         messages=[
             {"role": "system", "content": _SYSTEM_PROMPT},
-            {"role": "user", "content": user_message},
+            {"role": "user", "content": content},
         ],
         response_format={"type": "json_object"},
         temperature=0.2,
@@ -97,7 +184,6 @@ def gpt_match_resume_to_job(resume_text: str, job_text: str) -> GptMatchResult:
     )
 
     raw = response.choices[0].message.content or "{}"
-
     try:
         data = json.loads(raw)
     except json.JSONDecodeError as exc:
