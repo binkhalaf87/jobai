@@ -12,7 +12,6 @@ from app.models.enums import AnalysisStatus, CandidateStage, ResumeProcessingSta
 from app.models.job_description import JobDescription
 from app.models.resume import Resume
 from app.models.user import User
-from app.services.analysis_matching import MATCH_MODEL_NAME, compute_match_result
 from app.services.gpt_matching_service import GPT_MATCH_MODEL_NAME, gpt_match_resume_to_job
 from app.services.resume_upload import save_resume_upload
 
@@ -20,7 +19,7 @@ router = APIRouter(prefix="/recruiter/candidates", tags=["recruiter-candidates"]
 
 
 # ---------------------------------------------------------------------------
-# Request / response schemas
+# Schemas
 # ---------------------------------------------------------------------------
 
 
@@ -79,6 +78,20 @@ class StageUpdateResponse(BaseModel):
     stage: CandidateStage
 
 
+class AnalyzeResponse(BaseModel):
+    analyses_created: int
+    analyses_skipped: int
+    has_resume_text: bool
+    warning: str | None = None
+
+
+class AnalyzeAllResponse(BaseModel):
+    total_candidates: int
+    total_created: int
+    total_skipped: int
+    no_text_count: int
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -95,50 +108,13 @@ def _get_recruiter_jobs(db: Session, recruiter_id: str) -> list[JobDescription]:
     return list(db.scalars(select(JobDescription).where(JobDescription.user_id == recruiter_id)))
 
 
-def _run_and_save_analysis(
-    db: Session,
-    recruiter_id: str,
-    resume: Resume,
-    job: JobDescription,
-) -> Analysis | None:
-    resume_text = resume.normalized_text or resume.raw_text or ""
-    job_text = job.normalized_text or job.source_text or ""
-
-    if not resume_text or not job_text:
-        return None
-
-    try:
-        result = compute_match_result(resume_text, job_text)
-    except Exception:
-        return None
-
-    analysis = Analysis(
-        user_id=recruiter_id,
-        resume_id=resume.id,
-        job_description_id=job.id,
-        status=AnalysisStatus.COMPLETED,
-        model_name=MATCH_MODEL_NAME,
-        overall_score=result.match_score,
-        summary_text=(
-            f"TF-IDF match: {result.match_score:.2f}% similarity, "
-            f"{len(result.matching_keywords)} matching keywords."
-        ),
-        result_payload=result.to_payload(),
-        completed_at=datetime.now(timezone.utc),
-    )
-    db.add(analysis)
-    db.commit()
-    db.refresh(analysis)
-    return analysis
-
-
 def _run_gpt_analysis(
     db: Session,
     recruiter_id: str,
     resume: Resume,
     job: JobDescription,
 ) -> Analysis | None:
-    """Run GPT semantic matching and persist the result."""
+    """Run GPT semantic matching and persist. Returns None if text missing or GPT fails."""
     resume_text = resume.normalized_text or resume.raw_text or ""
     job_text = job.normalized_text or job.source_text or ""
 
@@ -151,8 +127,7 @@ def _run_gpt_analysis(
         return None
 
     summary = result.recommendation or (
-        f"GPT match: {result.match_score:.1f}% — {result.hiring_suggestion}. "
-        f"{len(result.matching_keywords)} matching skills."
+        f"GPT match: {result.match_score:.1f}% — {result.hiring_suggestion}."
     )
 
     analysis = Analysis(
@@ -182,7 +157,10 @@ def _keywords_from_payload(payload: dict | None, key: str) -> list[str]:
 def _email_from_structured(structured: dict | None) -> str | None:
     if not isinstance(structured, dict):
         return None
-    return structured.get("email") or structured.get("contact", {}).get("email") if isinstance(structured.get("contact"), dict) else structured.get("email")
+    contact = structured.get("contact")
+    if isinstance(contact, dict):
+        return contact.get("email")
+    return structured.get("email")
 
 
 def _build_list_item(db: Session, resume: Resume) -> CandidateListItem:
@@ -238,21 +216,16 @@ async def upload_candidates(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_recruiter),
 ) -> CandidateUploadResponse:
+    """Upload resumes. Text is extracted immediately; AI analysis runs separately."""
     if not files:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No files provided.")
 
-    jobs = _get_recruiter_jobs(db, current_user.id)
     resume_ids: list[str] = []
-
     for uploaded_file in files:
         try:
             resume = await save_resume_upload(db, current_user, uploaded_file)
         except ValueError as exc:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
-
-        for job in jobs:
-            _run_and_save_analysis(db, current_user.id, resume, job)
-
         resume_ids.append(resume.id)
 
     return CandidateUploadResponse(resume_ids=resume_ids)
@@ -271,6 +244,48 @@ def list_candidates(
         )
     )
     return [_build_list_item(db, resume) for resume in resumes]
+
+
+@router.post("/analyze-all", response_model=AnalyzeAllResponse)
+def analyze_all_candidates(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_recruiter),
+) -> AnalyzeAllResponse:
+    """Run GPT analysis for every candidate against every job."""
+    resumes = list(
+        db.scalars(select(Resume).where(Resume.user_id == current_user.id))
+    )
+    jobs = _get_recruiter_jobs(db, current_user.id)
+
+    if not jobs:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="No jobs found. Add at least one job before running analysis.",
+        )
+
+    total_created = 0
+    total_skipped = 0
+    no_text_count = 0
+
+    for resume in resumes:
+        resume_text = resume.normalized_text or resume.raw_text or ""
+        if not resume_text.strip():
+            no_text_count += 1
+            continue
+
+        for job in jobs:
+            result = _run_gpt_analysis(db, current_user.id, resume, job)
+            if result:
+                total_created += 1
+            else:
+                total_skipped += 1
+
+    return AnalyzeAllResponse(
+        total_candidates=len(resumes),
+        total_created=total_created,
+        total_skipped=total_skipped,
+        no_text_count=no_text_count,
+    )
 
 
 @router.get("/{resume_id}", response_model=CandidateDetail)
@@ -359,22 +374,13 @@ def update_stage(
     return StageUpdateResponse(id=resume.id, stage=resume.recruiter_stage)
 
 
-class AnalyzeResponse(BaseModel):
-    analyses_created: int
-    analyses_skipped: int
-    has_resume_text: bool
-    mode: str
-    warning: str | None = None
-
-
 @router.post("/{resume_id}/analyze", response_model=AnalyzeResponse)
 def analyze_candidate(
     resume_id: str,
-    mode: str = "tfidf",
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_recruiter),
 ) -> AnalyzeResponse:
-    """Run (or re-run) matching between this resume and all recruiter jobs."""
+    """Run GPT analysis for this candidate against all recruiter jobs."""
     resume = _get_owned_resume(db, resume_id, current_user.id)
 
     resume_text = resume.normalized_text or resume.raw_text or ""
@@ -385,10 +391,9 @@ def analyze_candidate(
             analyses_created=0,
             analyses_skipped=0,
             has_resume_text=False,
-            mode=mode,
             warning=(
                 "No text could be extracted from this resume. "
-                "The file may be a scanned image (not searchable PDF). "
+                "The file may be a scanned image (not a searchable PDF). "
                 "Try uploading a text-based PDF or DOCX file."
             ),
         )
@@ -401,36 +406,19 @@ def analyze_candidate(
             detail="No jobs found. Add at least one job before running analysis.",
         )
 
-    use_gpt = mode == "gpt"
     created = 0
     skipped = 0
-
     for job in jobs:
-        if use_gpt:
-            result = _run_gpt_analysis(db, current_user.id, resume, job)
-        else:
-            result = _run_and_save_analysis(db, current_user.id, resume, job)
-
+        result = _run_gpt_analysis(db, current_user.id, resume, job)
         if result:
             created += 1
         else:
             skipped += 1
 
-    warning: str | None = None
-    if created == 0 and skipped > 0 and not use_gpt:
-        warning = (
-            "Analysis ran but produced no results. "
-            "This usually means the resume and job description are in different languages "
-            "with no shared technical terms. Try 'Deep AI Analysis' for cross-language matching, "
-            "or ensure both texts share common technical keywords."
-        )
-
     return AnalyzeResponse(
         analyses_created=created,
         analyses_skipped=skipped,
         has_resume_text=has_resume_text,
-        mode=mode,
-        warning=warning,
     )
 
 

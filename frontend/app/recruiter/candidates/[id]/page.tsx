@@ -562,7 +562,7 @@ export default function CandidateProfilePage() {
     void load();
   }, [id]);
 
-  async function handleRunAnalysis(mode: "tfidf" | "gpt" = "tfidf") {
+  async function handleRunAnalysis() {
     if (!detail || analyzing) return;
     setAnalyzing(true);
     setAnalyzeError(null);
@@ -570,9 +570,8 @@ export default function CandidateProfilePage() {
       const result = await api.post<{
         analyses_created: number;
         has_resume_text: boolean;
-        mode: string;
         warning: string | null;
-      }>(`/recruiter/candidates/${id}/analyze?mode=${mode}`, undefined, { auth: true });
+      }>(`/recruiter/candidates/${id}/analyze`, undefined, { auth: true });
 
       if (!result.has_resume_text) {
         setAnalyzeError(result.warning ?? "No text found in resume.");
@@ -754,24 +753,16 @@ export default function CandidateProfilePage() {
                     Move to Interview →
                   </button>
                 )}
-                {(nextStep.action === "Run Analysis" || nextStep.action === "Re-run Analysis") && (
+                {(nextStep.action === "Run Analysis" ||
+                  nextStep.action === "Re-run Analysis" ||
+                  nextStep.action === "Deep AI Analysis") && (
                   <button
                     type="button"
                     disabled={analyzing}
-                    onClick={() => void handleRunAnalysis("tfidf")}
-                    className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
-                  >
-                    {analyzing ? "Running…" : nextStep.action}
-                  </button>
-                )}
-                {nextStep.action === "Deep AI Analysis" && (
-                  <button
-                    type="button"
-                    disabled={analyzing}
-                    onClick={() => void handleRunAnalysis("gpt")}
+                    onClick={() => void handleRunAnalysis()}
                     className="rounded-xl bg-violet-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50"
                   >
-                    {analyzing ? "Running…" : "✦ Deep AI Analysis"}
+                    {analyzing ? "Running…" : "✦ Analyze with AI"}
                   </button>
                 )}
                 {nextStep.action === "Go to Jobs →" && (
@@ -813,24 +804,16 @@ export default function CandidateProfilePage() {
         </div>
       )}
 
-      {/* ── Analysis action buttons ─────────────────────────── */}
+      {/* ── Re-run AI Analysis button ────────────────────────── */}
       {detail.matches.length > 0 && (
-        <div className="flex flex-wrap justify-end gap-2">
+        <div className="flex justify-end">
           <button
             type="button"
             disabled={analyzing}
-            onClick={() => void handleRunAnalysis("tfidf")}
-            className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-500 transition hover:border-slate-300 hover:text-slate-700 disabled:opacity-40"
-          >
-            {analyzing ? "Running…" : "⟳ Re-run Analysis"}
-          </button>
-          <button
-            type="button"
-            disabled={analyzing}
-            onClick={() => void handleRunAnalysis("gpt")}
+            onClick={() => void handleRunAnalysis()}
             className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 transition hover:bg-violet-100 disabled:opacity-40"
           >
-            {analyzing ? "Running…" : "✦ Deep AI Analysis"}
+            {analyzing ? "Running…" : "✦ Re-run AI Analysis"}
           </button>
         </div>
       )}

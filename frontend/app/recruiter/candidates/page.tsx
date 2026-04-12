@@ -463,6 +463,13 @@ export default function RecruiterCandidatesPage() {
   const [search, setSearch] = useState("");
   const [stageFilter, setStageFilter] = useState<Stage | "all" | "no_analysis">("all");
 
+  const [analyzingAll, setAnalyzingAll] = useState(false);
+  const [analyzeAllResult, setAnalyzeAllResult] = useState<{
+    total_candidates: number;
+    total_created: number;
+    no_text_count: number;
+  } | null>(null);
+
   async function loadCandidates() {
     try {
       const data = await api.get<CandidateListItem[]>("/recruiter/candidates/", { auth: true });
@@ -523,6 +530,36 @@ export default function RecruiterCandidatesPage() {
     });
   }
 
+  // --- Analyze all ---
+
+  async function handleAnalyzeAll() {
+    if (analyzingAll) return;
+    setAnalyzingAll(true);
+    setAnalyzeAllResult(null);
+    try {
+      const result = await api.post<{
+        total_candidates: number;
+        total_created: number;
+        total_skipped: number;
+        no_text_count: number;
+      }>("/recruiter/candidates/analyze-all", undefined, { auth: true });
+      setAnalyzeAllResult(result);
+      // Refresh list to show new scores
+      setListLoading(true);
+      void loadCandidates();
+    } catch (err) {
+      setAnalyzeAllResult(null);
+      // show error in the result area
+      setAnalyzeAllResult({
+        total_candidates: 0,
+        total_created: -1,
+        no_text_count: 0,
+      });
+    } finally {
+      setAnalyzingAll(false);
+    }
+  }
+
   // --- Stage update ---
 
   function handleStageChange(id: string, stage: Stage) {
@@ -562,6 +599,62 @@ export default function RecruiterCandidatesPage() {
           <h1 className="mt-0.5 text-2xl font-semibold tracking-tight text-slate-950">Candidates</h1>
         </div>
       </div>
+
+      {/* ── Analyze All button ──────────────────────────────────── */}
+      {!listLoading && candidates.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            disabled={analyzingAll}
+            onClick={() => void handleAnalyzeAll()}
+            className="flex items-center gap-2 rounded-2xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 disabled:opacity-50"
+          >
+            {analyzingAll ? (
+              <>
+                <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                Analyzing with AI…
+              </>
+            ) : (
+              <>✦ Analyze All with AI</>
+            )}
+          </button>
+          {analyzingAll && (
+            <p className="text-xs text-slate-500">
+              GPT is analyzing each candidate against your jobs. This may take a moment…
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* ── Analyze All result banner ────────────────────────────── */}
+      {analyzeAllResult && !analyzingAll && (
+        <div className={`rounded-2xl border px-4 py-3 text-sm ${
+          analyzeAllResult.total_created === -1
+            ? "border-rose-200 bg-rose-50 text-rose-700"
+            : "border-violet-200 bg-violet-50 text-violet-800"
+        }`}>
+          {analyzeAllResult.total_created === -1 ? (
+            "Analysis failed. Make sure you have jobs added and try again."
+          ) : (
+            <>
+              <span className="font-semibold">✦ AI Analysis complete.</span>
+              {" "}{analyzeAllResult.total_created} analyses created across {analyzeAllResult.total_candidates} candidates.
+              {analyzeAllResult.no_text_count > 0 && (
+                <span className="ml-1 text-violet-600">
+                  ({analyzeAllResult.no_text_count} skipped — no extractable text)
+                </span>
+              )}
+            </>
+          )}
+          <button
+            type="button"
+            onClick={() => setAnalyzeAllResult(null)}
+            className="ml-3 text-xs opacity-50 hover:opacity-100"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* ── Upload zone ─────────────────────────────────────────── */}
       <UploadZone onFilesAdded={handleFilesAdded} />
