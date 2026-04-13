@@ -7,15 +7,6 @@ import { useEffect, type ReactNode } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { DASHBOARD_NAV_GROUPS } from "@/lib/navigation";
 
-const JOURNEY_ROUTES = [
-  { label: "Upload", href: "/dashboard/resumes" },
-  { label: "Analyze", href: "/dashboard/analysis" },
-  { label: "Improve", href: "/dashboard/enhancement" },
-  { label: "Match", href: "/dashboard/job-search" },
-  { label: "Send", href: "/dashboard/smart-send" },
-  { label: "Interview", href: "/dashboard/ai-interview" },
-] as const;
-
 // ─── Inline SVG icon renderer (no external icon dependency) ─────────────────
 function NavIcon({ id }: { id: string }) {
   const icons: Record<string, ReactNode> = {
@@ -120,7 +111,6 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
 
   const allItems = DASHBOARD_NAV_GROUPS.flatMap((g) => g.items);
   const currentPage = allItems.find((item) => isActive(pathname, item.href));
-  const currentJourneyIndex = JOURNEY_ROUTES.findIndex((item) => isActive(pathname, item.href));
 
   useEffect(() => {
     if (!isLoading && !hasSession) router.replace("/login");
@@ -214,53 +204,10 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
       {/* ─── Main area ────────────────────────────────────────── */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Top header */}
-        <header className="border-b border-slate-200 bg-white px-6 py-4 md:px-8">
-          <div className="flex items-center justify-between gap-4">
-            <h1 className="text-base font-semibold text-slate-900">
-              {currentPage?.label ?? "Dashboard"}
-            </h1>
-            {currentJourneyIndex >= 0 && (
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                Step {currentJourneyIndex + 1} of {JOURNEY_ROUTES.length}
-              </span>
-            )}
-          </div>
-
-          <div className="mt-4 overflow-x-auto">
-            <div className="flex min-w-max items-center gap-2">
-              {JOURNEY_ROUTES.map((item, index) => {
-                const active = isActive(pathname, item.href);
-                const completed = currentJourneyIndex >= 0 && index < currentJourneyIndex;
-
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                      active
-                        ? "border-slate-900 bg-slate-900 text-white"
-                        : completed
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                          : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 hover:text-slate-900"
-                    }`}
-                  >
-                    <span
-                      className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] ${
-                        active
-                          ? "bg-white/15 text-white"
-                          : completed
-                            ? "bg-emerald-500 text-white"
-                            : "bg-slate-200 text-slate-500"
-                      }`}
-                    >
-                      {completed ? "OK" : index + 1}
-                    </span>
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
+        <header className="flex h-16 flex-shrink-0 items-center border-b border-slate-200 bg-white px-6 md:px-8">
+          <h1 className="text-base font-semibold text-slate-900">
+            {currentPage?.label ?? "Dashboard"}
+          </h1>
         </header>
 
         {/* Scrollable page content */}
