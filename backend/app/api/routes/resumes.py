@@ -6,6 +6,7 @@ from app.api.deps.db import get_db
 from app.models.user import User
 from app.schemas.resume import ResumeListItem, ResumeTextPreviewResponse, ResumeUploadResponse
 from app.services.resume_preview import build_text_preview, get_user_resume, list_user_resumes
+from app.services.resume_storage import delete_resume_file
 from app.services.resume_upload import save_resume_upload
 
 # This router keeps resume ingestion separate from downstream analysis logic.
@@ -77,5 +78,7 @@ def delete_resume(
     if not resume:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume not found.")
 
+    storage_key = resume.storage_key
     db.delete(resume)
     db.commit()
+    delete_resume_file(storage_key)

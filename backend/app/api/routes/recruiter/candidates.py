@@ -14,6 +14,7 @@ from app.models.job_description import JobDescription
 from app.models.resume import Resume
 from app.models.user import User
 from app.services.gpt_matching_service import GPT_MATCH_MODEL_NAME, gpt_match_resume_to_job
+from app.services.resume_storage import delete_resume_file, resolve_storage_key, resume_file_exists
 from app.services.resume_upload import save_resume_upload
 
 router = APIRouter(prefix="/recruiter/candidates", tags=["recruiter-candidates"])
@@ -135,10 +136,9 @@ def _run_gpt_analysis(
     pdf_path: str | None = None
 
     # Use vision for PDFs if the file is still on disk
-    if file_type == "pdf" and resume.storage_key:
-        from pathlib import Path as _Path
-        if _Path(resume.storage_key).exists():
-            pdf_path = resume.storage_key
+    resolved_resume_path = resolve_storage_key(resume.storage_key)
+    if file_type == "pdf" and resolved_resume_path and resolved_resume_path.exists():
+        pdf_path = str(resolved_resume_path)
 
     # Need either a file or text
     if not pdf_path and not resume_text:
@@ -376,8 +376,7 @@ def get_candidate(
                 reason=reason,
             )
 
-    from pathlib import Path as _Path
-    file_available = bool(resume.storage_key and _Path(resume.storage_key).exists())
+    file_available = resume_file_exists(resume.storage_key)
 
     return CandidateDetail(
         id=resume.id,
@@ -468,14 +467,13 @@ def get_resume_file(
     current_user: User = Depends(get_current_recruiter),
 ) -> FileResponse:
     """Serve the original uploaded resume file for inline preview or download."""
-    from pathlib import Path as _Path
     resume = _get_owned_resume(db, resume_id, current_user.id)
 
     if not resume.storage_key:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No file stored for this resume.")
 
-    path = _Path(resume.storage_key)
-    if not path.exists():
+    path = resolve_storage_key(resume.storage_key)
+    if path is None or not path.exists():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume file not found on disk.")
 
     file_type = (resume.file_type or "").lower()
@@ -501,5 +499,7 @@ def delete_candidate(
     current_user: User = Depends(get_current_recruiter),
 ) -> None:
     resume = _get_owned_resume(db, resume_id, current_user.id)
+    storage_key = resume.storage_key
     db.delete(resume)
     db.commit()
+    delete_resume_file(storage_key)

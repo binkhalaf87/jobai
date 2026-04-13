@@ -2,6 +2,7 @@ import os
 import re
 from dataclasses import dataclass
 from functools import lru_cache
+from pathlib import Path
 from urllib.parse import urlsplit
 
 
@@ -110,6 +111,12 @@ def get_required_env(name: str) -> str:
     return value
 
 
+def get_default_resume_storage_dir() -> str:
+    """Use a durable local directory inside the backend project by default."""
+    backend_dir = Path(__file__).resolve().parents[2]
+    return str((backend_dir / "storage" / "resumes").resolve())
+
+
 @dataclass(frozen=True)
 class Settings:
     """Central application settings loaded from environment variables."""
@@ -127,6 +134,7 @@ class Settings:
     redis_url: str | None
     stripe_secret_key: str | None
     rapidapi_key: str | None
+    resume_storage_dir: str
 
     def allowed_origins(self) -> list[str]:
         """Build an explicit allowlist for frontend origins."""
@@ -167,6 +175,7 @@ def build_settings() -> Settings:
         redis_url=get_optional_env("REDIS_URL", "").strip() or None,
         stripe_secret_key=get_optional_env("STRIPE_SECRET_KEY", "").strip() or None,
         rapidapi_key=get_optional_env("RAPIDAPI_KEY", "").strip() or None,
+        resume_storage_dir=get_optional_env("RESUME_STORAGE_DIR", get_default_resume_storage_dir()),
     )
 
 

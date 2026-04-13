@@ -37,10 +37,19 @@ Copy `.env.example` to `.env` for local development.
 - `ALLOWED_ORIGIN` - Comma-separated frontend origins allowed to call the API. In production this should include your Vercel frontend URL.
 - `REDIS_URL` - Optional Redis connection string for future caching, queues, or background coordination
 - `STRIPE_SECRET_KEY` - Optional secret key reserved for future billing integration
+- `RESUME_STORAGE_DIR` - Optional durable filesystem path used for uploaded resume files. Defaults to `backend/storage/resumes`
 - `PORT` - Port used by Uvicorn locally or by the hosting platform
 
 The backend settings loader validates the core runtime variables together and raises a clear startup error if any are missing.
 The CORS setup also adds common localhost frontend origins automatically when `ENVIRONMENT` is not `production`.
+
+## Resume file storage
+
+- Uploaded resume files are stored on the backend filesystem, not in the database
+- Parsed text, normalized text, and structured resume data are stored in PostgreSQL
+- New uploads use a durable storage directory configured by `RESUME_STORAGE_DIR`
+- If `RESUME_STORAGE_DIR` is not set, the backend defaults to `backend/storage/resumes`
+- Legacy absolute file paths remain readable so older uploads do not break after this change
 
 ## Deployment
 
