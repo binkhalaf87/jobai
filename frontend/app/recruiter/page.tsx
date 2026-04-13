@@ -143,16 +143,89 @@ export default function RecruiterDashboardPage() {
     );
   }
 
+  const pipelineTotal = Object.values(stats.pipeline_counts).reduce((sum, value) => sum + value, 0);
+  const shortlistedRatio = pipelineTotal > 0 ? Math.round((stats.pipeline_counts.shortlisted / pipelineTotal) * 100) : 0;
+  const nextActionHref =
+    stats.total_jobs === 0
+      ? "/recruiter/jobs"
+      : stats.awaiting_analysis > 0
+        ? "/recruiter/candidates"
+        : "/recruiter/candidates";
+  const nextActionLabel =
+    stats.total_jobs === 0
+      ? "Post a job"
+      : stats.awaiting_analysis > 0
+        ? "Run candidate analysis"
+        : "Review top candidates";
+  const nextActionDescription =
+    stats.total_jobs === 0
+      ? "Add an active role so ranking and fit scoring can start."
+      : stats.awaiting_analysis > 0
+        ? `${stats.awaiting_analysis} resumes are waiting for AI analysis against your open jobs.`
+        : "Your pipeline is ready for shortlist and interview decisions.";
+
   return (
     <div className="space-y-6">
-      <Panel className="p-8 md:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Recruiter Dashboard</p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
-          Operate your hiring pipeline from one workspace
-        </h1>
-        <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
-          Track applicants, identify strong fits, and move people through the pipeline without leaving the ATS flow.
-        </p>
+      <Panel className="overflow-hidden p-0">
+        <div className="grid gap-0 lg:grid-cols-[1.35fr_0.65fr]">
+          <div className="bg-[radial-gradient(circle_at_top_left,_rgba(15,23,42,0.08),_transparent_55%),linear-gradient(135deg,_#ffffff_0%,_#eef4ff_46%,_#f8fafc_100%)] px-8 py-8 md:px-10 md:py-10">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Recruiter Dashboard</p>
+            <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
+              Run sourcing, ranking, and pipeline decisions from one hiring workspace
+            </h1>
+            <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
+              This view turns uploaded resumes into an operating queue: who needs analysis, who is strongest for open jobs, and who should move next.
+            </p>
+
+            <div className="mt-6 grid gap-3 md:grid-cols-3">
+              <div className="rounded-[1.75rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Hiring Pulse</p>
+                <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{shortlistedRatio}%</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Of visible pipeline is already shortlisted for deeper review.</p>
+              </div>
+              <div className="rounded-[1.75rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Next Action</p>
+                <p className="mt-3 text-lg font-semibold tracking-tight text-slate-950">{nextActionLabel}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{nextActionDescription}</p>
+              </div>
+              <div className="rounded-[1.75rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Coverage</p>
+                <p className="mt-3 text-lg font-semibold tracking-tight text-slate-950">
+                  {stats.total_jobs > 0 ? `${stats.total_jobs} active role${stats.total_jobs === 1 ? "" : "s"}` : "No active jobs"}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Ranking quality improves when each candidate can be measured against a live role.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-200/70 bg-slate-950 px-8 py-8 text-white lg:border-l lg:border-t-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Control Center</p>
+            <div className="mt-5 space-y-4">
+              <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-4">
+                <p className="text-sm font-semibold">Move the pipeline forward</p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">
+                  Open the candidate queue to bulk analyze resumes, change stages, and review fit signals in one pass.
+                </p>
+                <Link
+                  href={nextActionHref}
+                  className="mt-4 inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-slate-200"
+                >
+                  {nextActionLabel}
+                </Link>
+              </div>
+              <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-4">
+                <p className="text-sm font-semibold">Top risk right now</p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">
+                  {stats.awaiting_analysis > 0
+                    ? "Unanalyzed candidates are hiding strong matches. Clear them first so ranking becomes trustworthy."
+                    : "The next bottleneck is human review speed. Use shortlist and interview stages to keep momentum visible."}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </Panel>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

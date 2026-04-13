@@ -282,14 +282,65 @@ export default function DashboardAiInterviewPage() {
   }
 
   const currentQuestion = questions[currentIndex];
+  const activeSessionCount = sessions.filter((session) => session.status === "active").length;
+  const completedSessions = sessions.filter((session) => session.status === "completed");
+  const latestCompletedScore = completedSessions[0]?.overall_score ?? null;
+  const readinessLabel =
+    latestCompletedScore == null ? "Not scored yet" : latestCompletedScore >= 8 ? "Strong" : latestCompletedScore >= 6 ? "Improving" : "Needs practice";
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">AI Tools</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">AI Interview</h1>
-        <p className="mt-1 max-w-3xl text-sm text-slate-500">A more realistic mock interview: role-aware, resume-aware, and adaptive to your answers.</p>
-      </div>
+      <Panel className="overflow-hidden p-0">
+        <div className="grid gap-0 lg:grid-cols-[1.35fr_0.65fr]">
+          <div className="bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.12),_transparent_42%),linear-gradient(135deg,_#ffffff_0%,_#ecfdf5_46%,_#f8fafc_100%)] px-6 py-6 md:px-8 md:py-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">AI Practice</p>
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-900">AI Interview</h1>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
+              Practice a more realistic mock interview with role-aware questions, resume context, adaptive follow-ups, and scored coaching after every answer.
+            </p>
+
+            <div className="mt-6 grid gap-3 md:grid-cols-3">
+              <div className="rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Readiness</p>
+                <p className="mt-3 text-lg font-semibold tracking-tight text-slate-950">{readinessLabel}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  {latestCompletedScore == null ? "Complete your first practice session to establish a benchmark." : `Latest completed session scored ${latestCompletedScore.toFixed(1)}/10.`}
+                </p>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Resume Context</p>
+                <p className="mt-3 text-lg font-semibold tracking-tight text-slate-950">{resumes.length > 0 ? "Available" : "Optional"}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  {resumes.length > 0 ? `${resumes.length} saved resume${resumes.length === 1 ? "" : "s"} can personalize the question set.` : "You can still practice without a resume, but context improves the simulation."}
+                </p>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Open Sessions</p>
+                <p className="mt-3 text-lg font-semibold tracking-tight text-slate-950">{activeSessionCount}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Resume an unfinished practice instead of starting over when you want continuity.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-200 bg-slate-950 px-6 py-6 text-white lg:border-l lg:border-t-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Best Practice Flow</p>
+            <div className="mt-4 space-y-3">
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+                <p className="text-sm font-semibold">1. Define the target role</p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">Use the exact job title and description so the interviewer adapts to the role you want.</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+                <p className="text-sm font-semibold">2. Practice with evidence</p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">Answer like a real interview and let the system score relevance, clarity, professionalism, and fit.</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+                <p className="text-sm font-semibold">3. Turn feedback into drills</p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">Use the final report to improve weak spots before the next interview round.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Panel>
 
       {pageState === "setup" && sessions.some((s) => s.status === "active") && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">

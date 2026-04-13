@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -493,35 +494,70 @@ export default function DashboardJobSearchPage() {
   const canSearch = query.trim().length > 0 && pageState !== "searching";
   const hasMore = results.length > 0 && results.length < totalFound;
   const matchedSavedCount = savedJobs.filter((job) => (job.fit_score ?? 0) >= 55).length;
+  const activeResume = resumes.find((resume) => resume.id === resumeId) ?? null;
+  const nextActionHref = savedJobs.length > 0 ? "/dashboard/smart-send" : "/dashboard/analysis";
+  const nextActionLabel = savedJobs.length > 0 ? "Launch SmartSend" : "Run CV analysis";
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Journey Step 4</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">Match roles, then act on them</h1>
-        <p className="mt-1 max-w-3xl text-sm text-slate-500">
-          Search live jobs, score them against your selected resume, understand why they match, then move straight into
-          analysis, outreach, or interview practice.
-        </p>
-      </div>
+      <Panel className="overflow-hidden">
+        <div className="border-b border-slate-100 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_55%,#ecfeff_100%)] px-6 py-7 md:px-8 md:py-8">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Journey Step 4</p>
+              <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 md:text-3xl">
+                Match roles, then act on them
+              </h1>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                Search live jobs, score them against your selected resume, understand why they match, and move directly
+                into CV analysis, SmartSend, or interview practice without losing context.
+              </p>
+            </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <ScoreHeader
-          label="Active Resume"
-          value={resumes.find((resume) => resume.id === resumeId)?.source_filename ?? resumes.find((resume) => resume.id === resumeId)?.title ?? "None"}
-          note={resumeId ? "Scoring is currently personalized against this resume." : "Select a resume to unlock fit scoring."}
-        />
-        <ScoreHeader
-          label="Saved Roles"
-          value={savedJobs.length.toString()}
-          note={savedJobs.length > 0 ? `${matchedSavedCount} saved roles already look promising.` : "Save strong opportunities so they stay in your shortlist."}
-        />
-        <ScoreHeader
-          label="Next Best Move"
-          value={savedJobs.length > 0 ? "Shortlist and send" : "Search first"}
-          note={savedJobs.length > 0 ? "Use SmartSend or interview practice directly from saved roles." : "Start with a role title and add location only if it truly matters."}
-        />
-      </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Current focus</p>
+                <p className="mt-2 text-sm font-semibold text-slate-950">
+                  {savedJobs.length > 0 ? "Turn saved roles into action" : "Build your first shortlist"}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  {savedJobs.length > 0
+                    ? `${matchedSavedCount} saved roles already look promising enough to send or practice against.`
+                    : "Start broad, save the strongest roles, then deepen analysis only on the shortlist."}
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white/90 px-4 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Next move</p>
+                <p className="text-sm font-semibold text-slate-950">{nextActionLabel}</p>
+                <Link
+                  href={nextActionHref}
+                  className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-700"
+                >
+                  Continue workflow
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-4 px-6 py-5 lg:grid-cols-3 md:px-8">
+          <ScoreHeader
+            label="Active Resume"
+            value={activeResume?.source_filename ?? activeResume?.title ?? "None selected"}
+            note={resumeId ? "Every fit score and suggestion on this page is based on this resume." : "Select a resume to unlock personalized match scoring."}
+          />
+          <ScoreHeader
+            label="Saved Roles"
+            value={savedJobs.length.toString()}
+            note={savedJobs.length > 0 ? `${matchedSavedCount} saved roles already look promising.` : "Save strong opportunities so they stay in your shortlist."}
+          />
+          <ScoreHeader
+            label="Decision Mode"
+            value={resumeId ? "Personalized matching" : "Manual scouting"}
+            note={resumeId ? "Use match reasons and suggestions to decide where to tailor, send, or rehearse next." : "You can still search, but results will be less tailored until you pick a resume."}
+          />
+        </div>
+      </Panel>
 
       <Panel className="p-5 md:p-6">
         <div className="flex flex-col gap-3 sm:flex-row">

@@ -7,7 +7,6 @@ import { useEffect, type ReactNode } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { DASHBOARD_NAV_GROUPS } from "@/lib/navigation";
 
-// ─── Inline SVG icon renderer (no external icon dependency) ─────────────────
 function NavIcon({ id }: { id: string }) {
   const icons: Record<string, ReactNode> = {
     home: (
@@ -53,13 +52,6 @@ function NavIcon({ id }: { id: string }) {
         <line x1="21" y1="21" x2="16.65" y2="16.65" />
       </>
     ),
-    target: (
-      <>
-        <circle cx="12" cy="12" r="10" />
-        <circle cx="12" cy="12" r="6" />
-        <circle cx="12" cy="12" r="2" />
-      </>
-    ),
     send: (
       <>
         <line x1="22" y1="2" x2="11" y2="13" />
@@ -95,13 +87,23 @@ function NavIcon({ id }: { id: string }) {
   );
 }
 
-// ─── Active link detection ───────────────────────────────────────────────────
 function isActive(pathname: string, href: string): boolean {
   if (href === "/dashboard") return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-// ─── Shell ───────────────────────────────────────────────────────────────────
+const PAGE_DESCRIPTIONS: Record<string, string> = {
+  Dashboard: "Track your CV quality, matching momentum, outreach, and interview readiness from one place.",
+  "My Resumes": "Keep one clear active resume, review parsing quality, and prepare the strongest version for analysis.",
+  Analysis: "Turn your resume into a practical ATS report with clear strengths, weaknesses, and next actions.",
+  Enhancement: "Rewrite and polish your CV with AI without leaving the product flow.",
+  "AI Interview": "Practice with role-aware questions, score your answers, and improve before recruiter conversations.",
+  "Job Search": "Find promising roles, understand why they match, and move them straight into action.",
+  "Smart Send": "Build targeted outreach campaigns, send in batches, and track every delivery outcome.",
+  Points: "Monitor plan usage and how much analysis capacity you still have available.",
+  Profile: "Update account details that shape your workspace and saved activity.",
+};
+
 type DashboardLayoutShellProps = { children: ReactNode };
 
 export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
@@ -109,7 +111,7 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
   const router = useRouter();
   const { user, isLoading, hasSession, signOut } = useAuth();
 
-  const allItems = DASHBOARD_NAV_GROUPS.flatMap((g) => g.items);
+  const allItems = DASHBOARD_NAV_GROUPS.flatMap((group) => group.items);
   const currentPage = allItems.find((item) => isActive(pathname, item.href));
 
   useEffect(() => {
@@ -118,10 +120,10 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
+      <div className="flex h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_#f8fafc,_#eef2ff_55%,_#f8fafc)]">
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Loading</p>
-          <h1 className="mt-2 text-xl font-semibold tracking-tight text-slate-900">Preparing workspace…</h1>
+          <h1 className="mt-2 text-xl font-semibold tracking-tight text-slate-900">Preparing your career workspace...</h1>
         </div>
       </div>
     );
@@ -132,42 +134,49 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
   const initials = (user.full_name ?? user.email)
     .split(" ")
     .slice(0, 2)
-    .map((s: string) => s[0]?.toUpperCase() ?? "")
+    .map((segment: string) => segment[0]?.toUpperCase() ?? "")
     .join("");
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
-      {/* ─── Sidebar ──────────────────────────────────────────── */}
-      <aside className="hidden w-64 flex-shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
-        {/* Brand */}
-        <div className="flex h-16 items-center border-b border-slate-100 px-6">
-          <Link href="/dashboard" className="text-lg font-bold tracking-tight text-slate-900">
+    <div className="flex min-h-screen bg-[radial-gradient(circle_at_top_left,_#ffffff,_#f8fafc_45%,_#eef2ff_100%)] text-slate-900">
+      <aside className="hidden w-72 flex-shrink-0 border-r border-slate-200/80 bg-white/85 backdrop-blur md:flex md:flex-col">
+        <div className="border-b border-slate-100 px-6 py-6">
+          <Link href="/dashboard" className="inline-flex items-center gap-2 text-lg font-bold tracking-tight text-slate-950">
+            <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-slate-900 text-sm font-semibold text-white">
+              J
+            </span>
             JobAI
           </Link>
+          <div className="mt-5 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Job Seeker Flow</p>
+            <p className="mt-2 text-sm font-semibold text-slate-900">From CV quality to application momentum</p>
+            <p className="mt-2 text-xs leading-6 text-slate-600">
+              Upload, analyze, improve, match, send, and practice in one guided workspace.
+            </p>
+          </div>
         </div>
 
-        {/* Navigation groups */}
         <nav className="flex-1 overflow-y-auto px-3 py-5">
           {DASHBOARD_NAV_GROUPS.map((group) => (
             <div key={group.label} className="mb-6">
               <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
                 {group.label}
               </p>
-              <ul className="space-y-0.5">
+              <ul className="space-y-1">
                 {group.items.map((item) => {
                   const active = isActive(pathname, item.href);
                   return (
                     <li key={item.href}>
                       <Link
                         href={item.href}
-                        className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                        className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-colors ${
                           active
-                            ? "bg-slate-900 text-white"
-                            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                            ? "bg-slate-900 text-white shadow-sm"
+                            : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
                         }`}
                       >
                         {item.icon && <NavIcon id={item.icon} />}
-                        {item.label}
+                        <span>{item.label}</span>
                       </Link>
                     </li>
                   );
@@ -177,14 +186,13 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
           ))}
         </nav>
 
-        {/* User footer */}
         <div className="border-t border-slate-100 p-4">
-          <div className="flex items-center gap-3 rounded-xl p-2">
-            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
+          <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-xs font-bold text-white">
               {initials}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-slate-900">{user.full_name ?? "User"}</p>
+              <p className="truncate text-sm font-semibold text-slate-900">{user.full_name ?? "Job seeker"}</p>
               <p className="truncate text-xs text-slate-500">{user.email}</p>
             </div>
           </div>
@@ -194,26 +202,56 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
               signOut();
               router.replace("/login");
             }}
-            className="mt-2 w-full rounded-xl px-3 py-2 text-left text-sm text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+            className="mt-3 w-full rounded-2xl px-3 py-2 text-left text-sm text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
           >
             Sign out
           </button>
         </div>
       </aside>
 
-      {/* ─── Main area ────────────────────────────────────────── */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Top header */}
-        <header className="flex h-16 flex-shrink-0 items-center border-b border-slate-200 bg-white px-6 md:px-8">
-          <h1 className="text-base font-semibold text-slate-900">
-            {currentPage?.label ?? "Dashboard"}
-          </h1>
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+        <header className="border-b border-slate-200/80 bg-white/80 backdrop-blur">
+          <div className="px-5 py-5 md:px-8">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Career Workspace</p>
+                <h1 className="mt-1 text-xl font-semibold tracking-tight text-slate-950 md:text-2xl">
+                  {currentPage?.label ?? "Dashboard"}
+                </h1>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                  {PAGE_DESCRIPTIONS[currentPage?.label ?? "Dashboard"] ?? PAGE_DESCRIPTIONS.Dashboard}
+                </p>
+              </div>
+              <div className="hidden rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-right text-xs text-slate-500 md:block">
+                <p className="font-semibold text-slate-700">Role</p>
+                <p>Job seeker</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-100 px-5 py-3 md:hidden">
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {allItems.map((item) => {
+                const active = isActive(pathname, item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                      active
+                        ? "border-slate-900 bg-slate-900 text-white"
+                        : "border-slate-200 bg-white text-slate-600"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
         </header>
 
-        {/* Scrollable page content */}
-        <main className="flex-1 overflow-y-auto px-6 py-8 md:px-8">
-          {children}
-        </main>
+        <main className="flex-1 px-5 py-6 md:px-8 md:py-8">{children}</main>
       </div>
     </div>
   );

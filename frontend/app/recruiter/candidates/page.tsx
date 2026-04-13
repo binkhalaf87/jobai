@@ -577,6 +577,28 @@ export default function RecruiterCandidatesPage() {
 
   // --- Filtering ---
 
+  const appliedCount = candidates.filter((candidate) => candidate.stage === "new").length;
+  const shortlistedCount = candidates.filter((candidate) => candidate.stage === "shortlisted").length;
+  const interviewCount = candidates.filter((candidate) => candidate.stage === "interview").length;
+  const awaitingAnalysisCount = candidates.filter((candidate) => !candidate.analysis_completed_at).length;
+  const strongMatchesCount = candidates.filter((candidate) => (candidate.best_match_score ?? 0) >= 70).length;
+  const nextPriorityLabel =
+    candidates.length === 0
+      ? "Upload candidate resumes"
+      : awaitingAnalysisCount > 0
+        ? "Analyze pending resumes"
+        : shortlistedCount === 0
+          ? "Shortlist top matches"
+          : "Move shortlisted candidates to interview";
+  const nextPriorityDescription =
+    candidates.length === 0
+      ? "Start the pipeline by importing resumes in PDF or DOCX format."
+      : awaitingAnalysisCount > 0
+        ? `${awaitingAnalysisCount} candidate${awaitingAnalysisCount === 1 ? "" : "s"} still need AI scoring and matching.`
+        : shortlistedCount === 0
+          ? "Your ranking is ready. Promote the strongest profiles so the team sees a clear next list."
+          : `${shortlistedCount} shortlisted candidate${shortlistedCount === 1 ? "" : "s"} are ready for recruiter follow-up.`;
+
   const filtered = candidates.filter((c) => {
     const q = search.toLowerCase();
     const matchesSearch =
@@ -598,12 +620,51 @@ export default function RecruiterCandidatesPage() {
     <div className="space-y-5">
 
       {/* ── Header ──────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Recruiter ATS</p>
-          <h1 className="mt-0.5 text-2xl font-semibold tracking-tight text-slate-950">Candidate pipeline</h1>
+      <Panel className="overflow-hidden p-0">
+        <div className="grid gap-0 xl:grid-cols-[1.3fr_0.7fr]">
+          <div className="bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.12),_transparent_42%),linear-gradient(135deg,_#ffffff_0%,_#f0fdf4_45%,_#f8fafc_100%)] px-6 py-6 md:px-8 md:py-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Recruiter ATS</p>
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-950">Candidate pipeline</h1>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
+              Review uploaded resumes, surface the strongest fits, and move candidates through applied, shortlisted, interview, and rejected without losing context.
+            </p>
+
+            <div className="mt-6 grid gap-3 md:grid-cols-4">
+              <div className="rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Applied</p>
+                <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{appliedCount}</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Shortlisted</p>
+                <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{shortlistedCount}</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Interview</p>
+                <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{interviewCount}</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Strong Fits</p>
+                <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{strongMatchesCount}</p>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-slate-200 bg-slate-950 px-6 py-6 text-white xl:border-l xl:border-t-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Next Priority</p>
+            <div className="mt-4 rounded-[1.75rem] border border-white/10 bg-white/5 p-4">
+              <p className="text-lg font-semibold">{nextPriorityLabel}</p>
+              <p className="mt-2 text-sm leading-6 text-slate-300">{nextPriorityDescription}</p>
+            </div>
+            <div className="mt-4 rounded-[1.75rem] border border-white/10 bg-white/5 p-4">
+              <p className="text-sm font-semibold">Pipeline health</p>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                {awaitingAnalysisCount > 0
+                  ? `${awaitingAnalysisCount} candidate${awaitingAnalysisCount === 1 ? "" : "s"} still need recruiter analysis before ranking is complete.`
+                  : "All visible candidates already have AI analysis, so the team can focus on decisions instead of processing."}
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
+      </Panel>
 
       {/* ── Analyze All button ──────────────────────────────────── */}
       {!listLoading && candidates.length > 0 && (
@@ -667,7 +728,16 @@ export default function RecruiterCandidatesPage() {
 
       {/* ── Stat pills + search ─────────────────────────────────── */}
       {!listLoading && !listError && candidates.length > 0 && (
-        <div className="space-y-3">
+        <Panel className="space-y-3 p-4 md:p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Filter Candidates</p>
+              <p className="mt-1 text-sm text-slate-600">Switch between stages or search by candidate, email, or matched job.</p>
+            </div>
+            <p className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+              {filtered.length} visible of {candidates.length}
+            </p>
+          </div>
           <StatPills candidates={candidates} activeFilter={stageFilter} onFilter={setStageFilter} />
           <input
             type="text"
@@ -676,7 +746,7 @@ export default function RecruiterCandidatesPage() {
             onChange={(e) => setSearch(e.target.value)}
             className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-slate-400"
           />
-        </div>
+        </Panel>
       )}
 
       {/* ── Candidate list ──────────────────────────────────────── */}

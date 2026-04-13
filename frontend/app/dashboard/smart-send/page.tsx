@@ -762,15 +762,76 @@ export default function SmartSendPage() {
     { id: "history", label: "History" },
     { id: "smtp", label: smtpConn ? (smtpConn.is_verified ? "Gmail ✓" : "Gmail") : "Gmail Setup" },
   ];
+  const connectionLabel = !smtpConn ? "Setup needed" : smtpConn.is_verified ? "Verified" : "Saved, verify next";
+  const connectionDescription = !smtpConn
+    ? "Add your Gmail SMTP connection before sending campaigns."
+    : smtpConn.is_verified
+      ? `Ready to send from ${smtpConn.gmail_address}.`
+      : "Connection exists, but verification should be completed before live sending.";
+  const campaignStateLabel =
+    step === "preview" || step === "sending"
+      ? "Campaign in progress"
+      : campaignId && letters
+        ? "Draft ready"
+        : "No campaign drafted";
+  const campaignStateDescription =
+    step === "preview" || step === "sending"
+      ? "Review the generated variants and control batch sending from one place."
+      : campaignId && letters
+        ? "You already have AI-generated email variants ready for preview."
+        : "Start with a target role and company details, then generate personalized outreach.";
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Smart Send</h1>
-        <p className="text-gray-500 text-sm mt-1">
-          AI-generated outreach emails sent directly from your Gmail.
-        </p>
-      </div>
+      <Panel className="overflow-hidden p-0">
+        <div className="grid gap-0 lg:grid-cols-[1.35fr_0.65fr]">
+          <div className="bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.12),_transparent_42%),linear-gradient(135deg,_#ffffff_0%,_#eff6ff_46%,_#f8fafc_100%)] px-6 py-6 md:px-8 md:py-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Application Outreach</p>
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-950">Smart Send campaigns</h1>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
+              Turn a target job into a guided outreach flow: generate tailored email copy, review variants, and send in controlled batches from your Gmail account.
+            </p>
+
+            <div className="mt-6 grid gap-3 md:grid-cols-3">
+              <div className="rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Connection</p>
+                <p className="mt-3 text-lg font-semibold tracking-tight text-slate-950">{connectionLabel}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{connectionDescription}</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Campaign Status</p>
+                <p className="mt-3 text-lg font-semibold tracking-tight text-slate-950">{campaignStateLabel}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{campaignStateDescription}</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Current Step</p>
+                <p className="mt-3 text-lg font-semibold tracking-tight capitalize text-slate-950">{step}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Compose, preview, send, and review history without leaving the campaign flow.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-200 bg-slate-950 px-6 py-6 text-white lg:border-l lg:border-t-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Recommended Flow</p>
+            <div className="mt-4 space-y-3">
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+                <p className="text-sm font-semibold">1. Draft the campaign</p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">Set the role, company, and job description so the AI can anchor the message correctly.</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+                <p className="text-sm font-semibold">2. Verify delivery</p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">Connect Gmail once, then reuse it across future campaigns and batch sends.</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+                <p className="text-sm font-semibold">3. Send with control</p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">Preview variants first, then watch sent and failed activity move into history.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Panel>
 
       {smtpLoadError && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -779,15 +840,15 @@ export default function SmartSendPage() {
       )}
 
       {step !== "preview" && step !== "sending" && (
-        <div className="flex gap-1 border-b">
+        <div className="flex flex-wrap gap-2">
           {tabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setStep(t.id)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+              className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                 step === t.id
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "bg-white text-gray-500 ring-1 ring-slate-200 hover:text-gray-700"
               }`}
             >
               {t.label}
@@ -799,7 +860,7 @@ export default function SmartSendPage() {
       {(step === "preview" || step === "sending") && (
         <button
           onClick={() => setStep(step === "preview" ? "compose" : "history")}
-          className="text-sm text-blue-600 hover:underline"
+          className="inline-flex rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
         >
           ← {step === "preview" ? "Back to Compose" : "Back to History"}
         </button>

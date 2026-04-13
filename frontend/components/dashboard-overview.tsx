@@ -343,25 +343,86 @@ export function DashboardOverview() {
   const parsedResumeCount = overview.resumes.data?.filter((resume) => resume.processing_status === "parsed").length ?? null;
   const quickActions = buildQuickActions(overview);
   const latestAnalysisDate = overview.latestAnalysisReport?.completed_at ?? overview.latestAnalysisReport?.created_at ?? null;
+  const campaignCount = overview.campaigns.data?.length ?? null;
+  const savedJobCount = overview.savedJobs.data?.length ?? null;
+  const focusLabel =
+    overview.metrics.completedJourneySteps >= 5
+      ? "Keep momentum high"
+      : overview.metrics.completedJourneySteps >= 3
+        ? "Convert readiness into action"
+        : "Build your foundation";
+  const focusDescription =
+    overview.metrics.completedJourneySteps >= 5
+      ? "You already have traction. Focus on sending, practicing, and doubling down on strong opportunities."
+      : overview.metrics.completedJourneySteps >= 3
+        ? "Your core assets are in place. Now move faster on matching, outreach, and interview practice."
+        : "Start with one strong resume, one clear ATS analysis, and one improved version before scaling out.";
 
   return (
     <div className="space-y-6">
-      <Panel className="p-8 md:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Career Command Center</p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
-          Move from CV quality to interview confidence
-        </h1>
-        <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
-          {overview.metrics.activeResumeTitle
-            ? `Your active resume is ${overview.metrics.activeResumeTitle}. Work through the journey below to improve fit, send outreach, and practice before recruiter conversations begin.`
-            : "This overview only uses live workspace data. Missing sources are shown as unavailable instead of placeholders."}
-        </p>
-        {latestActivity && (
-          <p className="mt-3 text-sm leading-7 text-slate-500">
-            Latest activity: <span className="font-semibold text-slate-800">{latestActivity.title}</span> on{" "}
-            {formatDateTime(latestActivity.createdAt)}.
-          </p>
-        )}
+      <Panel className="overflow-hidden">
+        <div className="border-b border-slate-100 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_55%,#ecfeff_100%)] px-8 py-8 md:px-10 md:py-10">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Career Command Center</p>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
+                Move from CV quality to interview confidence
+              </h1>
+              <p className="mt-4 text-sm leading-7 text-slate-600">
+                {overview.metrics.activeResumeTitle
+                  ? `Your active resume is ${overview.metrics.activeResumeTitle}. Work through the journey below to improve fit, send outreach, and practice before recruiter conversations begin.`
+                  : "This overview only uses live workspace data. Missing sources are shown as unavailable instead of placeholders."}
+              </p>
+              {latestActivity && (
+                <p className="mt-3 text-sm leading-7 text-slate-500">
+                  Latest activity: <span className="font-semibold text-slate-800">{latestActivity.title}</span> on{" "}
+                  {formatDateTime(latestActivity.createdAt)}.
+                </p>
+              )}
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-3xl border border-slate-200 bg-white/90 p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Current focus</p>
+                <p className="mt-2 text-sm font-semibold text-slate-950">{focusLabel}</p>
+                <p className="mt-2 text-xs leading-6 text-slate-500">{focusDescription}</p>
+              </div>
+              <div className="rounded-3xl border border-slate-200 bg-white/90 p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Journey health</p>
+                <p className="mt-2 text-sm font-semibold text-slate-950">{overview.metrics.completedJourneySteps}/6 steps active</p>
+                <p className="mt-2 text-xs leading-6 text-slate-500">
+                  {savedJobCount ?? 0} saved roles and {campaignCount ?? 0} campaign{campaignCount === 1 ? "" : "s"} currently shape your momentum.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-4 px-8 py-5 md:grid-cols-3 md:px-10">
+          <div className="rounded-3xl border border-slate-200 bg-white p-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Active Resume</p>
+            <p className="mt-2 text-base font-semibold text-slate-950">{overview.metrics.activeResumeTitle ?? "No active resume yet"}</p>
+            <p className="mt-2 text-xs leading-6 text-slate-500">
+              {overview.metrics.activeResumeTitle
+                ? "Use this as the default reference for matching, outreach, and interview prep."
+                : "Upload and parse a resume to unlock the full guided journey."}
+            </p>
+          </div>
+          <div className="rounded-3xl border border-slate-200 bg-white p-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Best next action</p>
+            <p className="mt-2 text-base font-semibold text-slate-950">{overview.nextStep.label}</p>
+            <p className="mt-2 text-xs leading-6 text-slate-500">{overview.nextStep.description}</p>
+          </div>
+          <div className="rounded-3xl border border-slate-200 bg-white p-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Decision rule</p>
+            <p className="mt-2 text-base font-semibold text-slate-950">
+              {(overview.metrics.atsScore ?? 0) >= 75 ? "Push strongest matches forward" : "Improve the CV before scaling out"}
+            </p>
+            <p className="mt-2 text-xs leading-6 text-slate-500">
+              Strong ATS quality helps every downstream step perform better, especially matching and SmartSend.
+            </p>
+          </div>
+        </div>
       </Panel>
 
       {failedCollections.length > 0 && (
@@ -493,7 +554,7 @@ export function DashboardOverview() {
           </Link>
 
           <div className="mt-6 rounded-[2rem] border border-slate-200 bg-slate-50 p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Workspace Signals</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Decision Signals</p>
             <div className="mt-4 space-y-3 text-sm text-slate-600">
               <div className="flex items-center justify-between gap-3">
                 <span>Active resume</span>
@@ -506,6 +567,10 @@ export function DashboardOverview() {
               <div className="flex items-center justify-between gap-3">
                 <span>Parsed resumes</span>
                 <span className="font-semibold text-slate-900">{formatCount(parsedResumeCount)}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span>Saved roles</span>
+                <span className="font-semibold text-slate-900">{formatCount(savedJobCount)}</span>
               </div>
             </div>
           </div>
