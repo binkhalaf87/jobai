@@ -93,6 +93,10 @@ class AnalyzeResponse(BaseModel):
     warning: str | None = None
 
 
+class AnalyzeRequest(BaseModel):
+    force_refresh: bool = False
+
+
 class AnalyzeAllResponse(BaseModel):
     total_candidates: int
     total_created: int
@@ -116,33 +120,66 @@ def _get_recruiter_jobs(db: Session, recruiter_id: str) -> list[JobDescription]:
     return list(db.scalars(select(JobDescription).where(JobDescription.user_id == recruiter_id)))
 
 
+def _get_resume_analysis_input(resume: Resume) -> tuple[str, str | None]:
+    resume_text = resume.normalized_text or resume.raw_text or ""
+    resolved_resume_path = resolve_storage_key(resume.storage_key)
+    pdf_path: str | None = None
+
+    if (
+        (resume.file_type or "").lower() == "pdf"
+        and resolved_resume_path
+        and resolved_resume_path.exists()
+        and resolved_resume_path.is_file()
+    ):
+        pdf_path = str(resolved_resume_path)
+
+    return resume_text, pdf_path
+
+
+def _has_resume_analysis_input(resume: Resume) -> bool:
+    resume_text, pdf_path = _get_resume_analysis_input(resume)
+    return bool(resume_text.strip() or pdf_path)
+
+
+def _get_existing_completed_analysis(db: Session, resume_id: str, job_id: str) -> Analysis | None:
+    return db.scalar(
+        select(Analysis)
+        .where(
+            Analysis.resume_id == resume_id,
+            Analysis.job_description_id == job_id,
+            Analysis.status == AnalysisStatus.COMPLETED,
+            Analysis.overall_score.is_not(None),
+        )
+        .order_by(Analysis.completed_at.desc(), Analysis.created_at.desc())
+        .limit(1)
+    )
+
+
 def _run_gpt_analysis(
     db: Session,
     recruiter_id: str,
     resume: Resume,
     job: JobDescription,
-) -> Analysis | None:
+    force_refresh: bool = False,
+) -> tuple[Analysis | None, bool]:
     """Run GPT semantic matching and persist. Returns None if text missing or GPT fails.
 
     Uses vision (PDF pages as images) when the original file is still on disk.
     Falls back to extracted text for DOCX or missing files.
     """
+    existing_analysis = _get_existing_completed_analysis(db, resume.id, job.id)
+    if existing_analysis and not force_refresh:
+        return existing_analysis, False
+
     job_text = job.normalized_text or job.source_text or ""
     if not job_text:
-        return None
+        return None, False
 
-    resume_text = resume.normalized_text or resume.raw_text or ""
-    file_type = (resume.file_type or "").lower()
-    pdf_path: str | None = None
-
-    # Use vision for PDFs if the file is still on disk
-    resolved_resume_path = resolve_storage_key(resume.storage_key)
-    if file_type == "pdf" and resolved_resume_path and resolved_resume_path.exists():
-        pdf_path = str(resolved_resume_path)
+    resume_text, pdf_path = _get_resume_analysis_input(resume)
 
     # Need either a file or text
     if not pdf_path and not resume_text:
-        return None
+        return None, False
 
     try:
         result = gpt_match_resume_to_job(
@@ -151,27 +188,30 @@ def _run_gpt_analysis(
             resume_text=resume_text,
         )
     except Exception:
-        return None
+        return None, False
 
     summary = result.recommendation or (
         f"GPT match: {result.match_score:.1f}% — {result.hiring_suggestion}."
     )
 
-    analysis = Analysis(
+    analysis = existing_analysis or Analysis(
         user_id=recruiter_id,
         resume_id=resume.id,
         job_description_id=job.id,
-        status=AnalysisStatus.COMPLETED,
-        model_name=GPT_MATCH_MODEL_NAME,
-        overall_score=result.match_score,
-        summary_text=summary,
-        result_payload=result.to_payload(),
-        completed_at=datetime.now(timezone.utc),
     )
-    db.add(analysis)
+    analysis.status = AnalysisStatus.COMPLETED
+    analysis.model_name = GPT_MATCH_MODEL_NAME
+    analysis.overall_score = result.match_score
+    analysis.summary_text = summary
+    analysis.result_payload = result.to_payload()
+    analysis.completed_at = datetime.now(timezone.utc)
+
+    if existing_analysis is None:
+        db.add(analysis)
+
     db.commit()
     db.refresh(analysis)
-    return analysis
+    return analysis, existing_analysis is None
 
 
 def _keywords_from_payload(payload: dict | None, key: str) -> list[str]:
@@ -251,12 +291,25 @@ async def upload_candidates(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No files provided.")
 
     resume_ids: list[str] = []
-    for uploaded_file in files:
-        try:
-            resume = await save_resume_upload(db, current_user, uploaded_file)
-        except ValueError as exc:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
-        resume_ids.append(resume.id)
+    stored_keys: list[str] = []
+
+    try:
+        for uploaded_file in files:
+            resume = await save_resume_upload(db, current_user, uploaded_file, auto_commit=False)
+            resume_ids.append(resume.id)
+            if resume.storage_key:
+                stored_keys.append(resume.storage_key)
+        db.commit()
+    except ValueError as exc:
+        db.rollback()
+        for storage_key in stored_keys:
+            delete_resume_file(storage_key)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except Exception:
+        db.rollback()
+        for storage_key in stored_keys:
+            delete_resume_file(storage_key)
+        raise
 
     return CandidateUploadResponse(resume_ids=resume_ids)
 
@@ -298,14 +351,13 @@ def analyze_all_candidates(
     no_text_count = 0
 
     for resume in resumes:
-        resume_text = resume.normalized_text or resume.raw_text or ""
-        if not resume_text.strip():
+        if not _has_resume_analysis_input(resume):
             no_text_count += 1
             continue
 
         for job in jobs:
-            result = _run_gpt_analysis(db, current_user.id, resume, job)
-            if result:
+            result, created = _run_gpt_analysis(db, current_user.id, resume, job)
+            if result and created:
                 total_created += 1
             else:
                 total_skipped += 1
@@ -415,14 +467,14 @@ def update_stage(
 @router.post("/{resume_id}/analyze", response_model=AnalyzeResponse)
 def analyze_candidate(
     resume_id: str,
+    payload: AnalyzeRequest | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_recruiter),
 ) -> AnalyzeResponse:
     """Run GPT analysis for this candidate against all recruiter jobs."""
     resume = _get_owned_resume(db, resume_id, current_user.id)
 
-    resume_text = resume.normalized_text or resume.raw_text or ""
-    has_resume_text = bool(resume_text.strip())
+    has_resume_text = _has_resume_analysis_input(resume)
 
     if not has_resume_text:
         return AnalyzeResponse(
@@ -430,9 +482,8 @@ def analyze_candidate(
             analyses_skipped=0,
             has_resume_text=False,
             warning=(
-                "No text could be extracted from this resume. "
-                "The file may be a scanned image (not a searchable PDF). "
-                "Try uploading a text-based PDF or DOCX file."
+                "This resume does not have usable text or a stored PDF file for AI analysis. "
+                "Try uploading a searchable PDF or DOCX file."
             ),
         )
 
@@ -446,9 +497,16 @@ def analyze_candidate(
 
     created = 0
     skipped = 0
+    force_refresh = payload.force_refresh if payload else False
     for job in jobs:
-        result = _run_gpt_analysis(db, current_user.id, resume, job)
-        if result:
+        result, was_created = _run_gpt_analysis(
+            db,
+            current_user.id,
+            resume,
+            job,
+            force_refresh=force_refresh,
+        )
+        if result and was_created:
             created += 1
         else:
             skipped += 1

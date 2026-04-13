@@ -724,7 +724,7 @@ export default function CandidateProfilePage() {
     void load();
   }, [id]);
 
-  async function handleRunAnalysis() {
+  async function handleRunAnalysis(forceRefresh = false) {
     if (!detail || analyzing) return;
     setAnalyzing(true);
     setAnalyzeError(null);
@@ -733,7 +733,11 @@ export default function CandidateProfilePage() {
         analyses_created: number;
         has_resume_text: boolean;
         warning: string | null;
-      }>(`/recruiter/candidates/${id}/analyze`, undefined, { auth: true });
+      }>(
+        `/recruiter/candidates/${id}/analyze`,
+        forceRefresh ? { force_refresh: true } : undefined,
+        { auth: true }
+      );
 
       if (!result.has_resume_text) {
         setAnalyzeError(result.warning ?? "No text found in resume.");
@@ -920,12 +924,17 @@ export default function CandidateProfilePage() {
                   </button>
                 )}
                 {(nextStep.action === "Run Analysis" ||
+                  nextStep.action === "Refresh Analysis" ||
                   nextStep.action === "Re-run Analysis" ||
                   nextStep.action === "Deep AI Analysis") && (
                   <button
                     type="button"
                     disabled={analyzing}
-                    onClick={() => void handleRunAnalysis()}
+                    onClick={() =>
+                      void handleRunAnalysis(
+                        nextStep.action === "Refresh Analysis" || nextStep.action === "Deep AI Analysis"
+                      )
+                    }
                     className="rounded-xl bg-violet-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50"
                   >
                     {analyzing ? "Running…" : "✦ Analyze with AI"}
@@ -976,7 +985,7 @@ export default function CandidateProfilePage() {
           <button
             type="button"
             disabled={analyzing}
-            onClick={() => void handleRunAnalysis()}
+            onClick={() => void handleRunAnalysis(true)}
             className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 transition hover:bg-violet-100 disabled:opacity-40"
           >
             {analyzing ? "Running…" : "✦ Re-run AI Analysis"}

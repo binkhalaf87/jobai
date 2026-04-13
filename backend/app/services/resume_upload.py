@@ -13,7 +13,13 @@ from app.services.resume_storage import build_resume_file_path, build_storage_ke
 from app.utils.files import validate_resume_file
 
 
-async def save_resume_upload(db: Session, user: User, uploaded_file: UploadFile) -> Resume:
+async def save_resume_upload(
+    db: Session,
+    user: User,
+    uploaded_file: UploadFile,
+    *,
+    auto_commit: bool = True,
+) -> Resume:
     """Validate, store, and extract text from an uploaded resume."""
     original_name = uploaded_file.filename or "resume"
     suffix = validate_resume_file(original_name, uploaded_file.content_type)
@@ -45,8 +51,11 @@ async def save_resume_upload(db: Session, user: User, uploaded_file: UploadFile)
             processing_status=ResumeProcessingStatus.PARSED,
         )
         db.add(resume)
-        db.commit()
-        db.refresh(resume)
+        if auto_commit:
+            db.commit()
+            db.refresh(resume)
+        else:
+            db.flush()
         return resume
     except Exception:
         if storage_path.exists():
