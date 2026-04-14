@@ -15,6 +15,7 @@ class Subscription(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "subscriptions"
 
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    plan_id: Mapped[str | None] = mapped_column(ForeignKey("plans.id", ondelete="SET NULL"), nullable=True, index=True)
     plan_name: Mapped[str] = mapped_column(String(100), nullable=False)
     status: Mapped[SubscriptionStatus] = mapped_column(
         SqlEnum(SubscriptionStatus, name="subscription_status", values_callable=lambda e: [m.value for m in e]),
@@ -32,4 +33,7 @@ class Subscription(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
 
     user = relationship("User", back_populates="subscriptions")
-
+    plan = relationship("Plan", back_populates="subscriptions")
+    payment_orders = relationship("PaymentOrder", back_populates="subscription")
+    payment_webhook_events = relationship("PaymentWebhookEvent", back_populates="subscription")
+    wallet_transactions = relationship("WalletTransaction", back_populates="subscription")

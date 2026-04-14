@@ -1,4 +1,11 @@
 from app.schemas.auth import AuthResponse, LoginRequest
+from app.schemas.billing import (
+    BillingCheckoutIntentionRequest,
+    BillingCheckoutResponse,
+    BillingMeResponse,
+    BillingPlansResponse,
+    BillingWebhookResponse,
+)
 from app.schemas.analysis import (
     AnalysisAtsRequest,
     AnalysisAtsResponse,
@@ -36,6 +43,11 @@ from app.schemas.user import UserCreate, UserRead
 
 __all__ = [
     "AuthResponse",
+    "BillingCheckoutIntentionRequest",
+    "BillingCheckoutResponse",
+    "BillingMeResponse",
+    "BillingPlansResponse",
+    "BillingWebhookResponse",
     "AnalysisAtsRequest",
     "AnalysisAtsResponse",
     "AnalysisCreate",

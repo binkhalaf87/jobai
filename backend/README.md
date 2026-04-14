@@ -37,6 +37,11 @@ Copy `.env.example` to `.env` for local development.
 - `ALLOWED_ORIGIN` - Comma-separated frontend origins allowed to call the API. In production this should include your Vercel frontend URL.
 - `REDIS_URL` - Optional Redis connection string for future caching, queues, or background coordination
 - `STRIPE_SECRET_KEY` - Optional secret key reserved for future billing integration
+- `PAYMOB_API_KEY` - Optional Paymob server-side API key used to create payment intentions
+- `PAYMOB_HMAC_SECRET` - Optional Paymob webhook signature secret reserved for backend webhook validation
+- `PAYMOB_PUBLIC_KEY` - Optional Paymob public key for future checkout bootstrap responses
+- `PAYMOB_INTEGRATION_ID` - Optional Paymob integration identifier used when requesting payment intentions
+- `PAYMOB_IFRAME_ID` - Optional Paymob iframe identifier if you later use the hosted iframe checkout flow
 - `RESUME_STORAGE_DIR` - Optional durable filesystem path used for uploaded resume files. Defaults to `backend/storage/resumes`
 - `PORT` - Port used by Uvicorn locally or by the hosting platform
 

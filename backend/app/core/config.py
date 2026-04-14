@@ -133,6 +133,11 @@ class Settings:
     allowed_origin: str
     redis_url: str | None
     stripe_secret_key: str | None
+    paymob_api_key: str | None
+    paymob_hmac_secret: str | None
+    paymob_public_key: str | None
+    paymob_integration_id: str | None
+    paymob_iframe_id: str | None
     rapidapi_key: str | None
     resume_storage_dir: str
 
@@ -174,6 +179,11 @@ def build_settings() -> Settings:
         allowed_origin=get_required_env("ALLOWED_ORIGIN"),
         redis_url=get_optional_env("REDIS_URL", "").strip() or None,
         stripe_secret_key=get_optional_env("STRIPE_SECRET_KEY", "").strip() or None,
+        paymob_api_key=get_optional_env("PAYMOB_API_KEY", "").strip() or None,
+        paymob_hmac_secret=get_optional_env("PAYMOB_HMAC_SECRET", "").strip() or None,
+        paymob_public_key=get_optional_env("PAYMOB_PUBLIC_KEY", "").strip() or None,
+        paymob_integration_id=get_optional_env("PAYMOB_INTEGRATION_ID", "").strip() or None,
+        paymob_iframe_id=get_optional_env("PAYMOB_IFRAME_ID", "").strip() or None,
         rapidapi_key=get_optional_env("RAPIDAPI_KEY", "").strip() or None,
         resume_storage_dir=get_optional_env("RESUME_STORAGE_DIR", get_default_resume_storage_dir()),
     )
