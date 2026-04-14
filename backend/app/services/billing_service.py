@@ -23,6 +23,7 @@ from app.models.plan import Plan
 from app.models.subscription import Subscription
 from app.models.user import User
 from app.models.user_wallet import UserWallet
+from app.models.wallet_transaction import WalletTransaction
 from app.schemas.billing import BillingCheckoutIntentionRequest
 from app.services.paymob_service import (
     PaymobBillingData,
@@ -148,6 +149,18 @@ def list_recent_payment_orders_for_user(db: Session, user_id: str, limit: int = 
         )
     )
 
+
+
+def list_wallet_transactions_for_user(db: Session, user_id: str, limit: int = 20) -> list[WalletTransaction]:
+    """Return recent wallet ledger rows for a user."""
+    return list(
+        db.scalars(
+            select(WalletTransaction)
+            .where(WalletTransaction.user_id == user_id)
+            .order_by(WalletTransaction.effective_at.desc(), WalletTransaction.created_at.desc())
+            .limit(limit)
+        )
+    )
 
 def _split_full_name(full_name: str | None) -> tuple[str, str]:
     normalized_name = (full_name or "").strip()

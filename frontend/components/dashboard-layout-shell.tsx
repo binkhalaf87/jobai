@@ -67,6 +67,12 @@ function NavIcon({ id }: { id: string }) {
         <circle cx="12" cy="7" r="4" />
       </>
     ),
+    "credit-card": (
+      <>
+        <rect x="2" y="5" width="20" height="14" rx="2" />
+        <line x1="2" y1="10" x2="22" y2="10" />
+      </>
+    ),
   };
 
   return (
@@ -100,7 +106,8 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   "AI Interview": "Practice with role-aware questions, score your answers, and improve before recruiter conversations.",
   "Job Search": "Find promising roles, understand why they match, and move them straight into action.",
   "Smart Send": "Build targeted outreach campaigns, send in batches, and track every delivery outcome.",
-  Points: "Monitor plan usage and how much analysis capacity you still have available.",
+  Billing: "Choose your monthly plan, create a Paymob checkout, and review payment activity in one place.",
+  Points: "Monitor wallet balance, top up extra points, and review your ledger history.",
   Profile: "Update account details that shape your workspace and saved activity.",
 };
 

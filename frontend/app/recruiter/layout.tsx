@@ -10,12 +10,14 @@ const NAV_ITEMS = [
   { label: "Dashboard", href: "/recruiter", icon: "home" },
   { label: "Candidates", href: "/recruiter/candidates", icon: "users" },
   { label: "Jobs", href: "/recruiter/jobs", icon: "briefcase" },
+  { label: "Billing", href: "/recruiter/billing", icon: "credit-card" },
 ] as const;
 
 const PAGE_DESCRIPTIONS: Record<string, string> = {
   Dashboard: "See pipeline health, top-ranked candidates, and the next hiring actions that need attention.",
   Candidates: "Review parsed candidate profiles, run AI analysis in bulk, and move people through the pipeline quickly.",
   Jobs: "Create the roles that power matching, candidate ranking, and interview planning.",
+  Billing: "Manage recruiter subscriptions and launch Paymob checkout without leaving the workspace.",
 };
 
 function NavIcon({ id }: { id: string }) {
@@ -38,6 +40,12 @@ function NavIcon({ id }: { id: string }) {
       <>
         <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
         <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+      </>
+    ),
+    "credit-card": (
+      <>
+        <rect x="2" y="5" width="20" height="14" rx="2" />
+        <line x1="2" y1="10" x2="22" y2="10" />
       </>
     ),
   };

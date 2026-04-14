@@ -10,6 +10,7 @@ from app.models.plan import Plan
 from app.models.subscription import Subscription
 from app.models.user import User
 from app.models.user_wallet import UserWallet
+from app.models.wallet_transaction import WalletTransaction
 from app.schemas.billing import (
     BillingCheckoutIntentionRequest,
     BillingCheckoutPlanSummary,
@@ -22,6 +23,8 @@ from app.schemas.billing import (
     BillingSubscriptionSummary,
     BillingWalletSummary,
     BillingWebhookResponse,
+    BillingWalletTransactionSummary,
+    BillingWalletTransactionsResponse,
 )
 from app.services.billing_service import (
     create_checkout_intention,
@@ -29,6 +32,7 @@ from app.services.billing_service import (
     get_wallet_for_user,
     list_plans_for_user,
     list_recent_payment_orders_for_user,
+    list_wallet_transactions_for_user,
 )
 from app.services.paymob_webhook_service import process_paymob_webhook
 
@@ -80,6 +84,20 @@ def _wallet_to_schema(wallet: UserWallet | None, user: User) -> BillingWalletSum
         is_active=True,
         created_at=None,
         updated_at=None,
+    )
+
+
+def _wallet_transaction_to_schema(transaction: WalletTransaction) -> BillingWalletTransactionSummary:
+    return BillingWalletTransactionSummary(
+        id=transaction.id,
+        transaction_type=transaction.transaction_type.value,
+        status=transaction.status.value,
+        direction=transaction.direction.value,
+        points=transaction.points,
+        balance_before=transaction.balance_before,
+        balance_after=transaction.balance_after,
+        description=transaction.description,
+        effective_at=transaction.effective_at,
     )
 
 
@@ -172,6 +190,21 @@ def get_my_billing_account(
             )
             for order in recent_orders
         ],
+    )
+
+
+@router.get("/wallet/transactions", response_model=BillingWalletTransactionsResponse)
+def get_wallet_transactions(
+    limit: int = 20,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> BillingWalletTransactionsResponse:
+    """Return recent wallet ledger rows for the authenticated user."""
+    bounded_limit = max(1, min(limit, 100))
+    transactions = list_wallet_transactions_for_user(db, current_user.id, bounded_limit)
+    return BillingWalletTransactionsResponse(
+        user_id=current_user.id,
+        transactions=[_wallet_transaction_to_schema(transaction) for transaction in transactions],
     )
 
 

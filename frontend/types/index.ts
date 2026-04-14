@@ -374,3 +374,146 @@ export type Campaign = {
   created_at: string;
   logs: SendLogItem[];
 };
+
+
+export type BillingRole = "jobseeker" | "recruiter";
+export type BillingPlanKind = "subscription" | "points_pack";
+export type BillingInterval = "monthly" | "one_time";
+export type BillingOrderStatus =
+  | "pending"
+  | "payment_key_issued"
+  | "paid"
+  | "failed"
+  | "canceled"
+  | "expired"
+  | "refunded"
+  | "partially_refunded";
+export type BillingOrderType = "subscription_initial" | "subscription_renewal" | "points_purchase";
+
+export type BillingPlan = {
+  id: string;
+  code: string;
+  name: string;
+  audience: BillingRole;
+  kind: BillingPlanKind;
+  billing_interval: BillingInterval;
+  currency: string;
+  price_amount_minor: number | null;
+  points_grant: number;
+  is_active: boolean;
+  display_order: number;
+  description: string | null;
+  metadata_payload: Record<string, unknown> | null;
+};
+
+export type BillingPlansResponse = {
+  role: BillingRole;
+  plans: BillingPlan[];
+};
+
+export type BillingCheckoutPayload = {
+  plan_code: string;
+  billing_data: {
+    email?: string | null;
+    first_name?: string | null;
+    last_name?: string | null;
+    phone_number: string;
+    apartment?: string | null;
+    floor?: string | null;
+    street?: string | null;
+    building?: string | null;
+    shipping_method?: string | null;
+    postal_code?: string | null;
+    city?: string | null;
+    country?: string | null;
+    state?: string | null;
+  };
+};
+
+export type BillingCheckoutResponse = {
+  payment_order_id: string;
+  merchant_reference: string;
+  provider_name: string;
+  status: BillingOrderStatus;
+  order_type: BillingOrderType;
+  amount_minor: number;
+  currency: string;
+  plan: {
+    code: string;
+    name: string;
+    kind: BillingPlanKind;
+    billing_interval: BillingInterval;
+    currency: string;
+    price_amount_minor: number | null;
+    points_grant: number;
+  };
+  checkout: {
+    intention_id: string;
+    client_secret: string;
+    public_key: string;
+    integration_id: number;
+    iframe_id: string | null;
+  };
+};
+
+export type BillingSubscriptionSummary = {
+  id: string;
+  plan_id: string | null;
+  plan_name: string;
+  status: string;
+  provider_name: string;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type BillingWalletSummary = {
+  id: string | null;
+  balance_points: number;
+  lifetime_earned_points: number;
+  lifetime_spent_points: number;
+  is_active: boolean;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type BillingOrderSummary = {
+  id: string;
+  plan_code: string;
+  plan_name: string;
+  order_type: BillingOrderType;
+  status: BillingOrderStatus;
+  amount_minor: number;
+  currency: string;
+  provider_name: string;
+  created_at: string;
+  paid_at: string | null;
+  failure_reason: string | null;
+};
+
+export type BillingMeResponse = {
+  user_id: string;
+  role: BillingRole;
+  current_subscription: BillingSubscriptionSummary | null;
+  wallet: BillingWalletSummary | null;
+  recent_orders: BillingOrderSummary[];
+};
+
+export type BillingWalletTransaction = {
+  id: string;
+  transaction_type: string;
+  status: string;
+  direction: "credit" | "debit";
+  points: number;
+  balance_before: number;
+  balance_after: number;
+  description: string | null;
+  effective_at: string;
+};
+
+export type BillingWalletTransactionsResponse = {
+  user_id: string;
+  transactions: BillingWalletTransaction[];
+};

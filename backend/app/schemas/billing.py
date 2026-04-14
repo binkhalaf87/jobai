@@ -142,3 +142,20 @@ class BillingWebhookResponse(BaseModel):
     payment_order_id: str | None = None
     status: str
     duplicate: bool = False
+
+
+class BillingWalletTransactionSummary(BaseModel):
+    id: str
+    transaction_type: str
+    status: str
+    direction: str
+    points: int
+    balance_before: int
+    balance_after: int
+    description: str | None = None
+    effective_at: datetime
+
+
+class BillingWalletTransactionsResponse(BaseModel):
+    user_id: str
+    transactions: list[BillingWalletTransactionSummary]
