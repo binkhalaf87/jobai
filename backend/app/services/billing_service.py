@@ -196,7 +196,7 @@ def _build_paymob_billing_data(user: User, payload: BillingCheckoutIntentionRequ
 
 
 def _build_merchant_reference(user: User, plan: Plan) -> str:
-    return f"jobai-{user.role.value}-{plan.code}-{uuid4().hex}"
+    return f"jobai-{user.role}-{plan.code}-{uuid4().hex}"
 
 
 def _build_idempotency_key() -> str:
