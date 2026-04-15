@@ -140,6 +140,13 @@ class Settings:
     paymob_iframe_id: str | None
     rapidapi_key: str | None
     resume_storage_dir: str
+    # S3-compatible object storage (AWS S3, Cloudflare R2, MinIO…)
+    # Leave blank to fall back to local filesystem storage (dev only).
+    s3_bucket_name: str | None
+    s3_endpoint_url: str | None
+    s3_region: str
+    s3_access_key_id: str | None
+    s3_secret_access_key: str | None
 
     def allowed_origins(self) -> list[str]:
         """Build an explicit allowlist for frontend origins."""
@@ -186,6 +193,11 @@ def build_settings() -> Settings:
         paymob_iframe_id=get_optional_env("PAYMOB_IFRAME_ID", "").strip() or None,
         rapidapi_key=get_optional_env("RAPIDAPI_KEY", "").strip() or None,
         resume_storage_dir=get_optional_env("RESUME_STORAGE_DIR", get_default_resume_storage_dir()),
+        s3_bucket_name=get_optional_env("S3_BUCKET_NAME", "").strip() or None,
+        s3_endpoint_url=get_optional_env("S3_ENDPOINT_URL", "").strip() or None,
+        s3_region=get_optional_env("S3_REGION", "us-east-1"),
+        s3_access_key_id=get_optional_env("S3_ACCESS_KEY_ID", "").strip() or None,
+        s3_secret_access_key=get_optional_env("S3_SECRET_ACCESS_KEY", "").strip() or None,
     )
 
 

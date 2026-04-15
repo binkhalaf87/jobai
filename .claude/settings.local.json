@@ -9,7 +9,23 @@
       "mcp__claude_ai_Supabase__list_projects",
       "mcp__claude_ai_Supabase__apply_migration",
       "mcp__claude_ai_Supabase__execute_sql",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(nslookup *)",
+      "Bash(python -c ' *)",
+      "Bash(python3 -c ' *)",
+      "Bash(where py *)",
+      "Bash(where python3.12)",
+      "Read(//c/Users/Majid/AppData/Local/Programs/**)",
+      "Read(//c/Users/Majid/.pyenv/pyenv-win/**)",
+      "Read(//c/Program Files/**)",
+      "Read(//c//**)",
+      "Bash(find /c -name \"python.exe\" -maxdepth 6)",
+      "Read(//c/Users/Majid/.local/**)",
+      "Read(//usr/**)",
+      "Read(//usr/local/**)",
+      "Bash(ls -la /c/github/jobai/frontend/components/*.tsx)",
+      "Bash(awk '{print $NF}')",
+      "Bash(npm install *)"
     ]
   }
 }

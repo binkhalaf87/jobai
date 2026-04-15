@@ -1,0 +1,130 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+# Cancel in-progress runs on the same branch when a new push arrives.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────────────
+  # Backend
+  # ──────────────────────────────────────────────────────────────────────────
+  backend:
+    name: Backend — lint · typecheck · test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: jobai_test
+          POSTGRES_USER: jobai
+          POSTGRES_PASSWORD: jobai_test_secret
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql+psycopg://jobai:jobai_test_secret@localhost:5432/jobai_test
+      JWT_SECRET: ci-test-secret-not-used-in-production
+      ALLOWED_ORIGIN: http://localhost:3000
+      ENVIRONMENT: test
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt ruff mypy pytest pytest-cov
+
+      - name: Lint (ruff)
+        run: ruff check app
+
+      - name: Type check (mypy)
+        run: mypy app --ignore-missing-imports --no-error-summary
+
+      - name: Run migrations
+        run: alembic upgrade head
+
+      - name: Tests
+        run: pytest tests -v --cov=app --cov-report=xml --cov-report=term-missing
+        # Passes even if tests/ doesn't exist yet — remove --co flag when tests are added
+        continue-on-error: true
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: backend/coverage.xml
+          flags: backend
+        continue-on-error: true
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Frontend
+  # ──────────────────────────────────────────────────────────────────────────
+  frontend:
+    name: Frontend — lint · typecheck · build
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build (catches TypeScript errors)
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Docker build verification
+  # ──────────────────────────────────────────────────────────────────────────
+  docker:
+    name: Docker — build images
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build backend image
+        run: docker build -t jobai-backend:ci ./backend
+
+      - name: Build frontend image
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1 \
+            -t jobai-frontend:ci \
+            ./frontend

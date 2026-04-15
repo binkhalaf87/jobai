@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
+import { useTranslations } from "next-intl";
 
 import { useAuth } from "@/hooks/use-auth";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { DASHBOARD_NAV_GROUPS } from "@/lib/navigation";
 
 function NavIcon({ id }: { id: string }) {
@@ -98,28 +100,18 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-const PAGE_DESCRIPTIONS: Record<string, string> = {
-  Dashboard: "See your CV, jobs, outreach, and interview progress in one place.",
-  "CVs": "Upload, review, and manage the CVs you use across analysis, jobs, and outreach.",
-  Analyze: "Run a fast ATS check and see what to fix next.",
-  Improve: "Rewrite weak sections and strengthen your CV fast.",
-  "AI Interview": "Practice with role-aware questions, score your answers, and improve before recruiter conversations.",
-  "Jobs": "Find roles, check fit, then move to analysis, interview, or send.",
-  "Send": "Create outreach, send in batches, and track delivery.",
-  Billing: "Choose your monthly plan, create a Paymob checkout, and review payment activity in one place.",
-  Points: "See your balance and top up when needed.",
-  Profile: "Keep your account details simple and up to date.",
-};
-
 type DashboardLayoutShellProps = { children: ReactNode };
 
 export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isLoading, hasSession, signOut } = useAuth();
+  const t = useTranslations("nav");
 
   const allItems = DASHBOARD_NAV_GROUPS.flatMap((group) => group.items);
-  const currentPage = allItems.find((item) => isActive(pathname, item.href));
+  const currentItem = allItems.find((item) => isActive(pathname, item.href));
+  const currentKey = currentItem?.key ?? "dashboard";
+  const currentLabel = currentItem ? t(`items.${currentItem.key}`) : t("items.dashboard");
 
   useEffect(() => {
     if (!isLoading && !hasSession) router.replace("/login");
@@ -129,8 +121,8 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
     return (
       <div className="flex h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_#f8fafc,_#eef2ff_55%,_#f8fafc)]">
         <div className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Loading</p>
-          <h1 className="mt-2 text-xl font-semibold tracking-tight text-slate-900">Opening your workspace...</h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{t("groups.workspace")}</p>
+          <h1 className="mt-2 text-xl font-semibold tracking-tight text-slate-900">{t("items.dashboard")}…</h1>
         </div>
       </div>
     );
@@ -154,20 +146,13 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
             </span>
             JobAI
           </Link>
-          <div className="mt-5 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Flow</p>
-            <p className="mt-2 text-sm font-semibold text-slate-900">Upload → Analyze → Improve → Send</p>
-            <p className="mt-2 text-xs leading-6 text-slate-600">
-              One clear flow. Less clutter. Faster decisions.
-            </p>
-          </div>
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-5">
           {DASHBOARD_NAV_GROUPS.map((group) => (
-            <div key={group.label} className="mb-6">
+            <div key={group.key} className="mb-6">
               <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                {group.label}
+                {t(`groups.${group.key}`)}
               </p>
               <ul className="space-y-1">
                 {group.items.map((item) => {
@@ -183,7 +168,7 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
                         }`}
                       >
                         {item.icon && <NavIcon id={item.icon} />}
-                        <span>{item.label}</span>
+                        <span>{t(`items.${item.key}`)}</span>
                       </Link>
                     </li>
                   );
@@ -199,7 +184,7 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
               {initials}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-slate-900">{user.full_name ?? "Candidate"}</p>
+              <p className="truncate text-sm font-semibold text-slate-900">{user.full_name ?? user.email}</p>
               <p className="truncate text-xs text-slate-500">{user.email}</p>
             </div>
           </div>
@@ -211,7 +196,7 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
             }}
             className="mt-3 w-full rounded-2xl px-3 py-2 text-left text-sm text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
           >
-            Log out
+            {t("user.signOut")}
           </button>
         </div>
       </aside>
@@ -221,18 +206,15 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
           <div className="px-5 py-5 md:px-8">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Workspace</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t("groups.workspace")}</p>
                 <h1 className="mt-1 text-xl font-semibold tracking-tight text-slate-950 md:text-2xl">
-                  {currentPage?.label ?? "Dashboard"}
+                  {currentLabel}
                 </h1>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                  {PAGE_DESCRIPTIONS[currentPage?.label ?? "Dashboard"] ?? PAGE_DESCRIPTIONS.Dashboard}
+                  {t(`descriptions.${currentKey}`)}
                 </p>
               </div>
-              <div className="hidden rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-right text-xs text-slate-500 md:block">
-                <p className="font-semibold text-slate-700">View</p>
-                <p>Job seeker</p>
-              </div>
+              <LocaleSwitcher />
             </div>
           </div>
 
@@ -250,7 +232,7 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
                         : "border-slate-200 bg-white text-slate-600"
                     }`}
                   >
-                    {item.label}
+                    {t(`items.${item.key}`)}
                   </Link>
                 );
               })}

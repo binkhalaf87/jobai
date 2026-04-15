@@ -1,0 +1,301 @@
+{
+  "common": {
+    "appName": "JobAI",
+    "loading": "جارٍ التحميل…",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "close": "إغلاق",
+    "continue": "متابعة",
+    "download": "تنزيل",
+    "preview": "معاينة",
+    "upload": "رفع",
+    "search": "بحث",
+    "back": "رجوع",
+    "processing": "جارٍ المعالجة…",
+    "pleaseWait": "يرجى الانتظار…",
+    "error": "حدث خطأ. يرجى المحاولة مجدداً.",
+    "pages": "الصفحات",
+    "noData": "—"
+  },
+
+  "language": {
+    "switch": "English",
+    "current": "العربية"
+  },
+
+  "auth": {
+    "login": {
+      "eyebrow": "الوصول إلى حسابك",
+      "title": "تسجيل الدخول إلى JobAI",
+      "description": "أدخل بيانات اعتمادك للوصول إلى لوحة التحكم.",
+      "submit": "دخول",
+      "submitting": "جارٍ التحقق…",
+      "noAccount": "إنشاء حساب جديد",
+      "backHome": "العودة للرئيسية"
+    },
+    "register": {
+      "eyebrow": "إنشاء حساب",
+      "title": "أنشئ حسابك الآن",
+      "description": "انضم إلى JobAI وانطلق في مسيرتك المهنية.",
+      "submit": "إنشاء الحساب",
+      "submitting": "جارٍ إنشاء الحساب…",
+      "hasAccount": "لديك حساب بالفعل؟",
+      "backHome": "العودة للرئيسية"
+    },
+    "fields": {
+      "fullName": "الاسم الكامل",
+      "fullNamePlaceholder": "محمد أحمد",
+      "email": "البريد الإلكتروني",
+      "emailPlaceholder": "name@company.com",
+      "password": "كلمة المرور",
+      "passwordPlaceholder": "أدخل كلمة المرور",
+      "roleLabel": "أنا",
+      "jobseeker": "🎯 باحث عن عمل",
+      "recruiter": "🏢 مسؤول توظيف"
+    },
+    "errors": {
+      "authFailed": "فشل تسجيل الدخول. تحقق من بياناتك وأعد المحاولة.",
+      "emailTaken": "يوجد حساب مسجّل بهذا البريد الإلكتروني."
+    }
+  },
+
+  "nav": {
+    "groups": {
+      "workspace": "مساحة العمل",
+      "actions": "الأدوات",
+      "account": "الحساب"
+    },
+    "items": {
+      "dashboard": "لوحة التحكم",
+      "cvs": "سيري الذاتية",
+      "analyze": "تحليل السيرة",
+      "improve": "تحسين السيرة",
+      "aiInterview": "مقابلة ذكية",
+      "jobs": "البحث عن وظيفة",
+      "send": "الإرسال الذكي",
+      "billing": "الاشتراك والفوترة",
+      "points": "رصيد النقاط",
+      "profile": "الملف الشخصي"
+    },
+    "user": {
+      "signOut": "تسجيل الخروج",
+      "greeting": "مرحباً، {name}"
+    },
+    "public": {
+      "overview": "نظرة عامة",
+      "login": "تسجيل الدخول",
+      "getStarted": "ابدأ الآن"
+    },
+    "descriptions": {
+      "dashboard": "تابع سيرتك الذاتية والوظائف والتواصل وتقدمك في المقابلات من مكان واحد.",
+      "cvs": "ارفع سيرتك وراجعها وأدرها لاستخدامها في التحليل ومطابقة الوظائف والإرسال.",
+      "analyze": "افحص مدى توافق سيرتك مع متطلبات ATS واعرف ما يجب تحسينه.",
+      "improve": "أعِد صياغة الأقسام الضعيفة وعزّز سيرتك الذاتية بسرعة.",
+      "aiInterview": "تدرّب على أسئلة مخصصة لدورك، وقيّم إجاباتك، واستعدّ قبل مقابلاتك.",
+      "jobs": "اعثر على الوظائف المناسبة، وتحقق من مدى توافقك، ثم انتقل للتحليل أو المقابلة أو الإرسال.",
+      "send": "أنشئ رسائل تواصل، وأرسلها دفعةً واحدة، وتابع نتائج التسليم.",
+      "billing": "أدر خطتك وأنشئ طلب دفع وراجع سجل المعاملات.",
+      "points": "اطّلع على رصيدك وأضف نقاطاً عند الحاجة.",
+      "profile": "احتفظ ببيانات حسابك محدّثة في جميع الأوقات."
+    }
+  },
+
+  "resumes": {
+    "upload": {
+      "eyebrow": "رفع سيرة ذاتية",
+      "title": "أضف سيرتك الذاتية",
+      "description": "ارفع سيرتك مرة واحدة واستخدمها في التحليل ومطابقة الوظائف والإرسال الذكي.",
+      "chooseFile": "اختر ملفاً",
+      "dropzone": "اسحب سيرتك الذاتية هنا",
+      "dropzoneHint": "أو انقر للتصفح. يُقبل PDF و DOCX فقط · الحد الأقصى 10 ميغابايت.",
+      "uploading": "جارٍ رفع {filename}",
+      "uploadingProgress": "{progress}%",
+      "success": "تم رفع السيرة الذاتية بنجاح",
+      "successDetail": "تم حفظ {filename}.",
+      "resumeId": "المعرّف: {id}",
+      "errorType": "يُقبل ملفات PDF و DOCX فقط.",
+      "errorGeneric": "فشل الرفع. يرجى المحاولة مجدداً."
+    },
+    "list": {
+      "eyebrow": "السير الذاتية المحفوظة",
+      "title_one": "سيرة ذاتية واحدة",
+      "title_other": "{count} سير ذاتية",
+      "loading": "جارٍ التحميل…",
+      "empty": "لا توجد سير ذاتية بعد",
+      "emptyHint": "ارفع ملف PDF أو DOCX للبدء.",
+      "columns": {
+        "file": "الملف",
+        "pages": "الصفحات",
+        "status": "الحالة",
+        "added": "تاريخ الإضافة",
+        "actions": "الإجراءات"
+      },
+      "actions": {
+        "preview": "معاينة",
+        "download": "تنزيل",
+        "close": "إغلاق",
+        "delete": "حذف",
+        "deleting": "جارٍ الحذف…",
+        "processingTooltip": "قيد المعالجة…"
+      },
+      "status": {
+        "parsed": "مُعالَج",
+        "processing": "قيد المعالجة",
+        "uploaded": "تم الرفع",
+        "failed": "فشل المعالجة"
+      },
+      "preview": {
+        "pdfTitle": "معاينة ملف PDF",
+        "docxTitle": "ملف Word",
+        "docxHint": "لا يمكن معاينة ملفات DOCX في المتصفح — نزّله لفتحه في Word أو Google Docs.",
+        "extractedText": "النص المستخرج",
+        "noText": "لم يُستخرج أي نص بعد."
+      },
+      "deleteConfirm": "هل تريد حذف \"{name}\"؟\n\nسيُحذف معه جميع التحليلات المرتبطة بهذه السيرة الذاتية.",
+      "errors": {
+        "load": "تعذّر تحميل السير الذاتية.",
+        "delete": "فشل الحذف. يرجى المحاولة مجدداً.",
+        "file": "تعذّر تحميل الملف."
+      }
+    }
+  },
+
+  "analysis": {
+    "title": "تحليل السيرة الذاتية",
+    "newAnalysis": "تحليل جديد",
+    "selectResume": "اختر سيرة ذاتية",
+    "selectJob": "اختر وصفاً وظيفياً",
+    "run": "تشغيل التحليل",
+    "running": "جارٍ التحليل…",
+    "score": "نسبة التوافق",
+    "atsScore": "تقييم ATS",
+    "keywords": {
+      "matching": "الكلمات المتطابقة",
+      "missing": "الكلمات الناقصة"
+    },
+    "sections": {
+      "overview": "نظرة عامة",
+      "keywords": "الكلمات المفتاحية",
+      "ats": "فحص ATS",
+      "suggestions": "الاقتراحات"
+    }
+  },
+
+  "interview": {
+    "title": "المقابلة الوظيفية الذكية",
+    "start": "بدء المقابلة",
+    "settings": {
+      "jobTitle": "المسمى الوظيفي",
+      "level": "مستوى الخبرة",
+      "type": "نوع المقابلة",
+      "language": "لغة المقابلة",
+      "questions": "عدد الأسئلة"
+    },
+    "levels": {
+      "entry": "مبتدئ",
+      "mid": "متوسط",
+      "senior": "متقدم"
+    },
+    "types": {
+      "hr": "مقابلة الموارد البشرية",
+      "technical": "مقابلة تقنية",
+      "mixed": "مقابلة مختلطة"
+    },
+    "languages": {
+      "en": "الإنجليزية",
+      "ar": "العربية"
+    },
+    "status": {
+      "ready": "جاهز",
+      "completed": "مكتملة",
+      "inProgress": "قيد التقدم"
+    },
+    "results": {
+      "score": "التقييم الإجمالي",
+      "readiness": "مستوى الاستعداد للمقابلة",
+      "strengths": "أبرز نقاط القوة",
+      "improvements": "أولويات التطوير",
+      "drills": "تمارين موصى بها"
+    }
+  },
+
+  "jobs": {
+    "title": "البحث عن وظائف",
+    "searchPlaceholder": "المسمى الوظيفي أو المهارات أو الكلمات المفتاحية",
+    "locationPlaceholder": "المدينة أو عن بُعد",
+    "search": "بحث",
+    "results": "{total} وظيفة متاحة",
+    "noResults": "لم يتم العثور على وظائف لهذا البحث.",
+    "applyNow": "تقدّم الآن",
+    "saveJob": "حفظ",
+    "savedJob": "محفوظة",
+    "fitScore": "نسبة التوافق",
+    "salary": "الراتب",
+    "type": "نوع الوظيفة",
+    "posted": "نُشرت {date}"
+  },
+
+  "billing": {
+    "title": "الاشتراك والفوترة",
+    "currentPlan": "الباقة الحالية",
+    "upgrade": "ترقية الباقة",
+    "points": "رصيد النقاط",
+    "history": "سجل الطلبات",
+    "status": {
+      "active": "نشط",
+      "canceled": "ملغى",
+      "expired": "منتهي الصلاحية"
+    },
+    "noSubscription": "لا يوجد اشتراك نشط.",
+    "checkout": "الانتقال إلى الدفع"
+  },
+
+  "profile": {
+    "title": "الملف الشخصي",
+    "fullName": "الاسم الكامل",
+    "email": "البريد الإلكتروني",
+    "role": "نوع الحساب",
+    "roles": {
+      "jobseeker": "باحث عن عمل",
+      "recruiter": "مسؤول توظيف"
+    },
+    "save": "حفظ التغييرات",
+    "saved": "تم حفظ التغييرات."
+  },
+
+  "recruiter": {
+    "nav": {
+      "groups": {
+        "workspace": "مساحة العمل",
+        "tools": "أدوات التوظيف",
+        "account": "الحساب"
+      },
+      "items": {
+        "dashboard": "لوحة التحكم",
+        "candidates": "المرشحون",
+        "jobs": "الوظائف المنشورة",
+        "aiScreening": "الفرز الذكي",
+        "aiInterview": "المقابلة الذكية",
+        "billing": "الاشتراك والفوترة"
+      }
+    },
+    "candidates": {
+      "title": "المرشحون",
+      "upload": "رفع السير الذاتية",
+      "analyzeAll": "تحليل الجميع",
+      "stage": {
+        "new": "جديد",
+        "shortlisted": "مرشَّح",
+        "interview": "مقابلة",
+        "rejected": "مرفوض"
+      },
+      "detail": {
+        "skills": "المهارات",
+        "experience": "الخبرات",
+        "topMatch": "أفضل تطابق",
+        "fileUnavailable": "الملف غير متاح"
+      }
+    }
+  }
+}

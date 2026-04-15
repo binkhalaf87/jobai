@@ -1,21 +1,22 @@
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps.auth import get_current_recruiter
 from app.api.deps.db import get_db
+from app.core.rate_limit import limiter
 from app.models.analysis import Analysis
 from app.models.enums import AnalysisStatus, CandidateStage, ResumeProcessingStatus
 from app.models.job_description import JobDescription
 from app.models.resume import Resume
 from app.models.user import User
 from app.services.gpt_matching_service import GPT_MATCH_MODEL_NAME, gpt_match_resume_to_job
-from app.services.resume_storage import delete_resume_file, resolve_storage_key, resume_file_exists
 from app.services.resume_upload import save_resume_upload
+from app.services.storage import get_storage
 
 router = APIRouter(prefix="/recruiter/candidates", tags=["recruiter-candidates"])
 
@@ -121,17 +122,18 @@ def _get_recruiter_jobs(db: Session, recruiter_id: str) -> list[JobDescription]:
 
 
 def _get_resume_analysis_input(resume: Resume) -> tuple[str, str | None]:
+    """Return (resume_text, pdf_local_path_or_None) for GPT analysis.
+
+    pdf_local_path is only available when using local storage.
+    With cloud storage the PDF vision feature falls back to text-only analysis.
+    """
     resume_text = resume.normalized_text or resume.raw_text or ""
-    resolved_resume_path = resolve_storage_key(resume.storage_key)
     pdf_path: str | None = None
 
-    if (
-        (resume.file_type or "").lower() == "pdf"
-        and resolved_resume_path
-        and resolved_resume_path.exists()
-        and resolved_resume_path.is_file()
-    ):
-        pdf_path = str(resolved_resume_path)
+    if (resume.file_type or "").lower() == "pdf" and resume.storage_key:
+        local_path = get_storage().get_local_path(resume.storage_key)
+        if local_path:
+            pdf_path = str(local_path)
 
     return resume_text, pdf_path
 
@@ -281,7 +283,9 @@ def _build_list_item(db: Session, resume: Resume) -> CandidateListItem:
 
 
 @router.post("/upload", response_model=CandidateUploadResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("30/hour")
 async def upload_candidates(
+    request: Request,
     files: list[UploadFile] = File(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_recruiter),
@@ -302,13 +306,15 @@ async def upload_candidates(
         db.commit()
     except ValueError as exc:
         db.rollback()
+        storage = get_storage()
         for storage_key in stored_keys:
-            delete_resume_file(storage_key)
+            storage.delete(storage_key)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except Exception:
         db.rollback()
+        storage = get_storage()
         for storage_key in stored_keys:
-            delete_resume_file(storage_key)
+            storage.delete(storage_key)
         raise
 
     return CandidateUploadResponse(resume_ids=resume_ids)
@@ -428,7 +434,7 @@ def get_candidate(
                 reason=reason,
             )
 
-    file_available = resume_file_exists(resume.storage_key)
+    file_available = bool(resume.storage_key and get_storage().exists(resume.storage_key))
 
     return CandidateDetail(
         id=resume.id,
@@ -518,33 +524,48 @@ def analyze_candidate(
     )
 
 
+_MIME_TYPES: dict[str, str] = {
+    "pdf":  "application/pdf",
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "doc":  "application/msword",
+}
+
+
 @router.get("/{resume_id}/file")
 def get_resume_file(
     resume_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_recruiter),
-) -> FileResponse:
-    """Serve the original uploaded resume file for inline preview or download."""
+) -> FileResponse | RedirectResponse:
+    """Serve or redirect to the original uploaded resume file.
+
+    - Local backend  → FileResponse (direct streaming).
+    - Cloud backend  → 307 redirect to a pre-signed URL (1-hour TTL).
+    """
     resume = _get_owned_resume(db, resume_id, current_user.id)
 
     if not resume.storage_key:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No file stored for this resume.")
 
-    path = resolve_storage_key(resume.storage_key)
-    if path is None or not path.exists():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume file not found on disk.")
+    storage = get_storage()
+
+    # Cloud path — pre-signed URL redirect
+    url = storage.get_download_url(resume.storage_key, expires_in=3600)
+    if url:
+        return RedirectResponse(url=url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
+
+    # Local path — direct streaming
+    local_path = storage.get_local_path(resume.storage_key)
+    if not local_path:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume file not found.")
 
     file_type = (resume.file_type or "").lower()
-    if file_type == "pdf":
-        media_type = "application/pdf"
-        disposition = "inline"
-    else:
-        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        disposition = "attachment"
-
+    media_type = _MIME_TYPES.get(file_type, "application/octet-stream")
+    disposition = "inline" if file_type == "pdf" else "attachment"
     filename = resume.source_filename or f"resume.{file_type}"
+
     return FileResponse(
-        path=str(path),
+        path=str(local_path),
         media_type=media_type,
         headers={"Content-Disposition": f'{disposition}; filename="{filename}"'},
     )
@@ -560,4 +581,5 @@ def delete_candidate(
     storage_key = resume.storage_key
     db.delete(resume)
     db.commit()
-    delete_resume_file(storage_key)
+    if storage_key:
+        get_storage().delete(storage_key)

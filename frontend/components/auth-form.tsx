@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { login, register } from "@/lib/auth";
 import { setUserRole } from "@/lib/api";
@@ -14,6 +15,8 @@ type AuthFormProps = {
 
 export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
+  const t = useTranslations("auth");
+  const f = useTranslations("auth.fields");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,10 +25,7 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isRegister = mode === "register";
-  const title = isRegister ? "Create your account" : "Sign in to JobAI";
-  const description = isRegister
-    ? "Create a starter account to access the dashboard shell."
-    : "Use your account credentials to access the protected dashboard.";
+  const ns = isRegister ? "register" : "login";
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -45,14 +45,19 @@ export function AuthForm({ mode }: AuthFormProps) {
         router.push(registeredRole === "recruiter" ? "/recruiter" : "/dashboard");
       } else {
         const response = await login({ email, password });
-        const role = response.user.role;
-        setUserRole(role);
-        router.push(role === "recruiter" ? "/recruiter" : "/dashboard");
+        const loggedInRole = response.user.role;
+        setUserRole(loggedInRole);
+        router.push(loggedInRole === "recruiter" ? "/recruiter" : "/dashboard");
       }
 
       router.refresh();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Authentication failed.");
+      const msg = error instanceof Error ? error.message : "";
+      if (msg.includes("email") || msg.includes("taken")) {
+        setErrorMessage(t("errors.emailTaken"));
+      } else {
+        setErrorMessage(t("errors.authFailed"));
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -61,27 +66,27 @@ export function AuthForm({ mode }: AuthFormProps) {
   return (
     <div className="space-y-2">
       <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">
-        {isRegister ? "Create Account" : "Account Access"}
+        {t(`${ns}.eyebrow`)}
       </p>
-      <h1 className="text-3xl font-semibold tracking-tight text-slate-950">{title}</h1>
-      <p className="text-sm leading-6 text-slate-600">{description}</p>
+      <h1 className="text-3xl font-semibold tracking-tight text-slate-950">{t(`${ns}.title`)}</h1>
+      <p className="text-sm leading-6 text-slate-600">{t(`${ns}.description`)}</p>
 
       <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
         {isRegister ? (
           <>
             <label className="block">
-              <span className="mb-2 block text-sm font-medium text-slate-700">Full name</span>
+              <span className="mb-2 block text-sm font-medium text-slate-700">{f("fullName")}</span>
               <input
                 value={fullName}
                 onChange={(event) => setFullName(event.target.value)}
                 type="text"
-                placeholder="Jane Doe"
+                placeholder={f("fullNamePlaceholder")}
                 className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-500"
               />
             </label>
 
             <div>
-              <span className="mb-2 block text-sm font-medium text-slate-700">I am a</span>
+              <span className="mb-2 block text-sm font-medium text-slate-700">{f("roleLabel")}</span>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
@@ -92,7 +97,7 @@ export function AuthForm({ mode }: AuthFormProps) {
                       : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
                   }`}
                 >
-                  🎯 Job Seeker
+                  {f("jobseeker")}
                 </button>
                 <button
                   type="button"
@@ -103,7 +108,7 @@ export function AuthForm({ mode }: AuthFormProps) {
                       : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
                   }`}
                 >
-                  🏢 Recruiter
+                  {f("recruiter")}
                 </button>
               </div>
             </div>
@@ -111,24 +116,24 @@ export function AuthForm({ mode }: AuthFormProps) {
         ) : null}
 
         <label className="block">
-          <span className="mb-2 block text-sm font-medium text-slate-700">Email</span>
+          <span className="mb-2 block text-sm font-medium text-slate-700">{f("email")}</span>
           <input
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             type="email"
-            placeholder="name@company.com"
+            placeholder={f("emailPlaceholder")}
             className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-500"
             required
           />
         </label>
 
         <label className="block">
-          <span className="mb-2 block text-sm font-medium text-slate-700">Password</span>
+          <span className="mb-2 block text-sm font-medium text-slate-700">{f("password")}</span>
           <input
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             type="password"
-            placeholder="Enter your password"
+            placeholder={f("passwordPlaceholder")}
             className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-500"
             required
           />
@@ -143,21 +148,21 @@ export function AuthForm({ mode }: AuthFormProps) {
           disabled={isSubmitting}
           className="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
         >
-          {isSubmitting ? "Please wait..." : isRegister ? "Create account" : "Continue"}
+          {isSubmitting ? t(`${ns}.submitting`) : t(`${ns}.submit`)}
         </button>
       </form>
 
       <div className="mt-6 flex items-center justify-between text-sm text-slate-500">
         <Link href="/" className="font-medium text-slate-700 hover:text-slate-950">
-          Back home
+          {t(`${ns}.backHome`)}
         </Link>
         {isRegister ? (
           <Link href="/login" className="font-medium text-slate-700 hover:text-slate-950">
-            Already have an account?
+            {t("register.hasAccount")}
           </Link>
         ) : (
           <Link href="/register" className="font-medium text-slate-700 hover:text-slate-950">
-            Create an account
+            {t("login.noAccount")}
           </Link>
         )}
       </div>

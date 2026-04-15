@@ -1,6 +1,7 @@
 // Shared frontend-only TypeScript types can be collected here as the app grows.
 export type NavItem = {
   label: string;
+  key?: string;
   href: string;
   icon?: string;
 };

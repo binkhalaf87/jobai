@@ -2,11 +2,14 @@ import logging
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from starlette.types import ASGIApp
 
 from app.api.router import api_router
 from app.core.application import wrap_with_cors
 from app.core.config import get_settings
+from app.core.rate_limit import limiter
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +28,10 @@ def create_application() -> ASGIApp:
     )
 
     app.include_router(api_router, prefix=settings.api_prefix)
+
+    # Rate limiting — attach limiter state and 429 handler
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:

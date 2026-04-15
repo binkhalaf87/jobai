@@ -1,0 +1,301 @@
+{
+  "common": {
+    "appName": "JobAI",
+    "loading": "Loading…",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "close": "Close",
+    "continue": "Continue",
+    "download": "Download",
+    "preview": "Preview",
+    "upload": "Upload",
+    "search": "Search",
+    "back": "Back",
+    "processing": "Processing…",
+    "pleaseWait": "Please wait…",
+    "error": "An error occurred. Please try again.",
+    "pages": "Pages",
+    "noData": "—"
+  },
+
+  "language": {
+    "switch": "العربية",
+    "current": "English"
+  },
+
+  "auth": {
+    "login": {
+      "eyebrow": "Account Access",
+      "title": "Sign in to JobAI",
+      "description": "Enter your credentials to access your dashboard.",
+      "submit": "Continue",
+      "submitting": "Signing in…",
+      "noAccount": "Create an account",
+      "backHome": "Back home"
+    },
+    "register": {
+      "eyebrow": "Create Account",
+      "title": "Create your account",
+      "description": "Join JobAI and start building your career.",
+      "submit": "Create account",
+      "submitting": "Creating account…",
+      "hasAccount": "Already have an account?",
+      "backHome": "Back home"
+    },
+    "fields": {
+      "fullName": "Full name",
+      "fullNamePlaceholder": "Jane Doe",
+      "email": "Email",
+      "emailPlaceholder": "name@company.com",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "roleLabel": "I am a",
+      "jobseeker": "🎯 Job Seeker",
+      "recruiter": "🏢 Recruiter"
+    },
+    "errors": {
+      "authFailed": "Authentication failed. Check your credentials and try again.",
+      "emailTaken": "An account with that email already exists."
+    }
+  },
+
+  "nav": {
+    "groups": {
+      "workspace": "Workspace",
+      "actions": "Tools",
+      "account": "Account"
+    },
+    "items": {
+      "dashboard": "Dashboard",
+      "cvs": "My CVs",
+      "analyze": "Analyze",
+      "improve": "Improve",
+      "aiInterview": "AI Interview",
+      "jobs": "Job Search",
+      "send": "Smart Send",
+      "billing": "Billing",
+      "points": "Points",
+      "profile": "Profile"
+    },
+    "user": {
+      "signOut": "Sign out",
+      "greeting": "Hello, {name}"
+    },
+    "public": {
+      "overview": "Overview",
+      "login": "Login",
+      "getStarted": "Get Started"
+    },
+    "descriptions": {
+      "dashboard": "See your CV, jobs, outreach, and interview progress in one place.",
+      "cvs": "Upload, review, and manage the CVs you use across analysis, jobs, and outreach.",
+      "analyze": "Run a fast ATS check and see what to fix next.",
+      "improve": "Rewrite weak sections and strengthen your CV fast.",
+      "aiInterview": "Practice with role-aware questions, score your answers, and improve before interviews.",
+      "jobs": "Find roles, check your fit, then move to analysis, interview, or send.",
+      "send": "Create outreach, send in batches, and track delivery.",
+      "billing": "Manage your plan, create a checkout, and review payment history.",
+      "points": "See your balance and top up when needed.",
+      "profile": "Keep your account details up to date."
+    }
+  },
+
+  "resumes": {
+    "upload": {
+      "eyebrow": "Upload CV",
+      "title": "Add your CV",
+      "description": "Upload once, then use this CV across analysis, job matching, and smart sending.",
+      "chooseFile": "Choose File",
+      "dropzone": "Drop your CV here",
+      "dropzoneHint": "Or click to browse. PDF or DOCX · Max 10 MB.",
+      "uploading": "Uploading {filename}",
+      "uploadingProgress": "{progress}%",
+      "success": "CV uploaded successfully",
+      "successDetail": "Saved as {filename}.",
+      "resumeId": "ID: {id}",
+      "errorType": "Only PDF and DOCX files are accepted.",
+      "errorGeneric": "Upload failed. Please try again."
+    },
+    "list": {
+      "eyebrow": "Saved CVs",
+      "title_one": "1 resume uploaded",
+      "title_other": "{count} resumes uploaded",
+      "loading": "Loading…",
+      "empty": "No CVs yet",
+      "emptyHint": "Upload a PDF or DOCX file to get started.",
+      "columns": {
+        "file": "File",
+        "pages": "Pages",
+        "status": "Status",
+        "added": "Added",
+        "actions": "Actions"
+      },
+      "actions": {
+        "preview": "Preview",
+        "download": "Download",
+        "close": "Close",
+        "delete": "Delete",
+        "deleting": "Deleting…",
+        "processingTooltip": "Processing…"
+      },
+      "status": {
+        "parsed": "Parsed",
+        "processing": "Processing",
+        "uploaded": "Uploaded",
+        "failed": "Failed"
+      },
+      "preview": {
+        "pdfTitle": "PDF Preview",
+        "docxTitle": "Word Document",
+        "docxHint": "DOCX files cannot be previewed in the browser — download to open in Word or Google Docs.",
+        "extractedText": "Extracted text",
+        "noText": "No text extracted yet."
+      },
+      "deleteConfirm": "Delete \"{name}\"?\n\nThis will also remove all analyses linked to this CV.",
+      "errors": {
+        "load": "Failed to load your CVs.",
+        "delete": "Delete failed. Please try again.",
+        "file": "Failed to load the file."
+      }
+    }
+  },
+
+  "analysis": {
+    "title": "Resume Analysis",
+    "newAnalysis": "New Analysis",
+    "selectResume": "Select a CV",
+    "selectJob": "Select a job description",
+    "run": "Run Analysis",
+    "running": "Analysing…",
+    "score": "Match Score",
+    "atsScore": "ATS Score",
+    "keywords": {
+      "matching": "Matching Keywords",
+      "missing": "Missing Keywords"
+    },
+    "sections": {
+      "overview": "Overview",
+      "keywords": "Keywords",
+      "ats": "ATS Check",
+      "suggestions": "Suggestions"
+    }
+  },
+
+  "interview": {
+    "title": "AI Interview",
+    "start": "Start Interview",
+    "settings": {
+      "jobTitle": "Job Title",
+      "level": "Experience Level",
+      "type": "Interview Type",
+      "language": "Language",
+      "questions": "Number of Questions"
+    },
+    "levels": {
+      "entry": "Entry Level",
+      "mid": "Mid Level",
+      "senior": "Senior Level"
+    },
+    "types": {
+      "hr": "HR Interview",
+      "technical": "Technical Interview",
+      "mixed": "Mixed"
+    },
+    "languages": {
+      "en": "English",
+      "ar": "Arabic"
+    },
+    "status": {
+      "ready": "Ready",
+      "completed": "Completed",
+      "inProgress": "In Progress"
+    },
+    "results": {
+      "score": "Overall Score",
+      "readiness": "Interview Readiness",
+      "strengths": "Top Strengths",
+      "improvements": "Priority Improvements",
+      "drills": "Recommended Practice"
+    }
+  },
+
+  "jobs": {
+    "title": "Job Search",
+    "searchPlaceholder": "Job title, skills, or keywords",
+    "locationPlaceholder": "City or remote",
+    "search": "Search",
+    "results": "{total} jobs found",
+    "noResults": "No jobs found for this search.",
+    "applyNow": "Apply Now",
+    "saveJob": "Save",
+    "savedJob": "Saved",
+    "fitScore": "Match",
+    "salary": "Salary",
+    "type": "Type",
+    "posted": "Posted {date}"
+  },
+
+  "billing": {
+    "title": "Billing & Plans",
+    "currentPlan": "Current Plan",
+    "upgrade": "Upgrade",
+    "points": "Points Balance",
+    "history": "Order History",
+    "status": {
+      "active": "Active",
+      "canceled": "Canceled",
+      "expired": "Expired"
+    },
+    "noSubscription": "No active subscription.",
+    "checkout": "Proceed to Checkout"
+  },
+
+  "profile": {
+    "title": "Profile",
+    "fullName": "Full Name",
+    "email": "Email",
+    "role": "Account Type",
+    "roles": {
+      "jobseeker": "Job Seeker",
+      "recruiter": "Recruiter"
+    },
+    "save": "Save Changes",
+    "saved": "Changes saved."
+  },
+
+  "recruiter": {
+    "nav": {
+      "groups": {
+        "workspace": "Workspace",
+        "tools": "Recruitment Tools",
+        "account": "Account"
+      },
+      "items": {
+        "dashboard": "Dashboard",
+        "candidates": "Candidates",
+        "jobs": "Job Listings",
+        "aiScreening": "AI Screening",
+        "aiInterview": "AI Interview",
+        "billing": "Billing"
+      }
+    },
+    "candidates": {
+      "title": "Candidates",
+      "upload": "Upload CVs",
+      "analyzeAll": "Analyze All",
+      "stage": {
+        "new": "New",
+        "shortlisted": "Shortlisted",
+        "interview": "Interview",
+        "rejected": "Rejected"
+      },
+      "detail": {
+        "skills": "Skills",
+        "experience": "Experience",
+        "topMatch": "Best Match",
+        "fileUnavailable": "File not available"
+      }
+    }
+  }
+}

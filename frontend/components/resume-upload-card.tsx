@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Panel } from "@/components/panel";
 import { uploadResume } from "@/lib/resumes";
@@ -17,6 +18,7 @@ type ResumeUploadCardProps = {
 };
 
 export function ResumeUploadCard({ onUploadComplete }: ResumeUploadCardProps) {
+  const t = useTranslations("resumes.upload");
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -34,7 +36,7 @@ export function ResumeUploadCard({ onUploadComplete }: ResumeUploadCardProps) {
       ACCEPTED_TYPES.includes(file.type) || file.name.toLowerCase().endsWith(".pdf") || file.name.toLowerCase().endsWith(".docx");
 
     if (!isAcceptedType) {
-      setErrorMessage("Only PDF and DOCX files are supported.");
+      setErrorMessage(t("errorType"));
       setUploadState("idle");
       setProgress(0);
       return;
@@ -55,7 +57,7 @@ export function ResumeUploadCard({ onUploadComplete }: ResumeUploadCardProps) {
     } catch (error) {
       setUploadState("idle");
       setProgress(0);
-      setErrorMessage(error instanceof Error ? error.message : "Upload failed.");
+      setErrorMessage(error instanceof Error ? error.message : t("errorGeneric"));
     }
   }
 
@@ -63,18 +65,16 @@ export function ResumeUploadCard({ onUploadComplete }: ResumeUploadCardProps) {
     <Panel className="p-8">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div className="max-w-2xl">
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Upload CV</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Add your CV</h2>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
-            Upload once, then use this CV in analysis, matching, and sending.
-          </p>
+          <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">{t("eyebrow")}</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{t("title")}</h2>
+          <p className="mt-3 text-sm leading-6 text-slate-600">{t("description")}</p>
         </div>
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
           className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:text-slate-950"
         >
-          Choose CV
+          {t("chooseFile")}
         </button>
       </div>
 
@@ -104,15 +104,15 @@ export function ResumeUploadCard({ onUploadComplete }: ResumeUploadCardProps) {
             event.currentTarget.value = "";
           }}
         />
-        <p className="text-base font-semibold text-slate-900">Drop your CV here</p>
-        <p className="mt-2 text-sm text-slate-500">Or choose a file. PDF or DOCX only.</p>
+        <p className="text-base font-semibold text-slate-900">{t("dropzone")}</p>
+        <p className="mt-2 text-sm text-slate-500">{t("dropzoneHint")}</p>
       </div>
 
       {uploadState === "uploading" ? (
         <div className="mt-6 space-y-3">
           <div className="flex items-center justify-between text-sm text-slate-600">
-            <span>Uploading {uploadedFileName}</span>
-            <span>{progress}%</span>
+            <span>{t("uploading", { filename: uploadedFileName })}</span>
+            <span>{t("uploadingProgress", { progress })}</span>
           </div>
           <div className="h-3 overflow-hidden rounded-full bg-slate-200">
             <div className="h-full rounded-full bg-slate-900 transition-all" style={{ width: `${progress}%` }} />
@@ -122,9 +122,9 @@ export function ResumeUploadCard({ onUploadComplete }: ResumeUploadCardProps) {
 
       {uploadState === "success" ? (
         <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-800">
-          <p className="font-semibold">CV uploaded</p>
-          <p className="mt-1">Saved {uploadedFileName}.</p>
-          <p className="mt-1">Resume ID: {resumeId}</p>
+          <p className="font-semibold">{t("success")}</p>
+          <p className="mt-1">{t("successDetail", { filename: uploadedFileName })}</p>
+          <p className="mt-1">{t("resumeId", { id: resumeId })}</p>
         </div>
       ) : null}
 
