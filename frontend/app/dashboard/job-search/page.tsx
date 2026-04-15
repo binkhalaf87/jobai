@@ -160,7 +160,7 @@ function JobCard({
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{insights.headline}</p>
         <div className="mt-3 grid gap-3 md:grid-cols-2">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">Why this role matches</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">Why it matches</p>
             <ul className="mt-2 space-y-1.5 text-xs leading-5 text-slate-600">
               {insights.reasons.map((reason) => (
                 <li key={reason}>- {reason}</li>
@@ -168,7 +168,7 @@ function JobCard({
             </ul>
           </div>
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700">How to improve the match</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700">How to improve</p>
             <ul className="mt-2 space-y-1.5 text-xs leading-5 text-slate-600">
               {insights.suggestions.map((suggestion) => (
                 <li key={suggestion}>- {suggestion}</li>
@@ -504,7 +504,7 @@ export default function DashboardJobSearchPage() {
         <div className="border-b border-slate-100 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_55%,#ecfeff_100%)] px-6 py-7 md:px-8 md:py-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Journey Step 4</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Step 4</p>
               <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 md:text-3xl">
                 Match roles, then act on them
               </h1>
@@ -516,7 +516,7 @@ export default function DashboardJobSearchPage() {
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Current focus</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Focus</p>
                 <p className="mt-2 text-sm font-semibold text-slate-950">
                   {savedJobs.length > 0 ? "Turn saved roles into action" : "Build your first shortlist"}
                 </p>
@@ -527,7 +527,7 @@ export default function DashboardJobSearchPage() {
                 </p>
               </div>
               <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white/90 px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Next move</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Next step</p>
                 <p className="text-sm font-semibold text-slate-950">{nextActionLabel}</p>
                 <Link
                   href={nextActionHref}
@@ -544,17 +544,17 @@ export default function DashboardJobSearchPage() {
           <ScoreHeader
             label="Active Resume"
             value={activeResume?.source_filename ?? activeResume?.title ?? "None selected"}
-            note={resumeId ? "Every fit score and suggestion on this page is based on this resume." : "Select a resume to unlock personalized match scoring."}
+            note={resumeId ? "Scores on this page use this CV." : "Pick a CV to unlock scoring."}
           />
           <ScoreHeader
             label="Saved Roles"
             value={savedJobs.length.toString()}
-            note={savedJobs.length > 0 ? `${matchedSavedCount} saved roles already look promising.` : "Save strong opportunities so they stay in your shortlist."}
+            note={savedJobs.length > 0 ? `${matchedSavedCount} saved roles already look promising.` : "Save strong jobs to keep them handy."}
           />
           <ScoreHeader
             label="Decision Mode"
             value={resumeId ? "Personalized matching" : "Manual scouting"}
-            note={resumeId ? "Use match reasons and suggestions to decide where to tailor, send, or rehearse next." : "You can still search, but results will be less tailored until you pick a resume."}
+            note={resumeId ? "Use fit signals to decide what to do next." : "You can still search, but results improve after you pick a CV."}
           />
         </div>
       </Panel>
@@ -626,13 +626,13 @@ export default function DashboardJobSearchPage() {
 
           {resumes.length > 0 && (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-500">Score against:</span>
+              <span className="text-xs text-slate-500">Score with:</span>
               <select
                 value={resumeId}
                 onChange={(event) => setResumeId(event.target.value)}
                 className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 focus:outline-none"
               >
-                <option value="">No scoring</option>
+                <option value="">No score</option>
                 {resumes.map((resume) => (
                   <option key={resume.id} value={resume.id}>
                     {resume.source_filename ?? resume.title}
@@ -669,7 +669,7 @@ export default function DashboardJobSearchPage() {
 
           {pageState === "idle" && (
             <Panel className="px-6 py-12 text-center">
-              <p className="text-sm font-semibold text-slate-900">Search for jobs</p>
+              <p className="text-sm font-semibold text-slate-900">Search jobs</p>
               <p className="mt-1 text-xs text-slate-500">
                 Start with a role title. If you select a resume above, each result will include a personalized fit
                 score.
@@ -735,8 +735,8 @@ export default function DashboardJobSearchPage() {
 
           {pageState === "results" && results.length === 0 && (
             <Panel className="px-6 py-12 text-center">
-              <p className="text-sm font-semibold text-slate-900">No roles found</p>
-              <p className="mt-1 text-xs text-slate-500">Try a broader title or remove a location filter.</p>
+              <p className="text-sm font-semibold text-slate-900">No jobs found</p>
+              <p className="mt-1 text-xs text-slate-500">Try a broader title or remove location.</p>
             </Panel>
           )}
         </div>
@@ -746,8 +746,8 @@ export default function DashboardJobSearchPage() {
         <div className="space-y-4">
           {savedJobs.length === 0 ? (
             <Panel className="px-6 py-12 text-center">
-              <p className="text-sm font-semibold text-slate-900">No saved roles yet</p>
-              <p className="mt-1 text-xs text-slate-500">Save strong opportunities from search so they stay in your shortlist.</p>
+              <p className="text-sm font-semibold text-slate-900">No saved jobs yet</p>
+              <p className="mt-1 text-xs text-slate-500">Save jobs from search to keep them in your shortlist.</p>
             </Panel>
           ) : (
             <>

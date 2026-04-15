@@ -161,7 +161,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
       <div className="space-y-6">
         <Panel className="p-8 md:p-10">
           <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Billing</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">Loading billing workspace…</h1>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">Loading billing…</h1>
         </Panel>
       </div>
     );
@@ -194,13 +194,13 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
           {audience === "recruiter"
-            ? "Manage recruiter subscriptions and plan limits"
-            : "Manage your monthly plan and Paymob checkout"}
+            ? "Manage recruiter plans"
+            : "Manage plan and checkout"}
         </h1>
         <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
           {audience === "recruiter"
-            ? "Choose the recruiter plan that fits your hiring volume, then activate it through Paymob."
-            : "Keep your monthly access active, then add extra points whenever you need more AI actions."}
+            ? "Pick a plan and activate it with Paymob."
+            : "Keep your plan active and top up points when needed."}
         </p>
       </Panel>
 
@@ -208,27 +208,27 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
         <MetricCard
           label="Current status"
           value={snapshot.current_subscription?.status.replace(/_/g, " ") ?? "No active subscription"}
-          note={snapshot.current_subscription?.plan_name ?? "Choose a plan below to start billing through Paymob."}
+          note={snapshot.current_subscription?.plan_name ?? "Choose a plan to start checkout."}
         />
         <MetricCard
           label="Current period"
           value={snapshot.current_subscription?.current_period_end ? formatDate(snapshot.current_subscription.current_period_end) : "—"}
-          note="Displayed from the last synced subscription record after successful payment confirmation."
+          note="Shown from your latest synced subscription."
         />
         <MetricCard
           label={audience === "jobseeker" ? "Points balance" : "Recent payments"}
           value={audience === "jobseeker" ? String(wallet?.balance_points ?? 0) : String(snapshot.recent_orders.length)}
-          note={audience === "jobseeker" ? "Available points in your wallet for premium AI features." : "Recent payment orders created from this recruiter account."}
+          note={audience === "jobseeker" ? "Points available for AI actions." : "Recent orders from this account."}
         />
       </div>
 
       <Panel className="p-6 md:p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Checkout contact</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Paymob billing details</h2>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Checkout</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Billing details</h2>
             <p className="mt-3 text-sm leading-7 text-slate-600">
-              Phone number is required before creating the Paymob intention. The remaining fields help prefill the checkout experience.
+              Add contact details before creating checkout.
             </p>
           </div>
           <button
@@ -236,7 +236,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
             onClick={() => void loadBillingState()}
             className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
           >
-            Refresh billing
+            Refresh
           </button>
         </div>
 
@@ -272,7 +272,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
         <Panel className="p-6 md:p-8">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Plans</p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-            {audience === "recruiter" ? "Recruiter monthly plans" : "Monthly plan and top-ups"}
+            {audience === "recruiter" ? "Recruiter plans" : "Plans and top-ups"}
           </h2>
 
           <div className="mt-6 space-y-4">
@@ -369,7 +369,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
             <div className="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-6">
               <p className="text-base font-semibold text-slate-900">No active checkout session</p>
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                Choose a plan or points pack on the left, then this panel will load the Paymob checkout button automatically.
+                Pick a plan to load checkout.
               </p>
             </div>
           )}
@@ -379,7 +379,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <Panel className="p-6 md:p-8">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Recent payment orders</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Latest billing activity</h2>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Recent billing</h2>
           <div className="mt-6 overflow-hidden rounded-[1.75rem] border border-slate-200">
             {snapshot.recent_orders.length === 0 ? (
               <div className="bg-slate-50 p-6 text-sm text-slate-600">No payment orders yet.</div>
@@ -432,13 +432,13 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
             <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Recruiter plan guidance</h2>
             <div className="mt-6 space-y-4 text-sm leading-7 text-slate-600">
               <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5">
-                Starter fits lightweight hiring flows and smaller candidate pools.
+                Starter is best for light usage.
               </div>
               <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5">
-                Growth is better when you need more active jobs and broader candidate throughput.
+                Growth suits higher hiring volume.
               </div>
               <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5">
-                Pro is the best fit when recruiter dashboards, jobs, and candidate operations are all core daily workflows.
+                Pro fits daily recruiter workflows.
               </div>
             </div>
           </Panel>

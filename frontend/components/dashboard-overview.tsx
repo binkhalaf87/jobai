@@ -93,21 +93,21 @@ function JourneyProgress({ overview }: { overview: DashboardOverviewData }) {
     },
     {
       num: 4,
-      label: "Match Jobs",
+      label: "Find Jobs",
       href: "/dashboard/job-search",
       done: (overview.metrics.jobsMatched ?? 0) > 0,
       active: false,
     },
     {
       num: 5,
-      label: "Send Campaign",
+      label: "Send CV",
       href: "/dashboard/smart-send",
       done: (overview.metrics.applicationsSent ?? 0) > 0,
       active: false,
     },
     {
       num: 6,
-      label: "Practice Interview",
+      label: "Practice",
       href: "/dashboard/ai-interview",
       done: (overview.interviews.data?.filter((item) => item.status === "completed").length ?? 0) > 0,
       active: false,
@@ -125,10 +125,10 @@ function JourneyProgress({ overview }: { overview: DashboardOverviewData }) {
     <div className="rounded-3xl border border-slate-200 bg-white p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Journey</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Flow</p>
           <p className="mt-0.5 text-sm font-semibold text-slate-900">
             {completedCount === steps.length
-              ? "All major steps have activity."
+              ? "Flow complete."
               : `${completedCount} of ${steps.length} steps completed`}
           </p>
         </div>
@@ -252,10 +252,10 @@ function buildQuickActions(overview: DashboardOverviewData): QuickAction[] {
           ? "Resume data is unavailable right now."
           : parsedResumes > 0
             ? `${pluralize(parsedResumes, "resume")} ready for analysis.`
-            : "Upload and parse a resume to unlock your first ATS report.",
+            : "Upload a CV to start your first report.",
     },
     {
-      label: "Match Jobs",
+      label: "Find Jobs",
       href: "/dashboard/job-search",
       description:
         savedJobs == null
@@ -265,7 +265,7 @@ function buildQuickActions(overview: DashboardOverviewData): QuickAction[] {
             : "Search live roles and score them against your resume.",
     },
     {
-      label: "Practice Interview",
+      label: "Practice",
       href: "/dashboard/ai-interview",
       description:
         interviews == null
@@ -320,7 +320,7 @@ export function DashboardOverview() {
   if (failedCollections.length === 6) {
     return (
       <Panel className="p-8 md:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Career Command Center</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Dashboard</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
           Live workspace data could not be loaded
         </h1>
@@ -364,7 +364,7 @@ export function DashboardOverview() {
         <div className="border-b border-slate-100 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_55%,#ecfeff_100%)] px-8 py-8 md:px-10 md:py-10">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Career Command Center</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Dashboard</p>
               <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
                 Move from CV quality to interview confidence
               </h1>
@@ -383,12 +383,12 @@ export function DashboardOverview() {
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-3xl border border-slate-200 bg-white/90 p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Current focus</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Focus</p>
                 <p className="mt-2 text-sm font-semibold text-slate-950">{focusLabel}</p>
                 <p className="mt-2 text-xs leading-6 text-slate-500">{focusDescription}</p>
               </div>
               <div className="rounded-3xl border border-slate-200 bg-white/90 p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Journey health</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Flow health</p>
                 <p className="mt-2 text-sm font-semibold text-slate-950">{overview.metrics.completedJourneySteps}/6 steps active</p>
                 <p className="mt-2 text-xs leading-6 text-slate-500">
                   {savedJobCount ?? 0} saved roles and {campaignCount ?? 0} campaign{campaignCount === 1 ? "" : "s"} currently shape your momentum.
@@ -400,7 +400,7 @@ export function DashboardOverview() {
 
         <div className="grid gap-4 px-8 py-5 md:grid-cols-3 md:px-10">
           <div className="rounded-3xl border border-slate-200 bg-white p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Active Resume</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Active CV</p>
             <p className="mt-2 text-base font-semibold text-slate-950">{overview.metrics.activeResumeTitle ?? "No active resume yet"}</p>
             <p className="mt-2 text-xs leading-6 text-slate-500">
               {overview.metrics.activeResumeTitle
@@ -409,12 +409,12 @@ export function DashboardOverview() {
             </p>
           </div>
           <div className="rounded-3xl border border-slate-200 bg-white p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Best next action</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Next action</p>
             <p className="mt-2 text-base font-semibold text-slate-950">{overview.nextStep.label}</p>
             <p className="mt-2 text-xs leading-6 text-slate-500">{overview.nextStep.description}</p>
           </div>
           <div className="rounded-3xl border border-slate-200 bg-white p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Decision rule</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Rule</p>
             <p className="mt-2 text-base font-semibold text-slate-950">
               {(overview.metrics.atsScore ?? 0) >= 75 ? "Push strongest matches forward" : "Improve the CV before scaling out"}
             </p>
@@ -483,7 +483,7 @@ export function DashboardOverview() {
         <Panel className="p-6 md:p-8">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Recent Activity</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Recent activity</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
                 Latest actions in your workspace
               </h2>
@@ -499,7 +499,7 @@ export function DashboardOverview() {
 
           {overview.recentActivity.length === 0 ? (
             <div className="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-6">
-              <p className="text-base font-semibold text-slate-900">No workspace activity yet</p>
+              <p className="text-base font-semibold text-slate-900">No activity yet</p>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
                 Upload resumes, run analyses, save jobs, send campaigns, or complete interviews to start building your
                 progress trail.
@@ -543,7 +543,7 @@ export function DashboardOverview() {
         </Panel>
 
         <Panel className="p-6 md:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Recommended Next Step</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Recommended step</p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{overview.nextStep.label}</h2>
           <p className="mt-3 text-sm leading-7 text-slate-600">{overview.nextStep.description}</p>
           <Link
@@ -554,10 +554,10 @@ export function DashboardOverview() {
           </Link>
 
           <div className="mt-6 rounded-[2rem] border border-slate-200 bg-slate-50 p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Decision Signals</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Signals</p>
             <div className="mt-4 space-y-3 text-sm text-slate-600">
               <div className="flex items-center justify-between gap-3">
-                <span>Active resume</span>
+                <span>Active CV</span>
                 <span className="font-semibold text-slate-900">{overview.metrics.activeResumeTitle ?? "Not set"}</span>
               </div>
               <div className="flex items-center justify-between gap-3">
@@ -569,7 +569,7 @@ export function DashboardOverview() {
                 <span className="font-semibold text-slate-900">{formatCount(parsedResumeCount)}</span>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <span>Saved roles</span>
+                <span>Saved jobs</span>
                 <span className="font-semibold text-slate-900">{formatCount(savedJobCount)}</span>
               </div>
             </div>

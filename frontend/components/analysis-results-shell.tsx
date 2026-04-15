@@ -194,7 +194,7 @@ export function AnalysisResultsShell() {
       <div className="space-y-6">
         <Panel className="p-8 md:p-10">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Analysis Results</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">Pick a resume and a job description first</h1>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">Pick a CV and job first</h1>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
             This screen expects both a `resumeId` and `jobDescriptionId` in the URL so it can run the full analysis flow
             and render the saved result set.
@@ -203,7 +203,7 @@ export function AnalysisResultsShell() {
             href="/dashboard"
             className="mt-6 inline-flex rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
           >
-            Return to dashboard
+            Back to dashboard
           </Link>
         </Panel>
       </div>
@@ -217,7 +217,7 @@ export function AnalysisResultsShell() {
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-rose-500">Analysis Error</p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">We couldn&apos;t generate this result yet</h1>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
-            {errorMessage || "Try again after checking that the resume and job description were saved correctly."}
+            {errorMessage || "Check the saved CV and job, then try again."}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
@@ -244,9 +244,9 @@ export function AnalysisResultsShell() {
       <div className="space-y-6">
         <Panel className="p-8 md:p-10">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Analysis Results</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">Running your full resume review</h1>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">Running your CV check</h1>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
-            The platform is calculating match quality, ATS readiness, and weighted scoring for this resume-job pair.
+            Scoring fit, ATS readiness, and key gaps.
           </p>
           <div className="mt-6 h-2 overflow-hidden rounded-full bg-slate-200">
             <div className="h-full w-2/3 animate-pulse rounded-full bg-slate-900" />
@@ -266,7 +266,7 @@ export function AnalysisResultsShell() {
           <div className="max-w-3xl">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Analysis Results</p>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
-              A clear picture of resume fit and ATS readiness
+              Your fit and ATS summary
             </h1>
             <p className="mt-4 text-sm leading-7 text-slate-600">{analysis.result.score.explanation}</p>
           </div>
@@ -297,9 +297,9 @@ export function AnalysisResultsShell() {
             <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Score Breakdown</p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">How the score was calculated</h2>
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">How scoring works</h2>
               </div>
-              <p className="text-sm text-slate-500">Deterministic weighting across four explainable categories.</p>
+              <p className="text-sm text-slate-500">Four clear scoring areas.</p>
             </div>
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               <BreakdownCard label={BREAKDOWN_LABELS.match} item={breakdown.match} />
@@ -316,7 +316,7 @@ export function AnalysisResultsShell() {
 
           <Panel className="p-6 md:p-8">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Job Signals</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Extracted role keyword groups</h2>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Role keywords</h2>
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               {groupedKeywords.length ? (
                 groupedKeywords.map((group) => (
@@ -346,7 +346,7 @@ export function AnalysisResultsShell() {
         <div className="space-y-6">
           <Panel className="p-6 md:p-8">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Top Issues</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Highest-priority ATS risks</h2>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Top ATS risks</h2>
             <div className="mt-6 space-y-4">
               {topIssues.length ? (
                 topIssues.map((issue) => <IssueCard key={`${issue.category}-${issue.message}`} issue={issue} />)
@@ -360,7 +360,7 @@ export function AnalysisResultsShell() {
 
           <Panel className="p-6 md:p-8">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Improvement Suggestions</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Next actions to improve the resume</h2>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Next actions</h2>
             <div className="mt-6 space-y-3">
               {suggestions.length ? (
                 suggestions.map((suggestion, index) => (
@@ -381,7 +381,7 @@ export function AnalysisResultsShell() {
 
           <Panel className="p-6 md:p-8">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Analysis Context</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Saved identifiers for this run</h2>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Saved IDs</h2>
             <dl className="mt-6 space-y-4">
               <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
                 <dt className="text-xs uppercase tracking-[0.18em] text-slate-500">Analysis ID</dt>

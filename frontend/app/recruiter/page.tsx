@@ -137,7 +137,7 @@ export default function RecruiterDashboardPage() {
   if (error || !stats) {
     return (
       <Panel className="p-8 md:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Recruiter Dashboard</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Hiring Dashboard</p>
         <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{error ?? "No data available"}</h1>
       </Panel>
     );
@@ -169,22 +169,22 @@ export default function RecruiterDashboardPage() {
       <Panel className="overflow-hidden p-0">
         <div className="grid gap-0 lg:grid-cols-[1.35fr_0.65fr]">
           <div className="bg-[radial-gradient(circle_at_top_left,_rgba(15,23,42,0.08),_transparent_55%),linear-gradient(135deg,_#ffffff_0%,_#eef4ff_46%,_#f8fafc_100%)] px-8 py-8 md:px-10 md:py-10">
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Recruiter Dashboard</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Hiring Dashboard</p>
             <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
-              Run sourcing, ranking, and pipeline decisions from one hiring workspace
+              Find, review, and move candidates faster
             </h1>
             <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
-              This view turns uploaded resumes into an operating queue: who needs analysis, who is strongest for open jobs, and who should move next.
+              One place for jobs, candidates, analysis, and next steps.
             </p>
 
             <div className="mt-6 grid gap-3 md:grid-cols-3">
               <div className="rounded-[1.75rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Hiring Pulse</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Pipeline</p>
                 <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{shortlistedRatio}%</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">Of visible pipeline is already shortlisted for deeper review.</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Already shortlisted.</p>
               </div>
               <div className="rounded-[1.75rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Next Action</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Next step</p>
                 <p className="mt-3 text-lg font-semibold tracking-tight text-slate-950">{nextActionLabel}</p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">{nextActionDescription}</p>
               </div>
@@ -194,19 +194,19 @@ export default function RecruiterDashboardPage() {
                   {stats.total_jobs > 0 ? `${stats.total_jobs} active role${stats.total_jobs === 1 ? "" : "s"}` : "No active jobs"}
                 </p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Ranking quality improves when each candidate can be measured against a live role.
+                  Ranking is stronger when jobs are active.
                 </p>
               </div>
             </div>
           </div>
 
           <div className="border-t border-slate-200/70 bg-slate-950 px-8 py-8 text-white lg:border-l lg:border-t-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Control Center</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Actions</p>
             <div className="mt-5 space-y-4">
               <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-4">
-                <p className="text-sm font-semibold">Move the pipeline forward</p>
+                <p className="text-sm font-semibold">Move the pipeline</p>
                 <p className="mt-2 text-sm leading-6 text-slate-300">
-                  Open the candidate queue to bulk analyze resumes, change stages, and review fit signals in one pass.
+                  Open candidates to analyze, move stages, and review fit.
                 </p>
                 <Link
                   href={nextActionHref}
@@ -216,7 +216,7 @@ export default function RecruiterDashboardPage() {
                 </Link>
               </div>
               <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-4">
-                <p className="text-sm font-semibold">Top risk right now</p>
+                <p className="text-sm font-semibold">Current risk</p>
                 <p className="mt-2 text-sm leading-6 text-slate-300">
                   {stats.awaiting_analysis > 0
                     ? "Unanalyzed candidates are hiding strong matches. Clear them first so ranking becomes trustworthy."
@@ -232,22 +232,22 @@ export default function RecruiterDashboardPage() {
         <MetricCard
           label="Candidates"
           value={stats.total_candidates.toString()}
-          note={stats.total_candidates === 0 ? "Upload resumes to start building your candidate pool." : "Total resumes available to rank and review."}
+          note={stats.total_candidates === 0 ? "Upload resumes to start." : "Resumes ready to review."}
         />
         <MetricCard
           label="Open Jobs"
           value={stats.total_jobs.toString()}
-          note={stats.total_jobs === 0 ? "Add at least one job to unlock candidate ranking." : "Jobs currently feeding your ATS workflow."}
+          note={stats.total_jobs === 0 ? "Add a job to unlock ranking." : "Active jobs in this workspace."}
         />
         <MetricCard
           label="Avg Match Score"
           value={stats.avg_match_score > 0 ? `${stats.avg_match_score.toFixed(1)}%` : "-"}
-          note="Average across completed candidate-job analyses."
+          note="Average fit across analyzed candidates."
         />
         <MetricCard
           label="Awaiting Analysis"
           value={stats.awaiting_analysis.toString()}
-          note="Parsed resumes that still need AI analysis against your jobs."
+          note="Resumes still waiting for analysis."
         />
       </div>
 
@@ -256,7 +256,7 @@ export default function RecruiterDashboardPage() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Pipeline</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Applied to hired-ready</h2>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Pipeline overview</h2>
             </div>
             <Link href="/recruiter/candidates" className="text-sm font-semibold text-slate-700 hover:text-slate-950">
               Open candidates
@@ -285,11 +285,11 @@ export default function RecruiterDashboardPage() {
 
         <Panel className="p-6 md:p-8">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Top Matches</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Candidates worth reviewing next</h2>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Top candidates</h2>
 
           {stats.top_matches.length === 0 ? (
             <div className="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-6">
-              <p className="text-base font-semibold text-slate-900">No ranked matches yet</p>
+              <p className="text-base font-semibold text-slate-900">No ranked candidates yet</p>
               <p className="mt-2 text-sm leading-7 text-slate-600">
                 Upload candidates and run AI analysis against your jobs to see ranking here.
               </p>
@@ -319,7 +319,7 @@ export default function RecruiterDashboardPage() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Recent Candidates</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Latest uploaded resumes</h2>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Latest resumes</h2>
           </div>
           <Link href="/recruiter/candidates" className="text-sm font-semibold text-slate-700 hover:text-slate-950">
             Open pipeline
@@ -329,7 +329,7 @@ export default function RecruiterDashboardPage() {
         {stats.recent_candidates.length === 0 ? (
           <div className="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-6">
             <p className="text-base font-semibold text-slate-900">No candidates yet</p>
-            <p className="mt-2 text-sm leading-7 text-slate-600">Upload candidate resumes from the Candidates page.</p>
+            <p className="mt-2 text-sm leading-7 text-slate-600">Upload resumes from Candidates.</p>
           </div>
         ) : (
           <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">

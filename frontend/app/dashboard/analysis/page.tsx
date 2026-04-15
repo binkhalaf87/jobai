@@ -153,7 +153,7 @@ function StructuredReport({
     <div id="analysis-print-root">
       {/* ── Print header ── */}
       <div className="mb-5 hidden print:block">
-        <h1 className="text-2xl font-bold text-slate-900">AI Resume Analysis Report</h1>
+        <h1 className="text-2xl font-bold text-slate-900">CV Analysis Report</h1>
         {resumeTitle && (
           <p className="mt-1 text-sm text-slate-500">
             Resume: {resumeTitle}{date ? ` · ${date}` : ""}
@@ -234,7 +234,7 @@ function NextStepsPanel({
   return (
     <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6" data-no-print>
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">What's next?</p>
-      <h2 className="mt-1 text-lg font-semibold text-slate-900">Continue your job search journey</h2>
+      <h2 className="mt-1 text-lg font-semibold text-slate-900">Keep moving</h2>
       {scoreMsg && (
         <p className="mt-2 text-sm text-slate-500">{scoreMsg}</p>
       )}
@@ -244,8 +244,8 @@ function NextStepsPanel({
           className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300 hover:bg-white"
         >
           <span className="text-base">🔍</span>
-          <p className="text-sm font-semibold text-slate-900">Find Matching Jobs</p>
-          <p className="text-xs text-slate-500">Search roles that fit your profile.</p>
+          <p className="text-sm font-semibold text-slate-900">Find jobs</p>
+          <p className="text-xs text-slate-500">See roles that fit.</p>
         </Link>
         <button
           type="button"
@@ -253,7 +253,7 @@ function NextStepsPanel({
           className="flex flex-col items-start gap-2 rounded-xl border border-violet-200 bg-violet-50 p-4 text-left transition hover:border-violet-300 hover:bg-violet-100"
         >
           <span className="text-base">🎤</span>
-          <p className="text-sm font-semibold text-violet-900">Practice Interview</p>
+          <p className="text-sm font-semibold text-violet-900">Practice interview</p>
           <p className="text-xs text-violet-600">
             {jobDescription ? "JD will be pre-loaded automatically." : "Simulate a mock interview session."}
           </p>
@@ -263,8 +263,8 @@ function NextStepsPanel({
           className="flex flex-col gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4 transition hover:border-emerald-300 hover:bg-emerald-100"
         >
           <span className="text-base">📬</span>
-          <p className="text-sm font-semibold text-emerald-900">Apply with SmartSend</p>
-          <p className="text-xs text-emerald-600">Send your CV to companies in bulk.</p>
+          <p className="text-sm font-semibold text-emerald-900">Send with SmartSend</p>
+          <p className="text-xs text-emerald-600">Send your CV in batches.</p>
         </Link>
       </div>
     </div>
@@ -374,7 +374,7 @@ export default function DashboardAnalysisPage() {
       {/* ─── Header ──────────────────────────────────────────────── */}
       <div data-no-print>
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">AI Tools</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">Resume Analysis</h1>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">Analyze CV</h1>
         <p className="mt-1 max-w-2xl text-sm text-slate-500">
           AI-powered report: ATS score, keyword gaps, hiring manager view, career plan, and interview prep.
         </p>
@@ -383,7 +383,7 @@ export default function DashboardAnalysisPage() {
       {/* ─── Input panel ─────────────────────────────────────────── */}
       <Panel className="p-6 md:p-8" data-no-print>
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">New Analysis</p>
-        <h2 className="mt-1 text-lg font-semibold tracking-tight text-slate-900">Select resume & run report</h2>
+        <h2 className="mt-1 text-lg font-semibold tracking-tight text-slate-900">Pick a CV and run</h2>
 
         <div className="mt-5 space-y-4">
           <div>
@@ -391,7 +391,7 @@ export default function DashboardAnalysisPage() {
             {resumes.length === 0 ? (
               <p className="text-sm text-slate-500">
                 No resumes yet.{" "}
-                <a href="/dashboard/resumes" className="font-semibold text-slate-900 underline underline-offset-2">Upload one →</a>
+                <a href="/dashboard/resumes" className="font-semibold text-slate-900 underline underline-offset-2">Upload CV →</a>
               </p>
             ) : (
               <select
@@ -417,7 +417,7 @@ export default function DashboardAnalysisPage() {
               rows={4}
               value={jobDescription}
               onChange={(e) => setJobDescription(e.target.value)}
-              placeholder="Paste the job description to tailor the analysis…"
+              placeholder="Paste job description…"
               className="w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm placeholder-slate-400 shadow-sm focus:border-slate-500 focus:outline-none"
             />
           </div>
@@ -443,7 +443,7 @@ export default function DashboardAnalysisPage() {
         <Panel className="p-6 md:p-8">
           <div className="mb-4 flex items-center gap-2">
             <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-            <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">AI is writing your report…</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Building your report…</p>
           </div>
           <div ref={outputRef} className={PROSE_CLS}>
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{streamText}</ReactMarkdown>
@@ -485,7 +485,7 @@ export default function DashboardAnalysisPage() {
       {/* ─── History panel ───────────────────────────────────────── */}
       <Panel className="overflow-hidden" data-no-print>
         <div className="px-6 py-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Previous Reports</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Past reports</p>
           <h2 className="mt-1 text-lg font-semibold tracking-tight text-slate-900">
             {reports.length} saved report{reports.length !== 1 ? "s" : ""}
           </h2>
@@ -493,7 +493,7 @@ export default function DashboardAnalysisPage() {
 
         {reports.length === 0 ? (
           <div className="mx-6 mb-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-8 text-center">
-            <p className="text-sm text-slate-500">No reports yet. Run your first analysis above.</p>
+            <p className="text-sm text-slate-500">No reports yet. Run your first check above.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">

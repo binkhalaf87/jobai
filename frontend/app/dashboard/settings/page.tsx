@@ -3,15 +3,15 @@ import { Panel } from "@/components/panel";
 const SETTINGS_SECTIONS = [
   {
     title: "Profile",
-    description: "Reserve this area for name, email, and profile preferences."
+    description: "Basic account details."
   },
   {
     title: "Security",
-    description: "Use this section later for password updates, sessions, and login controls."
+    description: "Password and access settings."
   },
   {
     title: "Notifications",
-    description: "Future email alerts, product updates, and analysis reminders can live here."
+    description: "Email and product alerts."
   }
 ];
 
@@ -22,11 +22,10 @@ export default function DashboardSettingsPage() {
       <Panel className="p-8 md:p-10">
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Settings</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
-          A clean place for account and workspace preferences
+          Workspace settings
         </h1>
         <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
-          Keep account configuration separate from analysis work so the dashboard stays practical as more features are
-          added.
+          Simple settings for your account and workspace.
         </p>
       </Panel>
 
@@ -40,19 +39,19 @@ export default function DashboardSettingsPage() {
       </div>
 
       <Panel className="p-6 md:p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Starter Form Areas</p>
-        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Prepared for future account forms</h2>
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Coming next</p>
+        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Ready for future forms</h2>
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-            <p className="text-sm font-semibold text-slate-900">Profile details</p>
+            <p className="text-sm font-semibold text-slate-900">Profile</p>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              Name, headline, and contact preferences can be managed here later.
+              Main details live here.
             </p>
           </div>
           <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-            <p className="text-sm font-semibold text-slate-900">Workspace preferences</p>
+            <p className="text-sm font-semibold text-slate-900">Workspace</p>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              Theme options, notification rules, and default analysis behavior can live in this card.
+              Theme and default behavior live here.
             </p>
           </div>
         </div>

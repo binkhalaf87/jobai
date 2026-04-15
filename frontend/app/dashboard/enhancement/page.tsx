@@ -116,7 +116,7 @@ export default function DashboardEnhancementPage() {
     <div className="space-y-6">
       {/* ─── Input panel ─────────────────────────────────────────── */}
       <Panel className="p-6 md:p-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">New Enhancement</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">New improvement</p>
         <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-900">
           Rewrite your resume with AI — ATS-optimized, STAR format
         </h2>
@@ -154,14 +154,14 @@ export default function DashboardEnhancementPage() {
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700" htmlFor="jd-input">
               Target Job Description{" "}
-              <span className="font-normal text-slate-400">(optional — AI will tailor to a suitable Saudi market role if empty)</span>
+              <span className="font-normal text-slate-400">(optional)</span>
             </label>
             <textarea
               id="jd-input"
               rows={5}
               value={jobDescription}
               onChange={(e) => setJobDescription(e.target.value)}
-              placeholder="Paste the job description here…"
+              placeholder="Paste job description…"
               className="w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:border-slate-500 focus:outline-none"
             />
           </div>
@@ -212,7 +212,7 @@ export default function DashboardEnhancementPage() {
       {/* ─── History panel ───────────────────────────────────────── */}
       <Panel className="overflow-hidden">
         <div className="px-6 py-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Previous Enhancements</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Past improvements</p>
           <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-900">
             {reports.length} saved rewrite{reports.length !== 1 ? "s" : ""}
           </h2>
@@ -220,7 +220,7 @@ export default function DashboardEnhancementPage() {
 
         {reports.length === 0 ? (
           <div className="mx-6 mb-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-8 text-center">
-            <p className="text-sm text-slate-500">No rewrites yet. Run your first enhancement above.</p>
+            <p className="text-sm text-slate-500">No rewrites yet. Run your first improvement above.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">

@@ -99,16 +99,16 @@ function isActive(pathname: string, href: string): boolean {
 }
 
 const PAGE_DESCRIPTIONS: Record<string, string> = {
-  Dashboard: "Track your CV quality, matching momentum, outreach, and interview readiness from one place.",
-  "My Resumes": "Keep one clear active resume, review parsing quality, and prepare the strongest version for analysis.",
-  Analysis: "Turn your resume into a practical ATS report with clear strengths, weaknesses, and next actions.",
-  Enhancement: "Rewrite and polish your CV with AI without leaving the product flow.",
+  Dashboard: "See your CV, jobs, outreach, and interview progress in one place.",
+  "CVs": "Upload, review, and manage the CVs you use across analysis, jobs, and outreach.",
+  Analyze: "Run a fast ATS check and see what to fix next.",
+  Improve: "Rewrite weak sections and strengthen your CV fast.",
   "AI Interview": "Practice with role-aware questions, score your answers, and improve before recruiter conversations.",
-  "Job Search": "Find promising roles, understand why they match, and move them straight into action.",
-  "Smart Send": "Build targeted outreach campaigns, send in batches, and track every delivery outcome.",
+  "Jobs": "Find roles, check fit, then move to analysis, interview, or send.",
+  "Send": "Create outreach, send in batches, and track delivery.",
   Billing: "Choose your monthly plan, create a Paymob checkout, and review payment activity in one place.",
-  Points: "Monitor wallet balance, top up extra points, and review your ledger history.",
-  Profile: "Update account details that shape your workspace and saved activity.",
+  Points: "See your balance and top up when needed.",
+  Profile: "Keep your account details simple and up to date.",
 };
 
 type DashboardLayoutShellProps = { children: ReactNode };
@@ -130,7 +130,7 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
       <div className="flex h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_#f8fafc,_#eef2ff_55%,_#f8fafc)]">
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Loading</p>
-          <h1 className="mt-2 text-xl font-semibold tracking-tight text-slate-900">Preparing your career workspace...</h1>
+          <h1 className="mt-2 text-xl font-semibold tracking-tight text-slate-900">Opening your workspace...</h1>
         </div>
       </div>
     );
@@ -155,10 +155,10 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
             JobAI
           </Link>
           <div className="mt-5 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Job Seeker Flow</p>
-            <p className="mt-2 text-sm font-semibold text-slate-900">From CV quality to application momentum</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Flow</p>
+            <p className="mt-2 text-sm font-semibold text-slate-900">Upload → Analyze → Improve → Send</p>
             <p className="mt-2 text-xs leading-6 text-slate-600">
-              Upload, analyze, improve, match, send, and practice in one guided workspace.
+              One clear flow. Less clutter. Faster decisions.
             </p>
           </div>
         </div>
@@ -199,7 +199,7 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
               {initials}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-slate-900">{user.full_name ?? "Job seeker"}</p>
+              <p className="truncate text-sm font-semibold text-slate-900">{user.full_name ?? "Candidate"}</p>
               <p className="truncate text-xs text-slate-500">{user.email}</p>
             </div>
           </div>
@@ -211,7 +211,7 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
             }}
             className="mt-3 w-full rounded-2xl px-3 py-2 text-left text-sm text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
           >
-            Sign out
+            Log out
           </button>
         </div>
       </aside>
@@ -221,7 +221,7 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
           <div className="px-5 py-5 md:px-8">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Career Workspace</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Workspace</p>
                 <h1 className="mt-1 text-xl font-semibold tracking-tight text-slate-950 md:text-2xl">
                   {currentPage?.label ?? "Dashboard"}
                 </h1>
@@ -230,7 +230,7 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
                 </p>
               </div>
               <div className="hidden rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-right text-xs text-slate-500 md:block">
-                <p className="font-semibold text-slate-700">Role</p>
+                <p className="font-semibold text-slate-700">View</p>
                 <p>Job seeker</p>
               </div>
             </div>

@@ -76,7 +76,7 @@ function SmtpSetup({
     try {
       const saved = await saveSmtpConnection(form);
       onSaved(saved);
-      setOk("Connection saved.");
+      setOk("Saved.");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to save");
     } finally {
@@ -90,7 +90,7 @@ function SmtpSetup({
     setVerifying(true);
     try {
       await verifySmtpConnection();
-      setOk("Gmail connection verified successfully!");
+      setOk("Connection verified.");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Verification failed");
     } finally {
@@ -101,15 +101,14 @@ function SmtpSetup({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold mb-1">Gmail SMTP Setup</h2>
+        <h2 className="text-lg font-semibold mb-1">Gmail setup</h2>
         <p className="text-sm text-gray-500">
-          JobAI sends emails directly from your Gmail account using an App Password.
-          Your credentials are encrypted and never shared.
+          Connect Gmail once, then generate and send faster.
         </p>
       </div>
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800 space-y-1">
-        <p className="font-medium">How to create a Gmail App Password:</p>
+        <p className="font-medium">Create a Gmail App Password:</p>
         <ol className="list-decimal list-inside space-y-0.5 text-blue-700">
           <li>Enable 2-Step Verification on your Google account</li>
           <li>Go to Google Account → Security → App Passwords</li>
@@ -120,7 +119,7 @@ function SmtpSetup({
 
       <form onSubmit={handleSave} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Gmail Address</label>
+          <label className="block text-sm font-medium mb-1">Gmail address</label>
           <input
             type="email"
             className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -131,7 +130,7 @@ function SmtpSetup({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Display Name</label>
+          <label className="block text-sm font-medium mb-1">Display name</label>
           <input
             type="text"
             className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -165,7 +164,7 @@ function SmtpSetup({
             disabled={saving}
             className="flex-1 bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
           >
-            {saving ? "Saving…" : conn ? "Update Connection" : "Save Connection"}
+            {saving ? "Saving…" : conn ? "Update" : "Save"}
           </button>
           {conn && (
             <button
@@ -174,7 +173,7 @@ function SmtpSetup({
               disabled={verifying}
               className="flex-1 border border-blue-600 text-blue-600 rounded-lg py-2 text-sm font-medium hover:bg-blue-50 disabled:opacity-50"
             >
-              {verifying ? "Verifying…" : "Test Connection"}
+              {verifying ? "Verifying…" : "Test"}
             </button>
           )}
         </div>

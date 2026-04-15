@@ -23,24 +23,22 @@ export function NewAnalysisShell() {
   return (
     <div className="space-y-6">
       <Panel className="p-8 md:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">New Analysis</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">New Check</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
-          Set up a fresh resume-to-role comparison
+          Compare a CV with a role
         </h1>
         <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
-          Upload a resume, save a target job description, and then open the combined results page to generate the full
-          deterministic analysis report.
+          Upload a CV, add a job description, then run the result.
         </p>
       </Panel>
 
       <Panel className="p-6 md:p-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Ready Check</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Run the full review when both records are ready</h2>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Ready</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Run when both items are ready</h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              The analysis page is powered by the stored IDs below, so this workflow stays clean and reusable as the
-              product grows.
+              Once both are saved, open the result and continue to improve or apply.
             </p>
           </div>
           <Link
@@ -51,21 +49,21 @@ export function NewAnalysisShell() {
                 : "pointer-events-none border border-slate-300 bg-white text-slate-400"
             }`}
           >
-            Open analysis results
+            Open result
           </Link>
         </div>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
           <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Latest Resume ID</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Latest CV ID</p>
             <p className="mt-3 break-all font-mono text-sm text-slate-900">
-              {latestResumeId || "Upload a resume to capture its record ID here."}
+              {latestResumeId || "Upload a CV to continue."}
             </p>
           </div>
           <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Latest Job Description ID</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Latest Job ID</p>
             <p className="mt-3 break-all font-mono text-sm text-slate-900">
-              {latestJobDescriptionId || "Save a job description to capture its record ID here."}
+              {latestJobDescriptionId || "Save a job description to continue."}
             </p>
           </div>
         </div>

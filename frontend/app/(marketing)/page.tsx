@@ -6,15 +6,15 @@ import { Panel } from "@/components/panel";
 const STARTER_SECTIONS = [
   {
     title: "Resume Review",
-    description: "Create the upload and parsing flow here once document ingestion requirements are defined."
+    description: "Upload your CV and start fast."
   },
   {
     title: "Match Insights",
-    description: "Use this area for fit scoring, keyword alignment, and recommendation views later on."
+    description: "See fit, gaps, and next moves."
   },
   {
     title: "Team Workspaces",
-    description: "Reserve space for recruiter dashboards, saved reports, and collaboration features."
+    description: "Track candidates and hiring steps."
   }
 ];
 
@@ -29,11 +29,10 @@ export default function HomePage() {
           </div>
           <div className="space-y-4">
             <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-slate-950 md:text-5xl">
-              Land the right job with AI-powered resume intelligence.
+              Analyze, improve, and send your CV faster.
             </h1>
             <p className="max-w-xl text-base leading-7 text-slate-600 md:text-lg">
-              Analyze your resume against job descriptions, get AI-driven enhancements, prep for interviews, and
-              send smarter applications — all from one dashboard.
+              One workspace for ATS checks, CV improvements, interview practice, job fit, and outreach.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -41,7 +40,7 @@ export default function HomePage() {
               href="/register"
               className="rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
             >
-              Get started free
+              Start free
             </Link>
             <Link
               href="/login"
@@ -64,23 +63,23 @@ export default function HomePage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Panel className="p-6">
           <p className="text-sm font-medium text-slate-500">Analysis</p>
-          <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">Resume scoring</h2>
+          <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">CV scoring</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Match your resume to any job description and get a detailed ATS and keyword fit score.
+            Check ATS fit and missing keywords fast.
           </p>
         </Panel>
         <Panel className="p-6">
           <p className="text-sm font-medium text-slate-500">Enhancement</p>
-          <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">AI rewriting</h2>
+          <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">AI improvements</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Get section-by-section rewrite suggestions tailored to your target role.
+            Rewrite weak sections in a few clicks.
           </p>
         </Panel>
         <Panel className="p-6">
           <p className="text-sm font-medium text-slate-500">Interview Prep</p>
-          <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">AI mock interviews</h2>
+          <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">Mock interviews</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Practice answers to role-specific questions and sharpen your delivery before the real call.
+            Practice answers before the real interview.
           </p>
         </Panel>
       </div>

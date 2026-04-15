@@ -63,11 +63,10 @@ export function ResumeUploadCard({ onUploadComplete }: ResumeUploadCardProps) {
     <Panel className="p-8">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div className="max-w-2xl">
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Resume Upload</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Upload a PDF or DOCX resume</h2>
+          <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Upload CV</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Add your CV</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Files are stored temporarily and kept separate from analysis. Text extraction and scoring can be layered on
-            later without changing this upload boundary.
+            Upload once, then use this CV in analysis, matching, and sending.
           </p>
         </div>
         <button
@@ -75,7 +74,7 @@ export function ResumeUploadCard({ onUploadComplete }: ResumeUploadCardProps) {
           onClick={() => inputRef.current?.click()}
           className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:text-slate-950"
         >
-          Choose file
+          Choose CV
         </button>
       </div>
 
@@ -105,8 +104,8 @@ export function ResumeUploadCard({ onUploadComplete }: ResumeUploadCardProps) {
             event.currentTarget.value = "";
           }}
         />
-        <p className="text-base font-semibold text-slate-900">Drag and drop your resume here</p>
-        <p className="mt-2 text-sm text-slate-500">Or click choose file. Supported formats: PDF and DOCX.</p>
+        <p className="text-base font-semibold text-slate-900">Drop your CV here</p>
+        <p className="mt-2 text-sm text-slate-500">Or choose a file. PDF or DOCX only.</p>
       </div>
 
       {uploadState === "uploading" ? (
@@ -123,8 +122,8 @@ export function ResumeUploadCard({ onUploadComplete }: ResumeUploadCardProps) {
 
       {uploadState === "success" ? (
         <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-800">
-          <p className="font-semibold">Upload complete</p>
-          <p className="mt-1">Saved {uploadedFileName} successfully.</p>
+          <p className="font-semibold">CV uploaded</p>
+          <p className="mt-1">Saved {uploadedFileName}.</p>
           <p className="mt-1">Resume ID: {resumeId}</p>
         </div>
       ) : null}

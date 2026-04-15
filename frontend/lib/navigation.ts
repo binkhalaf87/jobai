@@ -7,28 +7,28 @@ export type DashboardNavGroup = {
 
 // Site header navigation for public-facing routes.
 export const NAV_LINKS: NavItem[] = [
-  { label: "Home", href: "/" },
+  { label: "Overview", href: "/" },
   { label: "Login", href: "/login" },
-  { label: "Register", href: "/register" },
+  { label: "Get Started", href: "/register" },
 ];
 
 // Dashboard sidebar navigation grouped by functional area.
 export const DASHBOARD_NAV_GROUPS: DashboardNavGroup[] = [
   {
-    label: "Core",
+    label: "Workspace",
     items: [
       { label: "Dashboard", href: "/dashboard", icon: "home" },
-      { label: "My Resumes", href: "/dashboard/resumes", icon: "file-text" },
+      { label: "CVs", href: "/dashboard/resumes", icon: "file-text" },
     ],
   },
   {
-    label: "AI Tools",
+    label: "Actions",
     items: [
-      { label: "Analysis", href: "/dashboard/analysis", icon: "bar-chart" },
-      { label: "Enhancement", href: "/dashboard/enhancement", icon: "sparkles" },
+      { label: "Analyze", href: "/dashboard/analysis", icon: "bar-chart" },
+      { label: "Improve", href: "/dashboard/enhancement", icon: "sparkles" },
       { label: "AI Interview", href: "/dashboard/ai-interview", icon: "mic" },
-      { label: "Job Search", href: "/dashboard/job-search", icon: "search" },
-      { label: "Smart Send", href: "/dashboard/smart-send", icon: "send" },
+      { label: "Jobs", href: "/dashboard/job-search", icon: "search" },
+      { label: "Send", href: "/dashboard/smart-send", icon: "send" },
     ],
   },
   {
