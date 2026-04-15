@@ -10,6 +10,8 @@ const NAV_ITEMS = [
   { label: "Dashboard", href: "/recruiter", icon: "home" },
   { label: "Candidates", href: "/recruiter/candidates", icon: "users" },
   { label: "Jobs", href: "/recruiter/jobs", icon: "briefcase" },
+  { label: "AI Screening", href: "/recruiter/ai-screening", icon: "filter" },
+  { label: "AI Interview", href: "/recruiter/ai-interview", icon: "mic" },
   { label: "Billing", href: "/recruiter/billing", icon: "credit-card" },
 ] as const;
 
@@ -17,6 +19,8 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   Dashboard: "See pipeline health, top-ranked candidates, and the next hiring actions that need attention.",
   Candidates: "Review parsed candidate profiles, run AI analysis in bulk, and move people through the pipeline quickly.",
   Jobs: "Create the roles that power matching, candidate ranking, and interview planning.",
+  "AI Screening": "Rank all candidates by job fit score, filter by threshold, and auto-shortlist the strongest matches in one click.",
+  "AI Interview": "Generate a tailored interview question set for any candidate + job combination using AI.",
   Billing: "Manage recruiter subscriptions and launch Paymob checkout without leaving the workspace.",
 };
 
@@ -46,6 +50,19 @@ function NavIcon({ id }: { id: string }) {
       <>
         <rect x="2" y="5" width="20" height="14" rx="2" />
         <line x1="2" y1="10" x2="22" y2="10" />
+      </>
+    ),
+    filter: (
+      <>
+        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+      </>
+    ),
+    mic: (
+      <>
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+        <line x1="12" y1="19" x2="12" y2="23" />
+        <line x1="8" y1="23" x2="16" y2="23" />
       </>
     ),
   };
