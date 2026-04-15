@@ -1,6 +1,6 @@
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base_class import Base
 from app.models.mixins import TimestampMixin, UUIDPrimaryKeyMixin
@@ -33,7 +33,3 @@ class RecruiterInterview(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="ready", server_default="ready"
     )  # generating | ready | failed
-
-    recruiter = relationship("User", foreign_keys=[recruiter_id])
-    resume = relationship("Resume", foreign_keys=[resume_id])
-    job = relationship("JobDescription", foreign_keys=[job_id])
