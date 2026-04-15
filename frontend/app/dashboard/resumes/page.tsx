@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Panel } from "@/components/panel";
 import { ResumeUploadCard } from "@/components/resume-upload-card";
 import { deleteResume, getResumePreview, listResumes } from "@/lib/resumes";
-import type { ResumeListItem, ResumeView } from "@/types";
+import type { ResumeListItem, ResumePreview } from "@/types";
 
 // ─── Status badge ────────────────────────────────────────────────────────────
 const STATUS_STYLES: Record<string, string> = {
@@ -37,7 +37,7 @@ export default function DashboardResumesPage() {
   const [deletingId, setDeletingId]     = useState<string | null>(null);
   const [deleteError, setDeleteError]   = useState("");
   const [previewId, setViewId]       = useState<string | null>(null);
-  const [previewData, setViewData]   = useState<ResumeView | null>(null);
+  const [previewData, setViewData]   = useState<ResumePreview | null>(null);
   const [previewLoading, setViewLoading] = useState(false);
   const [previewError, setViewError] = useState("");
 
