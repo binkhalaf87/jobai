@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Install Python dependencies first to keep image rebuilds efficient.
 COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip setuptools && pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
 # Copy the application source after dependencies are installed.
 COPY . .

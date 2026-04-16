@@ -1,22 +1,23 @@
-"""Central rate-limiter instance shared across all route modules.
+"""Rate limiting placeholder.
 
-Uses slowapi (a Starlette/FastAPI wrapper around limits/ratelimit).
-The key function is the client IP address, so limits are per-IP.
+SlowAPI was removed due to pkg_resources incompatibility with Python 3.12-slim.
+Rate limiting will be re-implemented via middleware when a compatible solution is identified.
 
-Usage in a route module
------------------------
-    from app.core.rate_limit import limiter
-    from fastapi import Request
-
-    @router.post("/login")
-    @limiter.limit("5/minute")
-    def login(request: Request, ...):
-        ...
-
-The `request: Request` parameter is required by slowapi — FastAPI injects it
-automatically; you do not need to pass it manually in tests or clients.
+This module is kept so existing imports do not break — all decorators are no-ops.
 """
-from slowapi import Limiter
-from slowapi.util import get_remote_address
+from __future__ import annotations
 
-limiter = Limiter(key_func=get_remote_address, default_limits=[])
+from collections.abc import Callable
+from typing import Any
+
+
+class _NoOpLimiter:
+    """Drop-in replacement that makes @limiter.limit(...) a no-op decorator."""
+
+    def limit(self, limit_string: str, *args: Any, **kwargs: Any) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+        def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+            return func
+        return decorator
+
+
+limiter = _NoOpLimiter()
