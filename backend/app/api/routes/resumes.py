@@ -41,8 +41,8 @@ def list_resumes(
 @limiter.limit("20/hour")
 async def upload_resume(
     request: Request,
-    file: UploadFile = File(...),
     background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ResumeUploadResponse:
