@@ -531,12 +531,12 @@ _MIME_TYPES: dict[str, str] = {
 }
 
 
-@router.get("/{resume_id}/file")
+@router.get("/{resume_id}/file", response_model=None)
 def get_resume_file(
     resume_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_recruiter),
-) -> FileResponse | RedirectResponse:
+):
     """Serve or redirect to the original uploaded resume file.
 
     - Local backend  → FileResponse (direct streaming).

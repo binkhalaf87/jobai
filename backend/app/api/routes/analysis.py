@@ -321,12 +321,12 @@ def generate_resume_rewrite_suggestions(
 
 # ─── AI Report endpoints ──────────────────────────────────────────────────────
 
-@router.post("/ai-report", status_code=status.HTTP_200_OK)
+@router.post("/ai-report", status_code=status.HTTP_200_OK, response_model=None)
 def create_ai_report(
     payload: AIReportRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> StreamingResponse:
+):
     """
     Stream a GPT-powered full resume analysis report via Server-Sent Events.
     Creates a pending DB record first, then streams chunks, then saves the completed text.

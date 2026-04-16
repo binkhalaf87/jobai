@@ -82,12 +82,12 @@ def get_resume(
     )
 
 
-@router.get("/{resume_id}/file")
+@router.get("/{resume_id}/file", response_model=None)
 def get_resume_file(
     resume_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> FileResponse | RedirectResponse:
+):
     """Stream or redirect to the original uploaded resume file.
 
     - Local backend  → streams the file directly via FileResponse.
