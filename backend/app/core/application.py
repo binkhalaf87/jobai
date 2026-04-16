@@ -33,8 +33,9 @@ def create_unavailable_application(startup_error: Exception) -> ASGIApp:
         "detail": "Backend failed to start.",
     }
 
-    if not is_production:
-        diagnostic_payload["error"] = str(startup_error)
+    # Always expose the error type so Railway logs and 503 responses help diagnose startup failures.
+    diagnostic_payload["error"] = str(startup_error)
+    diagnostic_payload["error_type"] = type(startup_error).__name__
 
     fallback_app = FastAPI(
         title="JobAI Backend Unavailable",

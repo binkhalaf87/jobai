@@ -42,7 +42,7 @@ def list_resumes(
 async def upload_resume(
     request: Request,
     file: UploadFile = File(...),
-    background_tasks: BackgroundTasks = Depends(),
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ResumeUploadResponse:
