@@ -130,6 +130,8 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
 
   if (!user) return null;
 
+  const accountItems = DASHBOARD_NAV_GROUPS.find((group) => group.key === "account")?.items ?? [];
+
   const initials = (user.full_name ?? user.email)
     .split(" ")
     .slice(0, 2)
@@ -149,7 +151,7 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-5">
-          {DASHBOARD_NAV_GROUPS.map((group) => (
+          {DASHBOARD_NAV_GROUPS.filter((group) => group.key !== "account").map((group) => (
             <div key={group.key} className="mb-6">
               <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
                 {t(`groups.${group.key}`)}
@@ -188,6 +190,23 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
               <p className="truncate text-xs text-slate-500">{user.email}</p>
             </div>
           </div>
+
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Account</p>
+            <div className="space-y-2">
+              {accountItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
+                >
+                  {item.icon && <NavIcon id={item.icon} />}
+                  <span>{t(`items.${item.key}`)}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={() => {
