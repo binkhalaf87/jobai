@@ -108,6 +108,7 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
   const { user, isLoading, hasSession, signOut } = useAuth();
   const t = useTranslations("nav");
 
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
   const allItems = DASHBOARD_NAV_GROUPS.flatMap((group) => group.items);
   const currentItem = allItems.find((item) => isActive(pathname, item.href));
   const currentKey = currentItem?.key ?? "dashboard";

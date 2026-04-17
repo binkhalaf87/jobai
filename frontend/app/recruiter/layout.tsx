@@ -104,12 +104,13 @@ export default function RecruiterLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { user, isLoading, hasSession, signOut } = useAuth();
 
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
+
   useEffect(() => {
     if (!isLoading && !hasSession) router.replace("/login");
   }, [hasSession, isLoading, router]);
 
   if (isLoading) {
-    return (
       <div className="flex h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_#ffffff,_#eff6ff_55%,_#f8fafc)]">
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Loading</p>
