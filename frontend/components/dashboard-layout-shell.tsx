@@ -232,22 +232,6 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
             ) : null}
           </div>
 
-          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Account</p>
-            <div className="space-y-2">
-              {accountItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="flex items-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
-                >
-                  {item.icon && <NavIcon id={item.icon} />}
-                  <span>{t(`items.${item.key}`)}</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-
           <button
             type="button"
             onClick={() => {
