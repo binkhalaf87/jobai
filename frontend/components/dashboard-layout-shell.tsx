@@ -131,7 +131,6 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
 
   if (!user) return null;
 
-  const [showAccountMenu, setShowAccountMenu] = useState(false);
   const accountItems = DASHBOARD_NAV_GROUPS.find((group) => group.key === "account")?.items ?? [];
 
   const initials = (user.full_name ?? user.email)

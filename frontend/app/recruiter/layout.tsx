@@ -111,6 +111,7 @@ export default function RecruiterLayout({ children }: { children: ReactNode }) {
   }, [hasSession, isLoading, router]);
 
   if (isLoading) {
+    return (
       <div className="flex h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_#ffffff,_#eff6ff_55%,_#f8fafc)]">
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Loading</p>
@@ -122,7 +123,6 @@ export default function RecruiterLayout({ children }: { children: ReactNode }) {
 
   if (!user || user.role !== "recruiter") return null;
 
-  const [showAccountMenu, setShowAccountMenu] = useState(false);
   const accountMenuItems = [
     { label: "Subscription", href: "/recruiter/billing", icon: "credit-card" },
     { label: "Points", href: "/recruiter/billing", icon: "star" },
