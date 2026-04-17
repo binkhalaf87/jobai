@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { useAuth } from "@/hooks/use-auth";
 
@@ -65,6 +65,15 @@ function NavIcon({ id }: { id: string }) {
         <line x1="8" y1="23" x2="16" y2="23" />
       </>
     ),
+    user: (
+      <>
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+      </>
+    ),
+    star: (
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    ),
   };
 
   return (
@@ -111,6 +120,13 @@ export default function RecruiterLayout({ children }: { children: ReactNode }) {
   }
 
   if (!user || user.role !== "recruiter") return null;
+
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const accountMenuItems = [
+    { label: "Subscription", href: "/recruiter/billing", icon: "credit-card" },
+    { label: "Points", href: "/recruiter/billing", icon: "star" },
+    { label: "Profile", href: "/recruiter/profile", icon: "user" },
+  ];
 
   const currentPage = [...NAV_ITEMS].reverse().find((item) => isActive(pathname, item.href));
   const initials = (user.full_name ?? user.email)
@@ -163,14 +179,54 @@ export default function RecruiterLayout({ children }: { children: ReactNode }) {
         </nav>
 
         <div className="border-t border-slate-100 p-4">
-          <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-xs font-bold text-white">
-              {initials}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-slate-900">{user.full_name ?? "Recruiter"}</p>
-              <p className="truncate text-xs text-slate-500">{user.email}</p>
-            </div>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowAccountMenu((current) => !current)}
+              className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left transition hover:border-slate-300"
+              aria-expanded={showAccountMenu}
+            >
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-xs font-bold text-white">
+                {initials}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-slate-900">{user.full_name ?? "Recruiter"}</p>
+                <p className="truncate text-xs text-slate-500">{user.email}</p>
+              </div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                className="h-4 w-4 text-slate-500"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+
+            {showAccountMenu ? (
+              <div className="absolute left-0 right-0 top-full z-10 mt-2 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg">
+                <div className="p-3">
+                  {accountMenuItems.map((item) => (
+                    <Link
+                      key={item.href + item.label}
+                      href={item.href}
+                      onClick={() => setShowAccountMenu(false)}
+                      className="flex items-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
+                    >
+                      <NavIcon id={item.icon} />
+                      <span>{item.label}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
           <button
             type="button"

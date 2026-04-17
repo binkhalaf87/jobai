@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -130,6 +130,7 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
 
   if (!user) return null;
 
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
   const accountItems = DASHBOARD_NAV_GROUPS.find((group) => group.key === "account")?.items ?? [];
 
   const initials = (user.full_name ?? user.email)
@@ -181,14 +182,54 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
         </nav>
 
         <div className="border-t border-slate-100 p-4">
-          <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-xs font-bold text-white">
-              {initials}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-slate-900">{user.full_name ?? user.email}</p>
-              <p className="truncate text-xs text-slate-500">{user.email}</p>
-            </div>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowAccountMenu((current) => !current)}
+              className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left transition hover:border-slate-300"
+              aria-expanded={showAccountMenu}
+            >
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-xs font-bold text-white">
+                {initials}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-slate-900">{user.full_name ?? user.email}</p>
+                <p className="truncate text-xs text-slate-500">{user.email}</p>
+              </div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                className="h-4 w-4 text-slate-500"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+
+            {showAccountMenu ? (
+              <div className="absolute left-0 right-0 top-full z-10 mt-2 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg">
+                <div className="p-3">
+                  {accountItems.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setShowAccountMenu(false)}
+                      className="flex items-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
+                    >
+                      {item.icon && <NavIcon id={item.icon} />}
+                      <span>{t(`items.${item.key}`)}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
