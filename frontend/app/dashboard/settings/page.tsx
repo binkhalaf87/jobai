@@ -1,39 +1,13 @@
+import { getTranslations } from "next-intl/server";
+
 import { Panel } from "@/components/panel";
-import { useTranslations } from "next-intl";
 
-const SETTINGS_SECTIONS = [
-  {
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-      </svg>
-    ),
-    key: "profile",
-  },
-  {
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-      </svg>
-    ),
-    key: "security",
-  },
-  {
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
-      </svg>
-    ),
-    key: "notifications",
-  },
-];
+const SETTINGS_SECTION_KEYS = ["profile", "security", "notifications"] as const;
 
-export default function DashboardSettingsPage() {
-  const t = useTranslations("settings");
-
+export default async function DashboardSettingsPage() {
+  const t = await getTranslations("settingsPage");
   return (
     <div className="space-y-6">
-      {/* Hero */}
       <div className="relative overflow-hidden rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-800/8 via-white to-teal/5 p-6 md:p-8">
         <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-brand-800/8 blur-2xl" />
         <div className="pointer-events-none absolute -bottom-6 -left-6 h-24 w-24 rounded-full bg-teal/10 blur-2xl" />
@@ -54,20 +28,33 @@ export default function DashboardSettingsPage() {
         </div>
       </div>
 
-      {/* Section cards */}
       <div className="grid gap-4 lg:grid-cols-3">
-        {SETTINGS_SECTIONS.map((section) => (
-          <div key={section.key} className="rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-brand-200 hover:shadow-sm">
+        {SETTINGS_SECTION_KEYS.map((sectionKey) => (
+          <div key={sectionKey} className="rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-brand-200 hover:shadow-sm">
             <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
-              {section.icon}
+              {sectionKey === "profile" ? (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              ) : sectionKey === "security" ? (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+              )}
             </div>
-            <p className="text-sm font-bold text-slate-900">{t(`sections.${section.key}.title`)}</p>
-            <p className="mt-1.5 text-xs leading-5 text-slate-500">{t(`sections.${section.key}.description`)}</p>
+            <p className="text-sm font-bold text-slate-900">{t(`sections.${sectionKey}.title`)}</p>
+            <p className="mt-1.5 text-xs leading-5 text-slate-500">{t(`sections.${sectionKey}.description`)}</p>
           </div>
         ))}
       </div>
 
-      {/* Coming soon panel */}
       <Panel className="p-6 md:p-8">
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{t("comingSoon.eyebrow")}</p>
         <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900">{t("comingSoon.title")}</h2>
@@ -75,20 +62,23 @@ export default function DashboardSettingsPage() {
           <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
             <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
               </svg>
             </div>
-            <p className="text-sm font-bold text-slate-900">{t("comingSoon.profile.title")}</p>
-            <p className="mt-2 text-xs leading-5 text-slate-500">{t("comingSoon.profile.description")}</p>
+            <p className="text-sm font-bold text-slate-900">{t("comingSoon.cards.profile.title")}</p>
+            <p className="mt-2 text-xs leading-5 text-slate-500">{t("comingSoon.cards.profile.description")}</p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
             <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" />
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                <line x1="8" y1="21" x2="16" y2="21" />
+                <line x1="12" y1="17" x2="12" y2="21" />
               </svg>
             </div>
-            <p className="text-sm font-bold text-slate-900">{t("comingSoon.workspace.title")}</p>
-            <p className="mt-2 text-xs leading-5 text-slate-500">{t("comingSoon.workspace.description")}</p>
+            <p className="text-sm font-bold text-slate-900">{t("comingSoon.cards.workspace.title")}</p>
+            <p className="mt-2 text-xs leading-5 text-slate-500">{t("comingSoon.cards.workspace.description")}</p>
           </div>
         </div>
       </Panel>

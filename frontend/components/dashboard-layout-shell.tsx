@@ -152,7 +152,7 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
             </div>
             <div>
               <p className="text-base font-bold tracking-tight text-slate-900">JobAI</p>
-              <p className="text-[10px] font-medium text-slate-400 leading-none">منصة التوظيف الذكي</p>
+              <p className="text-[10px] font-medium leading-none text-slate-400">{t("brandTagline")}</p>
             </div>
           </Link>
         </div>

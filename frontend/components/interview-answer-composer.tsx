@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { useTranslations } from "next-intl";
 
@@ -71,7 +72,7 @@ export function InterviewAnswerComposer({
   error,
   onSubmit,
 }: InterviewAnswerComposerProps) {
-  const t = useTranslations();
+  const t = useTranslations("interview.answerComposer");
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -96,8 +97,13 @@ export function InterviewAnswerComposer({
     Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
 
   const transcriptHint = useMemo(() => {
+<<<<<<< HEAD
     return t("interview.transcriptHint");
   }, [t]);
+=======
+    return language === "ar" ? t("transcriptHintArabic") : t("transcriptHintDefault");
+  }, [language, t]);
+>>>>>>> b2deabb9ffe1911dcbb22721be40f3d6338a7e10
 
   function resetRecordedVideoUrl() {
     setRecordedVideoUrl((previousUrl) => {
@@ -293,7 +299,7 @@ export function InterviewAnswerComposer({
                 : "border-slate-300 bg-white text-slate-700 hover:border-slate-500"
             }`}
           >
-            {mode === "text" ? "Text Answer" : "Video + Voice"}
+            {mode === "text" ? t("modes.text") : t("modes.video")}
           </button>
         ))}
       </div>
@@ -307,14 +313,14 @@ export function InterviewAnswerComposer({
                   <video ref={videoRef} autoPlay muted playsInline className="aspect-video h-full w-full object-cover" />
                 ) : (
                   <div className="flex aspect-video items-center justify-center px-6 text-center text-sm text-slate-300">
-                    Start live answer to enable your camera and microphone.
+                    {t("cameraPrompt")}
                   </div>
                 )}
               </div>
 
               {recordedVideoUrl && !isCameraActive && (
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Local Replay</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">{t("localReplay")}</p>
                   <video controls playsInline src={recordedVideoUrl} className="w-full rounded-2xl border border-slate-200 bg-black" />
                 </div>
               )}
@@ -323,13 +329,13 @@ export function InterviewAnswerComposer({
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-2">
                 <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${isCameraActive ? "border-teal-light bg-teal-light/30 text-teal" : "border-slate-200 bg-white text-slate-500"}`}>
-                  {isCameraActive ? "Camera live" : "Camera off"}
+                  {isCameraActive ? t("status.cameraLive") : t("status.cameraOff")}
                 </span>
                 <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${isRecordingVideo ? "border-brand-200 bg-brand-50 text-brand-700" : "border-slate-200 bg-white text-slate-500"}`}>
-                  {isRecordingVideo ? "Recording" : "Not recording"}
+                  {isRecordingVideo ? t("status.recording") : t("status.notRecording")}
                 </span>
                 <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${isListening ? "border-amber-200 bg-amber-50 text-amber-700" : "border-slate-200 bg-white text-slate-500"}`}>
-                  {isListening ? "Transcribing" : "Transcript idle"}
+                  {isListening ? t("status.transcribing") : t("status.transcriptIdle")}
                 </span>
               </div>
 
@@ -340,7 +346,7 @@ export function InterviewAnswerComposer({
                     onClick={() => void startLiveAnswer()}
                     className="rounded-xl bg-brand-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
                   >
-                    Start Live Answer
+                    {t("actions.startLiveAnswer")}
                   </button>
                 ) : (
                   <button
@@ -348,7 +354,7 @@ export function InterviewAnswerComposer({
                     onClick={stopLiveAnswer}
                     className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-500"
                   >
-                    Stop Live Answer
+                    {t("actions.stopLiveAnswer")}
                   </button>
                 )}
 
@@ -358,7 +364,7 @@ export function InterviewAnswerComposer({
                     onClick={() => void startSpeechRecognition()}
                     className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-500"
                   >
-                    Resume Transcript
+                    {t("actions.resumeTranscript")}
                   </button>
                 )}
 
@@ -370,7 +376,7 @@ export function InterviewAnswerComposer({
                   }}
                   className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-500"
                 >
-                  Clear Transcript
+                  {t("actions.clearTranscript")}
                 </button>
               </div>
 
@@ -380,7 +386,7 @@ export function InterviewAnswerComposer({
 
               {!canUseSpeechRecognition && (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                  Browser speech-to-text is not available here. You can still practice with camera and microphone, then edit the answer text manually below.
+                  {t("speechUnavailable")}
                 </div>
               )}
 
@@ -396,7 +402,7 @@ export function InterviewAnswerComposer({
 
       <div>
         <label className="mb-1.5 block text-sm font-medium text-slate-700" htmlFor="answer-input">
-          {answerMode === "video" ? "Transcript for AI Evaluation" : "Your Answer"}
+          {answerMode === "video" ? t("labels.transcriptForEvaluation") : t("labels.yourAnswer")}
         </label>
         <textarea
           id="answer-input"
@@ -406,14 +412,14 @@ export function InterviewAnswerComposer({
           disabled={isSubmitting}
           placeholder={
             answerMode === "video"
-              ? "Your live transcript will appear here. You can also edit it manually before submission."
-              : "Answer naturally, but be specific. Use STAR, numbers, and your exact contribution when possible."
+              ? t("placeholders.video")
+              : t("placeholders.text")
           }
           className="w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:border-slate-500 focus:outline-none disabled:opacity-60"
         />
         {interimTranscript && (
           <p className="mt-2 text-xs text-slate-500">
-            Live transcript: <span className="italic">{interimTranscript}</span>
+            {t("liveTranscript", { transcript: interimTranscript })}
           </p>
         )}
       </div>
@@ -430,7 +436,7 @@ export function InterviewAnswerComposer({
         onClick={onSubmit}
         className="rounded-xl bg-brand-800 px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {isSubmitting ? "Evaluating answer..." : "Submit Answer"}
+        {isSubmitting ? t("submitting") : t("submit")}
       </button>
     </div>
   );

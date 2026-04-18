@@ -95,8 +95,39 @@ async def store_resume(
 
 
 # ---------------------------------------------------------------------------
-# Phase 2 — process (BackgroundTask, own DB session)
+# Phase 2 — extract (shared helper, caller owns session + commit)
 # ---------------------------------------------------------------------------
+
+def _apply_resume_text(db: Session, resume: Resume) -> None:
+    """Populate text fields on *resume* using the caller's existing session.
+
+    Does not commit — the caller decides when to persist the changes.
+    Raises on extraction failure so the caller can handle the error.
+    """
+    storage = get_storage()
+    suffix = f".{resume.file_type or 'pdf'}"
+
+    local_path = storage.get_local_path(resume.storage_key)
+    if local_path is not None:
+        extracted = extract_resume_text(local_path, suffix)
+    else:
+        file_bytes = storage.download(resume.storage_key)
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+            tmp.write(file_bytes)
+            tmp_path = Path(tmp.name)
+        try:
+            extracted = extract_resume_text(tmp_path, suffix)
+        finally:
+            tmp_path.unlink(missing_ok=True)
+
+    structured = parse_resume_text(extracted.normalized_text)
+
+    resume.raw_text = extracted.raw_text
+    resume.normalized_text = extracted.normalized_text
+    resume.structured_data = structured.to_dict()
+    resume.page_count = extracted.page_count
+    resume.processing_status = ResumeProcessingStatus.PARSED
+
 
 def process_resume_text_task(resume_id: str) -> None:
     """Extract and parse resume text, then update the DB record.
@@ -118,31 +149,7 @@ def process_resume_text_task(resume_id: str) -> None:
         resume.processing_status = ResumeProcessingStatus.PROCESSING
         db.commit()
 
-        storage = get_storage()
-        suffix = f".{resume.file_type or 'pdf'}"
-
-        # Resolve a local path for the extractor
-        local_path = storage.get_local_path(resume.storage_key)
-        if local_path is not None:
-            extracted = extract_resume_text(local_path, suffix)
-        else:
-            # Cloud storage: download to a temporary file for extraction
-            file_bytes = storage.download(resume.storage_key)
-            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
-                tmp.write(file_bytes)
-                tmp_path = Path(tmp.name)
-            try:
-                extracted = extract_resume_text(tmp_path, suffix)
-            finally:
-                tmp_path.unlink(missing_ok=True)
-
-        structured = parse_resume_text(extracted.normalized_text)
-
-        resume.raw_text = extracted.raw_text
-        resume.normalized_text = extracted.normalized_text
-        resume.structured_data = structured.to_dict()
-        resume.page_count = extracted.page_count
-        resume.processing_status = ResumeProcessingStatus.PARSED
+        _apply_resume_text(db, resume)
         db.commit()
 
     except Exception:
@@ -177,10 +184,13 @@ async def save_resume_upload(
     prefer ``store_resume`` + ``process_resume_text_task``.
     """
     resume = await store_resume(db, user, uploaded_file, auto_commit=False)
-    # Run extraction inline (recruiter flow still needs it synchronous)
-    process_resume_text_task(resume.id)
-    # Re-fetch after background update (the task opened its own session)
-    db.expire(resume)
+    # Extract text in the same session so the row is visible before commit.
+    try:
+        resume.processing_status = ResumeProcessingStatus.PROCESSING
+        _apply_resume_text(db, resume)
+    except Exception:
+        logger.exception("Inline text extraction failed for resume %s", resume.id)
+        resume.processing_status = ResumeProcessingStatus.FAILED
     if auto_commit:
         db.commit()
         db.refresh(resume)

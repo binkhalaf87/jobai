@@ -105,7 +105,7 @@ def confirm_send(
     return campaign
 
 
-@router.get("/campaigns/{campaign_id}/send-stream")
+@router.post("/campaigns/{campaign_id}/send-stream")
 async def send_stream(
     campaign_id: str,
     db: Session = Depends(get_db),
