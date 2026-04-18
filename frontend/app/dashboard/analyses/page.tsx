@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
-export default function DashboardAnalysesPage() {
+export default async function DashboardAnalysesPage() {
+  const t = await getTranslations("analysis.history");
+
   return (
     <div className="space-y-6">
       {/* Hero */}
@@ -15,10 +18,10 @@ export default function DashboardAnalysesPage() {
               </svg>
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-700">سجل التحليلات</p>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">تحليلاتك السابقة</h1>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-700">{t("eyebrow")}</p>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t("title")}</h1>
               <p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">
-                راجع نتائج التحليلات المحفوظة وقارن بين السير الذاتية ومتطلبات الوظائف.
+                {t("description")}
               </p>
             </div>
           </div>
@@ -29,7 +32,7 @@ export default function DashboardAnalysesPage() {
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
               <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
             </svg>
-            تحليل جديد
+            {t("newButton")}
           </Link>
         </div>
       </div>
@@ -37,9 +40,9 @@ export default function DashboardAnalysesPage() {
       {/* Metric cards */}
       <div className="grid gap-4 md:grid-cols-3">
         {[
-          { label: "تحليلات مكتملة", value: "—", note: "ستظهر التقارير المحفوظة هنا عند توصيل السجل." },
-          { label: "متوسط الدرجة", value: "—", note: "مستعد لعرض بيانات الدرجات المجمّعة الفعلية." },
-          { label: "أفضل نتيجة", value: "—", note: "يُستخدم لاحقاً لأبرز تطابق بين السيرة والوظيفة." },
+          { label: t("metrics.completed.label"), value: "—", note: t("metrics.completed.note") },
+          { label: t("metrics.average.label"), value: "—", note: t("metrics.average.note") },
+          { label: t("metrics.best.label"), value: "—", note: t("metrics.best.note") },
         ].map((card) => (
           <div key={card.label} className="rounded-2xl border border-slate-200 bg-white p-5">
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{card.label}</p>
@@ -53,14 +56,14 @@ export default function DashboardAnalysesPage() {
       <div className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">السجل</p>
-            <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900">آخر التحليلات</h2>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{t("list.eyebrow")}</p>
+            <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900">{t("list.title")}</h2>
           </div>
           <Link
             href="/dashboard/analysis"
             className="inline-flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-100"
           >
-            تشغيل تحليل جديد
+            {t("list.newAction")}
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
@@ -73,15 +76,15 @@ export default function DashboardAnalysesPage() {
               <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
             </svg>
           </div>
-          <p className="text-base font-bold text-slate-900">لا توجد سجلات تحليل بعد</p>
+          <p className="text-base font-bold text-slate-900">{t("list.emptyTitle")}</p>
           <p className="mt-2 max-w-md mx-auto text-sm leading-6 text-slate-500">
-            سيعرض هذا القسم الدرجة الكلية ودرجة التطابق ودرجة ATS والتواريخ وروابط مباشرة لكل نتيجة محفوظة.
+            {t("list.emptyDescription")}
           </p>
           <Link
             href="/dashboard/analysis"
             className="mt-5 inline-flex items-center gap-2 rounded-xl bg-brand-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700"
           >
-            ابدأ أول تحليل
+            {t("list.emptyCta")}
           </Link>
         </div>
       </div>

@@ -1,6 +1,9 @@
 import { Panel } from "@/components/panel";
+import { getTranslations } from "next-intl/server";
 
-export default function DashboardProfilePage() {
+export default async function DashboardProfilePage() {
+  const t = await getTranslations("profile");
+
   return (
     <div className="space-y-6">
       {/* Hero */}
@@ -16,10 +19,10 @@ export default function DashboardProfilePage() {
               </svg>
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-700">الحساب الشخصي</p>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">ملفك الشخصي</h1>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-700">{t("eyebrow")}</p>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t("title")}</h1>
               <p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">
-                أدر معلوماتك الشخصية وتفضيلات الحساب وإعدادات الأمان.
+                {t("description")}
               </p>
             </div>
           </div>
@@ -35,8 +38,8 @@ export default function DashboardProfilePage() {
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
               </svg>
             ),
-            title: "المعلومات الشخصية",
-            description: "الاسم والبريد الإلكتروني والمعلومات الأساسية للحساب.",
+            title: t("sections.personal"),
+            description: t("sections.personalDesc"),
           },
           {
             icon: (
@@ -45,8 +48,8 @@ export default function DashboardProfilePage() {
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
             ),
-            title: "الأمان",
-            description: "كلمة المرور والجلسات وإعدادات الوصول.",
+            title: t("sections.security"),
+            description: t("sections.securityDesc"),
           },
           {
             icon: (
@@ -55,8 +58,8 @@ export default function DashboardProfilePage() {
                 <path d="M13.73 21a2 2 0 0 1-3.46 0" />
               </svg>
             ),
-            title: "الإشعارات",
-            description: "التحكم في التنبيهات والتحديثات عبر البريد الإلكتروني.",
+            title: t("sections.notifications"),
+            description: t("sections.notificationsDesc"),
           },
         ].map((section) => (
           <div key={section.title} className="rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-brand-200 hover:shadow-sm">
@@ -71,8 +74,8 @@ export default function DashboardProfilePage() {
 
       {/* Details panel */}
       <Panel className="p-6 md:p-8">
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">التفاصيل</p>
-        <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900">معلومات الحساب الرئيسية</h2>
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{t("detailsEyebrow")}</p>
+        <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900">{t("detailsTitle")}</h2>
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
             <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
@@ -80,9 +83,9 @@ export default function DashboardProfilePage() {
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
               </svg>
             </div>
-            <p className="text-sm font-bold text-slate-900">الملف الشخصي</p>
+            <p className="text-sm font-bold text-slate-900">{t("cards.personalTitle")}</p>
             <p className="mt-2 text-xs leading-5 text-slate-500">
-              الاسم والبريد والتفضيلات الأساسية تظهر هنا.
+              {t("cards.personalDesc")}
             </p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
@@ -91,9 +94,9 @@ export default function DashboardProfilePage() {
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
             </div>
-            <p className="text-sm font-bold text-slate-900">الأمان</p>
+            <p className="text-sm font-bold text-slate-900">{t("cards.securityTitle")}</p>
             <p className="mt-2 text-xs leading-5 text-slate-500">
-              أدوات التحكم في كلمة المرور والجلسات تظهر هنا.
+              {t("cards.securityDesc")}
             </p>
           </div>
         </div>

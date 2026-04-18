@@ -53,7 +53,7 @@ export default function DashboardResumesPage() {
     setLoading(true);
     setFetchError("");
     try { setResumes(await listResumes()); }
-    catch (e) { setFetchError(e instanceof Error ? e.message : "فشل تحميل السيرة الذاتية."); }
+    catch (e) { setFetchError(e instanceof Error ? e.message : t("list.errors.load")); }
     finally { setLoading(false); }
   }, []);
 
@@ -86,7 +86,7 @@ export default function DashboardResumesPage() {
       const result = await getResumeFile(resume.id, fallback);
       setFileState({ ...result, fileType: resume.file_type ?? "" });
     } catch (e) {
-      setFileError(e instanceof Error ? e.message : "فشل تحميل الملف.");
+      setFileError(e instanceof Error ? e.message : t("list.errors.file"));
     } finally {
       setFileLoading(false);
     }
@@ -94,7 +94,7 @@ export default function DashboardResumesPage() {
 
   async function handleDelete(resume: ResumeListItem) {
     const name = resume.source_filename ?? resume.title;
-    if (!window.confirm(`حذف "${name}"?\n\nسيتم حذف التحليلات المرتبطة بها أيضاً.`)) return;
+    if (!window.confirm(t("list.deleteConfirm", { name }))) return;
     setDeletingId(resume.id);
     setDeleteError("");
     try {
@@ -102,7 +102,7 @@ export default function DashboardResumesPage() {
       if (expandedId === resume.id) { setExpandedId(null); clearFileState(); }
       await loadResumes();
     } catch (e) {
-      setDeleteError(e instanceof Error ? e.message : "فشل الحذف.");
+      setDeleteError(e instanceof Error ? e.message : t("list.errors.delete"));
     } finally {
       setDeletingId(null);
     }
@@ -120,9 +120,9 @@ export default function DashboardResumesPage() {
       {resumes.length > 0 && (
         <div className="flex flex-wrap items-center gap-3">
           {[
-            { label: "إجمالي السير", value: resumes.length, color: "bg-brand-50 border-brand-200 text-brand-700" },
-            { label: "جاهزة للتحليل", value: parsedCount, color: "bg-teal-light/30 border-teal-light text-teal" },
-            { label: "جاري المعالجة", value: processingCount, color: "bg-amber-50 border-amber-200 text-amber-700" },
+            { label: t("list.stats.total"), value: resumes.length, color: "bg-brand-50 border-brand-200 text-brand-700" },
+            { label: t("list.stats.ready"), value: parsedCount, color: "bg-teal-light/30 border-teal-light text-teal" },
+            { label: t("list.stats.processing"), value: processingCount, color: "bg-amber-50 border-amber-200 text-amber-700" },
           ].map((stat) => (
             <div key={stat.label} className={`flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold ${stat.color}`}>
               <span className="text-base font-black">{stat.value}</span>
@@ -143,7 +143,7 @@ export default function DashboardResumesPage() {
           </svg>
           {fetchError}
           <button type="button" onClick={() => void loadResumes()} className="mr-auto text-xs font-semibold underline">
-            إعادة المحاولة
+            {t("list.retry")}
           </button>
         </div>
       )}
@@ -166,8 +166,8 @@ export default function DashboardResumesPage() {
               <polyline points="14 2 14 8 20 8" />
             </svg>
           </div>
-          <p className="text-base font-bold text-slate-900">لا توجد سيرة ذاتية بعد</p>
-          <p className="mt-2 text-sm text-slate-500">ارفع ملف PDF أو DOCX للبدء.</p>
+          <p className="text-base font-bold text-slate-900">{t("list.empty")}</p>
+          <p className="mt-2 text-sm text-slate-500">{t("list.emptyHint")}</p>
         </div>
       )}
 
@@ -199,7 +199,7 @@ export default function DashboardResumesPage() {
                       <StatusBadge status={resume.processing_status} />
                       <span className="text-[10px] text-slate-400">{formatDate(resume.created_at)}</span>
                       {resume.page_count != null && (
-                        <span className="text-[10px] text-slate-400">{resume.page_count} صفحة</span>
+                        <span className="text-[10px] text-slate-400">{t("list.pagesCount", { count: resume.page_count })}</span>
                       )}
                     </div>
                   </div>
@@ -218,7 +218,7 @@ export default function DashboardResumesPage() {
                         : "border-slate-300 bg-white text-slate-700 hover:border-brand-300 hover:text-brand-800",
                     ].join(" ")}
                   >
-                    {isExpanded ? "إغلاق" : isPdf ? "معاينة" : "تحميل"}
+                    {isExpanded ? t("list.actions.close") : isPdf ? t("list.actions.preview") : t("list.actions.download")}
                   </button>
                   <button
                     type="button"
@@ -226,7 +226,7 @@ export default function DashboardResumesPage() {
                     onClick={() => void handleDelete(resume)}
                     className="rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-600 transition hover:border-rose-400 hover:bg-rose-50 disabled:opacity-50"
                   >
-                    {isDeleting ? "…" : "حذف"}
+                    {isDeleting ? "…" : t("list.actions.delete")}
                   </button>
                 </div>
 

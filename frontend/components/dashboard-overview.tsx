@@ -224,6 +224,7 @@ function HeroCard({
         </svg>
       ),
       label: ats !== null ? `ATS: ${Math.round(ats)}%` : "لم يُحلَّل",
+      label: ats !== null ? `ATS: ${Math.round(ats)}%` : t("dashboard.overview.stats.notAnalyzed"),
       active: ats !== null,
     },
     {
@@ -233,6 +234,7 @@ function HeroCard({
         </svg>
       ),
       label: `${jobs} وظيفة`,
+      label: t("dashboard.overview.stats.jobsCount", { count: jobs }),
       active: jobs > 0,
     },
     {
@@ -242,6 +244,7 @@ function HeroCard({
         </svg>
       ),
       label: `${sent} مُرسَل`,
+      label: t("dashboard.overview.stats.sentCount", { count: sent }),
       active: sent > 0,
     },
   ];
@@ -264,10 +267,10 @@ function HeroCard({
               </span>
             </div>
             <div>
-              <p className="text-xs text-slate-500">مستوى جاهزيتك المهنية</p>
+              <p className="text-xs text-slate-500">{t("dashboard.overview.readiness.label")}</p>
               <p className="text-base font-bold text-slate-900">{readinessLabel}</p>
               <p className="mt-0.5 text-xs text-slate-500">
-                {completed} من {total} خطوات مكتملة
+                {t("dashboard.overview.readiness.steps", { completed, total })}
               </p>
             </div>
           </div>
@@ -308,7 +311,7 @@ function HeroCard({
             onClick={onRefresh}
             className="mt-1 text-center text-[10px] text-slate-400 transition hover:text-slate-600"
           >
-            تحديث البيانات ↺
+            {t("dashboard.overview.refresh")} ↺
           </button>
         </div>
       </div>
@@ -371,6 +374,7 @@ function LoadingSkeleton() {
 
 /* ════════════════════════════════════ main component ════ */
 export function DashboardOverview() {
+  const t = useTranslations();
   const [overview, setOverview] = useState<DashboardOverviewData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshIndex, setRefreshIndex] = useState(0);
@@ -426,9 +430,12 @@ export function DashboardOverview() {
       ),
       title: "رفع السيرة الذاتية",
       description: "ارفع ملف PDF أو DOCX لبدء رحلتك المهنية",
+      title: t("dashboard.overview.journey.step1.title"),
+      description: t("dashboard.overview.journey.step1.desc"),
       done: step1Done,
       href: "/dashboard/resumes",
       badge: step1Done ? `${resumeCount} سيرة` : undefined,
+      badge: step1Done ? t("dashboard.overview.stats.resumeCount", { count: resumeCount }) : undefined,
     },
     {
       icon: (
@@ -438,10 +445,13 @@ export function DashboardOverview() {
       ),
       title: "تحليل السيرة",
       description: "اكتشف المشاكل التي تمنع قبولك في الوظائف وقيّم مستوى ATS",
+      title: t("dashboard.overview.journey.step2.title"),
+      description: t("dashboard.overview.journey.step2.desc"),
       done: step2Done,
       href: "/dashboard/analysis",
       score: step2Done ? overview.metrics.atsScore : null,
       badge: step2Done ? "تم التحليل" : undefined,
+      badge: step2Done ? t("dashboard.overview.stats.completed") : undefined,
     },
     {
       icon: (
@@ -451,9 +461,12 @@ export function DashboardOverview() {
       ),
       title: "تحسين السيرة",
       description: "أعد كتابة سيرتك احترافياً متوافقة مع أنظمة ATS",
+      title: t("dashboard.overview.journey.step3.title"),
+      description: t("dashboard.overview.journey.step3.desc"),
       done: step3Done,
       href: "/dashboard/enhancement",
       badge: step3Done ? "تم التحسين" : undefined,
+      badge: step3Done ? t("dashboard.overview.stats.completed") : undefined,
     },
     {
       icon: (
@@ -463,9 +476,12 @@ export function DashboardOverview() {
       ),
       title: "مطابقة الوظائف",
       description: "ابحث عن الوظائف وطابق أقواها مع سيرتك الذاتية",
+      title: t("dashboard.overview.journey.step4.title"),
+      description: t("dashboard.overview.journey.step4.desc"),
       done: step4Done,
       href: "/dashboard/job-search",
       badge: step4Done ? `${savedJobsCount} وظيفة محفوظة` : undefined,
+      badge: step4Done ? t("dashboard.overview.stats.jobsCount", { count: savedJobsCount }) : undefined,
     },
     {
       icon: (
@@ -475,9 +491,12 @@ export function DashboardOverview() {
       ),
       title: "إرسال SmartSend",
       description: "أرسل سيرتك إلى الشركات المناسبة بضغطة واحدة وتتبع التسليم",
+      title: t("dashboard.overview.journey.step5.title"),
+      description: t("dashboard.overview.journey.step5.desc"),
       done: step5Done,
       href: "/dashboard/smart-send",
       badge: step5Done ? `${overview.metrics.applicationsSent} مُرسَل` : undefined,
+      badge: step5Done ? t("dashboard.overview.stats.sentCount", { count: overview.metrics.applicationsSent }) : undefined,
     },
     {
       icon: (
@@ -487,10 +506,13 @@ export function DashboardOverview() {
       ),
       title: "تدريب المقابلات",
       description: "تدرّب على أسئلة واقعية وادخل مقابلتك بثقة كاملة",
+      title: t("dashboard.overview.journey.step6.title"),
+      description: t("dashboard.overview.journey.step6.desc"),
       done: step6Done,
       href: "/dashboard/ai-interview",
       score: step6Done ? interviewBestScore : null,
       badge: step6Done ? `${(overview.interviews.data ?? []).filter((i) => i.status === "completed").length} جلسة` : undefined,
+      badge: step6Done ? t("dashboard.overview.stats.sessionCount", { count: (overview.interviews.data ?? []).filter((i) => i.status === "completed").length }) : undefined,
     },
   ];
 
@@ -515,6 +537,7 @@ export function DashboardOverview() {
       {failedLabels.length > 0 && failedLabels.length < 6 && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-800">
           بعض البيانات غير متاحة مؤقتاً: {failedLabels.join("، ")}.
+          {t("dashboard.overview.partialError", { labels: failedLabels.join("، ") })}
         </div>
       )}
 
@@ -524,9 +547,11 @@ export function DashboardOverview() {
           <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Dashboard</p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
             تعذّر تحميل بيانات لوحة التحكم
+            {t("dashboard.overview.errorTitle")}
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
             جميع المصادر فشلت في الاستجابة. لا يتم عرض بيانات افتراضية.
+            {t("dashboard.overview.errorDesc")}
           </p>
           <button
             type="button"
@@ -534,6 +559,7 @@ export function DashboardOverview() {
             className="mt-6 rounded-xl bg-brand-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
           >
             إعادة المحاولة
+            {t("dashboard.overview.retry")}
           </button>
         </Panel>
       ) : (
@@ -546,9 +572,11 @@ export function DashboardOverview() {
                   <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
                 </svg>
                 رحلتك المهنية
+                {t("dashboard.overview.journey.title")}
               </h2>
               <span className="text-xs text-slate-500">
                 {overview.metrics.completedJourneySteps}/{6} مكتمل
+                {t("dashboard.overview.journey.status", { completed: overview.metrics.completedJourneySteps, total: 6 })}
               </span>
             </div>
 
@@ -567,26 +595,33 @@ export function DashboardOverview() {
                 <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
               </svg>
               المقاييس
+              {t("dashboard.overview.metrics.title")}
             </h2>
             <div className="grid grid-cols-2 gap-3">
               <MetricCard
                 label="درجة ATS"
+                label={t("dashboard.overview.metrics.ats")}
                 value={formatPercent(overview.metrics.atsScore)}
                 sub={atsLabel(overview.metrics.atsScore)}
                 colorClass={scoreColor(overview.metrics.atsScore)}
               />
               <MetricCard
                 label="وظائف مطابقة"
+                label={t("dashboard.overview.metrics.jobs")}
                 value={formatCount(overview.metrics.jobsMatched)}
                 sub={overview.savedJobs.error ? "غير متاح" : "من قائمة المحفوظة"}
+                sub={overview.savedJobs.error ? t("dashboard.overview.metrics.unavailable") : t("dashboard.overview.metrics.jobsSub")}
               />
               <MetricCard
                 label="طلبات مُرسلة"
+                label={t("dashboard.overview.metrics.sent")}
                 value={formatCount(overview.metrics.applicationsSent)}
                 sub={overview.campaigns.error ? "غير متاح" : "عبر حملات SmartSend"}
+                sub={overview.campaigns.error ? t("dashboard.overview.metrics.unavailable") : t("dashboard.overview.metrics.sentSub")}
               />
               <MetricCard
                 label="جاهزية المقابلة"
+                label={t("dashboard.overview.metrics.readiness")}
                 value={formatPercent(overview.metrics.interviewReadiness)}
                 sub={interviewReadinessLabel(overview.metrics.interviewReadiness)}
                 colorClass={scoreColor(overview.metrics.interviewReadiness)}
@@ -600,19 +635,23 @@ export function DashboardOverview() {
                   <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                 </svg>
                 آخر النشاطات
+                {t("dashboard.overview.activity.title")}
               </h2>
 
               {overview.recentActivity.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center">
                   <p className="text-sm font-semibold text-slate-700">لا نشاط بعد</p>
+                  <p className="text-sm font-semibold text-slate-700">{t("dashboard.overview.activity.emptyTitle")}</p>
                   <p className="mt-2 text-xs leading-6 text-slate-500">
                     ارفع سيرتك وابدأ رحلتك لتظهر نشاطاتك هنا.
+                    {t("dashboard.overview.activity.emptyDesc")}
                   </p>
                   <Link
                     href="/dashboard/resumes"
                     className="mt-4 inline-flex rounded-xl bg-brand-800 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-700"
                   >
                     ارفع سيرتك الأولى
+                    {t("dashboard.overview.activity.emptyCta")}
                   </Link>
                 </div>
               ) : (
@@ -645,25 +684,30 @@ export function DashboardOverview() {
                   <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
                 </svg>
                 وصول سريع
+                {t("dashboard.overview.quickAccess.title")}
               </h2>
               <div className="grid grid-cols-2 gap-2">
                 {[
                   { label: "سيرتي الذاتية", href: "/dashboard/resumes", icon: (
+                  { label: t("dashboard.overview.quickAccess.resumes"), href: "/dashboard/resumes", icon: (
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
                       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
                     </svg>
                   )},
                   { label: "التحليل", href: "/dashboard/analysis", icon: (
+                  { label: t("dashboard.overview.quickAccess.analysis"), href: "/dashboard/analysis", icon: (
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
                       <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
                     </svg>
                   )},
                   { label: "بحث الوظائف", href: "/dashboard/job-search", icon: (
+                  { label: t("dashboard.overview.quickAccess.jobs"), href: "/dashboard/job-search", icon: (
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
                       <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
                     </svg>
                   )},
                   { label: "SmartSend", href: "/dashboard/smart-send", icon: (
+                  { label: t("dashboard.overview.quickAccess.smartSend"), href: "/dashboard/smart-send", icon: (
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
                       <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
                     </svg>
