@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
-import { Upload, BarChart3, Pencil, Search, Send, Mic, TrendingUp, Briefcase, SendHorizonal, MonitorPlay } from "lucide-react";
+import { Upload, BarChart3, Pencil, Search, Send, Mic, TrendingUp, Briefcase, SendHorizonal, MonitorPlay, FileText } from "lucide-react";
 
 import { Panel } from "@/components/panel";
 import { loadDashboardOverview, type DashboardActivityItem, type DashboardOverviewData } from "@/lib/dashboard";
@@ -620,44 +620,25 @@ export function DashboardOverview() {
             </div>
 
             {/* Quick access */}
-            <div className="space-y-2.5">
-              <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-brand-700">
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                </svg>
+            <div className="space-y-2">
+              <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
                 {t("dashboardOverview.quickAccess.title")}
               </h2>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { label: t("nav.items.cvs"), href: "/dashboard/resumes", icon: (
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
-                    </svg>
-                  )},
-                  { label: t("nav.items.analyze"), href: "/dashboard/analysis", icon: (
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                      <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
-                    </svg>
-                  )},
-                  { label: t("nav.items.jobs"), href: "/dashboard/job-search", icon: (
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                      <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-                    </svg>
-                  )},
-                  { label: t("nav.items.send"), href: "/dashboard/smart-send", icon: (
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                      <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
-                    </svg>
-                  )},
+                  { label: t("nav.items.cvs"),     href: "/dashboard/resumes",    icon: <FileText size={13} />,  iconBg: "bg-violet-100", iconText: "text-violet-600" },
+                  { label: t("nav.items.analyze"), href: "/dashboard/analysis",   icon: <BarChart3 size={13} />, iconBg: "bg-amber-100",  iconText: "text-amber-600"  },
+                  { label: t("nav.items.jobs"),    href: "/dashboard/job-search", icon: <Search size={13} />,    iconBg: "bg-cyan-100",   iconText: "text-cyan-600"   },
+                  { label: t("nav.items.send"),    href: "/dashboard/smart-send", icon: <Send size={13} />,      iconBg: "bg-indigo-100", iconText: "text-indigo-600" },
                 ].map((item, idx) => (
                   <Link
                     key={idx}
                     href={item.href}
-                    className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white p-3 text-sm font-medium text-slate-700 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800"
+                    className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-2.5 text-[12.5px] font-medium text-slate-700 transition hover:border-slate-300 hover:shadow-sm"
                   >
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+                    <span className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md ${item.iconBg} ${item.iconText}`}>
                       {item.icon}
-                    </div>
+                    </span>
                     {item.label}
                   </Link>
                 ))}
