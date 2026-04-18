@@ -1,15 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { Panel } from "@/components/panel";
 import { loadDashboardOverview, type DashboardActivityItem, type DashboardOverviewData } from "@/lib/dashboard";
-import { atsLabel, interviewReadinessLabel } from "@/lib/product-insights";
 
-/* ─────────────────────────────────────────────── helpers ── */
-function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, {
+function formatDateTime(locale: string, iso: string): string {
+  return new Date(iso).toLocaleString(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -23,9 +22,9 @@ function formatPercent(value: number | null): string {
   return `${Math.round(value)}%`;
 }
 
-function formatCount(count: number | null): string {
+function formatCount(locale: string, count: number | null): string {
   if (count === null) return "—";
-  return count.toLocaleString();
+  return count.toLocaleString(locale);
 }
 
 function scoreColor(score: number | null): string {
@@ -35,14 +34,22 @@ function scoreColor(score: number | null): string {
   return "text-red-500";
 }
 
-function scoreBg(score: number | null): string {
-  if (score === null) return "bg-slate-200";
-  if (score >= 80) return "bg-teal";
-  if (score >= 60) return "bg-amber-500";
-  return "bg-red-500";
+function atsMetricLabel(score: number | null, t: (key: string) => string): string {
+  if (score === null) return t("unavailable");
+  if (score >= 80) return t("strong");
+  if (score >= 65) return t("competitive");
+  if (score >= 50) return t("improving");
+  return t("needsAttention");
 }
 
-/* ──────────────────────────────────── circular progress ── */
+function interviewMetricLabel(score: number | null, t: (key: string) => string): string {
+  if (score === null) return t("notStarted");
+  if (score >= 80) return t("ready");
+  if (score >= 65) return t("almostReady");
+  if (score >= 50) return t("needsCoaching");
+  return t("needsPractice");
+}
+
 function CircleProgress({
   percent,
   size = 56,
@@ -77,7 +84,6 @@ function CircleProgress({
   );
 }
 
-/* ───────────────────────────────────── inline SVG icons ── */
 function IconCheck() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
@@ -94,7 +100,6 @@ function IconArrow() {
   );
 }
 
-/* ─────────────────────────────────── journey step card ── */
 type StepConfig = {
   icon: React.ReactNode;
   title: string;
@@ -106,6 +111,7 @@ type StepConfig = {
 };
 
 function JourneyStepCard({ step }: { step: StepConfig }) {
+  const cardT = useTranslations("dashboardOverview.stepCard");
   const { icon, title, description, done, href, score, badge } = step;
   const hasScore = score !== null && score !== undefined;
 
@@ -119,7 +125,6 @@ function JourneyStepCard({ step }: { step: StepConfig }) {
           : "border-slate-200 bg-white hover:border-brand-300 hover:bg-brand-50/60 hover:shadow-sm",
       ].join(" ")}
     >
-      {/* Icon */}
       <div
         className={[
           "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl transition-all",
@@ -131,7 +136,6 @@ function JourneyStepCard({ step }: { step: StepConfig }) {
         {done ? <IconCheck /> : icon}
       </div>
 
-      {/* Content */}
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <span
@@ -156,7 +160,6 @@ function JourneyStepCard({ step }: { step: StepConfig }) {
         <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{description}</p>
       </div>
 
-      {/* Right: score ring or arrow */}
       <div className="flex flex-shrink-0 items-center gap-2">
         {done && hasScore ? (
           <div className="flex items-center gap-1.5">
@@ -176,7 +179,7 @@ function JourneyStepCard({ step }: { step: StepConfig }) {
           </svg>
         ) : (
           <div className="flex items-center gap-1 text-xs font-semibold text-slate-400 transition-colors group-hover:text-brand-600">
-            ابدأ
+            {cardT("start")}
             <IconArrow />
           </div>
         )}
@@ -185,7 +188,6 @@ function JourneyStepCard({ step }: { step: StepConfig }) {
   );
 }
 
-/* ──────────────────────────────────────────── hero card ── */
 function HeroCard({
   overview,
   onRefresh,
@@ -193,6 +195,8 @@ function HeroCard({
   overview: DashboardOverviewData;
   onRefresh: () => void;
 }) {
+  const locale = useLocale();
+  const t = useTranslations("dashboardOverview.hero");
   const completed = overview.metrics.completedJourneySteps;
   const total = 6;
   const pct = Math.round((completed / total) * 100);
@@ -201,7 +205,7 @@ function HeroCard({
   const sent = overview.metrics.applicationsSent ?? 0;
 
   const readinessLabel =
-    pct === 100 ? "جاهز تماماً 🚀" : pct >= 60 ? "تقدم جيد، استمر!" : "ابدأ رحلتك الآن";
+    pct === 100 ? t("readiness.complete") : pct >= 60 ? t("readiness.good") : t("readiness.start");
 
   const stats = [
     {
@@ -211,49 +215,50 @@ function HeroCard({
           <polyline points="14 2 14 8 20 8" />
         </svg>
       ),
-      label: overview.metrics.activeResumeTitle ?? "لا سيرة بعد",
+      label: overview.metrics.activeResumeTitle ?? t("stats.noResume"),
       active: !!overview.metrics.activeResumeTitle,
     },
     {
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3 w-3">
-          <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
+          <line x1="18" y1="20" x2="18" y2="10" />
+          <line x1="12" y1="20" x2="12" y2="4" />
+          <line x1="6" y1="20" x2="6" y2="14" />
         </svg>
       ),
-      label: ats !== null ? `ATS: ${Math.round(ats)}%` : "لم يُحلَّل",
+      label: ats !== null ? t("stats.ats", { score: Math.round(ats) }) : t("stats.notAnalyzed"),
       active: ats !== null,
     },
     {
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3 w-3">
-          <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
       ),
-      label: `${jobs} وظيفة`,
+      label: t("stats.jobs", { count: jobs.toLocaleString(locale) }),
       active: jobs > 0,
     },
     {
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3 w-3">
-          <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+          <line x1="22" y1="2" x2="11" y2="13" />
+          <polygon points="22 2 15 22 11 13 2 9 22 2" />
         </svg>
       ),
-      label: `${sent} مُرسَل`,
+      label: t("stats.sent", { count: sent.toLocaleString(locale) }),
       active: sent > 0,
     },
   ];
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-800/8 via-white to-teal/5 p-6 md:p-7">
-      {/* Decorative blobs */}
       <div className="pointer-events-none absolute -right-8 -top-8 h-36 w-36 rounded-full bg-brand-800/8 blur-2xl" />
       <div className="pointer-events-none absolute -bottom-6 -left-6 h-28 w-28 rounded-full bg-teal/10 blur-2xl" />
 
       <div className="relative flex flex-col gap-6 md:flex-row md:items-center">
-        {/* Left: progress ring + stats */}
         <div className="flex-1 space-y-4">
           <div className="flex items-center gap-4">
-            {/* Ring */}
             <div className="relative h-16 w-16 flex-shrink-0">
               <CircleProgress percent={pct} size={64} strokeWidth={4} colorClass="text-teal" />
               <span className="absolute inset-0 flex items-center justify-center text-xs font-black text-brand-800">
@@ -261,19 +266,18 @@ function HeroCard({
               </span>
             </div>
             <div>
-              <p className="text-xs text-slate-500">مستوى جاهزيتك المهنية</p>
+              <p className="text-xs text-slate-500">{t("professionalReadiness")}</p>
               <p className="text-base font-bold text-slate-900">{readinessLabel}</p>
               <p className="mt-0.5 text-xs text-slate-500">
-                {completed} من {total} خطوات مكتملة
+                {t("completedSteps", { completed, total })}
               </p>
             </div>
           </div>
 
-          {/* Stats pills */}
           <div className="flex flex-wrap gap-2">
-            {stats.map((stat, i) => (
+            {stats.map((stat, index) => (
               <div
-                key={i}
+                key={index}
                 className={[
                   "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all",
                   stat.active
@@ -288,7 +292,6 @@ function HeroCard({
           </div>
         </div>
 
-        {/* Right: next step CTA */}
         <div className="flex flex-col gap-2 md:min-w-[200px]">
           <Link
             href={overview.nextStep.href}
@@ -305,7 +308,7 @@ function HeroCard({
             onClick={onRefresh}
             className="mt-1 text-center text-[10px] text-slate-400 transition hover:text-slate-600"
           >
-            تحديث البيانات ↺
+            {t("refresh")}
           </button>
         </div>
       </div>
@@ -313,7 +316,6 @@ function HeroCard({
   );
 }
 
-/* ──────────────────────────────────── metric mini-card ── */
 function MetricCard({
   label,
   value,
@@ -334,7 +336,6 @@ function MetricCard({
   );
 }
 
-/* ─────────────────────────────── activity styles map ── */
 const ACTIVITY_STYLES: Record<DashboardActivityItem["kind"], string> = {
   resume: "bg-brand-50 text-brand-700 border-brand-200",
   "saved-job": "bg-amber-50 text-amber-700 border-amber-200",
@@ -344,21 +345,19 @@ const ACTIVITY_STYLES: Record<DashboardActivityItem["kind"], string> = {
   campaign: "bg-cyan-50 text-cyan-700 border-cyan-200",
 };
 
-/* ──────────────────────────────── loading skeleton ── */
 function LoadingSkeleton() {
   return (
     <div className="space-y-6">
-      {/* Hero skeleton */}
       <div className="h-40 animate-pulse rounded-2xl bg-slate-100" />
       <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
         <div className="space-y-3">
-          {Array.from({ length: 6 }, (_, i) => (
-            <div key={i} className="h-20 animate-pulse rounded-2xl bg-slate-100" />
+          {Array.from({ length: 6 }, (_, index) => (
+            <div key={index} className="h-20 animate-pulse rounded-2xl bg-slate-100" />
           ))}
         </div>
         <div className="space-y-3">
-          {Array.from({ length: 4 }, (_, i) => (
-            <div key={i} className="h-20 animate-pulse rounded-2xl bg-slate-100" />
+          {Array.from({ length: 4 }, (_, index) => (
+            <div key={index} className="h-20 animate-pulse rounded-2xl bg-slate-100" />
           ))}
         </div>
       </div>
@@ -366,8 +365,13 @@ function LoadingSkeleton() {
   );
 }
 
-/* ════════════════════════════════════ main component ════ */
 export function DashboardOverview() {
+  const locale = useLocale();
+  const t = useTranslations("dashboardOverview");
+  const navT = useTranslations("nav");
+  const atsLabelT = useTranslations("dashboardOverview.metrics.atsLabels");
+  const interviewLabelT = useTranslations("dashboardOverview.metrics.interviewLabels");
+
   const [overview, setOverview] = useState<DashboardOverviewData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshIndex, setRefreshIndex] = useState(0);
@@ -385,33 +389,33 @@ export function DashboardOverview() {
     }
 
     void load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [refreshIndex]);
 
   if (isLoading || !overview) return <LoadingSkeleton />;
 
-  /* ── derive per-step done states ── */
-  const parsedResumes = (overview.resumes.data ?? []).filter((r) => r.processing_status === "parsed");
+  const parsedResumes = (overview.resumes.data ?? []).filter((resume) => resume.processing_status === "parsed");
   const step1Done = parsedResumes.length > 0;
-  const step2Done = (overview.analysisReports.data ?? []).some((r) => r.status === "completed");
-  const step3Done = (overview.enhancementReports.data ?? []).some((r) => r.status === "completed");
+  const step2Done = (overview.analysisReports.data ?? []).some((report) => report.status === "completed");
+  const step3Done = (overview.enhancementReports.data ?? []).some((report) => report.status === "completed");
   const step4Done = (overview.metrics.jobsMatched ?? 0) > 0;
   const step5Done = (overview.metrics.applicationsSent ?? 0) > 0;
-  const step6Done = (overview.interviews.data ?? []).some((i) => i.status === "completed");
+  const step6Done = (overview.interviews.data ?? []).some((interview) => interview.status === "completed");
 
   const resumeCount = parsedResumes.length;
   const savedJobsCount = overview.savedJobs.data?.length ?? 0;
-  const campaignCount = overview.campaigns.data?.length ?? 0;
+  const completedSessions = (overview.interviews.data ?? []).filter((interview) => interview.status === "completed").length;
 
   const interviewBestScore =
     overview.interviews.data
-      ?.filter((i) => i.status === "completed" && i.overall_score !== null)
-      .reduce<number | null>((best, i) => {
-        const s = i.overall_score ?? 0;
-        return best === null ? s : Math.max(best, s);
+      ?.filter((interview) => interview.status === "completed" && interview.overall_score !== null)
+      .reduce<number | null>((best, interview) => {
+        const score = interview.overall_score ?? 0;
+        return best === null ? score : Math.max(best, score);
       }, null) ?? null;
 
-  /* ── journey steps config ── */
   const journeySteps: StepConfig[] = [
     {
       icon: (
@@ -421,60 +425,67 @@ export function DashboardOverview() {
           <line x1="12" y1="3" x2="12" y2="15" />
         </svg>
       ),
-      title: "رفع السيرة الذاتية",
-      description: "ارفع ملف PDF أو DOCX لبدء رحلتك المهنية",
+      title: t("steps.upload.title"),
+      description: t("steps.upload.description"),
       done: step1Done,
       href: "/dashboard/resumes",
-      badge: step1Done ? `${resumeCount} سيرة` : undefined,
+      badge: step1Done ? t("steps.upload.badge", { count: resumeCount.toLocaleString(locale) }) : undefined,
     },
     {
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-          <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
+          <line x1="18" y1="20" x2="18" y2="10" />
+          <line x1="12" y1="20" x2="12" y2="4" />
+          <line x1="6" y1="20" x2="6" y2="14" />
         </svg>
       ),
-      title: "تحليل السيرة",
-      description: "اكتشف المشاكل التي تمنع قبولك في الوظائف وقيّم مستوى ATS",
+      title: t("steps.analyze.title"),
+      description: t("steps.analyze.description"),
       done: step2Done,
       href: "/dashboard/analysis",
       score: step2Done ? overview.metrics.atsScore : null,
-      badge: step2Done ? "تم التحليل" : undefined,
+      badge: step2Done ? t("steps.analyze.badge") : undefined,
     },
     {
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-          <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
         </svg>
       ),
-      title: "تحسين السيرة",
-      description: "أعد كتابة سيرتك احترافياً متوافقة مع أنظمة ATS",
+      title: t("steps.improve.title"),
+      description: t("steps.improve.description"),
       done: step3Done,
       href: "/dashboard/enhancement",
-      badge: step3Done ? "تم التحسين" : undefined,
+      badge: step3Done ? t("steps.improve.badge") : undefined,
     },
     {
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-          <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
       ),
-      title: "مطابقة الوظائف",
-      description: "ابحث عن الوظائف وطابق أقواها مع سيرتك الذاتية",
+      title: t("steps.match.title"),
+      description: t("steps.match.description"),
       done: step4Done,
       href: "/dashboard/job-search",
-      badge: step4Done ? `${savedJobsCount} وظيفة محفوظة` : undefined,
+      badge: step4Done ? t("steps.match.badge", { count: savedJobsCount.toLocaleString(locale) }) : undefined,
     },
     {
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-          <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+          <line x1="22" y1="2" x2="11" y2="13" />
+          <polygon points="22 2 15 22 11 13 2 9 22 2" />
         </svg>
       ),
-      title: "إرسال SmartSend",
-      description: "أرسل سيرتك إلى الشركات المناسبة بضغطة واحدة وتتبع التسليم",
+      title: t("steps.send.title"),
+      description: t("steps.send.description"),
       done: step5Done,
       href: "/dashboard/smart-send",
-      badge: step5Done ? `${overview.metrics.applicationsSent} مُرسَل` : undefined,
+      badge: step5Done
+        ? t("steps.send.badge", { count: (overview.metrics.applicationsSent ?? 0).toLocaleString(locale) })
+        : undefined,
     },
     {
       icon: (
@@ -482,134 +493,183 @@ export function DashboardOverview() {
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
       ),
-      title: "تدريب المقابلات",
-      description: "تدرّب على أسئلة واقعية وادخل مقابلتك بثقة كاملة",
+      title: t("steps.interview.title"),
+      description: t("steps.interview.description"),
       done: step6Done,
       href: "/dashboard/ai-interview",
       score: step6Done ? interviewBestScore : null,
-      badge: step6Done ? `${(overview.interviews.data ?? []).filter((i) => i.status === "completed").length} جلسة` : undefined,
+      badge: step6Done ? t("steps.interview.badge", { count: completedSessions.toLocaleString(locale) }) : undefined,
     },
   ];
 
-  /* ── failed collections warning ── */
-  const failedLabels = [
-    overview.resumes,
-    overview.savedJobs,
-    overview.analysisReports,
-    overview.enhancementReports,
-    overview.interviews,
-    overview.campaigns,
+  const failedLabels: string[] = [
+    [overview.resumes.error, t("sources.resumes")],
+    [overview.savedJobs.error, t("sources.savedJobs")],
+    [overview.analysisReports.error, t("sources.analysisReports")],
+    [overview.enhancementReports.error, t("sources.enhancementReports")],
+    [overview.interviews.error, t("sources.interviews")],
+    [overview.campaigns.error, t("sources.campaigns")],
   ]
-    .filter((c) => c.error)
-    .map((c) => c.label);
+    .flatMap((entry) => (entry[0] ? [String(entry[1])] : []));
+
+  const listFormatter = new Intl.ListFormat(locale, { style: "long", type: "conjunction" });
+
+  const activityKindLabels: Record<DashboardActivityItem["kind"], string> = {
+    resume: t("activity.kinds.resume"),
+    "saved-job": t("activity.kinds.savedJob"),
+    "analysis-report": t("activity.kinds.analysisReport"),
+    "enhancement-report": t("activity.kinds.enhancementReport"),
+    interview: t("activity.kinds.interview"),
+    campaign: t("activity.kinds.campaign"),
+  };
+
+  const quickAccessItems = [
+    {
+      label: navT("items.cvs"),
+      href: "/dashboard/resumes",
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+        </svg>
+      ),
+    },
+    {
+      label: navT("items.analyze"),
+      href: "/dashboard/analysis",
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+          <line x1="18" y1="20" x2="18" y2="10" />
+          <line x1="12" y1="20" x2="12" y2="4" />
+          <line x1="6" y1="20" x2="6" y2="14" />
+        </svg>
+      ),
+    },
+    {
+      label: navT("items.jobs"),
+      href: "/dashboard/job-search",
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+      ),
+    },
+    {
+      label: navT("items.send"),
+      href: "/dashboard/smart-send",
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+          <line x1="22" y1="2" x2="11" y2="13" />
+          <polygon points="22 2 15 22 11 13 2 9 22 2" />
+        </svg>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-6">
-      {/* ── Hero ── */}
-      <HeroCard overview={overview} onRefresh={() => setRefreshIndex((v) => v + 1)} />
+      <HeroCard overview={overview} onRefresh={() => setRefreshIndex((value) => value + 1)} />
 
-      {/* ── Partial error warning ── */}
       {failedLabels.length > 0 && failedLabels.length < 6 && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-800">
-          بعض البيانات غير متاحة مؤقتاً: {failedLabels.join("، ")}.
+          {t("warnings.partialUnavailable", { labels: listFormatter.format(failedLabels) })}
         </div>
       )}
 
-      {/* ── Full failure ── */}
       {failedLabels.length === 6 ? (
         <Panel className="p-8 md:p-10">
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Dashboard</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">{t("fullFailure.eyebrow")}</p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
-            تعذّر تحميل بيانات لوحة التحكم
+            {t("fullFailure.title")}
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
-            جميع المصادر فشلت في الاستجابة. لا يتم عرض بيانات افتراضية.
+            {t("fullFailure.description")}
           </p>
           <button
             type="button"
-            onClick={() => setRefreshIndex((v) => v + 1)}
+            onClick={() => setRefreshIndex((value) => value + 1)}
             className="mt-6 rounded-xl bg-brand-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
           >
-            إعادة المحاولة
+            {t("fullFailure.retry")}
           </button>
         </Panel>
       ) : (
         <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
-          {/* ── Left: Journey Steps ── */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-brand-700">
-                  <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
                 </svg>
-                رحلتك المهنية
+                {t("journey.title")}
               </h2>
               <span className="text-xs text-slate-500">
-                {overview.metrics.completedJourneySteps}/{6} مكتمل
+                {t("journey.progress", { completed: overview.metrics.completedJourneySteps, total: 6 })}
               </span>
             </div>
 
             <div className="space-y-2.5">
-              {journeySteps.map((step, i) => (
-                <JourneyStepCard key={i} step={step} />
+              {journeySteps.map((step, index) => (
+                <JourneyStepCard key={index} step={step} />
               ))}
             </div>
           </div>
 
-          {/* ── Right: Metrics + Activity ── */}
           <div className="space-y-4">
-            {/* Metrics grid */}
             <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-brand-700">
-                <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
+                <line x1="18" y1="20" x2="18" y2="10" />
+                <line x1="12" y1="20" x2="12" y2="4" />
+                <line x1="6" y1="20" x2="6" y2="14" />
               </svg>
-              المقاييس
+              {t("metrics.title")}
             </h2>
             <div className="grid grid-cols-2 gap-3">
               <MetricCard
-                label="درجة ATS"
+                label={t("metrics.atsScore")}
                 value={formatPercent(overview.metrics.atsScore)}
-                sub={atsLabel(overview.metrics.atsScore)}
+                sub={atsMetricLabel(overview.metrics.atsScore, atsLabelT)}
                 colorClass={scoreColor(overview.metrics.atsScore)}
               />
               <MetricCard
-                label="وظائف مطابقة"
-                value={formatCount(overview.metrics.jobsMatched)}
-                sub={overview.savedJobs.error ? "غير متاح" : "من قائمة المحفوظة"}
+                label={t("metrics.matchedJobs")}
+                value={formatCount(locale, overview.metrics.jobsMatched)}
+                sub={overview.savedJobs.error ? t("metrics.unavailable") : t("metrics.fromSavedList")}
               />
               <MetricCard
-                label="طلبات مُرسلة"
-                value={formatCount(overview.metrics.applicationsSent)}
-                sub={overview.campaigns.error ? "غير متاح" : "عبر حملات SmartSend"}
+                label={t("metrics.sentApplications")}
+                value={formatCount(locale, overview.metrics.applicationsSent)}
+                sub={overview.campaigns.error ? t("metrics.unavailable") : t("metrics.viaSmartSend")}
               />
               <MetricCard
-                label="جاهزية المقابلة"
+                label={t("metrics.interviewReadiness")}
                 value={formatPercent(overview.metrics.interviewReadiness)}
-                sub={interviewReadinessLabel(overview.metrics.interviewReadiness)}
+                sub={interviewMetricLabel(overview.metrics.interviewReadiness, interviewLabelT)}
                 colorClass={scoreColor(overview.metrics.interviewReadiness)}
               />
             </div>
 
-            {/* Recent activity */}
             <div className="space-y-2.5">
               <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-brand-700">
                   <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                 </svg>
-                آخر النشاطات
+                {t("activity.title")}
               </h2>
 
               {overview.recentActivity.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center">
-                  <p className="text-sm font-semibold text-slate-700">لا نشاط بعد</p>
+                  <p className="text-sm font-semibold text-slate-700">{t("activity.emptyTitle")}</p>
                   <p className="mt-2 text-xs leading-6 text-slate-500">
-                    ارفع سيرتك وابدأ رحلتك لتظهر نشاطاتك هنا.
+                    {t("activity.emptyDescription")}
                   </p>
                   <Link
                     href="/dashboard/resumes"
                     className="mt-4 inline-flex rounded-xl bg-brand-800 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-700"
                   >
-                    ارفع سيرتك الأولى
+                    {t("activity.emptyCta")}
                   </Link>
                 </div>
               ) : (
@@ -623,11 +683,11 @@ export function DashboardOverview() {
                       <span
                         className={`mt-0.5 inline-flex rounded-full border px-2.5 py-0.5 text-[10px] font-semibold capitalize ${ACTIVITY_STYLES[item.kind]}`}
                       >
-                        {item.kind.replace("-", " ")}
+                        {activityKindLabels[item.kind]}
                       </span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-slate-900">{item.title}</p>
-                        <p className="mt-0.5 text-xs text-slate-500">{formatDateTime(item.createdAt)}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">{formatDateTime(locale, item.createdAt)}</p>
                       </div>
                     </Link>
                   ))}
@@ -635,37 +695,15 @@ export function DashboardOverview() {
               )}
             </div>
 
-            {/* Quick access */}
             <div className="space-y-2.5">
               <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-brand-700">
                   <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
                 </svg>
-                وصول سريع
+                {t("quickAccess.title")}
               </h2>
               <div className="grid grid-cols-2 gap-2">
-                {[
-                  { label: "سيرتي الذاتية", href: "/dashboard/resumes", icon: (
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
-                    </svg>
-                  )},
-                  { label: "التحليل", href: "/dashboard/analysis", icon: (
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                      <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
-                    </svg>
-                  )},
-                  { label: "بحث الوظائف", href: "/dashboard/job-search", icon: (
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                      <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-                    </svg>
-                  )},
-                  { label: "SmartSend", href: "/dashboard/smart-send", icon: (
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                      <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
-                    </svg>
-                  )},
-                ].map((item) => (
+                {quickAccessItems.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}

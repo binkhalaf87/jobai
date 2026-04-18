@@ -63,7 +63,8 @@
       "Bash(perl -pi -e 's/text-emerald-700/text-teal/g' /c/github/jobai/jobai/frontend/components/billing-dashboard.tsx)",
       "Bash(git pull *)",
       "Bash(git *)",
-      "Bash(ls -la /c/github/jobai/frontend/.eslintrc*)"
+      "Bash(ls -la /c/github/jobai/frontend/.eslintrc*)",
+      "Bash(grep -i \"pytest\\\\|httpx\\\\|testclient\" /c/github/jobai/backend/requirements*.txt)"
     ]
   }
 }
