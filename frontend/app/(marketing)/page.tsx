@@ -263,7 +263,7 @@ export default function HomePage() {
           <div className="rounded-[2rem] border border-slate-200 bg-brand-50 p-6 text-slate-950">
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand-700">{t("why.title")}</p>
             <ul className="mt-5 space-y-3 text-sm leading-7 text-slate-700">
-              {t("why.points").map((point, index) => (
+              {(t.raw("why.points") as string[]).map((point, index) => (
                 <li key={index}>• {point}</li>
               ))}
             </ul>
