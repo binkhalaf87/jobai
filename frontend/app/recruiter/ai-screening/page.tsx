@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ChevronDown, Sparkles, UserCircle, Briefcase, ArrowRight } from "lucide-react";
+import { ChevronDown, Sparkles, UserCircle, Briefcase, ArrowRight, CheckCircle2, AlertCircle } from "lucide-react";
 
 import { api } from "@/lib/api";
 
@@ -26,6 +26,20 @@ type TopRecommendation = {
   reason: string;
 };
 
+type JobMatchDetail = {
+  job_id: string;
+  job_title: string;
+  overall_score: number;
+  matching_keywords: string[];
+  missing_keywords: string[];
+  raw_payload: {
+    strengths?: string[];
+    gaps?: string[];
+    recommendation?: string;
+    hiring_suggestion?: string;
+  } | null;
+};
+
 type CandidateDetail = {
   id: string;
   parsed_name: string | null;
@@ -36,6 +50,7 @@ type CandidateDetail = {
   experience_summary: string[];
   top_recommendation: TopRecommendation | null;
   analysis_completed_at: string | null;
+  matches: JobMatchDetail[];
 };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -64,6 +79,12 @@ function initials(name: string) {
   return name.split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
 }
 
+function scoreColor(score: number) {
+  if (score >= 70) return "bg-emerald-100 text-emerald-700";
+  if (score >= 50) return "bg-amber-100 text-amber-700";
+  return "bg-rose-100 text-rose-600";
+}
+
 // ─── Candidate snapshot ───────────────────────────────────────────────────────
 
 function CandidateSnapshot({
@@ -85,6 +106,18 @@ function CandidateSnapshot({
 }) {
   const name = listItem.parsed_name ?? listItem.title;
   const hasAnalysis = !!listItem.analysis_completed_at;
+
+  // Pick best match by highest score
+  const bestMatch = detail?.matches?.length
+    ? detail.matches.reduce((a, b) => a.overall_score > b.overall_score ? a : b)
+    : null;
+
+  const payload = bestMatch?.raw_payload ?? null;
+  const verdict = payload?.hiring_suggestion ? VERDICT_CONFIG[payload.hiring_suggestion] : null;
+  const strengths = payload?.strengths?.slice(0, 3) ?? [];
+  const gaps = payload?.gaps?.slice(0, 2) ?? [];
+  const matchingKw = bestMatch?.matching_keywords?.slice(0, 6) ?? [];
+  const missingKw = bestMatch?.missing_keywords?.slice(0, 4) ?? [];
 
   if (loading) {
     return (
@@ -150,10 +183,24 @@ function CandidateSnapshot({
       )}
 
       {/* ── GPT Assessment ── */}
-      <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
-        <div className="mb-2 flex items-center gap-1.5">
-          <Sparkles size={12} className="text-violet-500" />
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">AI Assessment</p>
+      <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5">
+            <Sparkles size={12} className="text-violet-500" />
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">AI Assessment</p>
+          </div>
+          {hasAnalysis && bestMatch && (
+            <div className="flex items-center gap-2">
+              {verdict && (
+                <span className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${verdict.color}`}>
+                  {verdict.icon} {verdict.label}
+                </span>
+              )}
+              <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${scoreColor(bestMatch.overall_score)}`}>
+                {Math.round(bestMatch.overall_score)}%
+              </span>
+            </div>
+          )}
         </div>
 
         {!hasAnalysis ? (
@@ -169,19 +216,7 @@ function CandidateSnapshot({
               {analyzing ? "Running…" : "Run AI Analysis"}
             </button>
           </div>
-        ) : detail?.top_recommendation ? (
-          <div className="space-y-3">
-            <p className="text-[13px] leading-relaxed text-slate-700">
-              &ldquo;{detail.top_recommendation.reason}&rdquo;
-            </p>
-            {detail.top_recommendation.job_title && (
-              <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                <Briefcase size={11} />
-                Best for: <span className="font-semibold text-slate-700">{detail.top_recommendation.job_title}</span>
-              </div>
-            )}
-          </div>
-        ) : (
+        ) : !bestMatch ? (
           <div className="flex items-center justify-between gap-3">
             <p className="text-[12.5px] text-slate-500">Analysis done but no recommendation generated.</p>
             <button
@@ -192,6 +227,86 @@ function CandidateSnapshot({
             >
               {analyzing ? "Running…" : "Re-run"}
             </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+
+            {/* Recommendation text */}
+            {payload?.recommendation && (
+              <p className="text-[13px] leading-relaxed text-slate-700">
+                &ldquo;{payload.recommendation}&rdquo;
+              </p>
+            )}
+
+            {/* Best for job */}
+            {bestMatch.job_title && (
+              <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                <Briefcase size={11} />
+                Best for: <span className="font-semibold text-slate-700">{bestMatch.job_title}</span>
+              </div>
+            )}
+
+            {/* Strengths */}
+            {strengths.length > 0 && (
+              <div>
+                <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Strengths</p>
+                <ul className="space-y-1">
+                  {strengths.map((s, i) => (
+                    <li key={i} className="flex items-start gap-2 text-[12px] text-slate-600">
+                      <CheckCircle2 size={12} className="mt-0.5 flex-shrink-0 text-emerald-500" />
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Gaps */}
+            {gaps.length > 0 && (
+              <div>
+                <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Gaps</p>
+                <ul className="space-y-1">
+                  {gaps.map((g, i) => (
+                    <li key={i} className="flex items-start gap-2 text-[12px] text-slate-600">
+                      <AlertCircle size={12} className="mt-0.5 flex-shrink-0 text-amber-500" />
+                      {g}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Matching / Missing keywords */}
+            {(matchingKw.length > 0 || missingKw.length > 0) && (
+              <div className="flex flex-wrap gap-3">
+                {matchingKw.length > 0 && (
+                  <div className="flex-1 min-w-0">
+                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Matching</p>
+                    <div className="flex flex-wrap gap-1">
+                      {matchingKw.map((k) => (
+                        <span key={k} className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 border border-emerald-100">{k}</span>
+                      ))}
+                      {(bestMatch.matching_keywords?.length ?? 0) > 6 && (
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500">+{bestMatch.matching_keywords.length - 6}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {missingKw.length > 0 && (
+                  <div className="flex-1 min-w-0">
+                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Missing</p>
+                    <div className="flex flex-wrap gap-1">
+                      {missingKw.map((k) => (
+                        <span key={k} className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-600 border border-rose-100">{k}</span>
+                      ))}
+                      {(bestMatch.missing_keywords?.length ?? 0) > 4 && (
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500">+{bestMatch.missing_keywords.length - 4}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -241,25 +356,29 @@ export default function AIScreeningPage() {
   const [detailLoading, setDetailLoading] = useState(false);
 
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
+  const [analyzingAll, setAnalyzingAll] = useState(false);
+  const [analyzeAllResult, setAnalyzeAllResult] = useState<string | null>(null);
   const [stagePendingId, setStagePendingId] = useState<string | null>(null);
   const [showMore, setShowMore] = useState(false);
 
   const TAB_LIMIT = 5;
 
+  async function loadCandidates() {
+    try {
+      const data = await api.get<CandidateListItem[]>("/recruiter/candidates/", { auth: true });
+      setCandidates(data);
+      if (data.length > 0 && !selectedId) setSelectedId(data[0].id);
+    } catch {
+      // silently fail
+    } finally {
+      setListLoading(false);
+    }
+  }
+
   // Load candidate list
   useEffect(() => {
-    async function load() {
-      try {
-        const data = await api.get<CandidateListItem[]>("/recruiter/candidates/", { auth: true });
-        setCandidates(data);
-        if (data.length > 0) setSelectedId(data[0].id);
-      } catch {
-        // silently fail
-      } finally {
-        setListLoading(false);
-      }
-    }
-    void load();
+    void loadCandidates();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Load detail on selection
@@ -276,11 +395,28 @@ export default function AIScreeningPage() {
     setAnalyzingId(id);
     try {
       await api.post(`/recruiter/candidates/${id}/analyze`, undefined, { auth: true });
-      // Refresh detail
       setDetails((prev) => { const next = { ...prev }; delete next[id]; return next; });
       setCandidates((prev) => prev.map((c) => c.id === id ? { ...c, analysis_completed_at: new Date().toISOString() } : c));
     } catch {/* ignore */} finally {
       setAnalyzingId(null);
+    }
+  }
+
+  async function handleAnalyzeAll() {
+    if (analyzingAll) return;
+    setAnalyzingAll(true);
+    setAnalyzeAllResult(null);
+    try {
+      const res = await api.post<{ total_candidates: number; total_created: number; no_text_count: number }>(
+        "/recruiter/candidates/analyze-all", undefined, { auth: true }
+      );
+      setAnalyzeAllResult(`✦ ${res.total_created} analyses created across ${res.total_candidates} candidates.`);
+      setDetails({});
+      void loadCandidates();
+    } catch {
+      setAnalyzeAllResult("Analysis failed. Make sure you have jobs added and try again.");
+    } finally {
+      setAnalyzingAll(false);
     }
   }
 
@@ -326,7 +462,7 @@ export default function AIScreeningPage() {
   return (
     <div className="space-y-4">
 
-      {/* ── Tabs ── */}
+      {/* ── Header row: tabs + Analyze All ── */}
       <div className="flex flex-wrap items-center gap-1.5">
         {visibleTabs.map((c) => {
           const name = c.parsed_name ?? c.title;
@@ -386,7 +522,25 @@ export default function AIScreeningPage() {
             )}
           </div>
         )}
+
+        {/* Analyze All button */}
+        <button
+          type="button"
+          disabled={analyzingAll}
+          onClick={() => void handleAnalyzeAll()}
+          className="ml-auto flex items-center gap-1.5 rounded-xl bg-violet-600 px-3.5 py-2 text-[12.5px] font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50"
+        >
+          <Sparkles size={13} />
+          {analyzingAll ? "Analyzing All…" : "Analyze All with AI"}
+        </button>
       </div>
+
+      {/* Analyze All result toast */}
+      {analyzeAllResult && (
+        <p className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-2.5 text-[12.5px] font-medium text-violet-700">
+          {analyzeAllResult}
+        </p>
+      )}
 
       {/* ── Snapshot ── */}
       {selectedCandidate && (

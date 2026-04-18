@@ -14,7 +14,11 @@ from app.models.enums import AnalysisStatus, CandidateStage, ResumeProcessingSta
 from app.models.job_description import JobDescription
 from app.models.resume import Resume
 from app.models.user import User
-from app.services.gpt_matching_service import GPT_MATCH_MODEL_NAME, gpt_match_resume_to_job
+from app.services.gpt_matching_service import (
+    GPT_MATCH_MODEL_NAME,
+    gpt_match_resume_to_job,
+    gpt_screen_resume_against_jobs,
+)
 from app.services.resume_upload import save_resume_upload
 from app.services.storage import get_storage
 
@@ -157,6 +161,98 @@ def _get_existing_completed_analysis(db: Session, resume_id: str, job_id: str) -
     )
 
 
+def _run_gpt_screening_batch(
+    db: Session,
+    recruiter_id: str,
+    resume: Resume,
+    jobs: list[JobDescription],
+    force_refresh: bool = False,
+) -> tuple[int, int]:
+    """Screen one resume against all jobs in a single GPT call.
+
+    Saves/updates one Analysis record per job.
+    Returns (created_count, skipped_count).
+    """
+    resume_text, pdf_path = _get_resume_analysis_input(resume)
+
+    # Filter to jobs that have text, and skip already-analyzed ones when not forcing
+    eligible_jobs: list[JobDescription] = []
+    skipped = 0
+    for job in jobs:
+        job_text = job.normalized_text or job.source_text or ""
+        if not job_text:
+            skipped += 1
+            continue
+        if not force_refresh and _get_existing_completed_analysis(db, resume.id, job.id):
+            skipped += 1
+            continue
+        eligible_jobs.append(job)
+
+    if not eligible_jobs:
+        return 0, skipped
+
+    jobs_payload = [
+        {
+            "job_id": job.id,
+            "job_title": job.title,
+            "job_text": (job.normalized_text or job.source_text or "").strip(),
+        }
+        for job in eligible_jobs
+    ]
+
+    try:
+        result = gpt_screen_resume_against_jobs(
+            jobs_payload,
+            pdf_path=pdf_path,
+            resume_text=resume_text,
+        )
+    except Exception:
+        return 0, skipped + len(eligible_jobs)
+
+    # Update resume structured_data with GPT-extracted candidate info
+    if result.parsed_name or result.skills or result.experience_summary:
+        existing = resume.structured_data if isinstance(resume.structured_data, dict) else {}
+        resume.structured_data = {
+            **existing,
+            **({"name": result.parsed_name} if result.parsed_name else {}),
+            **({"email": result.email} if result.email else {}),
+            **({"skills": result.skills} if result.skills else {}),
+            **({"experience": result.experience_summary} if result.experience_summary else {}),
+        }
+
+    now = datetime.now(timezone.utc)
+    created = 0
+
+    # Build a lookup from job_id → match result
+    match_by_job_id = {m.job_id: m for m in result.matches}
+
+    for job in eligible_jobs:
+        match = match_by_job_id.get(job.id)
+        if not match:
+            skipped += 1
+            continue
+
+        existing_analysis = _get_existing_completed_analysis(db, resume.id, job.id)
+        analysis = existing_analysis or Analysis(
+            user_id=recruiter_id,
+            resume_id=resume.id,
+            job_description_id=job.id,
+        )
+        analysis.status = AnalysisStatus.COMPLETED
+        analysis.model_name = GPT_MATCH_MODEL_NAME
+        analysis.overall_score = match.overall_score
+        analysis.summary_text = match.recommendation
+        analysis.result_payload = match.to_payload()
+        analysis.completed_at = now
+
+        if existing_analysis is None:
+            db.add(analysis)
+            created += 1
+
+    db.commit()
+    return created, skipped
+
+
 def _run_gpt_analysis(
     db: Session,
     recruiter_id: str,
@@ -164,56 +260,12 @@ def _run_gpt_analysis(
     job: JobDescription,
     force_refresh: bool = False,
 ) -> tuple[Analysis | None, bool]:
-    """Run GPT semantic matching and persist. Returns None if text missing or GPT fails.
-
-    Uses vision (PDF pages as images) when the original file is still on disk.
-    Falls back to extracted text for DOCX or missing files.
-    """
-    existing_analysis = _get_existing_completed_analysis(db, resume.id, job.id)
-    if existing_analysis and not force_refresh:
-        return existing_analysis, False
-
-    job_text = job.normalized_text or job.source_text or ""
-    if not job_text:
-        return None, False
-
-    resume_text, pdf_path = _get_resume_analysis_input(resume)
-
-    # Need either a file or text
-    if not pdf_path and not resume_text:
-        return None, False
-
-    try:
-        result = gpt_match_resume_to_job(
-            job_text,
-            pdf_path=pdf_path,
-            resume_text=resume_text,
-        )
-    except Exception:
-        return None, False
-
-    summary = result.recommendation or (
-        f"GPT match: {result.match_score:.1f}% — {result.hiring_suggestion}."
+    """Single-job GPT analysis (kept for direct per-job calls). Delegates to batch internally."""
+    created, _ = _run_gpt_screening_batch(
+        db, recruiter_id, resume, [job], force_refresh=force_refresh
     )
-
-    analysis = existing_analysis or Analysis(
-        user_id=recruiter_id,
-        resume_id=resume.id,
-        job_description_id=job.id,
-    )
-    analysis.status = AnalysisStatus.COMPLETED
-    analysis.model_name = GPT_MATCH_MODEL_NAME
-    analysis.overall_score = result.match_score
-    analysis.summary_text = summary
-    analysis.result_payload = result.to_payload()
-    analysis.completed_at = datetime.now(timezone.utc)
-
-    if existing_analysis is None:
-        db.add(analysis)
-
-    db.commit()
-    db.refresh(analysis)
-    return analysis, existing_analysis is None
+    analysis = _get_existing_completed_analysis(db, resume.id, job.id)
+    return analysis, created > 0
 
 
 def _keywords_from_payload(payload: dict | None, key: str) -> list[str]:
@@ -361,12 +413,9 @@ def analyze_all_candidates(
             no_text_count += 1
             continue
 
-        for job in jobs:
-            result, created = _run_gpt_analysis(db, current_user.id, resume, job)
-            if result and created:
-                total_created += 1
-            else:
-                total_skipped += 1
+        created, skipped = _run_gpt_screening_batch(db, current_user.id, resume, jobs)
+        total_created += created
+        total_skipped += skipped
 
     return AnalyzeAllResponse(
         total_candidates=len(resumes),
@@ -501,21 +550,10 @@ def analyze_candidate(
             detail="No jobs found. Add at least one job before running analysis.",
         )
 
-    created = 0
-    skipped = 0
     force_refresh = payload.force_refresh if payload else False
-    for job in jobs:
-        result, was_created = _run_gpt_analysis(
-            db,
-            current_user.id,
-            resume,
-            job,
-            force_refresh=force_refresh,
-        )
-        if result and was_created:
-            created += 1
-        else:
-            skipped += 1
+    created, skipped = _run_gpt_screening_batch(
+        db, current_user.id, resume, jobs, force_refresh=force_refresh
+    )
 
     return AnalyzeResponse(
         analyses_created=created,
