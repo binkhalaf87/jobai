@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
@@ -24,23 +25,20 @@ type JobListItem = {
   candidate_count: number;
 };
 
-type CandidateSummary = {
+type RankedCandidate = {
   resume_id: string;
   candidate_name: string;
-  overall_score: number;
-  matching_keywords: string[];
-  missing_keywords: string[];
-  ai_summary: string | null;
+  email: string | null;
+  match_score: number;
+  hiring_suggestion: string | null;
+  stage: string;
+  analysis_id: string;
 };
 
-type JobDetail = {
-  id: string;
-  title: string;
-  company_name: string | null;
-  location: string | null;
-  employment_type: EmploymentType | null;
-  created_at: string;
-  top_candidates: CandidateSummary[];
+type RankedResults = {
+  job_id: string;
+  job_title: string;
+  candidates: RankedCandidate[];
 };
 
 type CreateJobForm = {
@@ -288,29 +286,51 @@ function AddJobForm({
   );
 }
 
-// ─── Candidate row inside job detail ─────────────────────────────────────────
+// ─── Ranked candidate row ─────────────────────────────────────────────────────
 
-function CandidateRow({ candidate }: { candidate: CandidateSummary }) {
+const SUGGESTION_CONFIG: Record<string, { label: string; color: string }> = {
+  shortlist:    { label: "Shortlist",    color: "bg-emerald-100 text-emerald-700" },
+  interview:    { label: "Interview",    color: "bg-violet-100 text-violet-700"   },
+  needs_review: { label: "Review",       color: "bg-amber-100 text-amber-700"     },
+  reject:       { label: "Reject",       color: "bg-rose-100 text-rose-600"       },
+};
+
+const STAGE_COLORS_MAP: Record<string, string> = {
+  new:         "bg-sky-100 text-sky-700",
+  shortlisted: "bg-emerald-100 text-emerald-700",
+  interview:   "bg-violet-100 text-violet-700",
+  rejected:    "bg-rose-100 text-rose-500",
+};
+
+function RankedRow({ candidate, rank }: { candidate: RankedCandidate; rank: number }) {
+  const suggestion = candidate.hiring_suggestion ? SUGGESTION_CONFIG[candidate.hiring_suggestion] : null;
   return (
-    <li className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-semibold text-slate-950">
-          {candidate.candidate_name}
-        </p>
-        <span
-          className={`text-xs font-bold tabular-nums ${scoreText(candidate.overall_score)}`}
-        >
-          {candidate.overall_score.toFixed(1)}%
-        </span>
+    <li className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+      <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md bg-slate-200 text-[10px] font-bold text-slate-600">
+        #{rank}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <p className="text-[13px] font-semibold text-slate-900">{candidate.candidate_name}</p>
+          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${STAGE_COLORS_MAP[candidate.stage] ?? "bg-slate-100 text-slate-600"}`}>
+            {candidate.stage}
+          </span>
+          {suggestion && (
+            <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${suggestion.color}`}>
+              AI: {suggestion.label}
+            </span>
+          )}
+        </div>
+        <div className="mt-1.5">
+          <ScoreBar score={candidate.match_score} />
+        </div>
       </div>
-      <div className="mt-2">
-        <ScoreBar score={candidate.overall_score} />
-      </div>
-      {candidate.ai_summary && (
-        <p className="mt-2 text-xs leading-5 text-slate-500">
-          {candidate.ai_summary}
-        </p>
-      )}
+      <Link
+        href={`/recruiter/candidates/${candidate.resume_id}`}
+        className="flex-shrink-0 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:border-brand-300 hover:text-brand-700"
+      >
+        View
+      </Link>
     </li>
   );
 }
@@ -320,135 +340,120 @@ function CandidateRow({ candidate }: { candidate: CandidateSummary }) {
 function JobCard({
   job,
   isExpanded,
-  detail,
-  loadingDetail,
+  ranked,
+  loadingRanked,
+  shortlisting,
+  shortlistResult,
   confirmDelete,
   deleting,
   onToggle,
+  onAutoShortlist,
   onConfirmDelete,
   onCancelDelete,
   onDelete,
 }: {
   job: JobListItem;
   isExpanded: boolean;
-  detail: JobDetail | undefined;
-  loadingDetail: boolean;
+  ranked: RankedResults | undefined;
+  loadingRanked: boolean;
+  shortlisting: boolean;
+  shortlistResult: string | null;
   confirmDelete: boolean;
   deleting: boolean;
   onToggle: () => void;
+  onAutoShortlist: () => void;
   onConfirmDelete: () => void;
   onCancelDelete: () => void;
   onDelete: () => void;
 }) {
-  const topScore = detail?.top_candidates[0]?.overall_score ?? null;
+  const topScore = ranked?.candidates[0]?.match_score ?? null;
 
   return (
-    <li className="rounded-3xl border border-slate-200 bg-white transition hover:border-slate-300">
+    <li className="rounded-2xl border border-slate-200 bg-white transition hover:border-slate-300">
       {/* Card header */}
-      <div
-        className="flex cursor-pointer items-start gap-4 p-5"
-        onClick={onToggle}
-      >
+      <div className="flex cursor-pointer items-start gap-4 p-5" onClick={onToggle}>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-base font-semibold text-slate-950">{job.title}</p>
-            {job.employment_type && (
-              <EmploymentBadge type={job.employment_type} />
-            )}
+            <p className="text-[15px] font-semibold text-slate-950">{job.title}</p>
+            {job.employment_type && <EmploymentBadge type={job.employment_type} />}
           </div>
-
-          <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
             {job.company_name && <span>{job.company_name}</span>}
-            {job.location && (
-              <>
-                {job.company_name && <span>·</span>}
-                <span>{job.location}</span>
-              </>
-            )}
-          </div>
-
-          <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-slate-500">
-            <span>
-              <span className="font-semibold text-slate-700">
-                {job.candidate_count}
-              </span>{" "}
-              candidate{job.candidate_count !== 1 ? "s" : ""}
-            </span>
+            {job.location && <><span>·</span><span>{job.location}</span></>}
+            <span>·</span>
+            <span><span className="font-semibold text-slate-700">{job.candidate_count}</span> candidate{job.candidate_count !== 1 ? "s" : ""}</span>
             {topScore !== null && (
-              <span>
-                Top match:{" "}
-                <span className={`font-semibold ${scoreText(topScore)}`}>
-                  {topScore.toFixed(1)}%
-                </span>
-              </span>
+              <><span>·</span><span>Top: <span className={`font-semibold ${scoreText(topScore)}`}>{topScore.toFixed(0)}%</span></span></>
             )}
-            <span>{fmtDate(job.created_at)}</span>
           </div>
         </div>
 
-        <div
-          className="flex flex-shrink-0 flex-col items-end gap-2"
-          onClick={(e) => e.stopPropagation()}
-        >
+        <div className="flex flex-shrink-0 flex-col items-end gap-2" onClick={(e) => e.stopPropagation()}>
           {!confirmDelete ? (
-            <button
-              type="button"
-              onClick={onConfirmDelete}
-              className="rounded-xl px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
-            >
+            <button type="button" onClick={onConfirmDelete}
+              className="rounded-lg px-3 py-1 text-xs font-medium text-slate-400 transition hover:bg-rose-50 hover:text-rose-600">
               Delete
             </button>
           ) : (
             <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={onDelete}
-                disabled={deleting}
-                className="rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700 disabled:opacity-50"
-              >
-                {deleting ? "Deleting…" : "Confirm delete"}
+              <button type="button" onClick={onDelete} disabled={deleting}
+                className="rounded-lg bg-rose-600 px-3 py-1 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50">
+                {deleting ? "…" : "Confirm"}
               </button>
-              <button
-                type="button"
-                onClick={onCancelDelete}
-                className="rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
-              >
+              <button type="button" onClick={onCancelDelete}
+                className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50">
                 Cancel
               </button>
             </div>
           )}
-          <span className="mt-1 text-xs text-slate-400">
-            {isExpanded ? "▲ Hide" : "▼ Candidates"}
-          </span>
+          <span className="text-[11px] text-slate-400">{isExpanded ? "▲ Hide" : "▼ View candidates"}</span>
         </div>
       </div>
 
-      {/* Expanded candidates */}
+      {/* Expanded ranked candidates */}
       {isExpanded && (
-        <div className="border-t border-slate-100 px-5 pb-5 pt-4">
-          {loadingDetail ? (
-            <div className="animate-pulse space-y-3">
-              {Array.from({ length: 3 }, (_, i) => (
-                <div key={i} className="h-16 rounded-2xl bg-slate-100" />
-              ))}
+        <div className="border-t border-slate-100 px-5 pb-5 pt-4 space-y-3">
+          {loadingRanked ? (
+            <div className="animate-pulse space-y-2">
+              {Array.from({ length: 3 }, (_, i) => <div key={i} className="h-14 rounded-xl bg-slate-100" />)}
             </div>
-          ) : !detail ? (
+          ) : !ranked ? (
             <p className="text-sm text-slate-500">Failed to load candidates.</p>
-          ) : detail.top_candidates.length === 0 ? (
-            <div className="rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
-              <p className="text-sm font-semibold text-slate-900">
-                No candidates yet
-              </p>
-              <p className="mt-1 text-xs text-slate-500">
-                Upload resumes from the Candidates page to see matches here.
-              </p>
+          ) : ranked.candidates.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-5 text-center">
+              <p className="text-sm font-semibold text-slate-700">No analyzed candidates yet</p>
+              <p className="mt-1 text-xs text-slate-400">Run AI analysis from the Candidates page first.</p>
             </div>
           ) : (
-            <ul className="space-y-2">
-              {detail.top_candidates.map((c) => (
-                <CandidateRow key={c.resume_id} candidate={c} />
-              ))}
-            </ul>
+            <>
+              <ul className="space-y-2">
+                {ranked.candidates.map((c, i) => (
+                  <RankedRow key={c.resume_id} candidate={c} rank={i + 1} />
+                ))}
+              </ul>
+
+              {/* Auto-shortlist */}
+              <div className="flex items-center justify-between rounded-xl bg-slate-50 border border-slate-200 px-4 py-3">
+                <div>
+                  <p className="text-[12px] font-semibold text-slate-700">Auto-Shortlist</p>
+                  <p className="text-[11px] text-slate-400">Promote all candidates scoring ≥ 70%</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onAutoShortlist(); }}
+                  disabled={shortlisting}
+                  className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  {shortlisting ? "Shortlisting…" : "Run"}
+                </button>
+              </div>
+
+              {shortlistResult && (
+                <p className={`rounded-lg px-3 py-2 text-xs font-medium ${
+                  shortlistResult.startsWith("✦") ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-600"
+                }`}>{shortlistResult}</p>
+              )}
+            </>
           )}
         </div>
       )}
@@ -462,26 +467,23 @@ export default function RecruiterJobsPage() {
   const [jobs, setJobs] = useState<JobListItem[]>([]);
   const [listLoading, setListLoading] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
-
   const [showForm, setShowForm] = useState(false);
 
-  const [details, setDetails] = useState<Record<string, JobDetail>>({});
+  const [ranked, setRanked] = useState<Record<string, RankedResults>>({});
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [loadingDetailId, setLoadingDetailId] = useState<string | null>(null);
+  const [loadingRankedId, setLoadingRankedId] = useState<string | null>(null);
+
+  const [shortlistingId, setShortlistingId] = useState<string | null>(null);
+  const [shortlistResults, setShortlistResults] = useState<Record<string, string>>({});
 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // --- Load jobs ---
-
   useEffect(() => {
     let cancelled = false;
-
     async function load() {
       try {
-        const data = await api.get<JobListItem[]>("/recruiter/jobs/", {
-          auth: true,
-        });
+        const data = await api.get<JobListItem[]>("/recruiter/jobs/", { auth: true });
         if (!cancelled) setJobs(data);
       } catch {
         if (!cancelled) setListError("Failed to load jobs.");
@@ -489,156 +491,126 @@ export default function RecruiterJobsPage() {
         if (!cancelled) setListLoading(false);
       }
     }
-
     void load();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
-
-  // --- Add job ---
 
   function handleJobSaved(job: JobListItem) {
     setJobs((prev) => [job, ...prev]);
     setShowForm(false);
   }
 
-  // --- Expand / detail ---
-
   async function handleToggle(id: string) {
-    if (expandedId === id) {
-      setExpandedId(null);
-      return;
-    }
-
+    if (expandedId === id) { setExpandedId(null); return; }
     setExpandedId(id);
-
-    if (details[id]) return;
-
-    setLoadingDetailId(id);
+    if (ranked[id]) return;
+    setLoadingRankedId(id);
     try {
-      const data = await api.get<JobDetail>(`/recruiter/jobs/${id}`, {
-        auth: true,
-      });
-      setDetails((prev) => ({ ...prev, [id]: data }));
-    } catch {
-      // detail stays undefined; panel shows error
-    } finally {
-      setLoadingDetailId(null);
+      const data = await api.get<RankedResults>(`/recruiter/screening/ranked?job_id=${id}&min_score=0`, { auth: true });
+      setRanked((prev) => ({ ...prev, [id]: data }));
+    } catch {/* ranked stays undefined */} finally {
+      setLoadingRankedId(null);
     }
   }
 
-  // --- Delete ---
+  async function handleAutoShortlist(id: string) {
+    setShortlistingId(id);
+    try {
+      const res = await api.post<{ shortlisted: number; already_shortlisted: number; skipped: number }>(
+        "/recruiter/screening/auto-shortlist", { job_id: id, min_score: 70 }, { auth: true }
+      );
+      setShortlistResults((prev) => ({
+        ...prev,
+        [id]: `✦ ${res.shortlisted} promoted, ${res.already_shortlisted} already shortlisted, ${res.skipped} skipped.`,
+      }));
+      // Refresh ranked results
+      setRanked((prev) => { const next = { ...prev }; delete next[id]; return next; });
+      setLoadingRankedId(id);
+      const fresh = await api.get<RankedResults>(`/recruiter/screening/ranked?job_id=${id}&min_score=0`, { auth: true });
+      setRanked((prev) => ({ ...prev, [id]: fresh }));
+    } catch {
+      setShortlistResults((prev) => ({ ...prev, [id]: "Auto-shortlist failed. Try again." }));
+    } finally {
+      setShortlistingId(null);
+      setLoadingRankedId(null);
+    }
+  }
 
   async function handleDelete(id: string) {
     setDeletingId(id);
     try {
       await api.delete(`/recruiter/jobs/${id}`, undefined, { auth: true });
       setJobs((prev) => prev.filter((j) => j.id !== id));
-      setDetails((prev) => {
-        const next = { ...prev };
-        delete next[id];
-        return next;
-      });
+      setRanked((prev) => { const next = { ...prev }; delete next[id]; return next; });
       if (expandedId === id) setExpandedId(null);
-    } catch {
-      // leave in list on failure
-    } finally {
+    } catch {/* leave in list */} finally {
       setDeletingId(null);
       setConfirmDeleteId(null);
     }
   }
 
-  // ─── Render ────────────────────────────────────────────────────────────────
-
   return (
-    <div className="space-y-6">
-      {/* Header panel with add button + inline form */}
-      <Panel className="p-6 md:p-8">
+    <div className="space-y-5">
+      {/* Header + form */}
+      <Panel className="p-5 md:p-6">
         <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-              Jobs
-            </p>
-            <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
-              Manage job postings
-            </h2>
+          <div className="flex items-center gap-3">
+            <p className="text-[15px] font-bold tracking-tight text-slate-900">Job Listings</p>
+            {jobs.length > 0 && (
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{jobs.length}</span>
+            )}
           </div>
           <button
             type="button"
             onClick={() => setShowForm((v) => !v)}
-            className={`rounded-2xl px-5 py-2.5 text-sm font-semibold transition ${
-              showForm
-                ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                : "bg-brand-800 text-white hover:bg-brand-700"
+            className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+              showForm ? "bg-slate-100 text-slate-700 hover:bg-slate-200" : "bg-brand-800 text-white hover:bg-brand-700"
             }`}
           >
-            {showForm ? "Cancel" : "Add job"}
+            {showForm ? "Cancel" : "+ Add job"}
           </button>
         </div>
-
         {showForm && (
-          <div className="mt-6 border-t border-slate-100 pt-6">
-            <AddJobForm
-              onSave={handleJobSaved}
-              onCancel={() => setShowForm(false)}
-            />
+          <div className="mt-5 border-t border-slate-100 pt-5">
+            <AddJobForm onSave={handleJobSaved} onCancel={() => setShowForm(false)} />
           </div>
         )}
       </Panel>
 
       {/* Jobs list */}
-      <Panel className="p-6 md:p-8">
-        <div className="flex items-center gap-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-            Job List
-          </p>
-          {jobs.length > 0 && (
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600">
-              {jobs.length}
-            </span>
-          )}
+      {listLoading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 3 }, (_, i) => <div key={i} className="h-20 animate-pulse rounded-2xl bg-slate-100" />)}
         </div>
-
-        {listLoading ? (
-          <div className="mt-6 animate-pulse space-y-3">
-            {Array.from({ length: 3 }, (_, i) => (
-              <div key={i} className="h-24 rounded-3xl bg-slate-100" />
-            ))}
-          </div>
-        ) : listError ? (
-          <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
-            {listError}
-          </div>
-        ) : jobs.length === 0 ? (
-          <div className="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-            <p className="text-base font-semibold text-slate-900">
-              No jobs yet
-            </p>
-            <p className="mt-2 text-sm leading-7 text-slate-600">
-              Click &ldquo;Add job&rdquo; above to post your first opening.
-            </p>
-          </div>
-        ) : (
-          <ul className="mt-4 space-y-3">
-            {jobs.map((job) => (
-              <JobCard
-                key={job.id}
-                job={job}
-                isExpanded={expandedId === job.id}
-                detail={details[job.id]}
-                loadingDetail={loadingDetailId === job.id}
-                confirmDelete={confirmDeleteId === job.id}
-                deleting={deletingId === job.id}
-                onToggle={() => void handleToggle(job.id)}
-                onConfirmDelete={() => setConfirmDeleteId(job.id)}
-                onCancelDelete={() => setConfirmDeleteId(null)}
-                onDelete={() => void handleDelete(job.id)}
-              />
-            ))}
-          </ul>
-        )}
-      </Panel>
+      ) : listError ? (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">{listError}</div>
+      ) : jobs.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center">
+          <p className="text-sm font-semibold text-slate-700">No jobs yet</p>
+          <p className="mt-1 text-xs text-slate-400">Add a job above to start matching candidates.</p>
+        </div>
+      ) : (
+        <ul className="space-y-3">
+          {jobs.map((job) => (
+            <JobCard
+              key={job.id}
+              job={job}
+              isExpanded={expandedId === job.id}
+              ranked={ranked[job.id]}
+              loadingRanked={loadingRankedId === job.id}
+              shortlisting={shortlistingId === job.id}
+              shortlistResult={shortlistResults[job.id] ?? null}
+              confirmDelete={confirmDeleteId === job.id}
+              deleting={deletingId === job.id}
+              onToggle={() => void handleToggle(job.id)}
+              onAutoShortlist={() => void handleAutoShortlist(job.id)}
+              onConfirmDelete={() => setConfirmDeleteId(job.id)}
+              onCancelDelete={() => setConfirmDeleteId(null)}
+              onDelete={() => void handleDelete(job.id)}
+            />
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

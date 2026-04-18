@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Users, Upload, Sparkles, ChevronRight } from "lucide-react";
 
 import { api, uploadRequest } from "@/lib/api";
-import { Panel } from "@/components/panel";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -41,154 +41,41 @@ const ACCEPTED_MIME = new Set([
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ]);
 
-const STAGE_LABELS: Record<Stage, string> = {
-  new: "Applied",
-  shortlisted: "Shortlisted",
-  interview: "Interview",
-  rejected: "Rejected",
-};
-
 const STAGE_COLORS: Record<Stage, string> = {
-  new: "bg-sky-100 text-sky-700",
-  shortlisted: "bg-emerald-100 text-emerald-700",
-  interview: "bg-violet-100 text-violet-700",
-  rejected: "bg-rose-100 text-rose-600",
+  new:        "bg-sky-100 text-sky-700",
+  shortlisted:"bg-emerald-100 text-emerald-700",
+  interview:  "bg-violet-100 text-violet-700",
+  rejected:   "bg-rose-100 text-rose-500",
 };
 
-const STAGE_BORDER: Record<Stage, string> = {
-  new: "",
-  shortlisted: "border-l-4 border-l-emerald-400",
-  interview: "border-l-4 border-l-violet-400",
-  rejected: "opacity-60",
+const STAGE_LABELS: Record<Stage, string> = {
+  new: "Applied", shortlisted: "Shortlisted", interview: "Interview", rejected: "Rejected",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function isAccepted(file: File) {
-  return (
-    ACCEPTED_MIME.has(file.type) ||
-    file.name.toLowerCase().endsWith(".pdf") ||
-    file.name.toLowerCase().endsWith(".docx")
-  );
+function isAccepted(f: File) {
+  return ACCEPTED_MIME.has(f.type) || f.name.endsWith(".pdf") || f.name.endsWith(".docx");
 }
-
-function uid() {
-  return Math.random().toString(36).slice(2);
-}
-
+function uid() { return Math.random().toString(36).slice(2); }
 function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  return new Date(iso).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
 }
-
-function analysisFreshness(completedAt: string | null): {
-  label: string;
-  color: string;
-} {
-  if (!completedAt) return { label: "No analysis", color: "text-amber-600 bg-amber-50" };
-  const hours = (Date.now() - new Date(completedAt).getTime()) / 3_600_000;
-  if (hours < 24) return { label: `Fresh · ${Math.round(hours)}h ago`, color: "text-emerald-700 bg-emerald-50" };
-  const days = Math.floor(hours / 24);
-  if (days <= 7) return { label: `${days}d ago`, color: "text-slate-600 bg-slate-100" };
-  return { label: `Stale · ${days}d ago`, color: "text-amber-700 bg-amber-50" };
-}
-
-function scoreColor(s: number) {
-  if (s >= 70) return "bg-emerald-500";
-  if (s >= 40) return "bg-amber-400";
-  return "bg-rose-400";
-}
-
-function scoreText(s: number) {
-  if (s >= 70) return "text-emerald-700";
-  if (s >= 40) return "text-amber-700";
-  return "text-rose-600";
-}
-
 function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("");
+  return name.split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
+}
+function scoreText(s: number) {
+  if (s >= 70) return "text-emerald-700"; if (s >= 40) return "text-amber-700"; return "text-rose-600";
 }
 
-// ─── Stat pills ───────────────────────────────────────────────────────────────
-
-function StatPills({
-  candidates,
-  activeFilter,
-  onFilter,
-}: {
-  candidates: CandidateListItem[];
-  activeFilter: Stage | "all" | "no_analysis";
-  onFilter: (f: Stage | "all" | "no_analysis") => void;
-}) {
-  const counts = {
-    new: candidates.filter((c) => c.stage === "new").length,
-    shortlisted: candidates.filter((c) => c.stage === "shortlisted").length,
-    interview: candidates.filter((c) => c.stage === "interview").length,
-    rejected: candidates.filter((c) => c.stage === "rejected").length,
-    no_analysis: candidates.filter((c) => !c.analysis_completed_at).length,
-  };
-
-  const pills: { key: Stage | "all" | "no_analysis"; label: string; count: number; cls: string }[] = [
-    { key: "all", label: "All", count: candidates.length, cls: "bg-slate-100 text-slate-700 hover:bg-slate-200" },
-    { key: "new", label: "Applied", count: counts.new, cls: "bg-sky-50 text-sky-700 hover:bg-sky-100" },
-    { key: "shortlisted", label: "Shortlisted", count: counts.shortlisted, cls: "bg-emerald-50 text-emerald-700 hover:bg-emerald-100" },
-    { key: "interview", label: "Interview", count: counts.interview, cls: "bg-violet-50 text-violet-700 hover:bg-violet-100" },
-    { key: "no_analysis", label: "Awaiting Analysis", count: counts.no_analysis, cls: "bg-amber-50 text-amber-700 hover:bg-amber-100" },
-  ];
-
-  return (
-    <div className="flex flex-wrap gap-2">
-      {pills.map((p) => (
-        <button
-          key={p.key}
-          type="button"
-          onClick={() => onFilter(p.key)}
-          className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${p.cls} ${
-            activeFilter === p.key ? "ring-2 ring-offset-1 ring-slate-400" : ""
-          }`}
-        >
-          {p.label}
-          <span className="rounded-full bg-white/60 px-1.5 py-0.5 text-[10px] font-bold">
-            {p.count}
-          </span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-// ─── Score bar ────────────────────────────────────────────────────────────────
-
-function ScoreBar({ score }: { score: number }) {
-  const c = Math.min(100, Math.max(0, score));
-  return (
-    <div className="flex items-center gap-2">
-      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
-        <div className={`h-full rounded-full ${scoreColor(c)}`} style={{ width: `${c}%` }} />
-      </div>
-      <span className={`w-10 text-right text-[11px] font-bold tabular-nums ${scoreText(c)}`}>
-        {c.toFixed(0)}%
-      </span>
-    </div>
-  );
-}
-
-// ─── Upload zone ──────────────────────────────────────────────────────────────
+// ─── Upload Zone ──────────────────────────────────────────────────────────────
 
 function UploadZone({ onFilesAdded }: { onFilesAdded: (files: File[]) => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
 
-  function collect(fileList: FileList | null) {
-    if (!fileList) return;
-    const valid = Array.from(fileList).filter(isAccepted);
+  function collect(list: FileList | null) {
+    const valid = Array.from(list ?? []).filter(isAccepted);
     if (valid.length) onFilesAdded(valid);
   }
 
@@ -199,259 +86,38 @@ function UploadZone({ onFilesAdded }: { onFilesAdded: (files: File[]) => void })
       onDragLeave={() => setDragging(false)}
       onDrop={(e) => { e.preventDefault(); setDragging(false); collect(e.dataTransfer.files); }}
       onClick={() => inputRef.current?.click()}
-      className={`cursor-pointer rounded-3xl border-2 border-dashed px-8 py-6 text-center transition ${
-        dragging ? "border-slate-700 bg-slate-100" : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white"
+      className={`cursor-pointer rounded-xl border-2 border-dashed px-6 py-4 text-center transition ${
+        dragging ? "border-brand-400 bg-brand-50" : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white"
       }`}
     >
-      <input
-        ref={inputRef}
-        type="file"
-        accept=".pdf,.docx"
-        multiple
-        className="hidden"
-        onChange={(e) => { collect(e.target.files); e.currentTarget.value = ""; }}
-      />
-      <p className="text-sm font-semibold text-slate-700">
-        Drop resumes here or <span className="text-slate-900 underline underline-offset-2">browse files</span>
+      <input ref={inputRef} type="file" accept=".pdf,.docx" multiple className="hidden"
+        onChange={(e) => { collect(e.target.files); e.currentTarget.value = ""; }} />
+      <p className="text-sm font-medium text-slate-600">
+        Drop resumes or <span className="font-semibold text-slate-900 underline underline-offset-2">browse</span>
+        <span className="ml-2 text-xs text-slate-400">PDF · DOCX</span>
       </p>
-      <p className="mt-1 text-xs text-slate-400">PDF and DOCX · multiple files at once</p>
     </div>
   );
 }
 
-// ─── Upload queue ─────────────────────────────────────────────────────────────
-
 function UploadQueue({ items }: { items: FileUploadItem[] }) {
-  if (items.length === 0) return null;
+  if (!items.length) return null;
   return (
-    <Panel className="p-4">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Uploading</p>
-      <ul className="space-y-2">
-        {items.map((item) => (
-          <li key={item.uid} className="flex items-center gap-3 text-sm">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <span className="truncate font-medium text-slate-700">{item.name}</span>
-                <span className="flex-shrink-0 text-xs font-semibold text-slate-400">
-                  {item.status === "done" ? "✓" : item.status === "error" ? "✗" : `${item.progress}%`}
-                </span>
-              </div>
-              {item.status !== "done" && item.status !== "error" && (
-                <div className="mt-1 h-1 overflow-hidden rounded-full bg-slate-200">
-                  <div className="h-full rounded-full bg-slate-800 transition-all" style={{ width: `${item.progress}%` }} />
-                </div>
-              )}
-              {item.status === "error" && (
-                <p className="mt-0.5 text-xs text-rose-600">{item.error}</p>
-              )}
-            </div>
-          </li>
-        ))}
-      </ul>
-    </Panel>
-  );
-}
-
-// ─── Candidate card (3-zone) ──────────────────────────────────────────────────
-
-function CandidateCard({
-  candidate,
-  onStageChange,
-  onDelete,
-}: {
-  candidate: CandidateListItem;
-  onStageChange: (id: string, stage: Stage) => void;
-  onDelete: (id: string) => void;
-}) {
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [stagePending, setStagePending] = useState(false);
-
-  const freshness = analysisFreshness(candidate.analysis_completed_at);
-  const hasAnalysis = !!candidate.analysis_completed_at;
-  const displayName = candidate.parsed_name ?? candidate.title;
-
-  async function handleStageChange(stage: Stage) {
-    if (stagePending) return;
-    setStagePending(true);
-    try {
-      await api.patch(`/recruiter/candidates/${candidate.id}/stage`, { stage }, { auth: true });
-      onStageChange(candidate.id, stage);
-    } catch {
-      // revert handled by parent
-    } finally {
-      setStagePending(false);
-    }
-  }
-
-  async function handleDelete() {
-    setDeleting(true);
-    try {
-      await api.delete(`/recruiter/candidates/${candidate.id}`, undefined, { auth: true });
-      onDelete(candidate.id);
-    } catch {
-      setDeleting(false);
-      setConfirmDelete(false);
-    }
-  }
-
-  return (
-    <li className={`rounded-3xl border border-slate-200 bg-white transition hover:border-slate-300 hover:shadow-sm ${STAGE_BORDER[candidate.stage]}`}>
-      <div className="grid grid-cols-1 gap-0 md:grid-cols-[1fr_auto_auto]">
-
-        {/* ── Zone A: WHO ─────────────────────────────────── */}
-        <div className="p-5">
-          <div className="flex items-start gap-3">
-            {/* Avatar */}
-            <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl text-sm font-bold text-white ${
-              candidate.stage === "shortlisted" ? "bg-emerald-500" :
-              candidate.stage === "interview" ? "bg-violet-500" :
-              candidate.stage === "rejected" ? "bg-slate-300" : "bg-slate-700"
-            }`}>
-              {initials(displayName)}
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-sm font-semibold text-slate-950">{displayName}</p>
-                {candidate.parsed_name && candidate.parsed_name !== candidate.title && (
-                  <p className="text-[11px] text-slate-400">Resume file: {candidate.title}</p>
-                )}
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${STAGE_COLORS[candidate.stage]}`}>
-                  {STAGE_LABELS[candidate.stage]}
-                </span>
-              </div>
-
-              {candidate.email && (
-                <p className="mt-0.5 truncate text-xs text-slate-400">{candidate.email}</p>
-              )}
-
-              {candidate.best_match_job && candidate.best_match_score !== null && (
-                <div className="mt-2">
-                  <p className="mb-1 text-[11px] text-slate-500">
-                    Best match: <span className="font-semibold text-slate-700">{candidate.best_match_job}</span>
-                  </p>
-                  <ScoreBar score={candidate.best_match_score} />
-                </div>
-              )}
-
-              {!hasAnalysis && candidate.status === "parsed" && (
-                <p className="mt-2 text-xs font-medium text-amber-600">No jobs to match against yet</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ── Zone B: AI SIGNAL ───────────────────────────── */}
-        <div className="border-t border-slate-100 p-5 md:w-56 md:border-l md:border-t-0">
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">AI Signal</p>
-
-          {hasAnalysis ? (
-            <>
-              {candidate.best_match_keywords.length > 0 && (
-                <div className="mb-2">
-                  <p className="text-[10px] font-semibold text-emerald-600">✦ Strengths</p>
-                  <p className="text-xs text-slate-600 leading-5">
-                    {candidate.best_match_keywords.slice(0, 2).join(" · ")}
-                  </p>
-                </div>
-              )}
-              {candidate.best_missing_keywords.length > 0 && (
-                <div className="mb-3">
-                  <p className="text-[10px] font-semibold text-amber-600">⚠ Gaps</p>
-                  <p className="text-xs text-slate-600 leading-5">
-                    {candidate.best_missing_keywords.slice(0, 2).join(" · ")}
-                  </p>
-                </div>
-              )}
-            </>
-          ) : (
-            <p className="mb-3 text-xs text-amber-600 font-medium">
-              {candidate.status === "parsed" ? "Add jobs to run analysis" : "Awaiting analysis…"}
-            </p>
-          )}
-
-          <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${freshness.color}`}>
-            {freshness.label}
+    <ul className="space-y-1.5 rounded-xl border border-slate-200 bg-white p-3">
+      {items.map((item) => (
+        <li key={item.uid} className="flex items-center gap-3 text-xs">
+          <span className="min-w-0 flex-1 truncate font-medium text-slate-700">{item.name}</span>
+          <span className={`font-semibold ${item.status === "done" ? "text-emerald-600" : item.status === "error" ? "text-rose-600" : "text-slate-400"}`}>
+            {item.status === "done" ? "✓" : item.status === "error" ? "✗" : `${item.progress}%`}
           </span>
-        </div>
-
-        {/* ── Zone C: ACT ─────────────────────────────────── */}
-        <div className="flex flex-row items-center gap-2 border-t border-slate-100 p-5 md:w-44 md:flex-col md:items-stretch md:border-l md:border-t-0">
-          {/* View profile */}
-          <Link
-            href={`/recruiter/candidates/${candidate.id}`}
-            className="rounded-xl bg-brand-800 px-3 py-2 text-center text-xs font-semibold text-white transition hover:bg-brand-700"
-          >
-            View Profile
-          </Link>
-
-          {/* Stage quick actions */}
-          {candidate.stage !== "shortlisted" && (
-            <button
-              type="button"
-              disabled={stagePending}
-              onClick={() => void handleStageChange("shortlisted")}
-              className="rounded-xl border border-emerald-300 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-40"
-            >
-              Shortlist ★
-            </button>
+          {item.status === "uploading" && (
+            <div className="h-1 w-20 overflow-hidden rounded-full bg-slate-200">
+              <div className="h-full rounded-full bg-slate-800 transition-all" style={{ width: `${item.progress}%` }} />
+            </div>
           )}
-          {candidate.stage === "shortlisted" && (
-            <button
-              type="button"
-              disabled={stagePending}
-              onClick={() => void handleStageChange("new")}
-              className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-500 transition hover:bg-slate-50 disabled:opacity-40"
-            >
-              Unshortlist
-            </button>
-          )}
-          {candidate.stage !== "rejected" && (
-            <button
-              type="button"
-              disabled={stagePending}
-              onClick={() => void handleStageChange("rejected")}
-              className="rounded-xl px-3 py-2 text-xs font-semibold text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40"
-            >
-              Reject
-            </button>
-          )}
-
-          {/* Delete */}
-          <div className="mt-auto pt-1" onClick={(e) => e.stopPropagation()}>
-            {!confirmDelete ? (
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(true)}
-                className="w-full rounded-xl px-3 py-1.5 text-[11px] font-medium text-slate-300 transition hover:bg-rose-50 hover:text-rose-400"
-              >
-                Delete
-              </button>
-            ) : (
-              <div className="flex flex-col gap-1">
-                <button
-                  type="button"
-                  disabled={deleting}
-                  onClick={() => void handleDelete()}
-                  className="rounded-xl bg-rose-600 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-rose-700 disabled:opacity-50"
-                >
-                  {deleting ? "…" : "Confirm"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirmDelete(false)}
-                  className="rounded-xl px-3 py-1.5 text-[11px] font-medium text-slate-400 transition hover:bg-slate-100"
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-      </div>
-    </li>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -459,345 +125,219 @@ function CandidateCard({
 
 export default function RecruiterCandidatesPage() {
   const [candidates, setCandidates] = useState<CandidateListItem[]>([]);
-  const [listLoading, setListLoading] = useState(true);
-  const [listError, setListError] = useState<string | null>(null);
-
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [uploadQueue, setUploadQueue] = useState<FileUploadItem[]>([]);
   const uploadingRef = useRef(false);
-
-  const [search, setSearch] = useState("");
-  const [stageFilter, setStageFilter] = useState<Stage | "all" | "no_analysis">("all");
-
   const [analyzingAll, setAnalyzingAll] = useState(false);
-  const [analyzeAllResult, setAnalyzeAllResult] = useState<{
-    total_candidates: number;
-    total_created: number;
-    no_text_count: number;
-  } | null>(null);
+  const [analyzeResult, setAnalyzeResult] = useState<string | null>(null);
 
   async function loadCandidates() {
     try {
       const data = await api.get<CandidateListItem[]>("/recruiter/candidates/", { auth: true });
       setCandidates(data);
     } catch {
-      setListError("Failed to load candidates.");
+      setError("Failed to load candidates.");
     } finally {
-      setListLoading(false);
+      setLoading(false);
     }
   }
 
   useEffect(() => { void loadCandidates(); }, []);
 
-  // --- Upload ---
-
   function updateItem(itemUid: string, patch: Partial<FileUploadItem>) {
-    setUploadQueue((prev) =>
-      prev.map((item) => (item.uid === itemUid ? { ...item, ...patch } : item)),
-    );
+    setUploadQueue((prev) => prev.map((i) => (i.uid === itemUid ? { ...i, ...patch } : i)));
   }
 
   const processQueue = useCallback(async (queue: FileUploadItem[]) => {
     if (uploadingRef.current) return;
     uploadingRef.current = true;
-
     for (const item of queue) {
       if (item.status !== "pending") continue;
       updateItem(item.uid, { status: "uploading", progress: 0 });
-      const formData = new FormData();
-      formData.append("files", item.file);
+      const fd = new FormData();
+      fd.append("files", item.file);
       try {
-        await uploadRequest<{ resume_ids: string[] }>("/recruiter/candidates/upload", formData, {
-          auth: true,
-          onProgress: (p) => updateItem(item.uid, { progress: p }),
+        await uploadRequest<{ resume_ids: string[] }>("/recruiter/candidates/upload", fd, {
+          auth: true, onProgress: (p) => updateItem(item.uid, { progress: p }),
         });
         updateItem(item.uid, { status: "done", progress: 100 });
       } catch (err) {
-        updateItem(item.uid, {
-          status: "error",
-          error: err instanceof Error ? err.message : "Upload failed.",
-        });
+        updateItem(item.uid, { status: "error", error: err instanceof Error ? err.message : "Upload failed." });
       }
     }
-
     uploadingRef.current = false;
-    setListLoading(true);
+    setLoading(true);
     void loadCandidates();
   }, []);
 
   function handleFilesAdded(files: File[]) {
-    const newItems: FileUploadItem[] = files.map((file) => ({
-      uid: uid(), name: file.name, file, progress: 0, status: "pending",
-    }));
-    setUploadQueue((prev) => {
-      const updated = [...prev, ...newItems];
-      void processQueue(updated);
-      return updated;
-    });
+    const newItems: FileUploadItem[] = files.map((f) => ({ uid: uid(), name: f.name, file: f, progress: 0, status: "pending" }));
+    setUploadQueue((prev) => { const updated = [...prev, ...newItems]; void processQueue(updated); return updated; });
   }
-
-  // --- Analyze all ---
 
   async function handleAnalyzeAll() {
     if (analyzingAll) return;
     setAnalyzingAll(true);
-    setAnalyzeAllResult(null);
+    setAnalyzeResult(null);
     try {
-      const result = await api.post<{
-        total_candidates: number;
-        total_created: number;
-        total_skipped: number;
-        no_text_count: number;
-      }>("/recruiter/candidates/analyze-all", undefined, { auth: true });
-      setAnalyzeAllResult(result);
-      // Refresh list to show new scores
-      setListLoading(true);
+      const res = await api.post<{ total_candidates: number; total_created: number; no_text_count: number }>(
+        "/recruiter/candidates/analyze-all", undefined, { auth: true }
+      );
+      setAnalyzeResult(`✦ ${res.total_created} analyses created across ${res.total_candidates} candidates.`);
+      setLoading(true);
       void loadCandidates();
-    } catch (err) {
-      setAnalyzeAllResult(null);
-      // show error in the result area
-      setAnalyzeAllResult({
-        total_candidates: 0,
-        total_created: -1,
-        no_text_count: 0,
-      });
+    } catch {
+      setAnalyzeResult("Analysis failed. Make sure you have jobs added and try again.");
     } finally {
       setAnalyzingAll(false);
     }
   }
 
-  // --- Stage update ---
-
-  function handleStageChange(id: string, stage: Stage) {
-    setCandidates((prev) => prev.map((c) => (c.id === id ? { ...c, stage } : c)));
-  }
-
-  function handleDelete(id: string) {
-    setCandidates((prev) => prev.filter((c) => c.id !== id));
-  }
-
-  // --- Filtering ---
-
-  const appliedCount = candidates.filter((candidate) => candidate.stage === "new").length;
-  const shortlistedCount = candidates.filter((candidate) => candidate.stage === "shortlisted").length;
-  const interviewCount = candidates.filter((candidate) => candidate.stage === "interview").length;
-  const awaitingAnalysisCount = candidates.filter((candidate) => !candidate.analysis_completed_at).length;
-  const strongMatchesCount = candidates.filter((candidate) => (candidate.best_match_score ?? 0) >= 70).length;
-  const nextPriorityLabel =
-    candidates.length === 0
-      ? "Upload candidate resumes"
-      : awaitingAnalysisCount > 0
-        ? "Analyze pending resumes"
-        : shortlistedCount === 0
-          ? "Shortlist top matches"
-          : "Move shortlisted candidates to interview";
-  const nextPriorityDescription =
-    candidates.length === 0
-      ? "Start the pipeline by importing resumes in PDF or DOCX format."
-      : awaitingAnalysisCount > 0
-        ? `${awaitingAnalysisCount} candidate${awaitingAnalysisCount === 1 ? "" : "s"} still need AI scoring and matching.`
-        : shortlistedCount === 0
-          ? "Your ranking is ready. Promote the strongest profiles so the team sees a clear next list."
-          : `${shortlistedCount} shortlisted candidate${shortlistedCount === 1 ? "" : "s"} are ready for recruiter follow-up.`;
-
-  const filtered = candidates.filter((c) => {
-    const q = search.toLowerCase();
-    const matchesSearch =
-      !q ||
-      c.title.toLowerCase().includes(q) ||
-      (c.email ?? "").toLowerCase().includes(q) ||
-      (c.best_match_job ?? "").toLowerCase().includes(q);
-
-    const matchesStage =
-      stageFilter === "all" ||
-      (stageFilter === "no_analysis" ? !c.analysis_completed_at : c.stage === stageFilter);
-
-    return matchesSearch && matchesStage;
-  });
-
-  // ─── Render ───────────────────────────────────────────────────────────────
+  // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
 
-      {/* ── Header ──────────────────────────────────────────────── */}
-      <Panel className="overflow-hidden p-0">
-        <div className="grid gap-0 xl:grid-cols-[1.3fr_0.7fr]">
-          <div className="bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.12),_transparent_42%),linear-gradient(135deg,_#ffffff_0%,_#f0fdf4_45%,_#f8fafc_100%)] px-6 py-6 md:px-8 md:py-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Recruiter ATS</p>
-            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-950">Candidate pipeline</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-              Review uploaded resumes, surface the strongest fits, and move candidates through applied, shortlisted, interview, and rejected without losing context.
-            </p>
-
-            <div className="mt-6 grid gap-3 md:grid-cols-4">
-              <div className="rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Applied</p>
-                <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{appliedCount}</p>
-              </div>
-              <div className="rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Shortlisted</p>
-                <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{shortlistedCount}</p>
-              </div>
-              <div className="rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Interview</p>
-                <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{interviewCount}</p>
-              </div>
-              <div className="rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Strong Fits</p>
-                <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{strongMatchesCount}</p>
-              </div>
-            </div>
+      {/* ── Action bar ── */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2 rounded-xl bg-white border border-slate-200 px-3 py-2">
+          <Users size={14} className="text-violet-500" />
+          <span className="text-sm font-semibold text-slate-700">{candidates.length} candidates</span>
+        </div>
+        <button
+          type="button"
+          disabled={analyzingAll || candidates.length === 0}
+          onClick={() => void handleAnalyzeAll()}
+          className="flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:opacity-40"
+        >
+          <Sparkles size={13} />
+          {analyzingAll ? "Analyzing…" : "Analyze All with AI"}
+        </button>
+        {analyzeResult && (
+          <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium ${
+            analyzeResult.startsWith("✦") ? "border-violet-200 bg-violet-50 text-violet-800" : "border-rose-200 bg-rose-50 text-rose-700"
+          }`}>
+            {analyzeResult}
+            <button type="button" onClick={() => setAnalyzeResult(null)} className="opacity-50 hover:opacity-100">✕</button>
           </div>
-          <div className="border-t border-slate-200 bg-brand-900 px-6 py-6 text-white xl:border-l xl:border-t-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Next Priority</p>
-            <div className="mt-4 rounded-[1.75rem] border border-white/10 bg-white/5 p-4">
-              <p className="text-lg font-semibold">{nextPriorityLabel}</p>
-              <p className="mt-2 text-sm leading-6 text-slate-300">{nextPriorityDescription}</p>
-            </div>
-            <div className="mt-4 rounded-[1.75rem] border border-white/10 bg-white/5 p-4">
-              <p className="text-sm font-semibold">Pipeline health</p>
-              <p className="mt-2 text-sm leading-6 text-slate-300">
-                {awaitingAnalysisCount > 0
-                  ? `${awaitingAnalysisCount} candidate${awaitingAnalysisCount === 1 ? "" : "s"} still need recruiter analysis before ranking is complete.`
-                  : "All visible candidates already have AI analysis, so the team can focus on decisions instead of processing."}
-              </p>
-            </div>
-          </div>
-        </div>
-      </Panel>
+        )}
+      </div>
 
-      {/* ── Analyze All button ──────────────────────────────────── */}
-      {!listLoading && candidates.length > 0 && (
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            disabled={analyzingAll}
-            onClick={() => void handleAnalyzeAll()}
-            className="flex items-center gap-2 rounded-2xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 disabled:opacity-50"
-          >
-            {analyzingAll ? (
-              <>
-                <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                Analyzing with AI…
-              </>
-            ) : (
-              <>✦ Analyze All with AI</>
-            )}
-          </button>
-          {analyzingAll && (
-            <p className="text-xs text-slate-500">
-              GPT is analyzing each candidate against your jobs. This may take a moment…
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* ── Analyze All result banner ────────────────────────────── */}
-      {analyzeAllResult && !analyzingAll && (
-        <div className={`rounded-2xl border px-4 py-3 text-sm ${
-          analyzeAllResult.total_created === -1
-            ? "border-rose-200 bg-rose-50 text-rose-700"
-            : "border-violet-200 bg-violet-50 text-violet-800"
-        }`}>
-          {analyzeAllResult.total_created === -1 ? (
-            "Analysis failed. Make sure you have jobs added and try again."
-          ) : (
-            <>
-              <span className="font-semibold">✦ AI Analysis complete.</span>
-              {" "}{analyzeAllResult.total_created} analyses created across {analyzeAllResult.total_candidates} candidates.
-              {analyzeAllResult.no_text_count > 0 && (
-                <span className="ml-1 text-violet-600">
-                  ({analyzeAllResult.no_text_count} skipped — no extractable text)
-                </span>
-              )}
-            </>
-          )}
-          <button
-            type="button"
-            onClick={() => setAnalyzeAllResult(null)}
-            className="ml-3 text-xs opacity-50 hover:opacity-100"
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
-      {/* ── Upload zone ─────────────────────────────────────────── */}
+      {/* ── Upload ── */}
       <UploadZone onFilesAdded={handleFilesAdded} />
       <UploadQueue items={uploadQueue} />
 
-      {/* ── Stat pills + search ─────────────────────────────────── */}
-      {!listLoading && !listError && candidates.length > 0 && (
-        <Panel className="space-y-3 p-4 md:p-5">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Filter Candidates</p>
-              <p className="mt-1 text-sm text-slate-600">Switch between stages or search by candidate, email, or matched job.</p>
-            </div>
-            <p className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-              {filtered.length} visible of {candidates.length}
-            </p>
-          </div>
-          <StatPills candidates={candidates} activeFilter={stageFilter} onFilter={setStageFilter} />
-          <input
-            type="text"
-            placeholder="Search by name, email, or job…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-slate-400"
-          />
-        </Panel>
-      )}
-
-      {/* ── Candidate list ──────────────────────────────────────── */}
-      {listLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 3 }, (_, i) => (
-            <div key={i} className="h-36 animate-pulse rounded-3xl bg-slate-100" />
+      {/* ── Table ── */}
+      {loading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 5 }, (_, i) => (
+            <div key={i} className="h-14 animate-pulse rounded-xl bg-slate-100" />
           ))}
         </div>
-      ) : listError ? (
-        <Panel className="p-6">
-          <p className="text-sm font-semibold text-rose-600">{listError}</p>
-          <button
-            type="button"
-            onClick={() => { setListError(null); setListLoading(true); void loadCandidates(); }}
-            className="mt-4 rounded-xl bg-brand-800 px-4 py-2 text-xs font-semibold text-white"
-          >
-            Retry
-          </button>
-        </Panel>
+      ) : error ? (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-5">
+          <p className="text-sm font-semibold text-rose-600">{error}</p>
+          <button type="button" onClick={() => { setError(null); setLoading(true); void loadCandidates(); }}
+            className="mt-3 rounded-lg bg-brand-800 px-4 py-1.5 text-xs font-semibold text-white">Retry</button>
+        </div>
       ) : candidates.length === 0 ? (
-        <Panel className="p-10 text-center">
-          <p className="text-base font-semibold text-slate-900">No candidates yet</p>
-          <p className="mt-2 text-sm text-slate-500">Upload resumes using the zone above to start.</p>
-        </Panel>
-      ) : filtered.length === 0 ? (
-        <Panel className="p-8 text-center">
-          <p className="text-sm font-semibold text-slate-700">No candidates match this filter</p>
-          <button
-            type="button"
-            onClick={() => { setSearch(""); setStageFilter("all"); }}
-            className="mt-3 text-xs font-medium text-slate-500 underline underline-offset-2"
-          >
-            Clear filters
-          </button>
-        </Panel>
+        <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
+          <Upload size={24} className="mx-auto mb-3 text-slate-300" />
+          <p className="text-sm font-semibold text-slate-700">No candidates yet</p>
+          <p className="mt-1 text-xs text-slate-400">Upload resumes above to get started.</p>
+        </div>
       ) : (
-        <ul className="space-y-3">
-          {filtered.map((c) => (
-            <CandidateCard
-              key={c.id}
-              candidate={c}
-              onStageChange={handleStageChange}
-              onDelete={handleDelete}
-            />
-          ))}
-          <p className="pt-1 text-center text-xs text-slate-400">
-            {filtered.length} of {candidates.length} candidate{candidates.length !== 1 ? "s" : ""}
-            {stageFilter !== "all" || search ? ` · ${fmtDate(new Date().toISOString())}` : ""}
-          </p>
-        </ul>
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50">
+                <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Candidate</th>
+                <th className="hidden px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 md:table-cell">Extracted Skills</th>
+                <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Stage</th>
+                <th className="hidden px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 lg:table-cell">Best Match</th>
+                <th className="hidden px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 xl:table-cell">Added</th>
+                <th className="px-4 py-3" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {candidates.map((c) => {
+                const name = c.parsed_name ?? c.title;
+                const skills = c.best_match_keywords.slice(0, 3);
+                return (
+                  <tr key={c.id} className="group transition hover:bg-slate-50/70">
+                    {/* Name + email */}
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-[11px] font-bold text-white ${
+                          c.stage === "shortlisted" ? "bg-emerald-500" :
+                          c.stage === "interview"   ? "bg-violet-500"  :
+                          c.stage === "rejected"    ? "bg-slate-300"   : "bg-slate-600"
+                        }`}>
+                          {initials(name)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-[13px] font-semibold text-slate-900">{name}</p>
+                          {c.email && <p className="truncate text-[11px] text-slate-400">{c.email}</p>}
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Skills */}
+                    <td className="hidden px-4 py-3 md:table-cell">
+                      <div className="flex flex-wrap gap-1">
+                        {skills.length > 0 ? skills.map((s) => (
+                          <span key={s} className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">{s}</span>
+                        )) : (
+                          <span className="text-[11px] text-slate-300">—</span>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* Stage */}
+                    <td className="px-4 py-3">
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${STAGE_COLORS[c.stage]}`}>
+                        {STAGE_LABELS[c.stage]}
+                      </span>
+                    </td>
+
+                    {/* Best match */}
+                    <td className="hidden px-4 py-3 lg:table-cell">
+                      {c.best_match_job && c.best_match_score !== null ? (
+                        <div>
+                          <p className="truncate text-[12px] font-medium text-slate-700 max-w-[140px]">{c.best_match_job}</p>
+                          <p className={`text-[11px] font-bold ${scoreText(c.best_match_score)}`}>
+                            {Math.round(c.best_match_score)}%
+                          </p>
+                        </div>
+                      ) : (
+                        <span className="text-[11px] text-slate-300">No analysis</span>
+                      )}
+                    </td>
+
+                    {/* Date */}
+                    <td className="hidden px-4 py-3 text-[11px] text-slate-400 xl:table-cell">
+                      {fmtDate(c.created_at)}
+                    </td>
+
+                    {/* Action */}
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/recruiter/candidates/${c.id}`}
+                        className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 opacity-0 transition hover:border-brand-300 hover:text-brand-700 group-hover:opacity-100"
+                      >
+                        View <ChevronRight size={11} />
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <div className="border-t border-slate-100 px-4 py-2.5 text-[11px] text-slate-400">
+            {candidates.length} candidate{candidates.length !== 1 ? "s" : ""}
+          </div>
+        </div>
       )}
     </div>
   );
