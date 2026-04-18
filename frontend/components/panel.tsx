@@ -9,7 +9,7 @@ type PanelProps = {
 export function Panel({ children, className = "" }: PanelProps) {
   return (
     <section
-      className={`rounded-3xl border border-slate-200 bg-white/90 shadow-sm shadow-slate-200/60 ${className}`.trim()}
+      className={`rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-brand-900/5 ${className}`.trim()}
     >
       {children}
     </section>

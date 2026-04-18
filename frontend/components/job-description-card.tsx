@@ -121,7 +121,7 @@ export function JobDescriptionCard({ onSaveComplete }: JobDescriptionCardProps) 
       </form>
 
       {jobDescriptionId ? (
-        <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-800">
+        <div className="mt-6 rounded-2xl border border-teal-light bg-teal-light/20 px-4 py-4 text-sm text-teal">
           <p className="font-semibold">Job description saved</p>
           <p className="mt-1">Title: {savedTitle}</p>
           <p className="mt-1">Record ID: {jobDescriptionId}</p>

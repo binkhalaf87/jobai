@@ -31,7 +31,7 @@ export async function SiteHeader() {
             href="/register"
             className="hidden rounded-full bg-brand-800 px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 md:inline-flex"
           >
-            جرب الآن
+            {t("getStarted")}
           </Link>
           <LocaleSwitcher />
         </div>

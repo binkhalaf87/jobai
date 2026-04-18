@@ -15,7 +15,7 @@ function formatDate(iso: string) {
 }
 
 const STATUS_BADGE: Record<string, string> = {
-  completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  completed: "bg-teal-light/30 text-teal border-teal-light",
   pending:   "bg-amber-50  text-amber-700  border-amber-200",
   failed:    "bg-rose-50   text-rose-700   border-rose-200",
 };
@@ -186,7 +186,7 @@ export default function DashboardEnhancementPage() {
             </p>
             {pageState === "streaming" && (
               <span className="inline-flex items-center gap-2 text-xs text-slate-500">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+                <span className="h-2 w-2 animate-pulse rounded-full bg-teal" />
                 Streaming
               </span>
             )}

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Panel } from "@/components/panel";
 import { loadDashboardOverview, type DashboardActivityItem, type DashboardOverviewData } from "@/lib/dashboard";
@@ -106,6 +107,7 @@ type StepConfig = {
 };
 
 function JourneyStepCard({ step }: { step: StepConfig }) {
+  const t = useTranslations();
   const { icon, title, description, done, href, score, badge } = step;
   const hasScore = score !== null && score !== undefined;
 
@@ -176,7 +178,7 @@ function JourneyStepCard({ step }: { step: StepConfig }) {
           </svg>
         ) : (
           <div className="flex items-center gap-1 text-xs font-semibold text-slate-400 transition-colors group-hover:text-brand-600">
-            ابدأ
+            {t("dashboard.overview.start")}
             <IconArrow />
           </div>
         )}
@@ -193,6 +195,7 @@ function HeroCard({
   overview: DashboardOverviewData;
   onRefresh: () => void;
 }) {
+  const t = useTranslations();
   const completed = overview.metrics.completedJourneySteps;
   const total = 6;
   const pct = Math.round((completed / total) * 100);
@@ -201,7 +204,7 @@ function HeroCard({
   const sent = overview.metrics.applicationsSent ?? 0;
 
   const readinessLabel =
-    pct === 100 ? "جاهز تماماً 🚀" : pct >= 60 ? "تقدم جيد، استمر!" : "ابدأ رحلتك الآن";
+    pct === 100 ? t("dashboard.overview.readiness.complete") : pct >= 60 ? t("dashboard.overview.readiness.good") : t("dashboard.overview.readiness.start");
 
   const stats = [
     {
@@ -211,7 +214,7 @@ function HeroCard({
           <polyline points="14 2 14 8 20 8" />
         </svg>
       ),
-      label: overview.metrics.activeResumeTitle ?? "لا سيرة بعد",
+      label: overview.metrics.activeResumeTitle ?? t("dashboard.overview.noResume"),
       active: !!overview.metrics.activeResumeTitle,
     },
     {

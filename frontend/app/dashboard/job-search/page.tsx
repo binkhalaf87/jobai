@@ -58,7 +58,7 @@ function FitBadge({ score }: { score: number | null }) {
   const rounded = Math.round(score);
   const classes =
     rounded >= 70
-      ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+      ? "bg-teal-light/30 border-teal-light text-teal"
       : rounded >= 45
         ? "bg-amber-50 border-amber-200 text-amber-700"
         : "bg-rose-50 border-rose-200 text-rose-700";
@@ -119,7 +119,7 @@ function JobCard({
   const insights = buildJobMatchInsights(job);
 
   return (
-    <div className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md">
+    <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-brand-200 hover:shadow-md">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -160,7 +160,7 @@ function JobCard({
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{insights.headline}</p>
         <div className="mt-3 grid gap-3 md:grid-cols-2">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">Why it matches</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-teal">Why it matches</p>
             <ul className="mt-2 space-y-1.5 text-xs leading-5 text-slate-600">
               {insights.reasons.map((reason) => (
                 <li key={reason}>- {reason}</li>
@@ -212,7 +212,7 @@ function JobCard({
           <button
             type="button"
             onClick={() => onSmartSend(job)}
-            className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
+            className="rounded-xl border border-teal-light bg-teal-light/20 px-3 py-2 text-xs font-semibold text-teal transition hover:bg-teal-light/40"
           >
             Add to SmartSend
           </button>
@@ -226,7 +226,7 @@ function JobCard({
           <button
             type="button"
             onClick={() => onPracticeInterview(job)}
-            className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-700 transition hover:bg-violet-100"
+            className="rounded-xl border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-700 transition hover:bg-brand-100"
           >
             Practice interview
           </button>
@@ -269,7 +269,7 @@ function SavedJobCard({
   const salary = formatSalary(job.salary_min, job.salary_max, job.salary_currency);
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-brand-200 hover:shadow-md">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -317,7 +317,7 @@ function SavedJobCard({
           <button
             type="button"
             onClick={() => onSmartSend(job)}
-            className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
+            className="rounded-xl border border-teal-light bg-teal-light/20 px-3 py-2 text-xs font-semibold text-teal transition hover:bg-teal-light/40"
           >
             Add to SmartSend
           </button>
@@ -330,7 +330,7 @@ function SavedJobCard({
           <button
             type="button"
             onClick={() => onPracticeInterview(job)}
-            className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-700 transition hover:bg-violet-100"
+            className="rounded-xl border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-700 transition hover:bg-brand-100"
           >
             Practice interview
           </button>
@@ -501,7 +501,7 @@ export default function DashboardJobSearchPage() {
   return (
     <div className="space-y-6">
       <Panel className="overflow-hidden">
-        <div className="border-b border-slate-100 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_55%,#E8F4EE_100%)] px-6 py-7 md:px-8 md:py-8">
+        <div className="border-b border-brand-100 bg-gradient-to-br from-brand-800/8 via-white to-teal/5 px-6 py-7 md:px-8 md:py-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Step 4</p>

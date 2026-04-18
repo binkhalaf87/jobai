@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { useTranslations } from "next-intl";
 
 type AnswerMode = "text" | "video";
 type InterviewLanguage = "en" | "ar";
@@ -70,6 +71,7 @@ export function InterviewAnswerComposer({
   error,
   onSubmit,
 }: InterviewAnswerComposerProps) {
+  const t = useTranslations();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -94,11 +96,8 @@ export function InterviewAnswerComposer({
     Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
 
   const transcriptHint = useMemo(() => {
-    if (language === "ar") {
-      return "يمكنك تعديل النص قبل الإرسال. التقييم يعتمد على النص النهائي وليس الفيديو نفسه.";
-    }
-    return "You can edit the transcript before submitting. AI evaluation uses the final text, not the raw video.";
-  }, [language]);
+    return t("interview.transcriptHint");
+  }, [t]);
 
   function resetRecordedVideoUrl() {
     setRecordedVideoUrl((previousUrl) => {
@@ -323,10 +322,10 @@ export function InterviewAnswerComposer({
 
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-2">
-                <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${isCameraActive ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white text-slate-500"}`}>
+                <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${isCameraActive ? "border-teal-light bg-teal-light/30 text-teal" : "border-slate-200 bg-white text-slate-500"}`}>
                   {isCameraActive ? "Camera live" : "Camera off"}
                 </span>
-                <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${isRecordingVideo ? "border-indigo-200 bg-indigo-50 text-indigo-700" : "border-slate-200 bg-white text-slate-500"}`}>
+                <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${isRecordingVideo ? "border-brand-200 bg-brand-50 text-brand-700" : "border-slate-200 bg-white text-slate-500"}`}>
                   {isRecordingVideo ? "Recording" : "Not recording"}
                 </span>
                 <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${isListening ? "border-amber-200 bg-amber-50 text-amber-700" : "border-slate-200 bg-white text-slate-500"}`}>

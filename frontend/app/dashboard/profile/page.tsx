@@ -1,55 +1,99 @@
 import { Panel } from "@/components/panel";
 
-// Profile: user account details, preferences, and security settings.
 export default function DashboardProfilePage() {
   return (
     <div className="space-y-6">
-      <Panel className="p-8 md:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Profile</p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
-          Your account
-        </h1>
-        <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
-          Manage your details and basic preferences.
-        </p>
-      </Panel>
+      {/* Hero */}
+      <div className="relative overflow-hidden rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-800/8 via-white to-teal/5 p-6 md:p-8">
+        <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-brand-800/8 blur-2xl" />
+        <div className="pointer-events-none absolute -bottom-6 -left-6 h-24 w-24 rounded-full bg-teal/10 blur-2xl" />
+        <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-brand-800 text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-700">الحساب الشخصي</p>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900">ملفك الشخصي</h1>
+              <p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">
+                أدر معلوماتك الشخصية وتفضيلات الحساب وإعدادات الأمان.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
 
+      {/* Section cards */}
       <div className="grid gap-4 lg:grid-cols-3">
         {[
           {
-            title: "Personal details",
-            description: "Edit your main account details.",
+            icon: (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+              </svg>
+            ),
+            title: "المعلومات الشخصية",
+            description: "الاسم والبريد الإلكتروني والمعلومات الأساسية للحساب.",
           },
           {
-            title: "Security",
-            description: "Manage password and sign-in access.",
+            icon: (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            ),
+            title: "الأمان",
+            description: "كلمة المرور والجلسات وإعدادات الوصول.",
           },
           {
-            title: "Notifications",
-            description: "Control updates and alerts.",
+            icon: (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+            ),
+            title: "الإشعارات",
+            description: "التحكم في التنبيهات والتحديثات عبر البريد الإلكتروني.",
           },
         ].map((section) => (
-          <Panel key={section.title} className="p-6">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{section.title}</p>
-            <p className="mt-3 text-sm leading-7 text-slate-600">{section.description}</p>
-          </Panel>
+          <div key={section.title} className="rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-brand-200 hover:shadow-sm">
+            <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+              {section.icon}
+            </div>
+            <p className="text-sm font-bold text-slate-900">{section.title}</p>
+            <p className="mt-1.5 text-xs leading-5 text-slate-500">{section.description}</p>
+          </div>
         ))}
       </div>
 
+      {/* Details panel */}
       <Panel className="p-6 md:p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Details</p>
-        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Main account info</h2>
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">التفاصيل</p>
+        <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900">معلومات الحساب الرئيسية</h2>
         <div className="mt-6 grid gap-4 md:grid-cols-2">
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-            <p className="text-sm font-semibold text-slate-900">Profile</p>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              Name, email, and basic preferences appear here.
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
+            <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+              </svg>
+            </div>
+            <p className="text-sm font-bold text-slate-900">الملف الشخصي</p>
+            <p className="mt-2 text-xs leading-5 text-slate-500">
+              الاسم والبريد والتفضيلات الأساسية تظهر هنا.
             </p>
           </div>
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-            <p className="text-sm font-semibold text-slate-900">Security</p>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              Password and session controls appear here.
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
+            <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            </div>
+            <p className="text-sm font-bold text-slate-900">الأمان</p>
+            <p className="mt-2 text-xs leading-5 text-slate-500">
+              أدوات التحكم في كلمة المرور والجلسات تظهر هنا.
             </p>
           </div>
         </div>

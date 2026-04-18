@@ -24,6 +24,136 @@
     "current": "English"
   },
 
+  "marketing": {
+    "services": {
+      "jobSearch": {
+        "title": "Job Search",
+        "description": "Find opportunities that match your professional profile and skills."
+      },
+      "resumeAnalysis": {
+        "title": "Resume Analysis",
+        "description": "Get an intelligent evaluation of your resume with improvements for weak sections."
+      },
+      "jobMatching": {
+        "title": "Job Matching",
+        "description": "Match your resume with jobs closest to your experience and professional values."
+      }
+    },
+    "features": {
+      "aiPowered": {
+        "title": "AI-Powered",
+        "description": "Self-learning systems for accurate resume analysis and job matching.",
+        "badge": "Technical"
+      },
+      "simpleInterface": {
+        "title": "Simple and Fast Interface",
+        "description": "Clean design that gives you an organized experience and quick access to information.",
+        "badge": "UX"
+      },
+      "rtlSupport": {
+        "title": "Full RTL and Arabic Support",
+        "description": "Content designed for Arabic with right alignment and natural flow.",
+        "badge": "Custom"
+      }
+    },
+    "jobs": {
+      "aiAnalyst": {
+        "title": "AI Capabilities Analyst",
+        "company": "Elm Tech Company",
+        "location": "Riyadh",
+        "type": "Full Time"
+      },
+      "recruitmentEngineer": {
+        "title": "Recruitment Development Engineer",
+        "company": "CareFusion",
+        "location": "Jeddah",
+        "type": "Part Time"
+      },
+      "uxManager": {
+        "title": "User Experience Manager",
+        "company": "AI Talent",
+        "location": "Dammam",
+        "type": "Remote"
+      }
+    },
+    "hero": {
+      "badge": "Smart Recruitment Platform",
+      "title": "Save time and build your career path with AI-powered recruitment",
+      "description": "JobAI offers a modern Arabic experience that combines Elm's professionalism with the technical character of SaaS products, so you can find the right job and control the details of your path easily.",
+      "cta": "Get Started",
+      "quickTour": "Quick Tour",
+      "stats": {
+        "fasterMatching": "35%",
+        "fasterMatchingDesc": "Faster in finding the best match",
+        "resumesAnalyzed": "120+",
+        "resumesAnalyzedDesc": "Smart CV certificates analyzed",
+        "userSatisfaction": "8.9/10",
+        "userSatisfactionDesc": "User satisfaction with smart suggestions"
+      },
+      "demo": {
+        "nextJob": "Your Next Job",
+        "jobTitle": "AI Data Analyst",
+        "status": "Candidate",
+        "features": {
+          "smartAnalysis": "Smart CV Analysis",
+          "recommendations": "Recommendations",
+          "recommendationsDesc": "Strengths, keywords, and best work sections.",
+          "matchingSkills": "Matching Skills",
+          "inviteTitle": "Trial Invitation",
+          "inviteDesc": "Experience smart search and accurate matching with job opportunities that match your professional profile."
+        }
+      }
+    },
+    "services": {
+      "eyebrow": "Our Services",
+      "title": "Integrated Recruitment Tools for Every Stage",
+      "description": "From CV analysis to job matching and creating a professional profile, everything in one place.",
+      "viewDetails": "View Details"
+    },
+    "dashboardPreview": {
+      "eyebrow": "User Dashboard",
+      "title": "Overview of Your Account Performance",
+      "badge": "AI Experience",
+      "stats": {
+        "todayMatch": "Today's Match",
+        "todayMatchValue": "82%",
+        "todayMatchDesc": "Opportunities presented to you today",
+        "cvScore": "Your CV",
+        "cvScoreValue": "95",
+        "cvScoreDesc": "Compatibility and clarity score",
+        "jobSuggestions": "Job Suggestions",
+        "jobSuggestionsValue": "14",
+        "jobSuggestionsDesc": "Opportunities suitable for your professional style"
+      },
+      "insights": {
+        "topCandidate": "Your Strongest Candidate Today",
+        "topCandidateDesc": "AI Engineer for an opportunity in Riyadh with high interview rates.",
+        "quickTip": "Quick Tip",
+        "quickTipDesc": "Add recent experience keywords to enhance your match with technical jobs."
+      }
+    },
+    "jobs": {
+      "eyebrow": "Latest Announcements",
+      "title": "Suitable Opportunities in AI Field",
+      "updated": "Updated"
+    },
+    "why": {
+      "title": "Why JobAI?",
+      "points": [
+        "Experience designed for Arabic and RTL from the beginning.",
+        "Simple design and organized interface to focus on the important.",
+        "AI automation that helps you in every step."
+      ]
+    },
+    "cta": {
+      "eyebrow": "Get Started",
+      "title": "Make Your Job Search Shorter and More Accurate",
+      "description": "Explore precise opportunities, develop your resume, and start your career journey with confidence with an interface designed for the most ambitious users.",
+      "register": "Register Now",
+      "login": "Login"
+    }
+  },
+
   "auth": {
     "login": {
       "eyebrow": "Account Access",
@@ -145,6 +275,12 @@
         "uploaded": "Uploaded",
         "failed": "Failed"
       },
+      "statusLabels": {
+        "parsed": "Ready",
+        "processing": "Processing",
+        "uploaded": "Uploaded",
+        "failed": "Failed"
+      },
       "preview": {
         "pdfTitle": "PDF Preview",
         "docxTitle": "Word Document",
@@ -217,7 +353,8 @@
       "strengths": "Top Strengths",
       "improvements": "Priority Improvements",
       "drills": "Recommended Practice"
-    }
+    },
+    "transcriptHint": "You can edit the transcript before submitting. AI evaluation uses the final text, not the raw video."
   },
 
   "jobs": {
@@ -295,6 +432,49 @@
         "experience": "Experience",
         "topMatch": "Best Match",
         "fileUnavailable": "File not available"
+      }
+  },
+
+  "settings": {
+    "eyebrow": "Settings",
+    "title": "Workspace Settings",
+    "description": "Manage your account and workspace settings easily.",
+    "sections": {
+      "profile": {
+        "title": "Profile",
+        "description": "Basic account details and personal information."
+      },
+      "security": {
+        "title": "Security",
+        "description": "Password, access settings, and session history."
+      },
+      "notifications": {
+        "title": "Notifications",
+        "description": "Email alerts and product updates."
+      }
+    },
+    "comingSoon": {
+      "eyebrow": "Coming Soon",
+      "title": "Ready for Future Features",
+      "profile": {
+        "title": "Profile",
+        "description": "Key details appear here."
+      },
+      "workspace": {
+        "title": "Workspace",
+        "description": "Theme and default behavior appear here."
+      }
+    }
+  },
+
+  "dashboard": {
+    "overview": {
+      "start": "Start",
+      "noResume": "No CV yet",
+      "readiness": {
+        "complete": "Ready completely 🚀",
+        "good": "Good progress, keep going!",
+        "start": "Start your journey now"
       }
     }
   }

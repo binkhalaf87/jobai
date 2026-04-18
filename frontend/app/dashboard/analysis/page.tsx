@@ -70,10 +70,10 @@ function AtsScoreRing({ score }: { score: number }) {
   const r = 52;
   const circ = 2 * Math.PI * r;
   const filled = (score / 100) * circ;
-  const color = score >= 80 ? "#10b981" : score >= 65 ? "#3b82f6" : score >= 50 ? "#f59e0b" : "#ef4444";
+  const color = score >= 80 ? "#00A878" : score >= 65 ? "#2057A6" : score >= 50 ? "#f59e0b" : "#ef4444";
   const label = score >= 80 ? "Excellent" : score >= 65 ? "Good" : score >= 50 ? "Fair" : "Needs Work";
-  const labelColor = score >= 80 ? "text-emerald-600" : score >= 65 ? "text-blue-600" : score >= 50 ? "text-amber-600" : "text-rose-600";
-  const bgColor = score >= 80 ? "bg-emerald-50 border-emerald-200" : score >= 65 ? "bg-blue-50 border-blue-200" : score >= 50 ? "bg-amber-50 border-amber-200" : "bg-rose-50 border-rose-200";
+  const labelColor = score >= 80 ? "text-teal" : score >= 65 ? "text-brand-700" : score >= 50 ? "text-amber-600" : "text-rose-600";
+  const bgColor = score >= 80 ? "bg-teal-light/20 border-teal-light" : score >= 65 ? "bg-brand-50 border-brand-200" : score >= 50 ? "bg-amber-50 border-amber-200" : "bg-rose-50 border-rose-200";
 
   return (
     <div className={`flex items-center gap-5 rounded-2xl border p-5 ${bgColor}`}>
@@ -241,30 +241,36 @@ function NextStepsPanel({
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
         <Link
           href="/dashboard/job-search"
-          className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300 hover:bg-white"
+          className="flex flex-col gap-2 rounded-xl border-2 border-slate-200 bg-white p-4 transition hover:border-brand-300 hover:bg-brand-50/40"
         >
-          <span className="text-base">🔍</span>
-          <p className="text-sm font-semibold text-slate-900">Find jobs</p>
-          <p className="text-xs text-slate-500">See roles that fit.</p>
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+          </div>
+          <p className="text-sm font-bold text-slate-900">بحث الوظائف</p>
+          <p className="text-xs text-slate-500">اعثر على الأدوار التي تناسبك.</p>
         </Link>
         <button
           type="button"
           onClick={goToInterview}
-          className="flex flex-col items-start gap-2 rounded-xl border border-violet-200 bg-violet-50 p-4 text-left transition hover:border-violet-300 hover:bg-violet-100"
+          className="flex flex-col items-start gap-2 rounded-xl border-2 border-brand-200 bg-brand-50 p-4 text-left transition hover:border-brand-400 hover:bg-brand-100"
         >
-          <span className="text-base">🎤</span>
-          <p className="text-sm font-semibold text-violet-900">Practice interview</p>
-          <p className="text-xs text-violet-600">
-            {jobDescription ? "JD will be pre-loaded automatically." : "Simulate a mock interview session."}
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-800 text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+          </div>
+          <p className="text-sm font-bold text-brand-900">تدريب المقابلات</p>
+          <p className="text-xs text-brand-600">
+            {jobDescription ? "سيتم تحميل الوصف الوظيفي تلقائياً." : "محاكاة مقابلة واقعية."}
           </p>
         </button>
         <Link
           href="/dashboard/smart-send"
-          className="flex flex-col gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4 transition hover:border-emerald-300 hover:bg-emerald-100"
+          className="flex flex-col gap-2 rounded-xl border-2 border-teal-light bg-teal-light/20 p-4 transition hover:border-teal/40 hover:bg-teal-light/35"
         >
-          <span className="text-base">📬</span>
-          <p className="text-sm font-semibold text-emerald-900">Send with SmartSend</p>
-          <p className="text-xs text-emerald-600">Send your CV in batches.</p>
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+          </div>
+          <p className="text-sm font-bold text-teal">SmartSend</p>
+          <p className="text-xs text-teal/70">أرسل سيرتك إلى شركات متعددة.</p>
         </Link>
       </div>
     </div>
@@ -274,7 +280,7 @@ function NextStepsPanel({
 // ─── Status badge ─────────────────────────────────────────────────────────────
 
 const STATUS_BADGE: Record<string, string> = {
-  completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  completed: "bg-teal-light/30 text-teal border-teal-light",
   pending:   "bg-amber-50 text-amber-700 border-amber-200",
   failed:    "bg-rose-50 text-rose-700 border-rose-200",
 };
@@ -430,7 +436,7 @@ export default function DashboardAnalysisPage() {
           >
             {pageState === "streaming" ? (
               <span className="flex items-center gap-2">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+                <span className="h-2 w-2 animate-pulse rounded-full bg-teal" />
                 Generating report…
               </span>
             ) : "Run Analysis"}
@@ -442,7 +448,7 @@ export default function DashboardAnalysisPage() {
       {pageState === "streaming" && (
         <Panel className="p-6 md:p-8">
           <div className="mb-4 flex items-center gap-2">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+            <span className="h-2 w-2 animate-pulse rounded-full bg-teal" />
             <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Building your report…</p>
           </div>
           <div ref={outputRef} className={PROSE_CLS}>
