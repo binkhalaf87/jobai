@@ -134,17 +134,17 @@ export default function HomePage() {
                 <div className="rounded-2xl bg-brand-800 px-3 py-2 text-xs font-semibold text-white">مرشح</div>
               </div>
               <div className="grid gap-4">
-                <div className="space-y-2 rounded-3xl bg-slate-900/60 p-5">
+                <div className="space-y-2 rounded-3xl bg-brand-900/60 p-5">
                   <div className="flex items-center gap-3 text-sm text-slate-200">
                     <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">CV</span>
                     <span>تحليل السيرة الذاتية الذكي</span>
                   </div>
-                  <div className="rounded-3xl border border-white/10 bg-slate-950/90 p-4 text-sm text-slate-200">
+                  <div className="rounded-3xl border border-white/10 bg-brand-900/90 p-4 text-sm text-slate-200">
                     <p className="font-semibold">التوصيات</p>
                     <p className="mt-2 text-xs text-slate-400">نقاط القوة، الكلمات المفتاحية، ومقاطع العمل الأفضل.</p>
                   </div>
                 </div>
-                <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-5 text-sm text-slate-200">
+                <div className="rounded-3xl border border-white/10 bg-brand-900/70 p-5 text-sm text-slate-200">
                   <p className="font-semibold">المهارات المطابقة</p>
                   <div className="mt-4 flex flex-wrap gap-2">
                     {['Python','Data','AI','SQL'].map((skill) => (
@@ -161,7 +161,7 @@ export default function HomePage() {
               </div>
             </div>
             <div className="pointer-events-none absolute -right-10 top-10 h-16 w-16 rounded-full bg-brand-500/20 blur-2xl" />
-            <div className="pointer-events-none absolute -left-10 bottom-10 h-28 w-28 rounded-full bg-tech-light opacity-80 blur-3xl" />
+            <div className="pointer-events-none absolute -left-10 bottom-10 h-28 w-28 rounded-full bg-teal-light opacity-80 blur-3xl" />
           </div>
         </div>
       </section>

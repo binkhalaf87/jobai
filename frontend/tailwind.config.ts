@@ -11,24 +11,24 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          50: "#eef4ff",
-          100: "#dce7ff",
-          200: "#b8d0ff",
-          300: "#8aa8ff",
-          400: "#5b7fff",
-          500: "#3f7ad8",
-          600: "#2f5cc1",
-          700: "#1f4594",
-          800: "#152e68",
-          900: "#0e234a"
+          50: "#EEF2F9",
+          100: "#D0DDF0",
+          200: "#A2BCE1",
+          300: "#7098CE",
+          400: "#4474BA",
+          500: "#2057A6",
+          600: "#1A468C",
+          700: "#143570",
+          800: "#0D2355",
+          900: "#08183C"
         },
-        tech: {
-          DEFAULT: "#8C5CF7",
-          light: "#E8D8FF"
+        teal: {
+          DEFAULT: "#00A878",
+          light: "#CCF0E4"
         },
         mint: {
-          DEFAULT: "#34C38F",
-          light: "#DBF8F0"
+          DEFAULT: "#00B37E",
+          light: "#D4F5EA"
         }
       },
       boxShadow: {

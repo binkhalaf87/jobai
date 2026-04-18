@@ -45,7 +45,7 @@ export function NewAnalysisShell() {
             href={analysisHref}
             className={`rounded-2xl px-5 py-3 text-sm font-semibold transition ${
               latestResumeId && latestJobDescriptionId
-                ? "bg-slate-900 text-white hover:bg-slate-700"
+                ? "bg-brand-800 text-white hover:bg-brand-700"
                 : "pointer-events-none border border-slate-300 bg-white text-slate-400"
             }`}
           >

@@ -191,7 +191,7 @@ export default function AIInterviewPage() {
             </p>
             <Link
               href={jobs.length === 0 ? "/recruiter/jobs" : "/recruiter/candidates"}
-              className="mt-4 inline-flex rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+              className="mt-4 inline-flex rounded-full bg-brand-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
             >
               {jobs.length === 0 ? "Add a job" : "Upload candidates"}
             </Link>
@@ -277,7 +277,7 @@ export default function AIInterviewPage() {
                 type="button"
                 onClick={() => void generate()}
                 disabled={generating || !selectedJobId || !selectedCandidateId}
-                className="rounded-2xl bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-50"
+                className="rounded-2xl bg-brand-800 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50"
               >
                 {generating ? "Generating questions…" : "Generate Interview"}
               </button>

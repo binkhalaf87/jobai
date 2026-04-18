@@ -175,7 +175,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
         <button
           type="button"
           onClick={() => void loadBillingState()}
-          className="mt-6 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
+          className="mt-6 rounded-full bg-brand-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700"
         >
           Retry
         </button>
@@ -298,7 +298,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                       type="button"
                       disabled={!contact.phone_number.trim() || pendingPlanCode === plan.code}
                       onClick={() => void startCheckout(plan.code)}
-                      className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                      className="rounded-full bg-brand-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                     >
                       {pendingPlanCode === plan.code ? "Creating checkout…" : isCurrent ? "Renew / change with Paymob" : "Choose with Paymob"}
                     </button>

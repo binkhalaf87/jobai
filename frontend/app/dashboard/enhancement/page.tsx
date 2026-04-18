@@ -170,7 +170,7 @@ export default function DashboardEnhancementPage() {
             type="button"
             disabled={!canSubmit}
             onClick={() => void handleRequestEnhancement()}
-            className="rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl bg-brand-800 px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {pageState === "streaming" ? "Rewriting resume…" : "Enhance Resume"}
           </button>

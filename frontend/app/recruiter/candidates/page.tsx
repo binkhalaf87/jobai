@@ -381,7 +381,7 @@ function CandidateCard({
           {/* View profile */}
           <Link
             href={`/recruiter/candidates/${candidate.id}`}
-            className="rounded-xl bg-slate-900 px-3 py-2 text-center text-xs font-semibold text-white transition hover:bg-slate-700"
+            className="rounded-xl bg-brand-800 px-3 py-2 text-center text-xs font-semibold text-white transition hover:bg-brand-700"
           >
             View Profile
           </Link>
@@ -648,7 +648,7 @@ export default function RecruiterCandidatesPage() {
               </div>
             </div>
           </div>
-          <div className="border-t border-slate-200 bg-slate-950 px-6 py-6 text-white xl:border-l xl:border-t-0">
+          <div className="border-t border-slate-200 bg-brand-900 px-6 py-6 text-white xl:border-l xl:border-t-0">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Next Priority</p>
             <div className="mt-4 rounded-[1.75rem] border border-white/10 bg-white/5 p-4">
               <p className="text-lg font-semibold">{nextPriorityLabel}</p>
@@ -762,7 +762,7 @@ export default function RecruiterCandidatesPage() {
           <button
             type="button"
             onClick={() => { setListError(null); setListLoading(true); void loadCandidates(); }}
-            className="mt-4 rounded-xl bg-slate-900 px-4 py-2 text-xs font-semibold text-white"
+            className="mt-4 rounded-xl bg-brand-800 px-4 py-2 text-xs font-semibold text-white"
           >
             Retry
           </button>

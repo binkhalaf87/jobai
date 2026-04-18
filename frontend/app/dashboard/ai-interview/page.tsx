@@ -322,7 +322,7 @@ export default function DashboardAiInterviewPage() {
             </div>
           </div>
 
-          <div className="border-t border-slate-200 bg-slate-950 px-6 py-6 text-white lg:border-l lg:border-t-0">
+          <div className="border-t border-slate-200 bg-brand-900 px-6 py-6 text-white lg:border-l lg:border-t-0">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Best Practice Flow</p>
             <div className="mt-4 space-y-3">
               <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
@@ -375,14 +375,14 @@ export default function DashboardAiInterviewPage() {
             <div className="space-y-2">{EXPERIENCE_LEVELS.map((item) => <label key={item.value} className="flex items-center gap-2 text-sm"><input type="radio" checked={setup.level === item.value} onChange={() => setSetup((p) => ({ ...p, level: item.value }))} />{item.label}</label>)}</div>
             <div className="space-y-2">{INTERVIEW_TYPES.map((item) => <label key={item.value} className="flex items-center gap-2 text-sm"><input type="radio" checked={setup.type === item.value} onChange={() => setSetup((p) => ({ ...p, type: item.value }))} />{item.label}</label>)}</div>
             <div className="flex gap-3">{(["en", "ar"] as const).map((language) => <label key={language} className="flex items-center gap-2 text-sm"><input type="radio" checked={setup.language === language} onChange={() => setSetup((p) => ({ ...p, language }))} />{language === "en" ? "English" : "Arabic"}</label>)}</div>
-            <div className="flex gap-3">{QUESTION_COUNTS.map((count) => <button key={count} type="button" onClick={() => setSetup((p) => ({ ...p, count }))} className={`rounded-xl border px-4 py-2 text-sm font-semibold ${setup.count === count ? "border-slate-900 bg-slate-900 text-white" : "border-slate-300 bg-white text-slate-700"}`}>{count}</button>)}</div>
+            <div className="flex gap-3">{QUESTION_COUNTS.map((count) => <button key={count} type="button" onClick={() => setSetup((p) => ({ ...p, count }))} className={`rounded-xl border px-4 py-2 text-sm font-semibold ${setup.count === count ? "border-brand-800 bg-brand-800 text-white" : "border-slate-300 bg-white text-slate-700"}`}>{count}</button>)}</div>
             <div className="md:col-span-2 grid gap-3 md:grid-cols-3">
-              {INTERVIEWER_STYLES.map((style) => <button key={style.value} type="button" onClick={() => setSetup((p) => ({ ...p, interviewerStyle: style.value }))} className={`rounded-2xl border p-4 text-left ${setup.interviewerStyle === style.value ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-slate-50 text-slate-700"}`}><p className="text-sm font-semibold">{style.label}</p><p className={`mt-2 text-xs ${setup.interviewerStyle === style.value ? "text-slate-200" : "text-slate-500"}`}>{style.desc}</p></button>)}
+              {INTERVIEWER_STYLES.map((style) => <button key={style.value} type="button" onClick={() => setSetup((p) => ({ ...p, interviewerStyle: style.value }))} className={`rounded-2xl border p-4 text-left ${setup.interviewerStyle === style.value ? "border-brand-800 bg-brand-800 text-white" : "border-slate-200 bg-slate-50 text-slate-700"}`}><p className="text-sm font-semibold">{style.label}</p><p className={`mt-2 text-xs ${setup.interviewerStyle === style.value ? "text-slate-200" : "text-slate-500"}`}>{style.desc}</p></button>)}
             </div>
             <textarea value={setup.jobDescription} onChange={(e) => setSetup((p) => ({ ...p, jobDescription: e.target.value }))} rows={6} placeholder="Paste job description (optional but recommended)" className="md:col-span-2 rounded-xl border border-slate-300 px-4 py-3 text-sm" />
           </div>
           {pageError && <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{pageError}</div>}
-          <button type="button" disabled={!setup.jobTitle.trim() || pageState === "generating"} onClick={() => void handleStart()} className="mt-6 rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white disabled:opacity-50">{pageState === "generating" ? "Preparing interviewer..." : "Start AI Interview"}</button>
+          <button type="button" disabled={!setup.jobTitle.trim() || pageState === "generating"} onClick={() => void handleStart()} className="mt-6 rounded-xl bg-brand-800 px-6 py-3 text-sm font-semibold text-white disabled:opacity-50">{pageState === "generating" ? "Preparing interviewer..." : "Start AI Interview"}</button>
         </Panel>
       )}
 
@@ -437,7 +437,7 @@ export default function DashboardAiInterviewPage() {
               {currentEvaluation.weaknesses.length > 0 && <div><p className="mb-2 text-xs font-semibold uppercase tracking-widest text-amber-700">Improvements</p><ul className="space-y-1.5 text-sm text-slate-700">{currentEvaluation.weaknesses.map((item) => <li key={item}>-&gt; {item}</li>)}</ul></div>}
               {currentEvaluation.improved_answer && <div><p className="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-500">Suggested Stronger Answer</p><div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm leading-relaxed text-slate-700">{currentEvaluation.improved_answer}</div></div>}
               {nextQuestion && <div className="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-800"><p className="text-[10px] font-semibold uppercase tracking-widest text-indigo-500">Next Question Ready</p><p className="mt-2">{nextQuestion.question}</p></div>}
-              <button type="button" disabled={pageState === "completing"} onClick={() => void handleNext()} className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{pageState === "completing" ? "Generating final report..." : currentIndex + 1 >= questionCount ? "View Final Report" : "Next Question ->"}</button>
+              <button type="button" disabled={pageState === "completing"} onClick={() => void handleNext()} className="rounded-xl bg-brand-800 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{pageState === "completing" ? "Generating final report..." : currentIndex + 1 >= questionCount ? "View Final Report" : "Next Question ->"}</button>
             </div>
           )}
         </Panel>

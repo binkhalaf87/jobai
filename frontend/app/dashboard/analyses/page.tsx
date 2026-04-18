@@ -53,7 +53,7 @@ export default function DashboardAnalysesPage() {
           </div>
           <Link
             href="/dashboard/new-analysis"
-            className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+            className="rounded-2xl bg-brand-800 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
           >
             Run a new analysis
           </Link>

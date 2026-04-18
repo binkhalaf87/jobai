@@ -242,7 +242,7 @@ function JobCard({
           href={job.apply_link}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
+          className="inline-flex items-center justify-center rounded-xl bg-brand-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700"
         >
           Open external application
         </a>
@@ -346,7 +346,7 @@ function SavedJobCard({
           href={job.apply_link}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-4 inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
+          className="mt-4 inline-flex items-center justify-center rounded-xl bg-brand-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700"
         >
           Open external application
         </a>
@@ -501,7 +501,7 @@ export default function DashboardJobSearchPage() {
   return (
     <div className="space-y-6">
       <Panel className="overflow-hidden">
-        <div className="border-b border-slate-100 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_55%,#ecfeff_100%)] px-6 py-7 md:px-8 md:py-8">
+        <div className="border-b border-slate-100 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_55%,#E8F4EE_100%)] px-6 py-7 md:px-8 md:py-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Step 4</p>
@@ -531,7 +531,7 @@ export default function DashboardJobSearchPage() {
                 <p className="text-sm font-semibold text-slate-950">{nextActionLabel}</p>
                 <Link
                   href={nextActionHref}
-                  className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-700"
+                  className="inline-flex items-center justify-center rounded-xl bg-brand-800 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-700"
                 >
                   Continue workflow
                 </Link>
@@ -593,7 +593,7 @@ export default function DashboardJobSearchPage() {
             type="button"
             disabled={!canSearch}
             onClick={() => void handleSearch(1)}
-            className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center justify-center rounded-xl bg-brand-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {pageState === "searching" ? "Searching..." : "Search jobs"}
           </button>

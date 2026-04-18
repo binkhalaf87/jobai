@@ -192,7 +192,7 @@ function AddJobForm({
             value={form.title}
             onChange={(e) => set("title", e.target.value)}
             placeholder="e.g. Senior Software Engineer"
-            className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+            className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-800 focus:ring-2 focus:ring-slate-900/10"
           />
         </div>
 
@@ -206,7 +206,7 @@ function AddJobForm({
             value={form.company_name}
             onChange={(e) => set("company_name", e.target.value)}
             placeholder="Optional"
-            className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+            className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-800 focus:ring-2 focus:ring-slate-900/10"
           />
         </div>
 
@@ -220,7 +220,7 @@ function AddJobForm({
             value={form.location}
             onChange={(e) => set("location", e.target.value)}
             placeholder="e.g. New York, USA"
-            className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+            className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-800 focus:ring-2 focus:ring-slate-900/10"
           />
         </div>
 
@@ -234,7 +234,7 @@ function AddJobForm({
             onChange={(e) =>
               set("employment_type", e.target.value as EmploymentType | "")
             }
-            className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+            className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-800 focus:ring-2 focus:ring-slate-900/10"
           >
             <option value="">— Select —</option>
             {(Object.entries(EMPLOYMENT_TYPE_LABELS) as [EmploymentType, string][]).map(
@@ -258,7 +258,7 @@ function AddJobForm({
           onChange={(e) => set("description", e.target.value)}
           rows={5}
           placeholder="Enter job requirements, required skills, and responsibilities…"
-          className="resize-y rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+          className="resize-y rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-800 focus:ring-2 focus:ring-slate-900/10"
         />
       </div>
 
@@ -272,7 +272,7 @@ function AddJobForm({
         <button
           type="submit"
           disabled={saving}
-          className="rounded-2xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-50"
+          className="rounded-2xl bg-brand-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50"
         >
           {saving ? "Saving…" : "Save job"}
         </button>
@@ -570,7 +570,7 @@ export default function RecruiterJobsPage() {
             className={`rounded-2xl px-5 py-2.5 text-sm font-semibold transition ${
               showForm
                 ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                : "bg-slate-900 text-white hover:bg-slate-700"
+                : "bg-brand-800 text-white hover:bg-brand-700"
             }`}
           >
             {showForm ? "Cancel" : "Add job"}

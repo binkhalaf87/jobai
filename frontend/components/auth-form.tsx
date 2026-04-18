@@ -93,7 +93,7 @@ export function AuthForm({ mode }: AuthFormProps) {
                   onClick={() => setRole("jobseeker")}
                   className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
                     role === "jobseeker"
-                      ? "border-slate-900 bg-slate-900 text-white"
+                      ? "border-brand-800 bg-brand-800 text-white"
                       : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
                   }`}
                 >
@@ -104,7 +104,7 @@ export function AuthForm({ mode }: AuthFormProps) {
                   onClick={() => setRole("recruiter")}
                   className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
                     role === "recruiter"
-                      ? "border-slate-900 bg-slate-900 text-white"
+                      ? "border-brand-800 bg-brand-800 text-white"
                       : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
                   }`}
                 >
@@ -146,7 +146,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+          className="w-full rounded-2xl bg-brand-800 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-slate-400"
         >
           {isSubmitting ? t(`${ns}.submitting`) : t(`${ns}.submit`)}
         </button>

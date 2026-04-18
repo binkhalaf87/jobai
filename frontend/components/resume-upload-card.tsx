@@ -91,7 +91,7 @@ export function ResumeUploadCard({ onUploadComplete }: ResumeUploadCardProps) {
           void handleFile(event.dataTransfer.files[0] ?? null);
         }}
         className={`mt-6 rounded-3xl border border-dashed px-6 py-10 text-center transition ${
-          isDragging ? "border-slate-900 bg-slate-100" : "border-slate-300 bg-slate-50"
+          isDragging ? "border-brand-800 bg-slate-100" : "border-slate-300 bg-slate-50"
         }`}
       >
         <input
@@ -115,7 +115,7 @@ export function ResumeUploadCard({ onUploadComplete }: ResumeUploadCardProps) {
             <span>{t("uploadingProgress", { progress })}</span>
           </div>
           <div className="h-3 overflow-hidden rounded-full bg-slate-200">
-            <div className="h-full rounded-full bg-slate-900 transition-all" style={{ width: `${progress}%` }} />
+            <div className="h-full rounded-full bg-brand-800 transition-all" style={{ width: `${progress}%` }} />
           </div>
         </div>
       ) : null}

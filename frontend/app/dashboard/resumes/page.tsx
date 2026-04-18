@@ -230,7 +230,7 @@ export default function DashboardResumesPage() {
                               title={!isReady ? "Processing…" : undefined}
                               className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${
                                 isExpanded
-                                  ? "border-slate-900 bg-slate-900 text-white"
+                                  ? "border-brand-800 bg-brand-800 text-white"
                                   : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:text-slate-900"
                               }`}
                             >

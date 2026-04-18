@@ -4,11 +4,11 @@
 
 /* This file is the shared styling entrypoint for the frontend application. */
 :root {
-  --background: #f4f7fb;
-  --foreground: #0f172a;
+  --background: #F2F5FA;
+  --foreground: #0A1830;
   --surface: #ffffff;
-  --surface-soft: #f8fafc;
-  --border: #e2e8f0;
+  --surface-soft: #F7F9FC;
+  --border: #DDE3EE;
 }
 
 html {

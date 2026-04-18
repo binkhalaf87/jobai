@@ -180,7 +180,7 @@ export default function AIScreeningPage() {
             </p>
             <Link
               href="/recruiter/jobs"
-              className="mt-4 inline-flex rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+              className="mt-4 inline-flex rounded-full bg-brand-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
             >
               Add a job
             </Link>
@@ -229,7 +229,7 @@ export default function AIScreeningPage() {
               type="button"
               onClick={() => void runScreening()}
               disabled={loadingResults || !selectedJobId}
-              className="rounded-2xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-50"
+              className="rounded-2xl bg-brand-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50"
             >
               {loadingResults ? "Running…" : "Run Screening"}
             </button>

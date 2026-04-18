@@ -200,7 +200,7 @@ export default function RecruiterDashboardPage() {
             </div>
           </div>
 
-          <div className="border-t border-slate-200/70 bg-slate-950 px-8 py-8 text-white lg:border-l lg:border-t-0">
+          <div className="border-t border-slate-200/70 bg-brand-900 px-8 py-8 text-white lg:border-l lg:border-t-0">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Actions</p>
             <div className="mt-5 space-y-4">
               <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-4">

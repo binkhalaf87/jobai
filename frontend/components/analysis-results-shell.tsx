@@ -201,7 +201,7 @@ export function AnalysisResultsShell() {
           </p>
           <Link
             href="/dashboard"
-            className="mt-6 inline-flex rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+            className="mt-6 inline-flex rounded-2xl bg-brand-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
           >
             Back to dashboard
           </Link>
@@ -229,7 +229,7 @@ export function AnalysisResultsShell() {
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+              className="rounded-2xl bg-brand-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
             >
               Retry analysis
             </button>
@@ -249,7 +249,7 @@ export function AnalysisResultsShell() {
             Scoring fit, ATS readiness, and key gaps.
           </p>
           <div className="mt-6 h-2 overflow-hidden rounded-full bg-slate-200">
-            <div className="h-full w-2/3 animate-pulse rounded-full bg-slate-900" />
+            <div className="h-full w-2/3 animate-pulse rounded-full bg-brand-800" />
           </div>
         </Panel>
       </div>
@@ -271,7 +271,7 @@ export function AnalysisResultsShell() {
             <p className="mt-4 text-sm leading-7 text-slate-600">{analysis.result.score.explanation}</p>
           </div>
           <div className="grid w-full gap-4 sm:grid-cols-3 lg:max-w-xl">
-            <div className="rounded-[2rem] bg-slate-950 px-6 py-5 text-white">
+            <div className="rounded-[2rem] bg-brand-900 px-6 py-5 text-white">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Overall Score</p>
               <p className="mt-3 text-4xl font-semibold tracking-tight">{formatPercent(analysis.result.score.overall_score)}</p>
             </div>

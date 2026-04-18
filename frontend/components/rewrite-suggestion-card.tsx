@@ -162,7 +162,7 @@ export function RewriteSuggestionCard({ analysisId, missingKeywords }: RewriteSu
           <button
             type="submit"
             disabled={isLoading || suggestedKeywords.length === 0}
-            className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+            className="rounded-2xl bg-brand-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-slate-400"
           >
             {isLoading ? "Generating..." : "Generate 3 rewrites"}
           </button>

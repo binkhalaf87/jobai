@@ -387,7 +387,7 @@ function TabMatches({ detail }: { detail: CandidateDetail }) {
         </p>
         <Link
           href="/recruiter/jobs"
-          className="mt-4 inline-block rounded-xl bg-slate-900 px-4 py-2 text-xs font-semibold text-white"
+          className="mt-4 inline-block rounded-xl bg-brand-800 px-4 py-2 text-xs font-semibold text-white"
         >
           Go to Jobs →
         </Link>
@@ -569,7 +569,7 @@ function TabPreview({ detail }: { detail: CandidateDetail }) {
               type="button"
               onClick={handlePrint}
               disabled={!blobUrl}
-              className="rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-700 disabled:opacity-40"
+              className="rounded-xl bg-brand-800 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-700 disabled:opacity-40"
             >
               Print
             </button>
@@ -578,7 +578,7 @@ function TabPreview({ detail }: { detail: CandidateDetail }) {
             <a
               href={blobUrl}
               download={detail.source_filename ?? `resume.${detail.file_type}`}
-              className="rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-700"
+              className="rounded-xl bg-brand-800 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-700"
             >
               Download
             </a>
@@ -659,7 +659,7 @@ function TabNotes({ candidateId }: { candidateId: string }) {
             type="button"
             onClick={addNote}
             disabled={!draft.trim()}
-            className="rounded-xl bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-700 disabled:opacity-40"
+            className="rounded-xl bg-brand-800 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-700 disabled:opacity-40"
           >
             Save Note
           </button>
@@ -1003,7 +1003,7 @@ export default function CandidateProfilePage() {
               onClick={() => setActiveTab(tab.key)}
               className={`px-4 py-3 text-xs font-semibold transition border-b-2 ${
                 activeTab === tab.key
-                  ? "border-slate-900 text-slate-900"
+                  ? "border-brand-800 text-slate-900"
                   : "border-transparent text-slate-400 hover:text-slate-700"
               }`}
             >

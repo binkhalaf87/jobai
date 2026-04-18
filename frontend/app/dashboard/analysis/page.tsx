@@ -426,7 +426,7 @@ export default function DashboardAnalysisPage() {
             type="button"
             disabled={!canSubmit}
             onClick={() => void handleRequestAnalysis()}
-            className="rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl bg-brand-800 px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {pageState === "streaming" ? (
               <span className="flex items-center gap-2">

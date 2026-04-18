@@ -137,7 +137,7 @@ function JourneyProgress({ overview }: { overview: DashboardOverviewData }) {
             <div
               key={step.num}
               className={`h-1.5 w-7 rounded-full ${
-                step.done ? "bg-emerald-500" : step.active ? "bg-slate-900" : "bg-slate-200"
+                step.done ? "bg-teal" : step.active ? "bg-brand-800" : "bg-slate-200"
               }`}
             />
           ))}
@@ -151,7 +151,7 @@ function JourneyProgress({ overview }: { overview: DashboardOverviewData }) {
             href={step.href}
             className={`flex flex-col items-center gap-1.5 rounded-2xl border px-2 py-3 text-center transition ${
               step.done
-                ? "border-emerald-200 bg-emerald-50 hover:bg-emerald-100"
+                ? "border-teal-light bg-teal-light/30 hover:bg-teal-light/50"
                 : step.active
                   ? "border-slate-300 bg-slate-100 hover:bg-white"
                   : "border-slate-200 bg-slate-50 hover:bg-white"
@@ -160,9 +160,9 @@ function JourneyProgress({ overview }: { overview: DashboardOverviewData }) {
             <span
               className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${
                 step.done
-                  ? "bg-emerald-500 text-white"
+                  ? "bg-teal text-white"
                   : step.active
-                    ? "bg-slate-900 text-white"
+                    ? "bg-brand-800 text-white"
                     : "bg-slate-200 text-slate-500"
               }`}
             >
@@ -170,7 +170,7 @@ function JourneyProgress({ overview }: { overview: DashboardOverviewData }) {
             </span>
             <p
               className={`text-[10px] font-semibold leading-tight ${
-                step.done ? "text-emerald-700" : step.active ? "text-slate-900" : "text-slate-500"
+                step.done ? "text-teal" : step.active ? "text-brand-800" : "text-slate-500"
               }`}
             >
               {step.label}
@@ -331,7 +331,7 @@ export function DashboardOverview() {
         <button
           type="button"
           onClick={() => setRefreshIndex((value) => value + 1)}
-          className="mt-6 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+          className="mt-6 rounded-2xl bg-brand-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
         >
           Retry loading dashboard
         </button>
@@ -361,7 +361,7 @@ export function DashboardOverview() {
   return (
     <div className="space-y-6">
       <Panel className="overflow-hidden">
-        <div className="border-b border-slate-100 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_55%,#ecfeff_100%)] px-8 py-8 md:px-10 md:py-10">
+        <div className="border-b border-slate-100 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_55%,#E8F4EE_100%)] px-8 py-8 md:px-10 md:py-10">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Dashboard</p>
@@ -506,7 +506,7 @@ export function DashboardOverview() {
               </p>
               <Link
                 href="/dashboard/resumes"
-                className="mt-5 inline-flex rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+                className="mt-5 inline-flex rounded-2xl bg-brand-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
               >
                 Upload your first resume
               </Link>
@@ -548,7 +548,7 @@ export function DashboardOverview() {
           <p className="mt-3 text-sm leading-7 text-slate-600">{overview.nextStep.description}</p>
           <Link
             href={overview.nextStep.href}
-            className="mt-5 inline-flex rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+            className="mt-5 inline-flex rounded-2xl bg-brand-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
           >
             Continue journey
           </Link>

@@ -290,7 +290,7 @@ export function InterviewAnswerComposer({
             onClick={() => onAnswerModeChange(mode)}
             className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
               answerMode === mode
-                ? "border-slate-900 bg-slate-900 text-white"
+                ? "border-brand-800 bg-brand-800 text-white"
                 : "border-slate-300 bg-white text-slate-700 hover:border-slate-500"
             }`}
           >
@@ -303,7 +303,7 @@ export function InterviewAnswerComposer({
         <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <div className="grid gap-4 lg:grid-cols-[1fr_1.1fr]">
             <div className="space-y-3">
-              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-900">
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-brand-800">
                 {isCameraActive ? (
                   <video ref={videoRef} autoPlay muted playsInline className="aspect-video h-full w-full object-cover" />
                 ) : (
@@ -339,7 +339,7 @@ export function InterviewAnswerComposer({
                   <button
                     type="button"
                     onClick={() => void startLiveAnswer()}
-                    className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+                    className="rounded-xl bg-brand-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
                   >
                     Start Live Answer
                   </button>
@@ -429,7 +429,7 @@ export function InterviewAnswerComposer({
         type="button"
         disabled={!answerValue.trim() || isSubmitting}
         onClick={onSubmit}
-        className="rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-xl bg-brand-800 px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isSubmitting ? "Evaluating answer..." : "Submit Answer"}
       </button>
