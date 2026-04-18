@@ -34,6 +34,18 @@ function createPublicConfig(): PublicConfig {
   };
 }
 
-// This helper centralizes access to public frontend environment variables.
-// Local development falls back to the default backend URL, while production still requires explicit configuration.
-export const publicConfig = createPublicConfig();
+// Lazy singleton — deferred until first actual API call so that importing
+// this module during static generation / SSR does not throw when the env
+// variable is absent (e.g. build-time rendering of non-API pages).
+let _publicConfig: PublicConfig | null = null;
+
+export function getPublicConfig(): PublicConfig {
+  if (!_publicConfig) {
+    _publicConfig = createPublicConfig();
+  }
+  return _publicConfig;
+}
+
+// Back-compat export kept for any call sites not yet migrated.
+// @deprecated — import getPublicConfig() instead.
+export const publicConfig = { get apiUrl() { return getPublicConfig().apiUrl; } };

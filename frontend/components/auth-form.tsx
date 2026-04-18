@@ -53,7 +53,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       router.refresh();
     } catch (error) {
       const msg = error instanceof Error ? error.message : "";
-      if (msg.includes("email") || msg.includes("taken")) {
+      if (msg.includes("already exists") || msg.includes("taken")) {
         setErrorMessage(t("errors.emailTaken"));
       } else {
         setErrorMessage(t("errors.authFailed"));

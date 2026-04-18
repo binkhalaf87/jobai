@@ -145,7 +145,7 @@ export async function streamCampaignSend(
 ): Promise<void> {
   const res = await fetch(
     `${getApiBaseUrl()}${BASE_PATH}/campaigns/${campaign_id}/send-stream`,
-    { headers: authHeaders() }
+    { method: "POST", headers: authHeaders() }
   );
 
   if (!res.ok) {
