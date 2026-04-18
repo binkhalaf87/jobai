@@ -97,13 +97,8 @@ export function InterviewAnswerComposer({
     Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
 
   const transcriptHint = useMemo(() => {
-<<<<<<< HEAD
     return t("interview.transcriptHint");
   }, [t]);
-=======
-    return language === "ar" ? t("transcriptHintArabic") : t("transcriptHintDefault");
-  }, [language, t]);
->>>>>>> b2deabb9ffe1911dcbb22721be40f3d6338a7e10
 
   function resetRecordedVideoUrl() {
     setRecordedVideoUrl((previousUrl) => {

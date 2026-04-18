@@ -536,7 +536,6 @@ export function DashboardOverview() {
       {/* ── Partial error warning ── */}
       {failedLabels.length > 0 && failedLabels.length < 6 && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-800">
-          بعض البيانات غير متاحة مؤقتاً: {failedLabels.join("، ")}.
           {t("dashboard.overview.partialError", { labels: failedLabels.join("، ") })}
         </div>
       )}
