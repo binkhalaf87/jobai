@@ -64,7 +64,8 @@
       "Bash(git pull *)",
       "Bash(git *)",
       "Bash(ls -la /c/github/jobai/frontend/.eslintrc*)",
-      "Bash(grep -i \"pytest\\\\|httpx\\\\|testclient\" /c/github/jobai/backend/requirements*.txt)"
+      "Bash(grep -i \"pytest\\\\|httpx\\\\|testclient\" /c/github/jobai/backend/requirements*.txt)",
+      "Bash(node -e \"require\\('lucide-react'\\)\")"
     ]
   }
 }

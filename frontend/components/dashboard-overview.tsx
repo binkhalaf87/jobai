@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
+import { Upload, BarChart3, Pencil, Search, Send, Mic, TrendingUp, Briefcase, SendHorizonal, MonitorPlay } from "lucide-react";
 
 import { Panel } from "@/components/panel";
 import { loadDashboardOverview, type DashboardActivityItem, type DashboardOverviewData } from "@/lib/dashboard";
@@ -97,88 +98,72 @@ function IconArrow() {
 
 /* ─────────────────────────────────── journey step card ── */
 type StepConfig = {
-  icon: React.ReactNode;
+  icon: ReactNode;
   title: string;
   description: string;
   done: boolean;
   href: string;
   score?: number | null;
   badge?: string;
+  iconBg: string;
+  iconText: string;
 };
 
 function JourneyStepCard({ step }: { step: StepConfig }) {
   const t = useTranslations();
-  const { icon, title, description, done, href, score, badge } = step;
+  const { icon, title, done, href, score, badge, iconBg, iconText } = step;
   const hasScore = score !== null && score !== undefined;
 
   return (
     <Link
       href={href}
       className={[
-        "group flex items-center gap-4 rounded-2xl border-2 p-4 transition-all duration-200",
+        "group flex items-center gap-3 rounded-xl border p-3 transition-all duration-150",
         done
-          ? "border-teal-light bg-teal-light/20 hover:border-teal/40 hover:bg-teal-light/35"
-          : "border-slate-200 bg-white hover:border-brand-300 hover:bg-brand-50/60 hover:shadow-sm",
+          ? "border-teal/20 bg-teal-light/15 hover:bg-teal-light/25"
+          : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm",
       ].join(" ")}
     >
       {/* Icon */}
-      <div
-        className={[
-          "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl transition-all",
-          done
-            ? "bg-teal text-white"
-            : "bg-slate-100 text-slate-500 group-hover:bg-brand-100 group-hover:text-brand-700",
-        ].join(" ")}
-      >
+      <div className={[
+        "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-all",
+        done ? "bg-teal text-white" : `${iconBg} ${iconText}`,
+      ].join(" ")}>
         {done ? <IconCheck /> : icon}
       </div>
 
-      {/* Content */}
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <span
-            className={[
-              "text-sm font-bold",
-              done ? "text-teal" : "text-slate-800 group-hover:text-brand-800",
-            ].join(" ")}
-          >
-            {title}
+      {/* Title + badge */}
+      <div className="min-w-0 flex-1 flex items-center gap-2">
+        <span className={[
+          "text-[13px] font-semibold leading-none",
+          done ? "text-teal" : "text-slate-800 group-hover:text-slate-950",
+        ].join(" ")}>
+          {title}
+        </span>
+        {badge && (
+          <span className={[
+            "rounded-full px-2 py-0.5 text-[10px] font-semibold",
+            done ? "bg-teal/15 text-teal" : "bg-slate-100 text-slate-500",
+          ].join(" ")}>
+            {badge}
           </span>
-          {badge && (
-            <span
-              className={[
-                "rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                done ? "bg-teal/15 text-teal" : "bg-slate-100 text-slate-500",
-              ].join(" ")}
-            >
-              {badge}
-            </span>
-          )}
-        </div>
-        <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{description}</p>
+        )}
       </div>
 
-      {/* Right: score ring or arrow */}
+      {/* Right */}
       <div className="flex flex-shrink-0 items-center gap-2">
         {done && hasScore ? (
           <div className="flex items-center gap-1.5">
-            <span className={`text-lg font-black ${scoreColor(score ?? null)}`}>{Math.round(score!)}%</span>
-            <div className="relative">
-              <CircleProgress
-                percent={score!}
-                size={32}
-                strokeWidth={3}
-                colorClass={score! >= 80 ? "text-teal" : score! >= 60 ? "text-amber-500" : "text-red-500"}
-              />
-            </div>
+            <span className={`text-sm font-black ${scoreColor(score ?? null)}`}>{Math.round(score!)}%</span>
+            <CircleProgress percent={score!} size={28} strokeWidth={2.5}
+              colorClass={score! >= 80 ? "text-teal" : score! >= 60 ? "text-amber-500" : "text-red-500"} />
           </div>
         ) : done ? (
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5 text-teal">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4 text-teal">
             <polyline points="20 6 9 17 4 12" />
           </svg>
         ) : (
-          <div className="flex items-center gap-1 text-xs font-semibold text-slate-400 transition-colors group-hover:text-brand-600">
-            {t("dashboard.overview.start")}
+          <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-400 group-hover:text-slate-600">
             <IconArrow />
           </div>
         )}
@@ -322,17 +307,30 @@ function MetricCard({
   value,
   sub,
   colorClass = "text-slate-950",
+  icon,
+  iconBg = "bg-slate-100",
+  iconColor = "text-slate-500",
 }: {
   label: string;
   value: string;
   sub: string;
   colorClass?: string;
+  icon?: ReactNode;
+  iconBg?: string;
+  iconColor?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{label}</p>
-      <p className={`mt-2 text-2xl font-semibold tracking-tight ${colorClass}`}>{value}</p>
-      <p className="mt-1 text-xs leading-5 text-slate-500">{sub}</p>
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{label}</p>
+        {icon && (
+          <span className={`flex h-6 w-6 items-center justify-center rounded-lg ${iconBg} ${iconColor}`}>
+            {icon}
+          </span>
+        )}
+      </div>
+      <p className={`text-2xl font-bold tracking-tight ${colorClass}`}>{value}</p>
+      <p className="mt-0.5 text-[11px] leading-5 text-slate-500">{sub}</p>
     </div>
   );
 }
@@ -418,78 +416,52 @@ export function DashboardOverview() {
   /* ── journey steps config ── */
   const journeySteps: StepConfig[] = [
     {
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline points="17 8 12 3 7 8" />
-          <line x1="12" y1="3" x2="12" y2="15" />
-        </svg>
-      ),
+      icon: <Upload size={14} />,
+      iconBg: "bg-violet-100", iconText: "text-violet-600",
       title: t("dashboardOverview.steps.upload.title"),
       description: t("dashboardOverview.steps.upload.description"),
-      done: step1Done,
-      href: "/dashboard/resumes",
+      done: step1Done, href: "/dashboard/resumes",
       badge: step1Done ? t("dashboardOverview.steps.upload.badge", { count: resumeCount }) : undefined,
     },
     {
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-          <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
-        </svg>
-      ),
+      icon: <BarChart3 size={14} />,
+      iconBg: "bg-amber-100", iconText: "text-amber-600",
       title: t("dashboardOverview.steps.analyze.title"),
       description: t("dashboardOverview.steps.analyze.description"),
-      done: step2Done,
-      href: "/dashboard/analysis",
+      done: step2Done, href: "/dashboard/analysis",
       score: step2Done ? overview.metrics.atsScore : null,
       badge: step2Done ? t("dashboardOverview.steps.analyze.badge") : undefined,
     },
     {
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-          <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-        </svg>
-      ),
+      icon: <Pencil size={14} />,
+      iconBg: "bg-emerald-100", iconText: "text-emerald-600",
       title: t("dashboardOverview.steps.improve.title"),
       description: t("dashboardOverview.steps.improve.description"),
-      done: step3Done,
-      href: "/dashboard/enhancement",
+      done: step3Done, href: "/dashboard/enhancement",
       badge: step3Done ? t("dashboardOverview.steps.improve.badge") : undefined,
     },
     {
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-          <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
-      ),
+      icon: <Search size={14} />,
+      iconBg: "bg-cyan-100", iconText: "text-cyan-600",
       title: t("dashboardOverview.steps.match.title"),
       description: t("dashboardOverview.steps.match.description"),
-      done: step4Done,
-      href: "/dashboard/job-search",
+      done: step4Done, href: "/dashboard/job-search",
       badge: step4Done ? t("dashboardOverview.steps.match.badge", { count: savedJobsCount }) : undefined,
     },
     {
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-          <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
-        </svg>
-      ),
+      icon: <Send size={14} />,
+      iconBg: "bg-indigo-100", iconText: "text-indigo-600",
       title: t("dashboardOverview.steps.send.title"),
       description: t("dashboardOverview.steps.send.description"),
-      done: step5Done,
-      href: "/dashboard/smart-send",
+      done: step5Done, href: "/dashboard/smart-send",
       badge: step5Done ? t("dashboardOverview.steps.send.badge", { count: overview.metrics.applicationsSent }) : undefined,
     },
     {
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-        </svg>
-      ),
+      icon: <Mic size={14} />,
+      iconBg: "bg-rose-100", iconText: "text-rose-600",
       title: t("dashboardOverview.steps.interview.title"),
       description: t("dashboardOverview.steps.interview.description"),
-      done: step6Done,
-      href: "/dashboard/ai-interview",
+      done: step6Done, href: "/dashboard/ai-interview",
       score: step6Done ? interviewBestScore : null,
       badge: step6Done ? t("dashboardOverview.steps.interview.badge", { count: (overview.interviews.data ?? []).filter((i) => i.status === "completed").length }) : undefined,
     },
@@ -575,22 +547,30 @@ export function DashboardOverview() {
                 value={formatPercent(overview.metrics.atsScore)}
                 sub={atsLabel(overview.metrics.atsScore)}
                 colorClass={scoreColor(overview.metrics.atsScore)}
+                icon={<TrendingUp size={13} />}
+                iconBg="bg-amber-100" iconColor="text-amber-600"
               />
               <MetricCard
                 label={t("dashboardOverview.metrics.matchedJobs")}
                 value={formatCount(overview.metrics.jobsMatched)}
                 sub={overview.savedJobs.error ? t("dashboardOverview.metrics.unavailable") : t("dashboardOverview.metrics.fromSavedList")}
+                icon={<Briefcase size={13} />}
+                iconBg="bg-cyan-100" iconColor="text-cyan-600"
               />
               <MetricCard
                 label={t("dashboardOverview.metrics.sentApplications")}
                 value={formatCount(overview.metrics.applicationsSent)}
                 sub={overview.campaigns.error ? t("dashboardOverview.metrics.unavailable") : t("dashboardOverview.metrics.viaSmartSend")}
+                icon={<SendHorizonal size={13} />}
+                iconBg="bg-indigo-100" iconColor="text-indigo-600"
               />
               <MetricCard
                 label={t("dashboardOverview.metrics.interviewReadiness")}
                 value={formatPercent(overview.metrics.interviewReadiness)}
                 sub={interviewReadinessLabel(overview.metrics.interviewReadiness)}
                 colorClass={scoreColor(overview.metrics.interviewReadiness)}
+                icon={<MonitorPlay size={13} />}
+                iconBg="bg-rose-100" iconColor="text-rose-600"
               />
             </div>
 
