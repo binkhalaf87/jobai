@@ -1,4 +1,6 @@
-from sqlalchemy import ForeignKey, String
+from datetime import datetime
+
+from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -33,3 +35,11 @@ class RecruiterInterview(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="ready", server_default="ready"
     )  # generating | ready | failed
+
+    # Invite flow
+    invite_token: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True, index=True)
+    invite_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    invite_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    response_status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="pending", server_default="pending"
+    )  # pending | sent | in_progress | completed

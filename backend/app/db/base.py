@@ -1,6 +1,7 @@
 from app.db.base_class import Base
 from app.models.ai_report import AIAnalysisReport
 from app.models.analysis import Analysis
+from app.models.interview_response import InterviewResponse
 from app.models.job_description import JobDescription
 from app.models.payment_order import PaymentOrder
 from app.models.payment_webhook_event import PaymentWebhookEvent
@@ -19,6 +20,7 @@ __all__ = [
     "AIAnalysisReport",
     "Analysis",
     "Base",
+    "InterviewResponse",
     "JobDescription",
     "PaymentOrder",
     "PaymentWebhookEvent",

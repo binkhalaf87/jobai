@@ -1,4 +1,4 @@
-"""Generate a structured interview question set for a specific candidate + job combination."""
+"""Generate interview question sets and analyse candidate video responses."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.core.openai_client import get_openai_client
+from app.models.interview_response import InterviewResponse
 from app.models.job_description import JobDescription
 from app.models.recruiter_interview import RecruiterInterview
 from app.models.resume import Resume
@@ -148,3 +149,59 @@ def generate_interview_questions(
     db.commit()
     db.refresh(interview)
     return interview
+
+
+def analyse_interview_responses(
+    job_title: str,
+    language: str,
+    questions: list[dict[str, Any]],
+    responses: list[InterviewResponse],
+) -> dict[str, Any]:
+    """Call OpenAI to produce per-answer feedback and an overall assessment."""
+    lang_note = _LANG_INSTRUCTIONS.get(language, _LANG_INSTRUCTIONS["en"])
+
+    qa_pairs = []
+    for q in questions:
+        idx = int(q.get("index", 0))
+        matching = next((r for r in responses if r.question_index == idx), None)
+        answer = (matching.text_answer or "").strip() if matching else ""
+        qa_pairs.append(
+            f"Q{idx + 1}: {q.get('question', '')}\nAnswer: {answer or '[No answer provided]'}"
+        )
+
+    qa_text = "\n\n".join(qa_pairs)
+
+    system = (
+        "You are a senior hiring evaluator reviewing a candidate's recorded interview answers.\n"
+        f"{lang_note}\n\n"
+        "Evaluate the answers and return ONLY valid JSON with this exact shape:\n"
+        "{\n"
+        '  "overall_score": <integer 0-100>,\n'
+        '  "overall_impression": "string",\n'
+        '  "hire_recommendation": "strong_yes | yes | maybe | no",\n'
+        '  "per_question": [\n'
+        '    {"index": 0, "score": <0-100>, "feedback": "string", "strength": "string", "weakness": "string"},\n'
+        "    ...\n"
+        "  ]\n"
+        "}\n\n"
+        "Rules:\n"
+        "- overall_impression: 2-3 sentences summarising the candidate's interview performance.\n"
+        "- feedback per question: 1-2 sentences, specific and actionable.\n"
+        "- strength / weakness: one short phrase each."
+    )
+
+    user = f"Job title: {job_title}\n\nInterview Q&A:\n{qa_text}"
+
+    client = get_openai_client()
+    response = client.chat.completions.create(
+        model=get_rewrite_model_name(),
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+        temperature=0.4,
+        response_format={"type": "json_object"},
+    )
+
+    raw = response.choices[0].message.content or "{}"
+    return _extract_json(raw)
