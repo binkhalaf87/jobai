@@ -141,35 +141,45 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_#ffffff,_#f8fafc_45%,_#EEF2F9_100%)] text-slate-900">
-      <aside className="sticky top-0 hidden h-screen w-72 flex-shrink-0 border-r border-slate-200/80 bg-white/85 backdrop-blur md:flex md:flex-col">
-        <div className="border-b border-slate-100 px-6 py-6">
-          <Link href="/dashboard" className="inline-flex items-center gap-2 text-lg font-bold tracking-tight text-slate-950">
-            <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-brand-800 text-sm font-semibold text-white">
+      {/* ── Sidebar ── */}
+      <aside className="sticky top-0 hidden h-screen w-64 flex-shrink-0 border-r border-slate-200/80 bg-white/90 backdrop-blur md:flex md:flex-col">
+        {/* Logo */}
+        <div className="px-5 py-5">
+          <Link href="/dashboard" className="inline-flex items-center gap-3">
+            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-700 to-brand-900 text-sm font-bold text-white shadow-md shadow-brand-800/30">
               J
-            </span>
-            JobAI
+              <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-teal" />
+            </div>
+            <div>
+              <p className="text-base font-bold tracking-tight text-slate-900">JobAI</p>
+              <p className="text-[10px] font-medium text-slate-400 leading-none">منصة التوظيف الذكي</p>
+            </div>
           </Link>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 py-5">
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto px-3 pb-4">
           {DASHBOARD_NAV_GROUPS.filter((group) => group.key !== "account").map((group) => (
-            <div key={group.key} className="mb-6">
-              <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+            <div key={group.key} className="mb-5">
+              <p className="mb-1.5 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
                 {t(`groups.${group.key}`)}
               </p>
-              <ul className="space-y-1">
+              <ul className="space-y-0.5">
                 {group.items.map((item) => {
                   const active = isActive(pathname, item.href);
                   return (
                     <li key={item.href}>
                       <Link
                         href={item.href}
-                        className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                        className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
                           active
-                            ? "bg-brand-800 text-white shadow-sm"
-                            : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
+                            ? "bg-brand-800 text-white shadow-sm shadow-brand-800/20"
+                            : "text-slate-600 hover:bg-brand-50 hover:text-brand-800"
                         }`}
                       >
+                        {active && (
+                          <span className="absolute right-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-l-full bg-teal" />
+                        )}
                         {item.icon && <NavIcon id={item.icon} />}
                         <span>{t(`items.${item.key}`)}</span>
                       </Link>
@@ -181,47 +191,36 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
           ))}
         </nav>
 
-        <div className="border-t border-slate-100 p-4">
+        {/* Account */}
+        <div className="border-t border-slate-100 p-3">
           <div className="relative">
             <button
               type="button"
               onClick={() => setShowAccountMenu((current) => !current)}
-              className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left transition hover:border-slate-300"
+              className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-left transition hover:border-brand-200 hover:bg-brand-50"
               aria-expanded={showAccountMenu}
             >
-              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-brand-800 text-xs font-bold text-white">
+              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-700 to-brand-900 text-xs font-bold text-white">
                 {initials}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-slate-900">{user.full_name ?? user.email}</p>
                 <p className="truncate text-xs text-slate-500">{user.email}</p>
               </div>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-                className="h-4 w-4 text-slate-500"
-              >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="h-4 w-4 flex-shrink-0 text-slate-400">
                 <polyline points="6 9 12 15 18 9" />
               </svg>
             </button>
 
             {showAccountMenu ? (
-              <div className="absolute left-0 right-0 top-full z-10 mt-2 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg">
-                <div className="p-3">
+              <div className="absolute bottom-full left-0 right-0 z-10 mb-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
+                <div className="p-2">
                   {accountItems.map((item) => (
                     <Link
                       key={item.href}
                       href={item.href}
                       onClick={() => setShowAccountMenu(false)}
-                      className="flex items-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
+                      className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-brand-50 hover:text-brand-800"
                     >
                       {item.icon && <NavIcon id={item.icon} />}
                       <span>{t(`items.${item.key}`)}</span>
@@ -234,35 +233,31 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
 
           <button
             type="button"
-            onClick={() => {
-              signOut();
-              router.replace("/login");
-            }}
-            className="mt-3 w-full rounded-2xl px-3 py-2 text-left text-sm text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+            onClick={() => { signOut(); router.replace("/login"); }}
+            className="mt-2 w-full rounded-xl px-3 py-2 text-right text-xs font-medium text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
           >
             {t("user.signOut")}
           </button>
         </div>
       </aside>
 
+      {/* ── Main ── */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/80 backdrop-blur">
-          <div className="px-5 py-5 md:px-8">
-            <div className="flex items-start justify-between gap-4">
+        <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/85 backdrop-blur">
+          <div className="px-5 py-4 md:px-8">
+            <div className="flex items-center justify-between gap-4">
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t("groups.workspace")}</p>
-                <h1 className="mt-1 text-xl font-semibold tracking-tight text-slate-950 md:text-2xl">
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">{t("groups.workspace")}</p>
+                <h1 className="mt-0.5 text-xl font-bold tracking-tight text-slate-950 md:text-2xl">
                   {currentLabel}
                 </h1>
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                  {t(`descriptions.${currentKey}`)}
-                </p>
               </div>
               <LocaleSwitcher />
             </div>
           </div>
 
-          <div className="border-t border-slate-100 px-5 py-3 md:hidden">
+          {/* Mobile nav pills */}
+          <div className="border-t border-slate-100 px-5 py-2.5 md:hidden">
             <div className="flex gap-2 overflow-x-auto pb-1">
               {allItems.map((item) => {
                 const active = isActive(pathname, item.href);
@@ -273,7 +268,7 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
                     className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
                       active
                         ? "border-brand-800 bg-brand-800 text-white"
-                        : "border-slate-200 bg-white text-slate-600"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-brand-300"
                     }`}
                   >
                     {t(`items.${item.key}`)}

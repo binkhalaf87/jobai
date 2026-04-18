@@ -7,43 +7,7 @@ import { Panel } from "@/components/panel";
 import { loadDashboardOverview, type DashboardActivityItem, type DashboardOverviewData } from "@/lib/dashboard";
 import { atsLabel, interviewReadinessLabel } from "@/lib/product-insights";
 
-type JourneyStep = {
-  num: number;
-  label: string;
-  href: string;
-  done: boolean;
-  active: boolean;
-};
-
-type MetricCardProps = {
-  label: string;
-  value: string;
-  note: string;
-};
-
-type QuickAction = {
-  label: string;
-  href: string;
-  description: string;
-};
-
-const ACTIVITY_STYLES: Record<DashboardActivityItem["kind"], string> = {
-  resume: "bg-sky-50 text-sky-700 border-sky-200",
-  "saved-job": "bg-amber-50 text-amber-700 border-amber-200",
-  "analysis-report": "bg-emerald-50 text-emerald-700 border-emerald-200",
-  "enhancement-report": "bg-violet-50 text-violet-700 border-violet-200",
-  interview: "bg-rose-50 text-rose-700 border-rose-200",
-  campaign: "bg-cyan-50 text-cyan-700 border-cyan-200",
-};
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
+/* ─────────────────────────────────────────────── helpers ── */
 function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString(undefined, {
     day: "numeric",
@@ -54,231 +18,355 @@ function formatDateTime(iso: string): string {
   });
 }
 
-function formatCount(count: number | null, suffix = ""): string {
-  if (count === null) return "-";
-  return `${count.toLocaleString()}${suffix}`;
-}
-
-function formatPercentage(value: number | null): string {
-  if (value === null) return "-";
+function formatPercent(value: number | null): string {
+  if (value === null) return "—";
   return `${Math.round(value)}%`;
 }
 
-function pluralize(count: number, singular: string, plural = `${singular}s`): string {
-  return `${count} ${count === 1 ? singular : plural}`;
+function formatCount(count: number | null): string {
+  if (count === null) return "—";
+  return count.toLocaleString();
 }
 
-function JourneyProgress({ overview }: { overview: DashboardOverviewData }) {
-  const steps: JourneyStep[] = [
+function scoreColor(score: number | null): string {
+  if (score === null) return "text-slate-400";
+  if (score >= 80) return "text-teal";
+  if (score >= 60) return "text-amber-500";
+  return "text-red-500";
+}
+
+function scoreBg(score: number | null): string {
+  if (score === null) return "bg-slate-200";
+  if (score >= 80) return "bg-teal";
+  if (score >= 60) return "bg-amber-500";
+  return "bg-red-500";
+}
+
+/* ──────────────────────────────────── circular progress ── */
+function CircleProgress({
+  percent,
+  size = 56,
+  strokeWidth = 4,
+  colorClass = "text-teal",
+}: {
+  percent: number;
+  size?: number;
+  strokeWidth?: number;
+  colorClass?: string;
+}) {
+  const r = size / 2 - strokeWidth * 1.5;
+  const circumference = 2 * Math.PI * r;
+  const dash = (Math.min(Math.max(percent, 0), 100) / 100) * circumference;
+  const cx = size / 2;
+
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90" aria-hidden="true">
+      <circle cx={cx} cy={cx} r={r} fill="none" strokeWidth={strokeWidth} className="stroke-slate-200" />
+      <circle
+        cx={cx}
+        cy={cx}
+        r={r}
+        fill="none"
+        strokeWidth={strokeWidth}
+        strokeDasharray={`${dash} ${circumference}`}
+        strokeLinecap="round"
+        className={colorClass}
+        stroke="currentColor"
+      />
+    </svg>
+  );
+}
+
+/* ───────────────────────────────────── inline SVG icons ── */
+function IconCheck() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function IconArrow() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+      <path d="M5 12h14M12 5l7 7-7 7" />
+    </svg>
+  );
+}
+
+/* ─────────────────────────────────── journey step card ── */
+type StepConfig = {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  done: boolean;
+  href: string;
+  score?: number | null;
+  badge?: string;
+};
+
+function JourneyStepCard({ step }: { step: StepConfig }) {
+  const { icon, title, description, done, href, score, badge } = step;
+  const hasScore = score !== null && score !== undefined;
+
+  return (
+    <Link
+      href={href}
+      className={[
+        "group flex items-center gap-4 rounded-2xl border-2 p-4 transition-all duration-200",
+        done
+          ? "border-teal-light bg-teal-light/20 hover:border-teal/40 hover:bg-teal-light/35"
+          : "border-slate-200 bg-white hover:border-brand-300 hover:bg-brand-50/60 hover:shadow-sm",
+      ].join(" ")}
+    >
+      {/* Icon */}
+      <div
+        className={[
+          "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl transition-all",
+          done
+            ? "bg-teal text-white"
+            : "bg-slate-100 text-slate-500 group-hover:bg-brand-100 group-hover:text-brand-700",
+        ].join(" ")}
+      >
+        {done ? <IconCheck /> : icon}
+      </div>
+
+      {/* Content */}
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span
+            className={[
+              "text-sm font-bold",
+              done ? "text-teal" : "text-slate-800 group-hover:text-brand-800",
+            ].join(" ")}
+          >
+            {title}
+          </span>
+          {badge && (
+            <span
+              className={[
+                "rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                done ? "bg-teal/15 text-teal" : "bg-slate-100 text-slate-500",
+              ].join(" ")}
+            >
+              {badge}
+            </span>
+          )}
+        </div>
+        <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{description}</p>
+      </div>
+
+      {/* Right: score ring or arrow */}
+      <div className="flex flex-shrink-0 items-center gap-2">
+        {done && hasScore ? (
+          <div className="flex items-center gap-1.5">
+            <span className={`text-lg font-black ${scoreColor(score ?? null)}`}>{Math.round(score!)}%</span>
+            <div className="relative">
+              <CircleProgress
+                percent={score!}
+                size={32}
+                strokeWidth={3}
+                colorClass={score! >= 80 ? "text-teal" : score! >= 60 ? "text-amber-500" : "text-red-500"}
+              />
+            </div>
+          </div>
+        ) : done ? (
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5 text-teal">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        ) : (
+          <div className="flex items-center gap-1 text-xs font-semibold text-slate-400 transition-colors group-hover:text-brand-600">
+            ابدأ
+            <IconArrow />
+          </div>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+/* ──────────────────────────────────────────── hero card ── */
+function HeroCard({
+  overview,
+  onRefresh,
+}: {
+  overview: DashboardOverviewData;
+  onRefresh: () => void;
+}) {
+  const completed = overview.metrics.completedJourneySteps;
+  const total = 6;
+  const pct = Math.round((completed / total) * 100);
+  const ats = overview.metrics.atsScore;
+  const jobs = overview.metrics.jobsMatched ?? 0;
+  const sent = overview.metrics.applicationsSent ?? 0;
+
+  const readinessLabel =
+    pct === 100 ? "جاهز تماماً 🚀" : pct >= 60 ? "تقدم جيد، استمر!" : "ابدأ رحلتك الآن";
+
+  const stats = [
     {
-      num: 1,
-      label: "Upload CV",
-      href: "/dashboard/resumes",
-      done: (overview.resumes.data?.length ?? 0) > 0,
-      active: false,
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3 w-3">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+        </svg>
+      ),
+      label: overview.metrics.activeResumeTitle ?? "لا سيرة بعد",
+      active: !!overview.metrics.activeResumeTitle,
     },
     {
-      num: 2,
-      label: "Analyze CV",
-      href: "/dashboard/analysis",
-      done: (overview.analysisReports.data?.filter((report) => report.status === "completed").length ?? 0) > 0,
-      active: false,
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3 w-3">
+          <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
+        </svg>
+      ),
+      label: ats !== null ? `ATS: ${Math.round(ats)}%` : "لم يُحلَّل",
+      active: ats !== null,
     },
     {
-      num: 3,
-      label: "Improve CV",
-      href: "/dashboard/enhancement",
-      done: (overview.enhancementReports.data?.filter((report) => report.status === "completed").length ?? 0) > 0,
-      active: false,
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3 w-3">
+          <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+      ),
+      label: `${jobs} وظيفة`,
+      active: jobs > 0,
     },
     {
-      num: 4,
-      label: "Find Jobs",
-      href: "/dashboard/job-search",
-      done: (overview.metrics.jobsMatched ?? 0) > 0,
-      active: false,
-    },
-    {
-      num: 5,
-      label: "Send CV",
-      href: "/dashboard/smart-send",
-      done: (overview.metrics.applicationsSent ?? 0) > 0,
-      active: false,
-    },
-    {
-      num: 6,
-      label: "Practice",
-      href: "/dashboard/ai-interview",
-      done: (overview.interviews.data?.filter((item) => item.status === "completed").length ?? 0) > 0,
-      active: false,
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3 w-3">
+          <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+        </svg>
+      ),
+      label: `${sent} مُرسَل`,
+      active: sent > 0,
     },
   ];
 
-  const firstIncompleteIndex = steps.findIndex((step) => !step.done);
-  if (firstIncompleteIndex >= 0) {
-    steps[firstIncompleteIndex].active = true;
-  }
-
-  const completedCount = steps.filter((step) => step.done).length;
-
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-5">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Flow</p>
-          <p className="mt-0.5 text-sm font-semibold text-slate-900">
-            {completedCount === steps.length
-              ? "Flow complete."
-              : `${completedCount} of ${steps.length} steps completed`}
-          </p>
+    <div className="relative overflow-hidden rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-800/8 via-white to-teal/5 p-6 md:p-7">
+      {/* Decorative blobs */}
+      <div className="pointer-events-none absolute -right-8 -top-8 h-36 w-36 rounded-full bg-brand-800/8 blur-2xl" />
+      <div className="pointer-events-none absolute -bottom-6 -left-6 h-28 w-28 rounded-full bg-teal/10 blur-2xl" />
+
+      <div className="relative flex flex-col gap-6 md:flex-row md:items-center">
+        {/* Left: progress ring + stats */}
+        <div className="flex-1 space-y-4">
+          <div className="flex items-center gap-4">
+            {/* Ring */}
+            <div className="relative h-16 w-16 flex-shrink-0">
+              <CircleProgress percent={pct} size={64} strokeWidth={4} colorClass="text-teal" />
+              <span className="absolute inset-0 flex items-center justify-center text-xs font-black text-brand-800">
+                {pct}%
+              </span>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">مستوى جاهزيتك المهنية</p>
+              <p className="text-base font-bold text-slate-900">{readinessLabel}</p>
+              <p className="mt-0.5 text-xs text-slate-500">
+                {completed} من {total} خطوات مكتملة
+              </p>
+            </div>
+          </div>
+
+          {/* Stats pills */}
+          <div className="flex flex-wrap gap-2">
+            {stats.map((stat, i) => (
+              <div
+                key={i}
+                className={[
+                  "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all",
+                  stat.active
+                    ? "border-brand-200 bg-brand-50 text-brand-700"
+                    : "border-slate-200 bg-slate-50 text-slate-500",
+                ].join(" ")}
+              >
+                {stat.icon}
+                <span className="max-w-[120px] truncate">{stat.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="flex items-center gap-1">
-          {steps.map((step) => (
-            <div
-              key={step.num}
-              className={`h-1.5 w-7 rounded-full ${
-                step.done ? "bg-teal" : step.active ? "bg-brand-800" : "bg-slate-200"
-              }`}
-            />
+
+        {/* Right: next step CTA */}
+        <div className="flex flex-col gap-2 md:min-w-[200px]">
+          <Link
+            href={overview.nextStep.href}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-800 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-800/20 transition hover:bg-brand-700"
+          >
+            {overview.nextStep.label}
+            <IconArrow />
+          </Link>
+          <p className="text-center text-[10px] leading-5 text-slate-500">
+            {overview.nextStep.description}
+          </p>
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="mt-1 text-center text-[10px] text-slate-400 transition hover:text-slate-600"
+          >
+            تحديث البيانات ↺
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────────────────────────── metric mini-card ── */
+function MetricCard({
+  label,
+  value,
+  sub,
+  colorClass = "text-slate-950",
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  colorClass?: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{label}</p>
+      <p className={`mt-2 text-2xl font-semibold tracking-tight ${colorClass}`}>{value}</p>
+      <p className="mt-1 text-xs leading-5 text-slate-500">{sub}</p>
+    </div>
+  );
+}
+
+/* ─────────────────────────────── activity styles map ── */
+const ACTIVITY_STYLES: Record<DashboardActivityItem["kind"], string> = {
+  resume: "bg-brand-50 text-brand-700 border-brand-200",
+  "saved-job": "bg-amber-50 text-amber-700 border-amber-200",
+  "analysis-report": "bg-teal-light/40 text-teal border-teal-light",
+  "enhancement-report": "bg-brand-50 text-brand-600 border-brand-100",
+  interview: "bg-rose-50 text-rose-700 border-rose-200",
+  campaign: "bg-cyan-50 text-cyan-700 border-cyan-200",
+};
+
+/* ──────────────────────────────── loading skeleton ── */
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-6">
+      {/* Hero skeleton */}
+      <div className="h-40 animate-pulse rounded-2xl bg-slate-100" />
+      <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
+        <div className="space-y-3">
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={i} className="h-20 animate-pulse rounded-2xl bg-slate-100" />
+          ))}
+        </div>
+        <div className="space-y-3">
+          {Array.from({ length: 4 }, (_, i) => (
+            <div key={i} className="h-20 animate-pulse rounded-2xl bg-slate-100" />
           ))}
         </div>
       </div>
-
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-        {steps.map((step) => (
-          <Link
-            key={step.num}
-            href={step.href}
-            className={`flex flex-col items-center gap-1.5 rounded-2xl border px-2 py-3 text-center transition ${
-              step.done
-                ? "border-teal-light bg-teal-light/30 hover:bg-teal-light/50"
-                : step.active
-                  ? "border-slate-300 bg-slate-100 hover:bg-white"
-                  : "border-slate-200 bg-slate-50 hover:bg-white"
-            }`}
-          >
-            <span
-              className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${
-                step.done
-                  ? "bg-teal text-white"
-                  : step.active
-                    ? "bg-brand-800 text-white"
-                    : "bg-slate-200 text-slate-500"
-              }`}
-            >
-              {step.done ? "OK" : step.num}
-            </span>
-            <p
-              className={`text-[10px] font-semibold leading-tight ${
-                step.done ? "text-teal" : step.active ? "text-brand-800" : "text-slate-500"
-              }`}
-            >
-              {step.label}
-            </p>
-          </Link>
-        ))}
-      </div>
     </div>
   );
 }
 
-function DashboardMetricCard({ label, value, note }: MetricCardProps) {
-  return (
-    <Panel className="p-6">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
-      <p className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">{value}</p>
-      <p className="mt-3 text-sm leading-6 text-slate-600">{note}</p>
-    </Panel>
-  );
-}
-
-function DashboardLoadingState() {
-  return (
-    <div className="space-y-6">
-      <Panel className="p-8 md:p-10">
-        <div className="animate-pulse space-y-4">
-          <div className="h-4 w-40 rounded bg-slate-200" />
-          <div className="h-10 w-72 rounded bg-slate-200" />
-          <div className="h-4 w-full max-w-3xl rounded bg-slate-100" />
-          <div className="h-4 w-full max-w-2xl rounded bg-slate-100" />
-        </div>
-      </Panel>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 4 }, (_, index) => (
-          <Panel key={index} className="p-6">
-            <div className="animate-pulse space-y-4">
-              <div className="h-3 w-24 rounded bg-slate-200" />
-              <div className="h-8 w-16 rounded bg-slate-200" />
-              <div className="h-4 w-full rounded bg-slate-100" />
-              <div className="h-4 w-3/4 rounded bg-slate-100" />
-            </div>
-          </Panel>
-        ))}
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        {Array.from({ length: 2 }, (_, index) => (
-          <Panel key={index} className="p-6 md:p-8">
-            <div className="animate-pulse space-y-4">
-              <div className="h-3 w-28 rounded bg-slate-200" />
-              <div className="h-8 w-64 rounded bg-slate-200" />
-              <div className="h-20 rounded bg-slate-100" />
-              <div className="h-20 rounded bg-slate-100" />
-            </div>
-          </Panel>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function buildQuickActions(overview: DashboardOverviewData): QuickAction[] {
-  const resumes = overview.resumes.data;
-  const savedJobs = overview.savedJobs.data;
-  const analysisReports = overview.analysisReports.data;
-  const interviews = overview.interviews.data;
-
-  const parsedResumes = resumes?.filter((resume) => resume.processing_status === "parsed").length ?? 0;
-  const completedAnalysisReports = analysisReports?.filter((report) => report.status === "completed").length ?? 0;
-  const completedInterviews = interviews?.filter((interview) => interview.status === "completed").length ?? 0;
-
-  return [
-    {
-      label: "Analyze CV",
-      href: "/dashboard/analysis",
-      description:
-        resumes == null
-          ? "Resume data is unavailable right now."
-          : parsedResumes > 0
-            ? `${pluralize(parsedResumes, "resume")} ready for analysis.`
-            : "Upload a CV to start your first report.",
-    },
-    {
-      label: "Find Jobs",
-      href: "/dashboard/job-search",
-      description:
-        savedJobs == null
-          ? "Saved job data is unavailable right now."
-          : savedJobs.length > 0
-            ? `${pluralize(savedJobs.length, "saved job")} ready to revisit and prioritize.`
-            : "Search live roles and score them against your resume.",
-    },
-    {
-      label: "Practice",
-      href: "/dashboard/ai-interview",
-      description:
-        interviews == null
-          ? "Interview history is unavailable right now."
-          : completedInterviews > 0
-            ? `${pluralize(completedInterviews, "completed interview")} already contributing to readiness.`
-            : completedAnalysisReports > 0
-              ? "Use your latest analysis context to rehearse before you apply."
-              : "Build analysis first, then practice with stronger role context.",
-    },
-  ];
-}
-
+/* ════════════════════════════════════ main component ════ */
 export function DashboardOverview() {
   const [overview, setOverview] = useState<DashboardOverviewData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -287,311 +375,313 @@ export function DashboardOverview() {
   useEffect(() => {
     let cancelled = false;
 
-    async function loadOverview() {
+    async function load() {
       setIsLoading(true);
-      const nextOverview = await loadDashboardOverview();
-
+      const data = await loadDashboardOverview();
       if (!cancelled) {
-        setOverview(nextOverview);
+        setOverview(data);
         setIsLoading(false);
       }
     }
 
-    void loadOverview();
-
-    return () => {
-      cancelled = true;
-    };
+    void load();
+    return () => { cancelled = true; };
   }, [refreshIndex]);
 
-  if (isLoading || !overview) {
-    return <DashboardLoadingState />;
-  }
+  if (isLoading || !overview) return <LoadingSkeleton />;
 
-  const failedCollections = [
+  /* ── derive per-step done states ── */
+  const parsedResumes = (overview.resumes.data ?? []).filter((r) => r.processing_status === "parsed");
+  const step1Done = parsedResumes.length > 0;
+  const step2Done = (overview.analysisReports.data ?? []).some((r) => r.status === "completed");
+  const step3Done = (overview.enhancementReports.data ?? []).some((r) => r.status === "completed");
+  const step4Done = (overview.metrics.jobsMatched ?? 0) > 0;
+  const step5Done = (overview.metrics.applicationsSent ?? 0) > 0;
+  const step6Done = (overview.interviews.data ?? []).some((i) => i.status === "completed");
+
+  const resumeCount = parsedResumes.length;
+  const savedJobsCount = overview.savedJobs.data?.length ?? 0;
+  const campaignCount = overview.campaigns.data?.length ?? 0;
+
+  const interviewBestScore =
+    overview.interviews.data
+      ?.filter((i) => i.status === "completed" && i.overall_score !== null)
+      .reduce<number | null>((best, i) => {
+        const s = i.overall_score ?? 0;
+        return best === null ? s : Math.max(best, s);
+      }, null) ?? null;
+
+  /* ── journey steps config ── */
+  const journeySteps: StepConfig[] = [
+    {
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="17 8 12 3 7 8" />
+          <line x1="12" y1="3" x2="12" y2="15" />
+        </svg>
+      ),
+      title: "رفع السيرة الذاتية",
+      description: "ارفع ملف PDF أو DOCX لبدء رحلتك المهنية",
+      done: step1Done,
+      href: "/dashboard/resumes",
+      badge: step1Done ? `${resumeCount} سيرة` : undefined,
+    },
+    {
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+          <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
+        </svg>
+      ),
+      title: "تحليل السيرة",
+      description: "اكتشف المشاكل التي تمنع قبولك في الوظائف وقيّم مستوى ATS",
+      done: step2Done,
+      href: "/dashboard/analysis",
+      score: step2Done ? overview.metrics.atsScore : null,
+      badge: step2Done ? "تم التحليل" : undefined,
+    },
+    {
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+          <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+        </svg>
+      ),
+      title: "تحسين السيرة",
+      description: "أعد كتابة سيرتك احترافياً متوافقة مع أنظمة ATS",
+      done: step3Done,
+      href: "/dashboard/enhancement",
+      badge: step3Done ? "تم التحسين" : undefined,
+    },
+    {
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+          <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+      ),
+      title: "مطابقة الوظائف",
+      description: "ابحث عن الوظائف وطابق أقواها مع سيرتك الذاتية",
+      done: step4Done,
+      href: "/dashboard/job-search",
+      badge: step4Done ? `${savedJobsCount} وظيفة محفوظة` : undefined,
+    },
+    {
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+          <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+        </svg>
+      ),
+      title: "إرسال SmartSend",
+      description: "أرسل سيرتك إلى الشركات المناسبة بضغطة واحدة وتتبع التسليم",
+      done: step5Done,
+      href: "/dashboard/smart-send",
+      badge: step5Done ? `${overview.metrics.applicationsSent} مُرسَل` : undefined,
+    },
+    {
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+      ),
+      title: "تدريب المقابلات",
+      description: "تدرّب على أسئلة واقعية وادخل مقابلتك بثقة كاملة",
+      done: step6Done,
+      href: "/dashboard/ai-interview",
+      score: step6Done ? interviewBestScore : null,
+      badge: step6Done ? `${(overview.interviews.data ?? []).filter((i) => i.status === "completed").length} جلسة` : undefined,
+    },
+  ];
+
+  /* ── failed collections warning ── */
+  const failedLabels = [
     overview.resumes,
     overview.savedJobs,
     overview.analysisReports,
     overview.enhancementReports,
     overview.interviews,
     overview.campaigns,
-  ].filter((collection) => collection.error);
-
-  if (failedCollections.length === 6) {
-    return (
-      <Panel className="p-8 md:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Dashboard</p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
-          Live workspace data could not be loaded
-        </h1>
-        <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
-          The dashboard only uses real account data. Every connected source failed to respond, so nothing is being
-          approximated.
-        </p>
-        <button
-          type="button"
-          onClick={() => setRefreshIndex((value) => value + 1)}
-          className="mt-6 rounded-2xl bg-brand-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
-        >
-          Retry loading dashboard
-        </button>
-      </Panel>
-    );
-  }
-
-  const latestActivity = overview.recentActivity[0] ?? null;
-  const parsedResumeCount = overview.resumes.data?.filter((resume) => resume.processing_status === "parsed").length ?? null;
-  const quickActions = buildQuickActions(overview);
-  const latestAnalysisDate = overview.latestAnalysisReport?.completed_at ?? overview.latestAnalysisReport?.created_at ?? null;
-  const campaignCount = overview.campaigns.data?.length ?? null;
-  const savedJobCount = overview.savedJobs.data?.length ?? null;
-  const focusLabel =
-    overview.metrics.completedJourneySteps >= 5
-      ? "Keep momentum high"
-      : overview.metrics.completedJourneySteps >= 3
-        ? "Convert readiness into action"
-        : "Build your foundation";
-  const focusDescription =
-    overview.metrics.completedJourneySteps >= 5
-      ? "You already have traction. Focus on sending, practicing, and doubling down on strong opportunities."
-      : overview.metrics.completedJourneySteps >= 3
-        ? "Your core assets are in place. Now move faster on matching, outreach, and interview practice."
-        : "Start with one strong resume, one clear ATS analysis, and one improved version before scaling out.";
+  ]
+    .filter((c) => c.error)
+    .map((c) => c.label);
 
   return (
     <div className="space-y-6">
-      <Panel className="overflow-hidden">
-        <div className="border-b border-slate-100 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_55%,#E8F4EE_100%)] px-8 py-8 md:px-10 md:py-10">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Dashboard</p>
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
-                Move from CV quality to interview confidence
-              </h1>
-              <p className="mt-4 text-sm leading-7 text-slate-600">
-                {overview.metrics.activeResumeTitle
-                  ? `Your active resume is ${overview.metrics.activeResumeTitle}. Work through the journey below to improve fit, send outreach, and practice before recruiter conversations begin.`
-                  : "This overview only uses live workspace data. Missing sources are shown as unavailable instead of placeholders."}
-              </p>
-              {latestActivity && (
-                <p className="mt-3 text-sm leading-7 text-slate-500">
-                  Latest activity: <span className="font-semibold text-slate-800">{latestActivity.title}</span> on{" "}
-                  {formatDateTime(latestActivity.createdAt)}.
-                </p>
-              )}
-            </div>
+      {/* ── Hero ── */}
+      <HeroCard overview={overview} onRefresh={() => setRefreshIndex((v) => v + 1)} />
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-3xl border border-slate-200 bg-white/90 p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Focus</p>
-                <p className="mt-2 text-sm font-semibold text-slate-950">{focusLabel}</p>
-                <p className="mt-2 text-xs leading-6 text-slate-500">{focusDescription}</p>
-              </div>
-              <div className="rounded-3xl border border-slate-200 bg-white/90 p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Flow health</p>
-                <p className="mt-2 text-sm font-semibold text-slate-950">{overview.metrics.completedJourneySteps}/6 steps active</p>
-                <p className="mt-2 text-xs leading-6 text-slate-500">
-                  {savedJobCount ?? 0} saved roles and {campaignCount ?? 0} campaign{campaignCount === 1 ? "" : "s"} currently shape your momentum.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-4 px-8 py-5 md:grid-cols-3 md:px-10">
-          <div className="rounded-3xl border border-slate-200 bg-white p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Active CV</p>
-            <p className="mt-2 text-base font-semibold text-slate-950">{overview.metrics.activeResumeTitle ?? "No active resume yet"}</p>
-            <p className="mt-2 text-xs leading-6 text-slate-500">
-              {overview.metrics.activeResumeTitle
-                ? "Use this as the default reference for matching, outreach, and interview prep."
-                : "Upload and parse a resume to unlock the full guided journey."}
-            </p>
-          </div>
-          <div className="rounded-3xl border border-slate-200 bg-white p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Next action</p>
-            <p className="mt-2 text-base font-semibold text-slate-950">{overview.nextStep.label}</p>
-            <p className="mt-2 text-xs leading-6 text-slate-500">{overview.nextStep.description}</p>
-          </div>
-          <div className="rounded-3xl border border-slate-200 bg-white p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Rule</p>
-            <p className="mt-2 text-base font-semibold text-slate-950">
-              {(overview.metrics.atsScore ?? 0) >= 75 ? "Push strongest matches forward" : "Improve the CV before scaling out"}
-            </p>
-            <p className="mt-2 text-xs leading-6 text-slate-500">
-              Strong ATS quality helps every downstream step perform better, especially matching and SmartSend.
-            </p>
-          </div>
-        </div>
-      </Panel>
-
-      {failedCollections.length > 0 && (
-        <div className="rounded-3xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
-          Some dashboard sections are temporarily unavailable:{" "}
-          {failedCollections.map((collection) => collection.label).join(", ")}.
+      {/* ── Partial error warning ── */}
+      {failedLabels.length > 0 && failedLabels.length < 6 && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-800">
+          بعض البيانات غير متاحة مؤقتاً: {failedLabels.join("، ")}.
         </div>
       )}
 
-      <JourneyProgress overview={overview} />
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <DashboardMetricCard
-          label="ATS Score"
-          value={formatPercentage(overview.metrics.atsScore)}
-          note={
-            latestAnalysisDate
-              ? `${atsLabel(overview.metrics.atsScore)} based on your latest completed analysis from ${formatDate(latestAnalysisDate)}.`
-              : "Run an analysis to calculate your latest ATS score."
-          }
-        />
-        <DashboardMetricCard
-          label="Jobs Matched"
-          value={formatCount(overview.metrics.jobsMatched)}
-          note={
-            overview.savedJobs.error
-              ? "Matched job data could not be loaded."
-              : (overview.metrics.jobsMatched ?? 0) === 0
-                ? "Search and save roles to build your scored match list."
-                : "Counted from saved opportunities scored against your resume."
-          }
-        />
-        <DashboardMetricCard
-          label="Applications Sent"
-          value={formatCount(overview.metrics.applicationsSent)}
-          note={
-            overview.campaigns.error
-              ? "Campaign history could not be loaded."
-              : (overview.metrics.applicationsSent ?? 0) === 0
-                ? "Launch SmartSend when your CV is ready to reach companies in batches."
-                : "Total emails sent across completed outreach campaigns."
-          }
-        />
-        <DashboardMetricCard
-          label="Interview Readiness"
-          value={formatPercentage(overview.metrics.interviewReadiness)}
-          note={
-            overview.interviews.error
-              ? "Interview history could not be loaded."
-              : overview.metrics.interviewReadiness === null
-                ? "Complete at least one mock interview to unlock readiness scoring."
-                : `${interviewReadinessLabel(overview.metrics.interviewReadiness)} based on completed interview sessions.`
-          }
-        />
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <Panel className="p-6 md:p-8">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Recent activity</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-                Latest actions in your workspace
+      {/* ── Full failure ── */}
+      {failedLabels.length === 6 ? (
+        <Panel className="p-8 md:p-10">
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Dashboard</p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
+            تعذّر تحميل بيانات لوحة التحكم
+          </h1>
+          <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
+            جميع المصادر فشلت في الاستجابة. لا يتم عرض بيانات افتراضية.
+          </p>
+          <button
+            type="button"
+            onClick={() => setRefreshIndex((v) => v + 1)}
+            className="mt-6 rounded-xl bg-brand-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+          >
+            إعادة المحاولة
+          </button>
+        </Panel>
+      ) : (
+        <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
+          {/* ── Left: Journey Steps ── */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-brand-700">
+                  <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                </svg>
+                رحلتك المهنية
               </h2>
+              <span className="text-xs text-slate-500">
+                {overview.metrics.completedJourneySteps}/{6} مكتمل
+              </span>
             </div>
-            <button
-              type="button"
-              onClick={() => setRefreshIndex((value) => value + 1)}
-              className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-950"
-            >
-              Refresh
-            </button>
-          </div>
 
-          {overview.recentActivity.length === 0 ? (
-            <div className="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-6">
-              <p className="text-base font-semibold text-slate-900">No activity yet</p>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-                Upload resumes, run analyses, save jobs, send campaigns, or complete interviews to start building your
-                progress trail.
-              </p>
-              <Link
-                href="/dashboard/resumes"
-                className="mt-5 inline-flex rounded-2xl bg-brand-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
-              >
-                Upload your first resume
-              </Link>
-            </div>
-          ) : (
-            <div className="mt-6 space-y-3">
-              {overview.recentActivity.map((activity) => (
-                <Link
-                  key={activity.id}
-                  href={activity.href}
-                  className="block rounded-3xl border border-slate-200 bg-slate-50 p-5 transition hover:border-slate-300 hover:bg-white"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span
-                          className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize ${ACTIVITY_STYLES[activity.kind]}`}
-                        >
-                          {activity.kind.replace("-", " ")}
-                        </span>
-                        {activity.status && (
-                          <span className="text-xs font-medium capitalize text-slate-500">{activity.status}</span>
-                        )}
-                      </div>
-                      <p className="mt-3 text-base font-semibold text-slate-950">{activity.title}</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">{activity.description}</p>
-                    </div>
-                    <span className="text-xs font-medium text-slate-500">{formatDateTime(activity.createdAt)}</span>
-                  </div>
-                </Link>
+            <div className="space-y-2.5">
+              {journeySteps.map((step, i) => (
+                <JourneyStepCard key={i} step={step} />
               ))}
             </div>
-          )}
-        </Panel>
+          </div>
 
-        <Panel className="p-6 md:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Recommended step</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{overview.nextStep.label}</h2>
-          <p className="mt-3 text-sm leading-7 text-slate-600">{overview.nextStep.description}</p>
-          <Link
-            href={overview.nextStep.href}
-            className="mt-5 inline-flex rounded-2xl bg-brand-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
-          >
-            Continue journey
-          </Link>
+          {/* ── Right: Metrics + Activity ── */}
+          <div className="space-y-4">
+            {/* Metrics grid */}
+            <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-brand-700">
+                <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
+              </svg>
+              المقاييس
+            </h2>
+            <div className="grid grid-cols-2 gap-3">
+              <MetricCard
+                label="درجة ATS"
+                value={formatPercent(overview.metrics.atsScore)}
+                sub={atsLabel(overview.metrics.atsScore)}
+                colorClass={scoreColor(overview.metrics.atsScore)}
+              />
+              <MetricCard
+                label="وظائف مطابقة"
+                value={formatCount(overview.metrics.jobsMatched)}
+                sub={overview.savedJobs.error ? "غير متاح" : "من قائمة المحفوظة"}
+              />
+              <MetricCard
+                label="طلبات مُرسلة"
+                value={formatCount(overview.metrics.applicationsSent)}
+                sub={overview.campaigns.error ? "غير متاح" : "عبر حملات SmartSend"}
+              />
+              <MetricCard
+                label="جاهزية المقابلة"
+                value={formatPercent(overview.metrics.interviewReadiness)}
+                sub={interviewReadinessLabel(overview.metrics.interviewReadiness)}
+                colorClass={scoreColor(overview.metrics.interviewReadiness)}
+              />
+            </div>
 
-          <div className="mt-6 rounded-[2rem] border border-slate-200 bg-slate-50 p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Signals</p>
-            <div className="mt-4 space-y-3 text-sm text-slate-600">
-              <div className="flex items-center justify-between gap-3">
-                <span>Active CV</span>
-                <span className="font-semibold text-slate-900">{overview.metrics.activeResumeTitle ?? "Not set"}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span>Journey completed</span>
-                <span className="font-semibold text-slate-900">{overview.metrics.completedJourneySteps}/6</span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span>Parsed resumes</span>
-                <span className="font-semibold text-slate-900">{formatCount(parsedResumeCount)}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span>Saved jobs</span>
-                <span className="font-semibold text-slate-900">{formatCount(savedJobCount)}</span>
+            {/* Recent activity */}
+            <div className="space-y-2.5">
+              <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-brand-700">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                </svg>
+                آخر النشاطات
+              </h2>
+
+              {overview.recentActivity.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center">
+                  <p className="text-sm font-semibold text-slate-700">لا نشاط بعد</p>
+                  <p className="mt-2 text-xs leading-6 text-slate-500">
+                    ارفع سيرتك وابدأ رحلتك لتظهر نشاطاتك هنا.
+                  </p>
+                  <Link
+                    href="/dashboard/resumes"
+                    className="mt-4 inline-flex rounded-xl bg-brand-800 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-700"
+                  >
+                    ارفع سيرتك الأولى
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {overview.recentActivity.map((item) => (
+                    <Link
+                      key={item.id}
+                      href={item.href}
+                      className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:bg-slate-50"
+                    >
+                      <span
+                        className={`mt-0.5 inline-flex rounded-full border px-2.5 py-0.5 text-[10px] font-semibold capitalize ${ACTIVITY_STYLES[item.kind]}`}
+                      >
+                        {item.kind.replace("-", " ")}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-slate-900">{item.title}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">{formatDateTime(item.createdAt)}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Quick access */}
+            <div className="space-y-2.5">
+              <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-brand-700">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                </svg>
+                وصول سريع
+              </h2>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: "سيرتي الذاتية", href: "/dashboard/resumes", icon: (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
+                    </svg>
+                  )},
+                  { label: "التحليل", href: "/dashboard/analysis", icon: (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                      <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
+                    </svg>
+                  )},
+                  { label: "بحث الوظائف", href: "/dashboard/job-search", icon: (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                      <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                  )},
+                  { label: "SmartSend", href: "/dashboard/smart-send", icon: (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                      <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+                    </svg>
+                  )},
+                ].map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white p-3 text-sm font-medium text-slate-700 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800"
+                  >
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+                      {item.icon}
+                    </div>
+                    {item.label}
+                  </Link>
+                ))}
               </div>
             </div>
           </div>
-
-          <div className="mt-6 space-y-3">
-            {quickActions.map((action) => (
-              <Link
-                key={action.href}
-                href={action.href}
-                className="block rounded-3xl border border-slate-200 bg-white p-5 transition hover:border-slate-300 hover:bg-slate-50"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-base font-semibold text-slate-950">{action.label}</h3>
-                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Open</span>
-                </div>
-                <p className="mt-3 text-sm leading-6 text-slate-600">{action.description}</p>
-              </Link>
-            ))}
-          </div>
-        </Panel>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
