@@ -109,6 +109,20 @@ class AnalyzeAllResponse(BaseModel):
     no_text_count: int
 
 
+class BulkIdsPayload(BaseModel):
+    ids: list[str]
+
+
+class BulkDeleteResponse(BaseModel):
+    deleted: int
+
+
+class BulkAnalyzeResponse(BaseModel):
+    analyses_created: int
+    analyses_skipped: int
+    no_text_count: int
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -621,3 +635,66 @@ def delete_candidate(
     db.commit()
     if storage_key:
         get_storage().delete(storage_key)
+
+
+@router.post("/bulk-delete", response_model=BulkDeleteResponse)
+def bulk_delete_candidates(
+    payload: BulkIdsPayload,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_recruiter),
+) -> BulkDeleteResponse:
+    """Delete multiple candidates at once."""
+    deleted = 0
+    storage = get_storage()
+    for resume_id in payload.ids:
+        resume = db.get(Resume, resume_id)
+        if not resume or resume.user_id != current_user.id:
+            continue
+        storage_key = resume.storage_key
+        db.delete(resume)
+        deleted += 1
+        if storage_key:
+            try:
+                storage.delete(storage_key)
+            except Exception:
+                pass
+    db.commit()
+    return BulkDeleteResponse(deleted=deleted)
+
+
+@router.post("/bulk-analyze", response_model=BulkAnalyzeResponse)
+def bulk_analyze_candidates(
+    payload: BulkIdsPayload,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_recruiter),
+) -> BulkAnalyzeResponse:
+    """Re-run GPT analysis for a selected set of candidates."""
+    jobs = _get_recruiter_jobs(db, current_user.id)
+    if not jobs:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="No jobs found. Add at least one job before running analysis.",
+        )
+
+    total_created = 0
+    total_skipped = 0
+    no_text_count = 0
+
+    for resume_id in payload.ids:
+        resume = db.get(Resume, resume_id)
+        if not resume or resume.user_id != current_user.id:
+            continue
+        if not _has_resume_analysis_input(resume):
+            no_text_count += 1
+            continue
+        created, skipped = _run_gpt_screening_batch(
+            db, current_user.id, resume, jobs, force_refresh=True
+        )
+        total_created += created
+        total_skipped += skipped
+
+    return BulkAnalyzeResponse(
+        analyses_created=total_created,
+        analyses_skipped=total_skipped,
+        no_text_count=no_text_count,
+    )

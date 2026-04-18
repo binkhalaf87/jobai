@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Users, Upload, Sparkles, ChevronRight } from "lucide-react";
+import { Users, Upload, Sparkles, ChevronRight, Trash2, RefreshCw } from "lucide-react";
 
 import { api, uploadRequest } from "@/lib/api";
 
@@ -132,6 +132,12 @@ export default function RecruiterCandidatesPage() {
   const [analyzingAll, setAnalyzingAll] = useState(false);
   const [analyzeResult, setAnalyzeResult] = useState<string | null>(null);
 
+  // Bulk selection
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkAction, setBulkAction] = useState(false);
+  const [bulkResult, setBulkResult] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
   async function loadCandidates() {
     try {
       const data = await api.get<CandidateListItem[]>("/recruiter/candidates/", { auth: true });
@@ -144,6 +150,69 @@ export default function RecruiterCandidatesPage() {
   }
 
   useEffect(() => { void loadCandidates(); }, []);
+
+  // Clear selection when candidates list changes
+  useEffect(() => { setSelected(new Set()); }, [candidates]);
+
+  function toggleOne(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    if (selected.size === candidates.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(candidates.map((c) => c.id)));
+    }
+  }
+
+  async function handleBulkDelete() {
+    if (selected.size === 0) return;
+    setBulkAction(true);
+    setBulkResult(null);
+    setConfirmDelete(false);
+    try {
+      const res = await api.post<{ deleted: number }>(
+        "/recruiter/candidates/bulk-delete",
+        { ids: Array.from(selected) },
+        { auth: true }
+      );
+      setBulkResult({ type: "success", text: `${res.deleted} candidate${res.deleted !== 1 ? "s" : ""} deleted.` });
+      setLoading(true);
+      void loadCandidates();
+    } catch {
+      setBulkResult({ type: "error", text: "Delete failed. Please try again." });
+    } finally {
+      setBulkAction(false);
+    }
+  }
+
+  async function handleBulkAnalyze() {
+    if (selected.size === 0) return;
+    setBulkAction(true);
+    setBulkResult(null);
+    try {
+      const res = await api.post<{ analyses_created: number; analyses_skipped: number; no_text_count: number }>(
+        "/recruiter/candidates/bulk-analyze",
+        { ids: Array.from(selected) },
+        { auth: true }
+      );
+      setBulkResult({
+        type: "success",
+        text: `${res.analyses_created} analyses created. ${res.no_text_count > 0 ? `${res.no_text_count} skipped (no text).` : ""}`,
+      });
+      setLoading(true);
+      void loadCandidates();
+    } catch {
+      setBulkResult({ type: "error", text: "Analysis failed. Make sure you have jobs added." });
+    } finally {
+      setBulkAction(false);
+    }
+  }
 
   function updateItem(itemUid: string, patch: Partial<FileUploadItem>) {
     setUploadQueue((prev) => prev.map((i) => (i.uid === itemUid ? { ...i, ...patch } : i)));
@@ -194,6 +263,9 @@ export default function RecruiterCandidatesPage() {
     }
   }
 
+  const allSelected = candidates.length > 0 && selected.size === candidates.length;
+  const someSelected = selected.size > 0;
+
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -228,6 +300,75 @@ export default function RecruiterCandidatesPage() {
       <UploadZone onFilesAdded={handleFilesAdded} />
       <UploadQueue items={uploadQueue} />
 
+      {/* ── Bulk result banner ── */}
+      {bulkResult && (
+        <div className={`flex items-center justify-between rounded-xl border px-4 py-2.5 text-sm font-medium ${
+          bulkResult.type === "success" ? "border-teal-200 bg-teal-50 text-teal-700" : "border-rose-200 bg-rose-50 text-rose-700"
+        }`}>
+          {bulkResult.text}
+          <button type="button" onClick={() => setBulkResult(null)} className="ml-4 opacity-50 hover:opacity-100 text-xs">✕</button>
+        </div>
+      )}
+
+      {/* ── Floating bulk action bar ── */}
+      {someSelected && (
+        <div className="sticky top-4 z-20 flex items-center justify-between gap-3 rounded-2xl border border-slate-300 bg-white px-4 py-3 shadow-lg">
+          <span className="text-sm font-semibold text-slate-800">
+            {selected.size} selected
+          </span>
+          <div className="flex items-center gap-2">
+            {confirmDelete ? (
+              <>
+                <span className="text-xs text-rose-600 font-medium">Delete {selected.size} candidate{selected.size !== 1 ? "s" : ""}?</span>
+                <button
+                  type="button"
+                  onClick={() => void handleBulkDelete()}
+                  disabled={bulkAction}
+                  className="rounded-xl bg-rose-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700 disabled:opacity-50"
+                >
+                  {bulkAction ? "Deleting…" : "Confirm Delete"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(false)}
+                  className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => void handleBulkAnalyze()}
+                  disabled={bulkAction}
+                  className="flex items-center gap-1.5 rounded-xl bg-violet-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50"
+                >
+                  <RefreshCw size={12} />
+                  {bulkAction ? "Analyzing…" : "Re-analyze"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(true)}
+                  disabled={bulkAction}
+                  className="flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50"
+                >
+                  <Trash2 size={12} />
+                  Delete
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelected(new Set())}
+                  className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50"
+                >
+                  Clear
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ── Table ── */}
       {loading ? (
         <div className="space-y-2">
@@ -252,6 +393,16 @@ export default function RecruiterCandidatesPage() {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50">
+                {/* Select all checkbox */}
+                <th className="w-10 px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={(el) => { if (el) el.indeterminate = someSelected && !allSelected; }}
+                    onChange={toggleAll}
+                    className="h-4 w-4 cursor-pointer rounded border-slate-300 accent-violet-600"
+                  />
+                </th>
                 <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Candidate</th>
                 <th className="hidden px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 md:table-cell">Extracted Skills</th>
                 <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Stage</th>
@@ -264,8 +415,22 @@ export default function RecruiterCandidatesPage() {
               {candidates.map((c) => {
                 const name = c.parsed_name ?? c.title;
                 const skills = c.best_match_keywords.slice(0, 3);
+                const isSelected = selected.has(c.id);
                 return (
-                  <tr key={c.id} className="group transition hover:bg-slate-50/70">
+                  <tr
+                    key={c.id}
+                    className={`group transition ${isSelected ? "bg-violet-50/60" : "hover:bg-slate-50/70"}`}
+                  >
+                    {/* Checkbox */}
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleOne(c.id)}
+                        className="h-4 w-4 cursor-pointer rounded border-slate-300 accent-violet-600"
+                      />
+                    </td>
+
                     {/* Name + email */}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
@@ -336,6 +501,7 @@ export default function RecruiterCandidatesPage() {
           </table>
           <div className="border-t border-slate-100 px-4 py-2.5 text-[11px] text-slate-400">
             {candidates.length} candidate{candidates.length !== 1 ? "s" : ""}
+            {someSelected && <span className="ml-2 font-semibold text-violet-600">· {selected.size} selected</span>}
           </div>
         </div>
       )}
