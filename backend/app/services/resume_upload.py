@@ -25,7 +25,6 @@ from app.models.enums import ResumeProcessingStatus
 from app.models.resume import Resume
 from app.models.user import User
 from app.services.resume_extraction import extract_resume_text
-from app.services.resume_parser import parse_resume_text
 from app.services.storage import get_storage
 from app.utils.files import validate_resume_file
 
@@ -120,11 +119,9 @@ def _apply_resume_text(db: Session, resume: Resume) -> None:
         finally:
             tmp_path.unlink(missing_ok=True)
 
-    structured = parse_resume_text(extracted.normalized_text)
-
     resume.raw_text = extracted.raw_text
     resume.normalized_text = extracted.normalized_text
-    resume.structured_data = structured.to_dict()
+    resume.structured_data = extracted.structured_data
     resume.page_count = extracted.page_count
     resume.processing_status = ResumeProcessingStatus.PARSED
 
