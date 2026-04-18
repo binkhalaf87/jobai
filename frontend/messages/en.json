@@ -309,10 +309,31 @@
       "description": "JobAI delivers a modern bilingual experience that blends Elm-grade professionalism with a polished SaaS feel, so you can find the right role and manage your career with confidence.",
       "primaryCta": "Get Started",
       "secondaryCta": "Quick tour",
+      "cta": "Get Started",
+      "quickTour": "Quick tour",
       "stats": {
         "matchSpeed": "Faster time to the right match",
         "analysedResumes": "AI-reviewed resumes analysed",
-        "satisfaction": "User satisfaction with smart suggestions"
+        "satisfaction": "User satisfaction with smart suggestions",
+        "fasterMatching": "3×",
+        "fasterMatchingDesc": "Faster time to the right match",
+        "resumesAnalyzed": "10k+",
+        "resumesAnalyzedDesc": "AI-reviewed resumes analysed",
+        "userSatisfaction": "97%",
+        "userSatisfactionDesc": "User satisfaction with smart suggestions"
+      },
+      "demo": {
+        "nextJob": "Your next role",
+        "jobTitle": "AI Data Analyst",
+        "status": "Candidate",
+        "features": {
+          "smartAnalysis": "Smart CV analysis",
+          "recommendations": "Recommendations",
+          "recommendationsDesc": "Strengths, keywords, and the strongest work highlights.",
+          "matchingSkills": "Matched skills",
+          "inviteTitle": "Try the flow",
+          "inviteDesc": "Experience smart search and precise matching across roles that fit your profile."
+        }
       }
     },
     "preview": {
@@ -331,6 +352,19 @@
       "title": "End-to-end hiring tools for every stage",
       "description": "From CV analysis to job matching and polished profile building, everything lives in one place.",
       "detailsCta": "View details",
+      "viewDetails": "View details",
+      "jobSearch": {
+        "title": "Job Search",
+        "description": "Discover opportunities that fit your professional profile and skills."
+      },
+      "resumeAnalysis": {
+        "title": "Resume Analysis",
+        "description": "Get an intelligent CV assessment with guidance to improve weak sections."
+      },
+      "jobMatching": {
+        "title": "Job Matching",
+        "description": "Match your resume with roles that align with your experience and career values."
+      },
       "items": {
         "jobSearch": {
           "title": "Job Search",
@@ -347,6 +381,21 @@
       }
     },
     "features": {
+      "aiPowered": {
+        "title": "Built with AI",
+        "description": "Adaptive systems that analyse CVs and match roles with precision.",
+        "badge": "Tech"
+      },
+      "simpleInterface": {
+        "title": "Simple and fast interface",
+        "description": "A clean design that keeps the experience organized and information easy to reach.",
+        "badge": "Fast"
+      },
+      "rtlSupport": {
+        "title": "Full Arabic and RTL support",
+        "description": "Content designed for Arabic with right-to-left alignment and natural flow.",
+        "badge": "Tailored"
+      },
       "items": {
         "ai": {
           "title": "Built with AI",
@@ -365,7 +414,50 @@
         }
       }
     },
+    "dashboardPreview": {
+      "eyebrow": "User dashboard",
+      "title": "A snapshot of your account performance",
+      "badge": "AI experience",
+      "stats": {
+        "todayMatch": "Today's match",
+        "todayMatchValue": "12",
+        "todayMatchDesc": "Opportunities recommended to you today",
+        "cvScore": "Your resume",
+        "cvScoreValue": "87%",
+        "cvScoreDesc": "Clarity and relevance score",
+        "jobSuggestions": "Job suggestions",
+        "jobSuggestionsValue": "24",
+        "jobSuggestionsDesc": "Roles that fit your professional style"
+      },
+      "insights": {
+        "topCandidate": "Strongest lead today",
+        "topCandidateDesc": "An AI engineer opening in Riyadh with a high interview potential.",
+        "quickTip": "Quick tip",
+        "quickTipDesc": "Add more recent experience keywords to improve your fit for technical roles."
+      }
+    },
     "jobs": {
+      "eyebrow": "Latest listings",
+      "title": "Relevant AI opportunities",
+      "updated": "Updated",
+      "aiAnalyst": {
+        "title": "AI Capability Analyst",
+        "company": "Elm Tech",
+        "location": "Riyadh",
+        "type": "Full-time"
+      },
+      "recruitmentEngineer": {
+        "title": "Recruitment Growth Engineer",
+        "company": "CareFusion",
+        "location": "Jeddah",
+        "type": "Part-time"
+      },
+      "uxManager": {
+        "title": "User Experience Manager",
+        "company": "AI Talent",
+        "location": "Dammam",
+        "type": "Remote"
+      },
       "items": {
         "aiAnalyst": {
           "title": "AI Capability Analyst",
@@ -413,6 +505,12 @@
     },
     "why": {
       "eyebrow": "Why JobAI?",
+      "title": "Why JobAI?",
+      "points": [
+        "Designed for Arabic and RTL from day one.",
+        "A simple, organized interface that keeps your focus on what matters.",
+        "AI automation that helps you at every step."
+      ],
       "items": {
         "rtl": "Designed for Arabic and RTL from day one.",
         "focused": "A simple, organized interface that keeps your focus on what matters.",
@@ -424,7 +522,9 @@
       "title": "Make your job search shorter and more precise",
       "description": "Explore better-fit roles, improve your resume, and move forward with confidence through an interface built for ambitious professionals.",
       "primary": "Create account",
-      "secondary": "Sign in"
+      "secondary": "Sign in",
+      "register": "Create account",
+      "login": "Sign in"
     }
   },
 
