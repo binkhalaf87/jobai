@@ -2,7 +2,6 @@
 
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
-import { useTranslations } from "next-intl";
 
 type AnswerMode = "text" | "video";
 type InterviewLanguage = "en" | "ar";
