@@ -75,7 +75,7 @@ function PlanBadge({ current, label }: { current: boolean; label: string }) {
   return (
     <span
       className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-        current ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"
+        current ? "bg-teal-light/30 text-teal" : "bg-slate-100 text-slate-600"
       }`}
     >
       {label}
@@ -346,7 +346,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
 
           {checkoutSession ? (
             <div className="mt-6 space-y-5">
-              <div className="rounded-[1.75rem] border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+              <div className="rounded-2xl border border-teal-light bg-teal-light/20 p-4 text-sm text-teal">
                 Payment intention created for <span className="font-semibold">{checkoutSession.plan.name}</span>. Complete it below using Paymob.
               </div>
               <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-4">
@@ -416,7 +416,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                         <p className="font-semibold text-slate-950">{transaction.description ?? transaction.transaction_type.replace(/_/g, " ")}</p>
                         <p className="mt-1 text-xs text-slate-500">{formatDate(transaction.effective_at)}</p>
                       </div>
-                      <p className={`text-sm font-semibold ${transaction.direction === "credit" ? "text-emerald-700" : "text-rose-600"}`}>
+                      <p className={`text-sm font-semibold ${transaction.direction === "credit" ? "text-teal" : "text-rose-600"}`}>
                         {transaction.direction === "credit" ? "+" : "-"}{transaction.points} pts
                       </p>
                       <p className="text-sm text-slate-600">Balance: {transaction.balance_after}</p>

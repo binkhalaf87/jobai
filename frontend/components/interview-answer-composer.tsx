@@ -323,10 +323,10 @@ export function InterviewAnswerComposer({
 
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-2">
-                <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${isCameraActive ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white text-slate-500"}`}>
+                <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${isCameraActive ? "border-teal-light bg-teal-light/30 text-teal" : "border-slate-200 bg-white text-slate-500"}`}>
                   {isCameraActive ? "Camera live" : "Camera off"}
                 </span>
-                <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${isRecordingVideo ? "border-indigo-200 bg-indigo-50 text-indigo-700" : "border-slate-200 bg-white text-slate-500"}`}>
+                <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${isRecordingVideo ? "border-brand-200 bg-brand-50 text-brand-700" : "border-slate-200 bg-white text-slate-500"}`}>
                   {isRecordingVideo ? "Recording" : "Not recording"}
                 </span>
                 <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${isListening ? "border-amber-200 bg-amber-50 text-amber-700" : "border-slate-200 bg-white text-slate-500"}`}>

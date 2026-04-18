@@ -37,13 +37,13 @@ type SendProgress = {
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    draft: "bg-gray-100 text-gray-600",
-    sending: "bg-blue-100 text-blue-700",
-    completed: "bg-green-100 text-green-700",
-    failed: "bg-red-100 text-red-700",
+    draft: "bg-slate-100 text-slate-600 border border-slate-200",
+    sending: "bg-brand-50 text-brand-700 border border-brand-200",
+    completed: "bg-teal-light/30 text-teal border border-teal-light",
+    failed: "bg-rose-50 text-rose-700 border border-rose-200",
   };
   return (
-    <span className={`px-2 py-0.5 rounded text-xs font-medium ${map[status] ?? "bg-gray-100 text-gray-500"}`}>
+    <span className={`px-2 py-0.5 rounded text-xs font-medium ${map[status] ?? "bg-slate-100 text-slate-500"}`}>
       {status}
     </span>
   );
@@ -107,9 +107,9 @@ function SmtpSetup({
         </p>
       </div>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800 space-y-1">
+      <div className="bg-brand-50 border border-brand-200 rounded-xl p-4 text-sm text-brand-800 space-y-1">
         <p className="font-medium">Create a Gmail App Password:</p>
-        <ol className="list-decimal list-inside space-y-0.5 text-blue-700">
+        <ol className="list-decimal list-inside space-y-0.5 text-brand-700">
           <li>Enable 2-Step Verification on your Google account</li>
           <li>Go to Google Account → Security → App Passwords</li>
           <li>Select app: Mail, device: Other → type &quot;JobAI&quot;</li>
@@ -122,7 +122,7 @@ function SmtpSetup({
           <label className="block text-sm font-medium mb-1">Gmail address</label>
           <input
             type="email"
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             placeholder="you@gmail.com"
             value={form.gmail_address}
             onChange={(e) => setForm({ ...form, gmail_address: e.target.value })}
@@ -133,7 +133,7 @@ function SmtpSetup({
           <label className="block text-sm font-medium mb-1">Display name</label>
           <input
             type="text"
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             placeholder="Your Name"
             value={form.display_name}
             onChange={(e) => setForm({ ...form, display_name: e.target.value })}
@@ -147,7 +147,7 @@ function SmtpSetup({
           </label>
           <input
             type="password"
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             placeholder="xxxx xxxx xxxx xxxx"
             value={form.app_password}
             onChange={(e) => setForm({ ...form, app_password: e.target.value })}
@@ -156,13 +156,13 @@ function SmtpSetup({
         </div>
 
         {error && <p className="text-red-600 text-sm">{error}</p>}
-        {ok && <p className="text-green-600 text-sm">{ok}</p>}
+        {ok && <p className="text-teal text-sm">{ok}</p>}
 
         <div className="flex gap-3">
           <button
             type="submit"
             disabled={saving}
-            className="flex-1 bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="flex-1 bg-brand-800 text-white rounded-lg py-2 text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
           >
             {saving ? "Saving…" : conn ? "Update" : "Save"}
           </button>
@@ -171,7 +171,7 @@ function SmtpSetup({
               type="button"
               onClick={handleVerify}
               disabled={verifying}
-              className="flex-1 border border-blue-600 text-blue-600 rounded-lg py-2 text-sm font-medium hover:bg-blue-50 disabled:opacity-50"
+              className="flex-1 border border-brand-300 text-brand-700 rounded-lg py-2 text-sm font-medium hover:bg-brand-50 disabled:opacity-50"
             >
               {verifying ? "Verifying…" : "Test"}
             </button>
@@ -185,7 +185,7 @@ function SmtpSetup({
             Current:{" "}
             <span className="font-medium text-gray-700">{conn.gmail_address}</span>
             {conn.is_verified && (
-              <span className="ml-2 text-green-600 text-xs font-medium">✓ Verified</span>
+              <span className="ml-2 text-teal text-xs font-medium">✓ Verified</span>
             )}
           </p>
         </div>
@@ -271,7 +271,7 @@ function ComposePanel({
           <label className="block text-sm font-medium mb-1">Job Title *</label>
           <input
             type="text"
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             placeholder="e.g. Software Engineer"
             value={form.job_title}
             onChange={(e) => setForm({ ...form, job_title: e.target.value })}
@@ -282,7 +282,7 @@ function ComposePanel({
           <label className="block text-sm font-medium mb-1">Company Name</label>
           <input
             type="text"
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             placeholder="Optional"
             value={form.company_name}
             onChange={(e) => setForm({ ...form, company_name: e.target.value })}
@@ -294,7 +294,7 @@ function ComposePanel({
               Resume <span className="text-gray-400 font-normal">(optional — helps tailor the letter)</span>
             </label>
             <select
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
               value={form.resume_id}
               onChange={(e) => setForm({ ...form, resume_id: e.target.value })}
             >
@@ -311,7 +311,7 @@ function ComposePanel({
           <label className="block text-sm font-medium mb-1">Job Description</label>
           <textarea
             rows={4}
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
             placeholder="Paste the job description to tailor the email (optional)"
             value={form.job_description}
             onChange={(e) => setForm({ ...form, job_description: e.target.value })}
@@ -323,7 +323,7 @@ function ComposePanel({
         <button
           type="submit"
           disabled={generating || !form.job_title.trim()}
-          className="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full bg-brand-800 text-white rounded-lg py-2 text-sm font-medium hover:bg-brand-700 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {generating ? (
             <>
@@ -431,8 +431,8 @@ function PreviewPanel({
             onClick={() => selectVariant(v)}
             className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
               selectedVariant === v
-                ? "bg-blue-600 text-white border-blue-600"
-                : "bg-white text-gray-600 border-gray-200 hover:border-blue-400"
+                ? "bg-brand-800 text-white border-brand-800"
+                : "bg-white text-gray-600 border-slate-200 hover:border-brand-400"
             }`}
           >
             {v.charAt(0).toUpperCase() + v.slice(1)}
@@ -444,7 +444,7 @@ function PreviewPanel({
         <label className="block text-sm font-medium mb-1">Subject</label>
         <input
           type="text"
-          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
           value={editedSubject}
           onChange={(e) => setEditedSubject(e.target.value)}
         />
@@ -454,7 +454,7 @@ function PreviewPanel({
         <label className="block text-sm font-medium mb-1">Body</label>
         <textarea
           rows={10}
-          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none font-mono"
+          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none font-mono"
           value={editedBody}
           onChange={(e) => setEditedBody(e.target.value)}
         />
@@ -465,7 +465,7 @@ function PreviewPanel({
         <div className="flex gap-2">
           <input
             type="text"
-            className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             placeholder="email@example.com Optional Name"
             value={recipientInput}
             onChange={(e) => setRecipientInput(e.target.value)}
@@ -474,7 +474,7 @@ function PreviewPanel({
           <button
             type="button"
             onClick={addRecipient}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200"
+            className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-sm hover:bg-slate-200"
           >
             Add
           </button>
@@ -488,13 +488,13 @@ function PreviewPanel({
             {recipients.map((r) => (
               <span
                 key={r.email}
-                className="flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full"
+                className="flex items-center gap-1 bg-brand-50 text-brand-700 text-xs px-2 py-1 rounded-full"
               >
                 {r.name ? `${r.name} <${r.email}>` : r.email}
                 <button
                   type="button"
                   onClick={() => removeRecipient(r.email)}
-                  className="text-blue-400 hover:text-blue-700 ml-1"
+                  className="text-brand-300 hover:text-brand-700 ml-1"
                 >
                   ×
                 </button>
@@ -509,7 +509,7 @@ function PreviewPanel({
       <button
         onClick={handleConfirm}
         disabled={confirming || recipients.length === 0}
-        className="w-full bg-green-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+        className="w-full bg-teal text-white rounded-lg py-2 text-sm font-medium hover:bg-teal/90 disabled:opacity-50"
       >
         {confirming
           ? "Confirming…"
@@ -578,20 +578,20 @@ function SendingPanel({
           <span>{logs.length} / {total || "?"}</span>
           <span>{progress}%</span>
         </div>
-        <div className="w-full bg-gray-100 rounded-full h-2">
-          <div className="bg-blue-500 h-2 rounded-full transition-all" style={{ width: `${progress}%` }} />
+        <div className="w-full bg-slate-100 rounded-full h-2">
+          <div className="bg-brand-700 h-2 rounded-full transition-all" style={{ width: `${progress}%` }} />
         </div>
       </div>
 
       <div className="flex gap-4 text-sm">
-        <span className="text-green-600 font-medium">{sent} sent</span>
+        <span className="text-teal font-medium">{sent} sent</span>
         {failed > 0 && <span className="text-red-600 font-medium">{failed} failed</span>}
       </div>
 
       <div className="max-h-60 overflow-y-auto space-y-1">
         {logs.map((log, i) => (
           <div key={i} className="flex items-center gap-2 text-xs">
-            <span className={log.status === "sent" ? "text-green-500" : "text-red-500"}>
+            <span className={log.status === "sent" ? "text-teal" : "text-red-500"}>
               {log.status === "sent" ? "✓" : "✗"}
             </span>
             <span className="text-gray-700 truncate">{log.email}</span>
@@ -605,14 +605,14 @@ function SendingPanel({
       {done && (
         <div className="space-y-3">
           {summary && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-800">
+            <div className="bg-teal-light/20 border border-teal-light rounded-xl p-4 text-sm text-teal">
               Campaign complete — {summary.sent} sent
               {summary.failed > 0 && `, ${summary.failed} failed`}
             </div>
           )}
           <button
             onClick={onDone}
-            className="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700"
+            className="w-full bg-brand-800 text-white rounded-lg py-2 text-sm font-medium hover:bg-brand-700"
           >
             View History
           </button>
@@ -652,7 +652,7 @@ function HistoryPanel() {
       {campaigns.map((c) => (
         <div key={c.id} className="border rounded-lg overflow-hidden">
           <button
-            className="w-full text-left px-4 py-3 flex items-center justify-between hover:bg-gray-50"
+            className="w-full text-left px-4 py-3 flex items-center justify-between hover:bg-slate-50"
             onClick={() => setExpanded(expanded === c.id ? null : c.id)}
           >
             <div className="flex items-center gap-3">
@@ -668,11 +668,11 @@ function HistoryPanel() {
             </div>
           </button>
           {expanded === c.id && (
-            <div className="border-t px-4 py-3 bg-gray-50 space-y-3">
+            <div className="border-t px-4 py-3 bg-slate-50 space-y-3">
               <div className="flex gap-6 text-xs text-gray-500 flex-wrap">
                 <span>Variant: <strong>{c.selected_variant ?? "—"}</strong></span>
                 <span>Total: <strong>{c.total_recipients}</strong></span>
-                <span className="text-green-600">Sent: <strong>{c.sent_count}</strong></span>
+                <span className="text-teal">Sent: <strong>{c.sent_count}</strong></span>
                 {c.failed_count > 0 && (
                   <span className="text-red-600">Failed: <strong>{c.failed_count}</strong></span>
                 )}
@@ -686,7 +686,7 @@ function HistoryPanel() {
                 <div className="max-h-40 overflow-y-auto space-y-0.5">
                   {c.logs.map((log) => (
                     <div key={log.id} className="flex items-center gap-2 text-xs">
-                      <span className={log.status === "sent" ? "text-green-500" : "text-red-500"}>
+                      <span className={log.status === "sent" ? "text-teal" : "text-red-500"}>
                         {log.status === "sent" ? "✓" : "✗"}
                       </span>
                       <span className="text-gray-600 truncate">
@@ -784,7 +784,7 @@ export default function SmartSendPage() {
     <div className="space-y-6">
       <Panel className="overflow-hidden p-0">
         <div className="grid gap-0 lg:grid-cols-[1.35fr_0.65fr]">
-          <div className="bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.12),_transparent_42%),linear-gradient(135deg,_#ffffff_0%,_#eff6ff_46%,_#f8fafc_100%)] px-6 py-6 md:px-8 md:py-8">
+          <div className="bg-gradient-to-br from-brand-800/8 via-white to-teal/5 px-6 py-6 md:px-8 md:py-8">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Application Outreach</p>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-950">Smart Send campaigns</h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
@@ -846,7 +846,7 @@ export default function SmartSendPage() {
               onClick={() => setStep(t.id)}
               className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                 step === t.id
-                  ? "bg-blue-600 text-white shadow-sm"
+                  ? "bg-brand-800 text-white shadow-sm"
                   : "bg-white text-gray-500 ring-1 ring-slate-200 hover:text-gray-700"
               }`}
             >

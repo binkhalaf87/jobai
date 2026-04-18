@@ -63,11 +63,11 @@ function styleClass(style: InterviewerStyle | null | undefined): string {
     ? "border-rose-200 bg-rose-50 text-rose-700"
     : style === "direct"
       ? "border-slate-200 bg-slate-100 text-slate-700"
-      : "border-emerald-200 bg-emerald-50 text-emerald-700";
+      : "border-teal-light bg-teal-light/30 text-teal";
 }
 
 function typeClass(type: string): string {
-  return type === "technical" ? "border-purple-200 bg-purple-50 text-purple-700" : "border-blue-200 bg-blue-50 text-blue-700";
+  return type === "technical" ? "border-brand-200 bg-brand-50 text-brand-700" : "border-brand-200 bg-brand-50 text-brand-700";
 }
 
 function ScoreBar({ label, score }: { label: string; score: number }) {
@@ -75,7 +75,7 @@ function ScoreBar({ label, score }: { label: string; score: number }) {
     <div className="flex items-center gap-3">
       <span className="w-28 shrink-0 text-xs text-slate-600">{label}</span>
       <div className="h-1.5 flex-1 rounded-full bg-slate-100">
-        <div className={`h-1.5 rounded-full ${score >= 7.5 ? "bg-emerald-500" : score >= 5 ? "bg-amber-400" : "bg-rose-400"}`} style={{ width: `${Math.round((score / 10) * 100)}%` }} />
+        <div className={`h-1.5 rounded-full ${score >= 7.5 ? "bg-teal" : score >= 5 ? "bg-amber-400" : "bg-rose-400"}`} style={{ width: `${Math.round((score / 10) * 100)}%` }} />
       </div>
       <span className="w-8 text-right text-xs font-semibold text-slate-700">{score.toFixed(1)}</span>
     </div>
@@ -292,7 +292,7 @@ export default function DashboardAiInterviewPage() {
     <div className="space-y-6">
       <Panel className="overflow-hidden p-0">
         <div className="grid gap-0 lg:grid-cols-[1.35fr_0.65fr]">
-          <div className="bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.12),_transparent_42%),linear-gradient(135deg,_#ffffff_0%,_#ecfdf5_46%,_#f8fafc_100%)] px-6 py-6 md:px-8 md:py-8">
+          <div className="bg-gradient-to-br from-brand-800/8 via-white to-teal/5 px-6 py-6 md:px-8 md:py-8">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">AI Practice</p>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-900">AI Interview</h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
@@ -400,7 +400,7 @@ export default function DashboardAiInterviewPage() {
               <div
                 key={i}
                 className={`h-1.5 flex-1 rounded-full transition-colors ${
-                  i < currentIndex ? "bg-slate-700" : i === currentIndex ? "bg-blue-500" : "bg-slate-200"
+                  i < currentIndex ? "bg-slate-700" : i === currentIndex ? "bg-brand-700" : "bg-slate-200"
                 }`}
               />
             ))}
@@ -431,12 +431,12 @@ export default function DashboardAiInterviewPage() {
           ) : (
             <div className="mt-5 space-y-4 rounded-2xl border border-slate-100 bg-slate-50 p-5">
               <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700"><p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Interviewer Reply</p><p className="mt-2">{currentEvaluation.interviewer_reply}</p></div>
-              <div className={`rounded-xl border px-4 py-3 ${currentEvaluation.score >= 7.5 ? "border-emerald-200 bg-emerald-50" : currentEvaluation.score >= 5 ? "border-amber-200 bg-amber-50" : "border-rose-200 bg-rose-50"}`}><p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Answer Score</p><p className="mt-2 text-2xl font-bold">{currentEvaluation.score.toFixed(1)}<span className="text-sm font-normal text-slate-400">/10</span></p></div>
+              <div className={`rounded-xl border px-4 py-3 ${currentEvaluation.score >= 7.5 ? "border-teal-light bg-teal-light/20" : currentEvaluation.score >= 5 ? "border-amber-200 bg-amber-50" : "border-rose-200 bg-rose-50"}`}><p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Answer Score</p><p className="mt-2 text-2xl font-bold">{currentEvaluation.score.toFixed(1)}<span className="text-sm font-normal text-slate-400">/10</span></p></div>
               {currentEvaluation.communication_tip && <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700"><p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Coaching Tip</p><p className="mt-2">{currentEvaluation.communication_tip}</p></div>}
-              {currentEvaluation.strengths.length > 0 && <div><p className="mb-2 text-xs font-semibold uppercase tracking-widest text-emerald-700">Strengths</p><ul className="space-y-1.5 text-sm text-slate-700">{currentEvaluation.strengths.map((item) => <li key={item}>+ {item}</li>)}</ul></div>}
+              {currentEvaluation.strengths.length > 0 && <div><p className="mb-2 text-xs font-semibold uppercase tracking-widest text-teal">Strengths</p><ul className="space-y-1.5 text-sm text-slate-700">{currentEvaluation.strengths.map((item) => <li key={item}>+ {item}</li>)}</ul></div>}
               {currentEvaluation.weaknesses.length > 0 && <div><p className="mb-2 text-xs font-semibold uppercase tracking-widest text-amber-700">Improvements</p><ul className="space-y-1.5 text-sm text-slate-700">{currentEvaluation.weaknesses.map((item) => <li key={item}>-&gt; {item}</li>)}</ul></div>}
               {currentEvaluation.improved_answer && <div><p className="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-500">Suggested Stronger Answer</p><div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm leading-relaxed text-slate-700">{currentEvaluation.improved_answer}</div></div>}
-              {nextQuestion && <div className="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-800"><p className="text-[10px] font-semibold uppercase tracking-widest text-indigo-500">Next Question Ready</p><p className="mt-2">{nextQuestion.question}</p></div>}
+              {nextQuestion && <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-800"><p className="text-[10px] font-semibold uppercase tracking-widest text-brand-500">Next Question Ready</p><p className="mt-2">{nextQuestion.question}</p></div>}
               <button type="button" disabled={pageState === "completing"} onClick={() => void handleNext()} className="rounded-xl bg-brand-800 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{pageState === "completing" ? "Generating final report..." : currentIndex + 1 >= questionCount ? "View Final Report" : "Next Question ->"}</button>
             </div>
           )}
@@ -458,7 +458,7 @@ export default function DashboardAiInterviewPage() {
             {completedSession.final_report?.summary && <p className="mt-4 text-sm leading-7 text-slate-600">{completedSession.final_report.summary}</p>}
             {completedSession.final_report?.breakdown && <div className="mt-5 space-y-2.5"><ScoreBar label="Relevance" score={completedSession.final_report.breakdown.relevance} /><ScoreBar label="Clarity" score={completedSession.final_report.breakdown.clarity} /><ScoreBar label="Professionalism" score={completedSession.final_report.breakdown.professionalism} /><ScoreBar label="Confidence" score={completedSession.final_report.breakdown.confidence} /><ScoreBar label="Role Fit" score={completedSession.final_report.breakdown.role_fit} /></div>}
             <div className="mt-6 grid gap-4 md:grid-cols-3">
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><p className="text-xs font-semibold uppercase tracking-widest text-emerald-700">Top Strengths</p><ul className="mt-3 space-y-2 text-sm text-emerald-900">{(completedSession.final_report?.top_strengths ?? []).map((item: string) => <li key={item}>+ {item}</li>)}</ul></div>
+              <div className="rounded-2xl border border-teal-light bg-teal-light/20 p-4"><p className="text-xs font-semibold uppercase tracking-widest text-teal">Top Strengths</p><ul className="mt-3 space-y-2 text-sm text-teal">{(completedSession.final_report?.top_strengths ?? []).map((item: string) => <li key={item}>+ {item}</li>)}</ul></div>
               <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4"><p className="text-xs font-semibold uppercase tracking-widest text-amber-700">Priority Improvements</p><ul className="mt-3 space-y-2 text-sm text-amber-900">{(completedSession.final_report?.priority_improvements ?? []).map((item: string) => <li key={item}>-&gt; {item}</li>)}</ul></div>
               <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4"><p className="text-xs font-semibold uppercase tracking-widest text-sky-700">Recommended Drills</p><ul className="mt-3 space-y-2 text-sm text-sky-900">{(completedSession.final_report?.recommended_drills ?? []).map((item: string) => <li key={item}>• {item}</li>)}</ul></div>
             </div>

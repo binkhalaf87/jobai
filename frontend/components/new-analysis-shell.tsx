@@ -54,13 +54,13 @@ export function NewAnalysisShell() {
         </div>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
             <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Latest CV ID</p>
             <p className="mt-3 break-all font-mono text-sm text-slate-900">
               {latestResumeId || "Upload a CV to continue."}
             </p>
           </div>
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
             <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Latest Job ID</p>
             <p className="mt-3 break-all font-mono text-sm text-slate-900">
               {latestJobDescriptionId || "Save a job description to continue."}
