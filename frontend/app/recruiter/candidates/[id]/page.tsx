@@ -392,15 +392,31 @@ function TabScreening({
   detail,
   onRegenerate,
   regenerating,
+  timedOut,
 }: {
   report: ScreeningReport | null;
   detail: CandidateDetail;
   onRegenerate: () => void;
   regenerating: boolean;
+  timedOut: boolean;
 }) {
   const hasJobMatches = detail.matches.length > 0;
 
   if (!report || report.status === "pending") {
+    if (timedOut) {
+      return (
+        <div className="space-y-5">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center space-y-3">
+            <p className="text-sm font-semibold text-amber-700">Screening report is taking longer than expected.</p>
+            <button type="button" onClick={onRegenerate} disabled={regenerating}
+              className="rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50">
+              {regenerating ? "Starting…" : "Generate Report"}
+            </button>
+          </div>
+          {hasJobMatches && <JobAnalysisSection detail={detail} />}
+        </div>
+      );
+    }
     return (
       <div className="space-y-5">
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-10 text-center space-y-3">
@@ -869,8 +885,10 @@ export default function CandidateProfilePage() {
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const [hasJobs, setHasJobs] = useState(false);
   const [screening, setScreening] = useState<ScreeningReport | null>(null);
+  const [screeningTimedOut, setScreeningTimedOut] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollCountRef = useRef(0);
 
   useEffect(() => {
     async function load() {
@@ -883,7 +901,7 @@ export default function CandidateProfilePage() {
         setDetail(data);
         setHasJobs(jobs.length > 0);
         setScreening(screen);
-        if (screen?.status === "pending") schedulePoll();
+        if (!screen || screen.status === "pending") schedulePoll();
       } catch {
         setError("Failed to load candidate profile.");
       } finally {
@@ -895,11 +913,16 @@ export default function CandidateProfilePage() {
   }, [id]);
 
   function schedulePoll() {
+    if (pollCountRef.current >= 20) {
+      setScreeningTimedOut(true);
+      return;
+    }
+    pollCountRef.current += 1;
     pollRef.current = setTimeout(async () => {
       try {
         const screen = await api.get<ScreeningReport | null>(`/recruiter/candidates/${id}/screening`, { auth: true });
         setScreening(screen);
-        if (screen?.status === "pending") schedulePoll();
+        if (!screen || screen.status === "pending") schedulePoll();
       } catch { /* ignore */ }
     }, 4000);
   }
@@ -907,6 +930,8 @@ export default function CandidateProfilePage() {
   async function handleRegenerate() {
     if (regenerating) return;
     setRegenerating(true);
+    pollCountRef.current = 0;
+    setScreeningTimedOut(false);
     try {
       const screen = await api.post<ScreeningReport>(`/recruiter/candidates/${id}/screening`, undefined, { auth: true });
       setScreening(screen);
@@ -1213,6 +1238,7 @@ export default function CandidateProfilePage() {
             detail={detail}
             onRegenerate={() => void handleRegenerate()}
             regenerating={regenerating}
+            timedOut={screeningTimedOut}
           />
         )}
         {activeTab === "matches" && <TabMatches detail={detail} />}

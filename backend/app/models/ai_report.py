@@ -15,6 +15,7 @@ class AIAnalysisReport(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     resume_id: Mapped[str] = mapped_column(ForeignKey("resumes.id", ondelete="CASCADE"), nullable=False, index=True)
     resume_title: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    job_description_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
     job_description_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     model_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     report_type: Mapped[str] = mapped_column(String(20), nullable=False, default="analysis", server_default="analysis", index=True)

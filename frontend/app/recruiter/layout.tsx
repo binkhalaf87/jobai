@@ -4,8 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import {
-  LayoutDashboard, Users, Briefcase, SlidersHorizontal, Mic,
-  CreditCard, UserCircle, Star, ChevronDown, LogOut,
+  LayoutDashboard, Users, Briefcase, Layers, Mic,
+  CreditCard, UserCircle, Star, ChevronDown, LogOut, FileText,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -16,7 +16,8 @@ const NAV_ITEMS = [
   { label: "Dashboard",    href: "/recruiter",              icon: "home" },
   { label: "Candidates",   href: "/recruiter/candidates",   icon: "users" },
   { label: "Jobs",         href: "/recruiter/jobs",         icon: "briefcase" },
-  { label: "AI Screening", href: "/recruiter/ai-screening", icon: "filter" },
+  { label: "Talent Fit",   href: "/recruiter/ai-screening", icon: "layers" },
+  { label: "Reports",      href: "/recruiter/reports",      icon: "file-text" },
   { label: "AI Interview", href: "/recruiter/ai-interview", icon: "mic" },
   { label: "Billing",      href: "/recruiter/billing",      icon: "credit-card" },
 ] as const;
@@ -50,10 +51,15 @@ const NAV_ICON_CFG: Record<string, IconCfg> = {
     iconBg: "bg-sky-100", iconText: "text-sky-600",
     activeIconBg: "bg-sky-600", activeBg: "bg-sky-50", activeText: "text-sky-700",
   },
-  filter: {
-    icon: <SlidersHorizontal size={13} />,
+  layers: {
+    icon: <Layers size={13} />,
     iconBg: "bg-orange-100", iconText: "text-orange-600",
     activeIconBg: "bg-orange-500", activeBg: "bg-orange-50", activeText: "text-orange-700",
+  },
+  "file-text": {
+    icon: <FileText size={13} />,
+    iconBg: "bg-teal-100", iconText: "text-teal-600",
+    activeIconBg: "bg-teal-600", activeBg: "bg-teal-50", activeText: "text-teal-700",
   },
   mic: {
     icon: <Mic size={13} />,

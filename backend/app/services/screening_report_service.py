@@ -82,7 +82,31 @@ def run_screening_report_task(resume_id: str, user_id: str, force: bool = False)
             return
 
         resume_text = (resume.normalized_text or resume.raw_text or "").strip()
+
         if not resume_text:
+            existing_failed = db.scalar(
+                select(AIAnalysisReport)
+                .where(
+                    AIAnalysisReport.resume_id == resume_id,
+                    AIAnalysisReport.report_type == REPORT_TYPE,
+                )
+                .limit(1)
+            )
+            if not existing_failed:
+                failed_rec = AIAnalysisReport(
+                    user_id=user_id,
+                    resume_id=resume_id,
+                    resume_title=resume.source_filename or resume.title,
+                    job_description_text=None,
+                    model_name=GPT_MATCH_MODEL,
+                    report_type=REPORT_TYPE,
+                    status="failed",
+                )
+                db.add(failed_rec)
+                db.commit()
+            elif existing_failed.status == "pending":
+                existing_failed.status = "failed"
+                db.commit()
             return
 
         existing = db.scalar(

@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronDown, Sparkles, UserCircle, Briefcase, ArrowRight, CheckCircle2, AlertCircle } from "lucide-react";
+import { Layers, SlidersHorizontal, FileText, ChevronDown, ArrowRight } from "lucide-react";
 
 import { api } from "@/lib/api";
 
@@ -10,549 +10,301 @@ import { api } from "@/lib/api";
 
 type Stage = "new" | "shortlisted" | "interview" | "rejected";
 
-type CandidateListItem = {
-  id: string;
-  title: string;
-  parsed_name: string | null;
-  email: string | null;
-  stage: Stage;
-  best_match_job: string | null;
-  best_match_score: number | null;
-  analysis_completed_at: string | null;
-};
-
-type TopRecommendation = {
-  job_title: string;
-  reason: string;
-};
-
-type JobMatchDetail = {
+type TalentFitRow = {
+  resume_id: string;
+  candidate_name: string;
+  candidate_email: string | null;
+  candidate_stage: Stage;
   job_id: string;
   job_title: string;
+  job_location: string | null;
   overall_score: number;
   matching_keywords: string[];
   missing_keywords: string[];
-  raw_payload: {
-    strengths?: string[];
-    gaps?: string[];
-    recommendation?: string;
-    hiring_suggestion?: string;
-  } | null;
+  hiring_suggestion: string | null;
+  analyzed_at: string | null;
+  report_id: string | null;
+  report_status: string | null;
 };
 
-type CandidateDetail = {
-  id: string;
-  parsed_name: string | null;
-  title: string;
-  email: string | null;
-  stage: Stage;
-  skills: string[];
-  experience_summary: string[];
-  top_recommendation: TopRecommendation | null;
-  analysis_completed_at: string | null;
-  matches: JobMatchDetail[];
+type TalentFitResponse = {
+  rows: TalentFitRow[];
+  total_candidates: number;
+  total_jobs: number;
 };
+
+type JobOption = { id: string; title: string };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const STAGE_COLORS: Record<Stage, string> = {
-  new:         "bg-sky-100 text-sky-700",
-  shortlisted: "bg-emerald-100 text-emerald-700",
-  interview:   "bg-violet-100 text-violet-700",
-  rejected:    "bg-rose-100 text-rose-500",
-};
-
 const STAGE_LABELS: Record<Stage, string> = {
-  new: "Applied", shortlisted: "Shortlisted", interview: "Interview", rejected: "Rejected",
+  new: "Applied",
+  shortlisted: "Shortlisted",
+  interview: "Interview",
+  rejected: "Rejected",
 };
 
-const VERDICT_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
-  shortlist:    { label: "Shortlist",    color: "bg-emerald-100 text-emerald-700 border-emerald-200", icon: "✅" },
-  interview:    { label: "Interview",    color: "bg-violet-100 text-violet-700 border-violet-200",   icon: "🎯" },
-  needs_review: { label: "Needs Review", color: "bg-amber-100 text-amber-700 border-amber-200",     icon: "🔍" },
-  reject:       { label: "Reject",       color: "bg-rose-100 text-rose-600 border-rose-200",         icon: "✗"  },
+const STAGE_CLS: Record<Stage, string> = {
+  new:         "bg-sky-50 text-sky-700 border-sky-200",
+  shortlisted: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  interview:   "bg-violet-50 text-violet-700 border-violet-200",
+  rejected:    "bg-rose-50 text-rose-700 border-rose-200",
+};
+
+const SUGGESTION_CLS: Record<string, string> = {
+  shortlist:    "bg-emerald-100 text-emerald-700",
+  interview:    "bg-violet-100 text-violet-700",
+  needs_review: "bg-amber-100 text-amber-700",
+  reject:       "bg-rose-100 text-rose-700",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function initials(name: string) {
-  return name.split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
+function scoreColor(s: number) {
+  if (s >= 70) return "text-emerald-700";
+  if (s >= 40) return "text-amber-700";
+  return "text-rose-600";
 }
 
-function scoreColor(score: number) {
-  if (score >= 70) return "bg-emerald-100 text-emerald-700";
-  if (score >= 50) return "bg-amber-100 text-amber-700";
-  return "bg-rose-100 text-rose-600";
+function scoreBg(s: number) {
+  if (s >= 70) return "bg-emerald-500";
+  if (s >= 40) return "bg-amber-400";
+  return "bg-rose-400";
 }
 
-// ─── Candidate snapshot ───────────────────────────────────────────────────────
-
-function CandidateSnapshot({
-  listItem,
-  detail,
-  loading,
-  onAnalyze,
-  analyzing,
-  onStageChange,
-  stagePending,
-}: {
-  listItem: CandidateListItem;
-  detail: CandidateDetail | null;
-  loading: boolean;
-  onAnalyze: () => void;
-  analyzing: boolean;
-  onStageChange: (stage: Stage) => void;
-  stagePending: boolean;
-}) {
-  const name = listItem.parsed_name ?? listItem.title;
-  const hasAnalysis = !!listItem.analysis_completed_at;
-
-  // Pick best match by highest score
-  const bestMatch = detail?.matches?.length
-    ? detail.matches.reduce((a, b) => a.overall_score > b.overall_score ? a : b)
-    : null;
-
-  const payload = bestMatch?.raw_payload ?? null;
-  const verdict = payload?.hiring_suggestion ? VERDICT_CONFIG[payload.hiring_suggestion] : null;
-  const strengths = payload?.strengths?.slice(0, 3) ?? [];
-  const gaps = payload?.gaps?.slice(0, 2) ?? [];
-  const matchingKw = bestMatch?.matching_keywords?.slice(0, 6) ?? [];
-  const missingKw = bestMatch?.missing_keywords?.slice(0, 4) ?? [];
-
-  if (loading) {
-    return (
-      <div className="animate-pulse space-y-4 rounded-2xl border border-slate-200 bg-white p-6">
-        <div className="h-4 w-32 rounded bg-slate-100" />
-        <div className="h-3 w-48 rounded bg-slate-100" />
-        <div className="h-20 rounded bg-slate-100" />
-      </div>
-    );
-  }
-
+function ScoreBar({ score }: { score: number }) {
+  const c = Math.min(100, Math.max(0, score));
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-5">
-
-      {/* ── Identity ── */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white ${
-            listItem.stage === "shortlisted" ? "bg-emerald-500" :
-            listItem.stage === "interview"   ? "bg-violet-500"  :
-            listItem.stage === "rejected"    ? "bg-slate-300"   : "bg-slate-600"
-          }`}>
-            {initials(name)}
-          </div>
-          <div>
-            <p className="text-base font-bold text-slate-900">{name}</p>
-            {listItem.email && <p className="text-xs text-slate-400">{listItem.email}</p>}
-          </div>
-        </div>
-        <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${STAGE_COLORS[listItem.stage]}`}>
-          {STAGE_LABELS[listItem.stage]}
-        </span>
+    <div className="flex items-center gap-2">
+      <div className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-100">
+        <div className={`h-full rounded-full ${scoreBg(c)}`} style={{ width: `${c}%` }} />
       </div>
-
-      {/* ── Skills ── */}
-      {detail && detail.skills.length > 0 && (
-        <div>
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Extracted Skills</p>
-          <div className="flex flex-wrap gap-1.5">
-            {detail.skills.slice(0, 8).map((s) => (
-              <span key={s} className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600">{s}</span>
-            ))}
-            {detail.skills.length > 8 && (
-              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500">+{detail.skills.length - 8}</span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── Experience ── */}
-      {detail && detail.experience_summary.length > 0 && (
-        <div>
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Experience</p>
-          <ul className="space-y-1">
-            {detail.experience_summary.slice(0, 3).map((exp, i) => (
-              <li key={i} className="flex items-start gap-2 text-[12.5px] text-slate-600">
-                <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-300" />
-                {exp}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* ── GPT Assessment ── */}
-      <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-4">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5">
-            <Sparkles size={12} className="text-violet-500" />
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">AI Assessment</p>
-          </div>
-          {hasAnalysis && bestMatch && (
-            <div className="flex items-center gap-2">
-              {verdict && (
-                <span className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${verdict.color}`}>
-                  {verdict.icon} {verdict.label}
-                </span>
-              )}
-              <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${scoreColor(bestMatch.overall_score)}`}>
-                {Math.round(bestMatch.overall_score)}%
-              </span>
-            </div>
-          )}
-        </div>
-
-        {!hasAnalysis ? (
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-[12.5px] text-slate-500">No analysis yet.</p>
-            <button
-              type="button"
-              onClick={onAnalyze}
-              disabled={analyzing}
-              className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50"
-            >
-              <Sparkles size={11} />
-              {analyzing ? "Running…" : "Run AI Analysis"}
-            </button>
-          </div>
-        ) : !bestMatch ? (
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-[12.5px] text-slate-500">Analysis done but no recommendation generated.</p>
-            <button
-              type="button"
-              onClick={onAnalyze}
-              disabled={analyzing}
-              className="flex items-center gap-1.5 rounded-lg bg-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-300 disabled:opacity-50"
-            >
-              {analyzing ? "Running…" : "Re-run"}
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-
-            {/* Recommendation text */}
-            {payload?.recommendation && (
-              <p className="text-[13px] leading-relaxed text-slate-700">
-                &ldquo;{payload.recommendation}&rdquo;
-              </p>
-            )}
-
-            {/* Best for job */}
-            {bestMatch.job_title && (
-              <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                <Briefcase size={11} />
-                Best for: <span className="font-semibold text-slate-700">{bestMatch.job_title}</span>
-              </div>
-            )}
-
-            {/* Strengths */}
-            {strengths.length > 0 && (
-              <div>
-                <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Strengths</p>
-                <ul className="space-y-1">
-                  {strengths.map((s, i) => (
-                    <li key={i} className="flex items-start gap-2 text-[12px] text-slate-600">
-                      <CheckCircle2 size={12} className="mt-0.5 flex-shrink-0 text-emerald-500" />
-                      {s}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Gaps */}
-            {gaps.length > 0 && (
-              <div>
-                <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Gaps</p>
-                <ul className="space-y-1">
-                  {gaps.map((g, i) => (
-                    <li key={i} className="flex items-start gap-2 text-[12px] text-slate-600">
-                      <AlertCircle size={12} className="mt-0.5 flex-shrink-0 text-amber-500" />
-                      {g}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Matching / Missing keywords */}
-            {(matchingKw.length > 0 || missingKw.length > 0) && (
-              <div className="flex flex-wrap gap-3">
-                {matchingKw.length > 0 && (
-                  <div className="flex-1 min-w-0">
-                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Matching</p>
-                    <div className="flex flex-wrap gap-1">
-                      {matchingKw.map((k) => (
-                        <span key={k} className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 border border-emerald-100">{k}</span>
-                      ))}
-                      {(bestMatch.matching_keywords?.length ?? 0) > 6 && (
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500">+{bestMatch.matching_keywords.length - 6}</span>
-                      )}
-                    </div>
-                  </div>
-                )}
-                {missingKw.length > 0 && (
-                  <div className="flex-1 min-w-0">
-                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Missing</p>
-                    <div className="flex flex-wrap gap-1">
-                      {missingKw.map((k) => (
-                        <span key={k} className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-600 border border-rose-100">{k}</span>
-                      ))}
-                      {(bestMatch.missing_keywords?.length ?? 0) > 4 && (
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500">+{bestMatch.missing_keywords.length - 4}</span>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* ── Actions ── */}
-      <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
-        {listItem.stage !== "shortlisted" && (
-          <button type="button" disabled={stagePending}
-            onClick={() => onStageChange("shortlisted")}
-            className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-40">
-            Shortlist
-          </button>
-        )}
-        {listItem.stage !== "interview" && (
-          <button type="button" disabled={stagePending}
-            onClick={() => onStageChange("interview")}
-            className="rounded-lg border border-violet-300 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 transition hover:bg-violet-100 disabled:opacity-40">
-            Move to Interview
-          </button>
-        )}
-        {listItem.stage !== "rejected" && (
-          <button type="button" disabled={stagePending}
-            onClick={() => onStageChange("rejected")}
-            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40">
-            Reject
-          </button>
-        )}
-        <Link
-          href={`/recruiter/candidates/${listItem.id}`}
-          className="ml-auto flex items-center gap-1 text-xs font-semibold text-slate-500 transition hover:text-brand-700"
-        >
-          Full profile <ArrowRight size={11} />
-        </Link>
-      </div>
+      <span className={`text-xs font-bold tabular-nums ${scoreColor(c)}`}>{c.toFixed(1)}%</span>
     </div>
   );
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function AIScreeningPage() {
-  const [candidates, setCandidates] = useState<CandidateListItem[]>([]);
-  const [listLoading, setListLoading] = useState(true);
+export default function TalentFitPage() {
+  const router = useRouter();
+  const [data, setData] = useState<TalentFitResponse | null>(null);
+  const [jobs, setJobs] = useState<JobOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedJob, setSelectedJob] = useState<string>("");
+  const [minScore, setMinScore] = useState(0);
+  const [requesting, setRequesting] = useState<Set<string>>(new Set());
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [details, setDetails] = useState<Record<string, CandidateDetail>>({});
-  const [detailLoading, setDetailLoading] = useState(false);
-
-  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
-  const [analyzingAll, setAnalyzingAll] = useState(false);
-  const [analyzeAllResult, setAnalyzeAllResult] = useState<string | null>(null);
-  const [stagePendingId, setStagePendingId] = useState<string | null>(null);
-  const [showMore, setShowMore] = useState(false);
-
-  const TAB_LIMIT = 5;
-
-  async function loadCandidates() {
-    try {
-      const data = await api.get<CandidateListItem[]>("/recruiter/candidates/", { auth: true });
-      setCandidates(data);
-      if (data.length > 0 && !selectedId) setSelectedId(data[0].id);
-    } catch {
-      // silently fail
-    } finally {
-      setListLoading(false);
-    }
-  }
-
-  // Load candidate list
   useEffect(() => {
-    void loadCandidates();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    api.get<JobOption[]>("/recruiter/talent-fit/jobs", { auth: true })
+      .then(setJobs)
+      .catch(() => {});
   }, []);
 
-  // Load detail on selection
   useEffect(() => {
-    if (!selectedId || details[selectedId]) return;
-    setDetailLoading(true);
-    api.get<CandidateDetail>(`/recruiter/candidates/${selectedId}`, { auth: true })
-      .then((d) => setDetails((prev) => ({ ...prev, [selectedId]: d })))
-      .catch(() => {/* leave null */})
-      .finally(() => setDetailLoading(false));
-  }, [selectedId, details]);
+    setLoading(true);
+    setError(null);
+    const params = new URLSearchParams();
+    if (selectedJob) params.set("job_id", selectedJob);
+    if (minScore > 0) params.set("min_score", String(minScore));
+    api.get<TalentFitResponse>(`/recruiter/talent-fit/?${params.toString()}`, { auth: true })
+      .then(setData)
+      .catch(() => setError("Failed to load talent fit data."))
+      .finally(() => setLoading(false));
+  }, [selectedJob, minScore]);
 
-  async function handleAnalyze(id: string) {
-    setAnalyzingId(id);
+  async function handleRequestReport(row: TalentFitRow) {
+    const key = `${row.resume_id}-${row.job_id}`;
+    if (requesting.has(key)) return;
+    setRequesting((prev) => new Set(prev).add(key));
     try {
-      await api.post(`/recruiter/candidates/${id}/analyze`, undefined, { auth: true });
-      setDetails((prev) => { const next = { ...prev }; delete next[id]; return next; });
-      setCandidates((prev) => prev.map((c) => c.id === id ? { ...c, analysis_completed_at: new Date().toISOString() } : c));
-    } catch {/* ignore */} finally {
-      setAnalyzingId(null);
-    }
-  }
-
-  async function handleAnalyzeAll() {
-    if (analyzingAll) return;
-    setAnalyzingAll(true);
-    setAnalyzeAllResult(null);
-    try {
-      const res = await api.post<{ total_candidates: number; total_created: number; no_text_count: number }>(
-        "/recruiter/candidates/analyze-all", undefined, { auth: true }
+      const result = await api.post<{ id: string }>(
+        "/recruiter/reports/",
+        { resume_id: row.resume_id, job_id: row.job_id },
+        { auth: true }
       );
-      setAnalyzeAllResult(`✦ ${res.total_created} analyses created across ${res.total_candidates} candidates.`);
-      setDetails({});
-      void loadCandidates();
+      router.push(`/recruiter/reports/${result.id}`);
     } catch {
-      setAnalyzeAllResult("Analysis failed. Make sure you have jobs added and try again.");
-    } finally {
-      setAnalyzingAll(false);
+      setRequesting((prev) => { const s = new Set(prev); s.delete(key); return s; });
     }
   }
 
-  async function handleStageChange(id: string, stage: Stage) {
-    setStagePendingId(id);
-    try {
-      await api.patch(`/recruiter/candidates/${id}/stage`, { stage }, { auth: true });
-      setCandidates((prev) => prev.map((c) => c.id === id ? { ...c, stage } : c));
-    } catch {/* ignore */} finally {
-      setStagePendingId(null);
-    }
+  function handleViewReport(reportId: string) {
+    router.push(`/recruiter/reports/${reportId}`);
   }
 
-  if (listLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="flex gap-2">
-          {Array.from({ length: 4 }, (_, i) => <div key={i} className="h-9 w-24 animate-pulse rounded-xl bg-slate-100" />)}
-        </div>
-        <div className="h-64 animate-pulse rounded-2xl bg-slate-100" />
-      </div>
-    );
-  }
-
-  if (candidates.length === 0) {
-    return (
-      <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-12 text-center">
-        <UserCircle size={32} className="mx-auto mb-3 text-slate-300" />
-        <p className="text-sm font-semibold text-slate-700">No candidates to screen</p>
-        <p className="mt-1 text-xs text-slate-400">Upload resumes from the Candidates page first.</p>
-        <Link href="/recruiter/candidates"
-          className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-brand-800 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-700">
-          Go to Candidates <ArrowRight size={12} />
-        </Link>
-      </div>
-    );
-  }
-
-  const visibleTabs = candidates.slice(0, TAB_LIMIT);
-  const moreTabs = candidates.slice(TAB_LIMIT);
-  const selectedCandidate = candidates.find((c) => c.id === selectedId) ?? candidates[0];
+  const rows = data?.rows ?? [];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
 
-      {/* ── Header row: tabs + Analyze All ── */}
-      <div className="flex flex-wrap items-center gap-1.5">
-        {visibleTabs.map((c) => {
-          const name = c.parsed_name ?? c.title;
-          const active = c.id === selectedId;
-          return (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => setSelectedId(c.id)}
-              className={[
-                "flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12.5px] font-semibold transition",
-                active
-                  ? "bg-brand-800 text-white shadow-sm shadow-brand-800/20"
-                  : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-900",
-              ].join(" ")}
-            >
-              <span className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md text-[9px] font-bold ${
-                active ? "bg-white/20 text-white" :
-                c.stage === "shortlisted" ? "bg-emerald-100 text-emerald-700" :
-                c.stage === "interview"   ? "bg-violet-100 text-violet-700"   : "bg-slate-100 text-slate-600"
-              }`}>
-                {(c.parsed_name ?? c.title).slice(0, 1).toUpperCase()}
-              </span>
-              <span className="max-w-[100px] truncate">{name.split(" ")[0]}</span>
-            </button>
-          );
-        })}
+      {/* ── Header ── */}
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-4">
+        <div className="flex items-center gap-3">
+          <Layers size={16} className="text-orange-500" />
+          <p className="text-[15px] font-bold tracking-tight text-slate-900">Talent Fit</p>
+          {data && (
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+              {data.total_candidates} candidates · {data.total_jobs} jobs
+            </span>
+          )}
+        </div>
 
-        {/* More dropdown */}
-        {moreTabs.length > 0 && (
+        {/* Filters */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Job filter */}
           <div className="relative">
-            <button
-              type="button"
-              onClick={() => setShowMore((v) => !v)}
-              className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[12.5px] font-semibold text-slate-600 transition hover:border-slate-300"
+            <select
+              value={selectedJob}
+              onChange={(e) => setSelectedJob(e.target.value)}
+              className="appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-8 text-xs font-semibold text-slate-700 outline-none focus:border-slate-400"
             >
-              +{moreTabs.length} more <ChevronDown size={12} />
-            </button>
-            {showMore && (
-              <div className="absolute left-0 top-full z-20 mt-1 min-w-[160px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
-                <div className="p-1.5">
-                  {moreTabs.map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => { setSelectedId(c.id); setShowMore(false); }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[12.5px] font-medium text-slate-700 transition hover:bg-slate-50"
-                    >
-                      <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold ${STAGE_COLORS[c.stage]}`}>
-                        {STAGE_LABELS[c.stage][0]}
-                      </span>
-                      <span className="truncate">{c.parsed_name ?? c.title}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+              <option value="">All Jobs</option>
+              {jobs.map((j) => (
+                <option key={j.id} value={j.id}>{j.title}</option>
+              ))}
+            </select>
+            <ChevronDown size={11} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
           </div>
-        )}
 
-        {/* Analyze All button */}
-        <button
-          type="button"
-          disabled={analyzingAll}
-          onClick={() => void handleAnalyzeAll()}
-          className="ml-auto flex items-center gap-1.5 rounded-xl bg-violet-600 px-3.5 py-2 text-[12.5px] font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50"
-        >
-          <Sparkles size={13} />
-          {analyzingAll ? "Analyzing All…" : "Analyze All with AI"}
-        </button>
+          {/* Min score filter */}
+          <div className="relative">
+            <select
+              value={minScore}
+              onChange={(e) => setMinScore(Number(e.target.value))}
+              className="appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-8 text-xs font-semibold text-slate-700 outline-none focus:border-slate-400"
+            >
+              <option value={0}>All Scores</option>
+              <option value={40}>≥ 40%</option>
+              <option value={60}>≥ 60%</option>
+              <option value={80}>≥ 80%</option>
+            </select>
+            <ChevronDown size={11} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          </div>
+        </div>
       </div>
 
-      {/* Analyze All result toast */}
-      {analyzeAllResult && (
-        <p className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-2.5 text-[12.5px] font-medium text-violet-700">
-          {analyzeAllResult}
-        </p>
+      {/* ── Filters summary ── */}
+      {(selectedJob || minScore > 0) && (
+        <div className="flex items-center gap-2 text-xs text-slate-500">
+          <SlidersHorizontal size={11} />
+          <span>Filters active</span>
+          <button
+            type="button"
+            onClick={() => { setSelectedJob(""); setMinScore(0); }}
+            className="font-semibold text-slate-700 underline underline-offset-2"
+          >
+            Clear
+          </button>
+        </div>
       )}
 
-      {/* ── Snapshot ── */}
-      {selectedCandidate && (
-        <CandidateSnapshot
-          listItem={selectedCandidate}
-          detail={details[selectedCandidate.id] ?? null}
-          loading={detailLoading && !details[selectedCandidate.id]}
-          onAnalyze={() => void handleAnalyze(selectedCandidate.id)}
-          analyzing={analyzingId === selectedCandidate.id}
-          onStageChange={(stage) => void handleStageChange(selectedCandidate.id, stage)}
-          stagePending={stagePendingId === selectedCandidate.id}
-        />
+      {/* ── Table ── */}
+      {loading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 5 }, (_, i) => (
+            <div key={i} className="h-16 animate-pulse rounded-2xl bg-slate-100" />
+          ))}
+        </div>
+      ) : error ? (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">{error}</div>
+      ) : rows.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-14 text-center">
+          <Layers size={24} className="mx-auto mb-3 text-slate-300" />
+          <p className="text-sm font-semibold text-slate-700">No match data yet</p>
+          <p className="mt-1 text-xs text-slate-400">
+            Upload candidates and run AI analysis to see Talent Fit scores here.
+          </p>
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          {/* Table header */}
+          <div className="grid grid-cols-[1fr_1fr_120px_90px_120px_auto] items-center gap-3 border-b border-slate-100 bg-slate-50 px-5 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+            <span>Candidate</span>
+            <span>Job</span>
+            <span>Fit Score</span>
+            <span>Stage</span>
+            <span>AI Suggestion</span>
+            <span />
+          </div>
+
+          {/* Rows */}
+          <ul className="divide-y divide-slate-100">
+            {rows.map((row) => {
+              const key = `${row.resume_id}-${row.job_id}`;
+              const isLoading = requesting.has(key);
+              const hasReport = !!row.report_id && row.report_status !== "failed";
+              const isPending = row.report_status === "pending";
+
+              return (
+                <li
+                  key={key}
+                  className="grid grid-cols-[1fr_1fr_120px_90px_120px_auto] items-center gap-3 px-5 py-3.5 transition hover:bg-slate-50"
+                >
+                  {/* Candidate */}
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-slate-900">{row.candidate_name}</p>
+                    {row.candidate_email && (
+                      <p className="truncate text-xs text-slate-400">{row.candidate_email}</p>
+                    )}
+                  </div>
+
+                  {/* Job */}
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-slate-800">{row.job_title}</p>
+                    {row.job_location && (
+                      <p className="truncate text-xs text-slate-400">{row.job_location}</p>
+                    )}
+                  </div>
+
+                  {/* Score */}
+                  <ScoreBar score={row.overall_score} />
+
+                  {/* Stage */}
+                  <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${STAGE_CLS[row.candidate_stage]}`}>
+                    {STAGE_LABELS[row.candidate_stage]}
+                  </span>
+
+                  {/* Suggestion */}
+                  <div>
+                    {row.hiring_suggestion ? (
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold capitalize ${SUGGESTION_CLS[row.hiring_suggestion] ?? "bg-slate-100 text-slate-600"}`}>
+                        {row.hiring_suggestion.replace("_", " ")}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-slate-300">—</span>
+                    )}
+                  </div>
+
+                  {/* Action */}
+                  <div className="flex items-center justify-end gap-1.5">
+                    {hasReport ? (
+                      <button
+                        type="button"
+                        onClick={() => handleViewReport(row.report_id!)}
+                        className="flex items-center gap-1 rounded-xl border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-100"
+                      >
+                        <FileText size={11} />
+                        {isPending ? "Generating…" : "View Report"}
+                        {!isPending && <ArrowRight size={10} />}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={isLoading}
+                        onClick={() => void handleRequestReport(row)}
+                        className="flex items-center gap-1 rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
+                      >
+                        {isLoading ? "Requesting…" : "Request Report"}
+                      </button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
     </div>
   );
