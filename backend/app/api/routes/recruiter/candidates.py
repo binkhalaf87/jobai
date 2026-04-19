@@ -1,6 +1,7 @@
+import json
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Request, UploadFile, status
 from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -19,7 +20,9 @@ from app.services.gpt_matching_service import (
     gpt_match_resume_to_job,
     gpt_screen_resume_against_jobs,
 )
+from app.models.ai_report import AIAnalysisReport
 from app.services.resume_upload import save_resume_upload
+from app.services.screening_report_service import REPORT_TYPE, run_screening_report_task
 from app.services.storage import get_storage
 
 router = APIRouter(prefix="/recruiter/candidates", tags=["recruiter-candidates"])
@@ -121,6 +124,14 @@ class BulkAnalyzeResponse(BaseModel):
     analyses_created: int
     analyses_skipped: int
     no_text_count: int
+
+
+class ScreeningReportResponse(BaseModel):
+    id: str
+    status: str
+    created_at: datetime
+    completed_at: datetime | None
+    report: dict | None
 
 
 # ---------------------------------------------------------------------------
@@ -352,11 +363,12 @@ def _build_list_item(db: Session, resume: Resume) -> CandidateListItem:
 @limiter.limit("30/hour")
 async def upload_candidates(
     request: Request,
+    background_tasks: BackgroundTasks,
     files: list[UploadFile] = File(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_recruiter),
 ) -> CandidateUploadResponse:
-    """Upload resumes. Text is extracted immediately; AI analysis runs separately."""
+    """Upload resumes. Text is extracted immediately; screening report runs in background."""
     if not files:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No files provided.")
 
@@ -382,6 +394,10 @@ async def upload_candidates(
         for storage_key in stored_keys:
             storage.delete(storage_key)
         raise
+
+    # Queue screening report for each uploaded resume
+    for rid in resume_ids:
+        background_tasks.add_task(run_screening_report_task, rid, current_user.id)
 
     return CandidateUploadResponse(resume_ids=resume_ids)
 
@@ -581,6 +597,86 @@ _MIME_TYPES: dict[str, str] = {
     "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "doc":  "application/msword",
 }
+
+
+@router.get("/{resume_id}/screening", response_model=ScreeningReportResponse | None)
+def get_screening_report(
+    resume_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_recruiter),
+) -> ScreeningReportResponse | None:
+    """Return the latest screening report for a candidate (or null if none)."""
+    _get_owned_resume(db, resume_id, current_user.id)
+    report = db.scalar(
+        select(AIAnalysisReport)
+        .where(
+            AIAnalysisReport.resume_id == resume_id,
+            AIAnalysisReport.report_type == REPORT_TYPE,
+        )
+        .order_by(AIAnalysisReport.created_at.desc())
+        .limit(1)
+    )
+    if not report:
+        return None
+    parsed: dict | None = None
+    if report.report_text:
+        try:
+            parsed = json.loads(report.report_text)
+        except Exception:
+            pass
+    return ScreeningReportResponse(
+        id=report.id,
+        status=report.status,
+        created_at=report.created_at,
+        completed_at=report.completed_at,
+        report=parsed,
+    )
+
+
+@router.post("/{resume_id}/screening", response_model=ScreeningReportResponse, status_code=status.HTTP_202_ACCEPTED)
+def trigger_screening_report(
+    resume_id: str,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_recruiter),
+) -> ScreeningReportResponse:
+    """(Re-)generate a screening report for a candidate."""
+    resume = _get_owned_resume(db, resume_id, current_user.id)
+
+    # Delete any existing report so a fresh one is created
+    existing = db.scalar(
+        select(AIAnalysisReport)
+        .where(
+            AIAnalysisReport.resume_id == resume_id,
+            AIAnalysisReport.report_type == REPORT_TYPE,
+        )
+        .limit(1)
+    )
+    if existing:
+        db.delete(existing)
+        db.commit()
+
+    placeholder = AIAnalysisReport(
+        user_id=current_user.id,
+        resume_id=resume_id,
+        resume_title=resume.source_filename or resume.title,
+        model_name="queued",
+        report_type=REPORT_TYPE,
+        status="pending",
+    )
+    db.add(placeholder)
+    db.commit()
+    db.refresh(placeholder)
+
+    background_tasks.add_task(run_screening_report_task, resume_id, current_user.id)
+
+    return ScreeningReportResponse(
+        id=placeholder.id,
+        status="pending",
+        created_at=placeholder.created_at,
+        completed_at=None,
+        report=None,
+    )
 
 
 @router.get("/{resume_id}/file", response_model=None)

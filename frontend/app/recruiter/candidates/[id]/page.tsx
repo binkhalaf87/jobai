@@ -44,7 +44,42 @@ type CandidateDetail = {
   analysis_completed_at: string | null;
 };
 
-type Tab = "analysis" | "matches" | "preview" | "notes";
+type Tab = "screening" | "analysis" | "matches" | "preview" | "notes";
+
+// ─── Screening Report types ───────────────────────────────────────────────────
+
+type ScreeningScores = {
+  relevant_experience: number;
+  core_skills_match: number;
+  stability: number;
+  growth_and_progression: number;
+  role_fit: number;
+  final_score: number;
+};
+
+type ScreeningRecommendation = {
+  decision: string;
+  action: string;
+  reason: string;
+};
+
+type ScreeningData = {
+  executive_summary: string;
+  scores: ScreeningScores;
+  decision: string;
+  why_hire: string[];
+  risks: string[];
+  recommendation: ScreeningRecommendation;
+  quick_flags: string[];
+};
+
+type ScreeningReport = {
+  id: string;
+  status: "pending" | "completed" | "failed";
+  created_at: string;
+  completed_at: string | null;
+  report: ScreeningData | null;
+};
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -207,6 +242,181 @@ function ScoreBar({ score }: { score: number }) {
       <span className={`w-12 text-right text-xs font-bold tabular-nums ${scoreText(c)}`}>
         {c.toFixed(1)}%
       </span>
+    </div>
+  );
+}
+
+// ─── Tab: Screening Report ────────────────────────────────────────────────────
+
+const DECISION_STYLES: Record<string, { bg: string; border: string; text: string; dot: string }> = {
+  "Strong Hire": { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", dot: "bg-emerald-500" },
+  "Consider":    { bg: "bg-violet-50",  border: "border-violet-200",  text: "text-violet-700",  dot: "bg-violet-500"  },
+  "Weak":        { bg: "bg-amber-50",   border: "border-amber-200",   text: "text-amber-700",   dot: "bg-amber-400"   },
+  "Reject":      { bg: "bg-rose-50",    border: "border-rose-200",    text: "text-rose-700",    dot: "bg-rose-500"    },
+};
+
+function ScoreLine({ label, value }: { label: string; value: number }) {
+  const pct = Math.round((value / 10) * 100);
+  const color = pct >= 75 ? "bg-emerald-500" : pct >= 55 ? "bg-violet-500" : pct >= 40 ? "bg-amber-400" : "bg-rose-400";
+  return (
+    <div className="flex items-center gap-3">
+      <span className="w-36 flex-shrink-0 text-xs text-slate-600">{label}</span>
+      <div className="flex-1 h-1.5 overflow-hidden rounded-full bg-slate-100">
+        <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="w-8 text-right text-xs font-bold tabular-nums text-slate-700">{value}/10</span>
+    </div>
+  );
+}
+
+function TabScreening({
+  report,
+  onRegenerate,
+  regenerating,
+  candidateId,
+}: {
+  report: ScreeningReport | null;
+  onRegenerate: () => void;
+  regenerating: boolean;
+  candidateId: string;
+}) {
+  if (!report || report.status === "pending") {
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-10 text-center space-y-3">
+        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-violet-600" />
+        <p className="text-sm font-semibold text-slate-700">Generating Screening Report…</p>
+        <p className="text-xs text-slate-400">This runs automatically after upload. Usually takes 10–20 seconds.</p>
+      </div>
+    );
+  }
+
+  if (report.status === "failed" || !report.report) {
+    return (
+      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-8 text-center space-y-3">
+        <p className="text-sm font-semibold text-rose-700">Screening report failed.</p>
+        <button
+          type="button"
+          onClick={onRegenerate}
+          disabled={regenerating}
+          className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
+        >
+          {regenerating ? "Retrying…" : "Retry"}
+        </button>
+      </div>
+    );
+  }
+
+  const d = report.report;
+  const ds = DECISION_STYLES[d.decision] ?? DECISION_STYLES["Consider"];
+  const scores = d.scores;
+  const scoreItems: [string, keyof Omit<ScreeningScores, "final_score">][] = [
+    ["Relevant Experience", "relevant_experience"],
+    ["Core Skills Match",   "core_skills_match"],
+    ["Stability",           "stability"],
+    ["Growth & Progression","growth_and_progression"],
+    ["Role Fit",            "role_fit"],
+  ];
+
+  return (
+    <div className="space-y-5">
+      {/* Decision banner */}
+      <div className={`rounded-2xl border ${ds.border} ${ds.bg} px-5 py-4 flex items-center justify-between gap-4`}>
+        <div className="flex items-center gap-3">
+          <span className={`h-2.5 w-2.5 rounded-full ${ds.dot} flex-shrink-0`} />
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Screening Decision</p>
+            <p className={`text-xl font-bold ${ds.text}`}>{d.decision}</p>
+            <p className="text-xs text-slate-500 mt-0.5">{d.recommendation.action}</p>
+          </div>
+        </div>
+        <div className="text-right flex-shrink-0">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Final Score</p>
+          <p className={`text-3xl font-black tabular-nums ${ds.text}`}>{scores.final_score.toFixed(1)}</p>
+          <p className="text-[10px] text-slate-400">out of 10</p>
+        </div>
+      </div>
+
+      {/* Executive summary */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-5">
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Executive Summary</p>
+        <p className="text-sm leading-6 text-slate-700">{d.executive_summary}</p>
+      </div>
+
+      {/* Score breakdown */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3">
+        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Scoring Criteria</p>
+        {scoreItems.map(([label, key]) => (
+          <ScoreLine key={key} label={label} value={scores[key]} />
+        ))}
+        <div className="pt-2 border-t border-slate-100">
+          <ScoreLine label="Final Score (avg)" value={scores.final_score} />
+        </div>
+      </div>
+
+      {/* Why Hire + Risks */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-600">Why Hire</p>
+          <ul className="space-y-2">
+            {d.why_hire.map((r, i) => (
+              <li key={i} className="flex gap-2 text-xs leading-5 text-emerald-800">
+                <span className="mt-0.5 flex-shrink-0 text-emerald-400">✓</span>
+                {r}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="rounded-2xl border border-rose-100 bg-rose-50 p-4">
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-rose-600">Risks / Why Not</p>
+          <ul className="space-y-2">
+            {d.risks.map((r, i) => (
+              <li key={i} className="flex gap-2 text-xs leading-5 text-rose-800">
+                <span className="mt-0.5 flex-shrink-0 text-rose-400">✕</span>
+                {r}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* Recommendation */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-5">
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Final Recommendation</p>
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className={`rounded-full px-3 py-1 text-xs font-bold ${ds.bg} ${ds.text} border ${ds.border}`}>
+            {d.recommendation.decision}
+          </span>
+          <span className="text-xs text-slate-400">→</span>
+          <span className="text-xs font-semibold text-slate-700">{d.recommendation.action}</span>
+        </div>
+        <p className="mt-2 text-xs text-slate-500 leading-5">{d.recommendation.reason}</p>
+      </div>
+
+      {/* Quick flags */}
+      {d.quick_flags.length > 0 && (
+        <div>
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Quick Flags</p>
+          <div className="flex flex-wrap gap-2">
+            {d.quick_flags.map((f) => (
+              <span key={f} className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                {f}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Re-generate */}
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={onRegenerate}
+          disabled={regenerating}
+          className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50 disabled:opacity-40"
+        >
+          {regenerating ? "Regenerating…" : "↺ Regenerate Report"}
+        </button>
+      </div>
     </div>
   );
 }
@@ -700,21 +910,27 @@ export default function CandidateProfilePage() {
   const [detail, setDetail] = useState<CandidateDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<Tab>("analysis");
+  const [activeTab, setActiveTab] = useState<Tab>("screening");
   const [stagePending, setStagePending] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const [hasJobs, setHasJobs] = useState(false);
+  const [screening, setScreening] = useState<ScreeningReport | null>(null);
+  const [regenerating, setRegenerating] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     async function load() {
       try {
-        const [data, jobs] = await Promise.all([
+        const [data, jobs, screen] = await Promise.all([
           api.get<CandidateDetail>(`/recruiter/candidates/${id}`, { auth: true }),
           api.get<{ id: string }[]>("/recruiter/jobs/", { auth: true }),
+          api.get<ScreeningReport | null>(`/recruiter/candidates/${id}/screening`, { auth: true }).catch(() => null),
         ]);
         setDetail(data);
         setHasJobs(jobs.length > 0);
+        setScreening(screen);
+        if (screen?.status === "pending") schedulePoll();
       } catch {
         setError("Failed to load candidate profile.");
       } finally {
@@ -722,7 +938,30 @@ export default function CandidateProfilePage() {
       }
     }
     void load();
+    return () => { if (pollRef.current) clearTimeout(pollRef.current); };
   }, [id]);
+
+  function schedulePoll() {
+    pollRef.current = setTimeout(async () => {
+      try {
+        const screen = await api.get<ScreeningReport | null>(`/recruiter/candidates/${id}/screening`, { auth: true });
+        setScreening(screen);
+        if (screen?.status === "pending") schedulePoll();
+      } catch { /* ignore */ }
+    }, 4000);
+  }
+
+  async function handleRegenerate() {
+    if (regenerating) return;
+    setRegenerating(true);
+    try {
+      const screen = await api.post<ScreeningReport>(`/recruiter/candidates/${id}/screening`, undefined, { auth: true });
+      setScreening(screen);
+      schedulePoll();
+    } catch { /* ignore */ } finally {
+      setRegenerating(false);
+    }
+  }
 
   async function handleRunAnalysis(forceRefresh = false) {
     if (!detail || analyzing) return;
@@ -798,6 +1037,7 @@ export default function CandidateProfilePage() {
   const displayName = detail.parsed_name ?? detail.title;
 
   const TABS: { key: Tab; label: string }[] = [
+    { key: "screening", label: "✦ Screening" },
     { key: "analysis", label: "AI Analysis" },
     { key: "matches", label: `Job Matches ${detail.matches.length > 0 ? `(${detail.matches.length})` : ""}` },
     { key: "preview", label: "Resume" },
@@ -1015,6 +1255,14 @@ export default function CandidateProfilePage() {
 
       {/* ── Tab content ─────────────────────────────────────────── */}
       <div className="pb-8">
+        {activeTab === "screening" && (
+          <TabScreening
+            report={screening}
+            onRegenerate={() => void handleRegenerate()}
+            regenerating={regenerating}
+            candidateId={id}
+          />
+        )}
         {activeTab === "analysis" && <TabAnalysis detail={detail} />}
         {activeTab === "matches" && <TabMatches detail={detail} />}
         {activeTab === "preview" && <TabPreview detail={detail} />}
