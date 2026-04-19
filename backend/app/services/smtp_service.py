@@ -18,7 +18,7 @@ from app.models.smtp_connection import SmtpConnection
 from app.schemas.smart_send import SmtpConnectionCreate
 
 _GMAIL_HOST = "smtp.gmail.com"
-_GMAIL_PORT = 587  # STARTTLS
+_GMAIL_PORT = 465  # SSL
 
 
 def _get_fernet() -> Fernet:
@@ -79,9 +79,7 @@ def verify_smtp_connection(db: Session, user_id: str) -> tuple[bool, str]:
 
     password = decrypt_password(conn.encrypted_app_password)
     try:
-        with smtplib.SMTP(_GMAIL_HOST, _GMAIL_PORT, timeout=10) as server:
-            server.ehlo()
-            server.starttls(context=ssl.create_default_context())
+        with smtplib.SMTP_SSL(_GMAIL_HOST, _GMAIL_PORT, context=ssl.create_default_context(), timeout=10) as server:
             server.ehlo()
             server.login(conn.gmail_address, password)
 
@@ -129,9 +127,7 @@ def send_email(
     plain = MIMEText(body, "plain", "utf-8")
     msg.attach(plain)
 
-    with smtplib.SMTP(_GMAIL_HOST, _GMAIL_PORT, timeout=15) as server:
-        server.ehlo()
-        server.starttls(context=ssl.create_default_context())
+    with smtplib.SMTP_SSL(_GMAIL_HOST, _GMAIL_PORT, context=ssl.create_default_context(), timeout=15) as server:
         server.ehlo()
         server.login(smtp_conn.gmail_address, password)
         server.sendmail(smtp_conn.gmail_address, to_email, msg.as_string())
