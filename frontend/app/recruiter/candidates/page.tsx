@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Users, Upload, Sparkles, ChevronRight, Trash2, RefreshCw } from "lucide-react";
+import { Users, Upload, Sparkles, ChevronRight, Trash2 } from "lucide-react";
 
 import { api, uploadRequest } from "@/lib/api";
 
@@ -153,8 +153,8 @@ export default function RecruiterCandidatesPage() {
   const [error, setError] = useState<string | null>(null);
   const [uploadQueue, setUploadQueue] = useState<FileUploadItem[]>([]);
   const uploadingRef = useRef(false);
-  const [analyzingAll, setAnalyzingAll] = useState(false);
-  const [analyzeResult, setAnalyzeResult] = useState<string | null>(null);
+  const [screeningAll, setScreeningAll] = useState(false);
+  const [screenResult, setScreenResult] = useState<string | null>(null);
 
   // Bulk selection
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -238,29 +238,27 @@ export default function RecruiterCandidatesPage() {
     }
   }
 
-  async function handleBulkAnalyze() {
+  async function handleBulkScreen() {
     if (selected.size === 0) return;
     setBulkAction(true);
     setBulkResult(null);
     startProgress();
     try {
-      const res = await api.post<{ analyses_created: number; analyses_skipped: number; no_text_count: number }>(
-        "/recruiter/candidates/bulk-analyze",
+      const res = await api.post<{ queued: number }>(
+        "/recruiter/candidates/bulk-screen",
         { ids: Array.from(selected) },
         { auth: true }
       );
       finishProgress(() => {
         setBulkResult({
           type: "success",
-          text: `${res.analyses_created} analyses created. ${res.no_text_count > 0 ? `${res.no_text_count} skipped (no text).` : ""}`,
+          text: `✦ Screening ${res.queued} candidate${res.queued !== 1 ? "s" : ""} in background…`,
         });
       });
-      setLoading(true);
-      void loadCandidates();
     } catch {
       if (progressTimer.current) clearInterval(progressTimer.current);
       setActionProgress(0);
-      setBulkResult({ type: "error", text: "Analysis failed. Make sure you have jobs added." });
+      setBulkResult({ type: "error", text: "Screening failed. Please try again." });
     } finally {
       setBulkAction(false);
     }
@@ -297,21 +295,23 @@ export default function RecruiterCandidatesPage() {
     setUploadQueue((prev) => { const updated = [...prev, ...newItems]; void processQueue(updated); return updated; });
   }
 
-  async function handleAnalyzeAll() {
-    if (analyzingAll) return;
-    setAnalyzingAll(true);
-    setAnalyzeResult(null);
+  async function handleScreenAll() {
+    if (screeningAll) return;
+    setScreeningAll(true);
+    setScreenResult(null);
     try {
-      const res = await api.post<{ total_candidates: number; total_created: number; no_text_count: number }>(
-        "/recruiter/candidates/analyze-all", undefined, { auth: true }
+      const res = await api.post<{ queued: number }>(
+        "/recruiter/candidates/screen-all", undefined, { auth: true }
       );
-      setAnalyzeResult(`✦ ${res.total_created} analyses created across ${res.total_candidates} candidates.`);
-      setLoading(true);
-      void loadCandidates();
+      setScreenResult(
+        res.queued > 0
+          ? `✦ Screening ${res.queued} candidate${res.queued !== 1 ? "s" : ""} in background…`
+          : "All candidates already screened."
+      );
     } catch {
-      setAnalyzeResult("Analysis failed. Make sure you have jobs added and try again.");
+      setScreenResult("Screening failed. Please try again.");
     } finally {
-      setAnalyzingAll(false);
+      setScreeningAll(false);
     }
   }
 
@@ -331,19 +331,19 @@ export default function RecruiterCandidatesPage() {
         </div>
         <button
           type="button"
-          disabled={analyzingAll || candidates.length === 0}
-          onClick={() => void handleAnalyzeAll()}
+          disabled={screeningAll || candidates.length === 0}
+          onClick={() => void handleScreenAll()}
           className="flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:opacity-40"
         >
           <Sparkles size={13} />
-          {analyzingAll ? "Analyzing…" : "Analyze All with AI"}
+          {screeningAll ? "Screening…" : "✦ Screen All"}
         </button>
-        {analyzeResult && (
+        {screenResult && (
           <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium ${
-            analyzeResult.startsWith("✦") ? "border-violet-200 bg-violet-50 text-violet-800" : "border-rose-200 bg-rose-50 text-rose-700"
+            screenResult.startsWith("✦") || screenResult.startsWith("All") ? "border-violet-200 bg-violet-50 text-violet-800" : "border-rose-200 bg-rose-50 text-rose-700"
           }`}>
-            {analyzeResult}
-            <button type="button" onClick={() => setAnalyzeResult(null)} className="opacity-50 hover:opacity-100">✕</button>
+            {screenResult}
+            <button type="button" onClick={() => setScreenResult(null)} className="opacity-50 hover:opacity-100">✕</button>
           </div>
         )}
       </div>
@@ -403,12 +403,12 @@ export default function RecruiterCandidatesPage() {
                 <>
                   <button
                     type="button"
-                    onClick={() => void handleBulkAnalyze()}
+                    onClick={() => void handleBulkScreen()}
                     disabled={bulkAction}
                     className="flex items-center gap-1.5 rounded-xl bg-violet-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50"
                   >
-                    <RefreshCw size={12} className={bulkAction ? "animate-spin" : ""} />
-                    {bulkAction ? `Analyzing… ${actionProgress}%` : "Re-analyze"}
+                    <Sparkles size={12} />
+                    {bulkAction ? `Screening… ${actionProgress}%` : "✦ Screen"}
                   </button>
                   <button
                     type="button"

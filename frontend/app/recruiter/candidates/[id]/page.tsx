@@ -44,7 +44,7 @@ type CandidateDetail = {
   analysis_completed_at: string | null;
 };
 
-type Tab = "screening" | "analysis" | "matches" | "preview" | "notes";
+type Tab = "screening" | "matches" | "preview" | "notes";
 
 // ─── Screening Report types ───────────────────────────────────────────────────
 
@@ -269,39 +269,161 @@ function ScoreLine({ label, value }: { label: string; value: number }) {
   );
 }
 
+type GptPayload = {
+  strengths?: string[];
+  gaps?: string[];
+  hiring_suggestion?: string;
+  recommendation?: string;
+};
+function isGptPayload(payload: unknown): payload is GptPayload {
+  return typeof payload === "object" && payload !== null && "hiring_suggestion" in payload;
+}
+
+function JobAnalysisSection({ detail }: { detail: CandidateDetail }) {
+  const bestMatch = detail.matches[0] ?? null;
+  if (!bestMatch) return null;
+
+  const freshness = analysisFreshness(detail.analysis_completed_at);
+  const gptData = bestMatch.raw_payload && isGptPayload(bestMatch.raw_payload) ? bestMatch.raw_payload : null;
+  const strengths = gptData?.strengths?.length ? gptData.strengths : bestMatch.matching_keywords.slice(0, 6);
+  const gaps = gptData?.gaps?.length ? gptData.gaps : bestMatch.missing_keywords.slice(0, 6);
+  const isGptStrings = !gptData?.strengths?.length;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="h-px flex-1 bg-slate-200" />
+        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Job Match Analysis</span>
+        <div className="h-px flex-1 bg-slate-200" />
+      </div>
+
+      {freshness && (
+        <div className={`flex items-center justify-between rounded-xl border px-4 py-2.5 ${
+          freshness.stale ? "border-amber-200 bg-amber-50" : "border-emerald-100 bg-emerald-50"
+        }`}>
+          <p className={`text-xs font-semibold ${freshness.stale ? "text-amber-700" : "text-emerald-700"}`}>
+            {freshness.stale ? "⚠ Match data may be outdated" : "✓ Match data is current"}
+          </p>
+          <span className={`text-xs ${freshness.stale ? "text-amber-600" : "text-emerald-600"}`}>{freshness.label}</span>
+        </div>
+      )}
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-5">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Best Job Match</p>
+            <p className="mt-1 text-base font-semibold text-slate-900">{bestMatch.job_title}</p>
+            {gptData?.hiring_suggestion && (
+              <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                gptData.hiring_suggestion === "shortlist" ? "bg-emerald-100 text-emerald-700" :
+                gptData.hiring_suggestion === "interview" ? "bg-violet-100 text-violet-700" :
+                gptData.hiring_suggestion === "reject"    ? "bg-rose-100 text-rose-700" :
+                "bg-slate-100 text-slate-600"
+              }`}>{String(gptData.hiring_suggestion)}</span>
+            )}
+          </div>
+          <span className={`text-2xl font-bold tabular-nums ${scoreText(bestMatch.overall_score)}`}>
+            {bestMatch.overall_score.toFixed(1)}%
+          </span>
+        </div>
+        <div className="mt-3"><ScoreBar score={bestMatch.overall_score} /></div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-emerald-600">Strengths</p>
+          {isGptStrings ? (
+            <div className="flex flex-wrap gap-1.5">
+              {(strengths as string[]).map((k) => (
+                <span key={k} className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800">{k}</span>
+              ))}
+            </div>
+          ) : (
+            <ul className="space-y-1.5">
+              {(strengths as string[]).map((s, i) => (
+                <li key={i} className="text-xs leading-5 text-emerald-800">· {s}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-amber-600">Gaps</p>
+          {isGptStrings ? (
+            <div className="flex flex-wrap gap-1.5">
+              {(gaps as string[]).map((k) => (
+                <span key={k} className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">{k}</span>
+              ))}
+            </div>
+          ) : (
+            <ul className="space-y-1.5">
+              {(gaps as string[]).map((g, i) => (
+                <li key={i} className="text-xs leading-5 text-amber-800">· {g}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      {detail.skills.length > 0 && (
+        <div>
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">All Extracted Skills</p>
+          <div className="flex flex-wrap gap-2">
+            {detail.skills.map((skill) => {
+              const isMatch = bestMatch.matching_keywords.map((k) => k.toLowerCase()).includes(skill.toLowerCase());
+              const isGap = bestMatch.missing_keywords.map((k) => k.toLowerCase()).includes(skill.toLowerCase());
+              return (
+                <span key={skill} className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                  isMatch ? "border-emerald-200 bg-emerald-50 text-emerald-700" :
+                  isGap   ? "border-amber-200 bg-amber-50 text-amber-700" :
+                            "border-slate-200 bg-slate-50 text-slate-600"
+                }`}>{skill}</span>
+              );
+            })}
+          </div>
+          <p className="mt-2 text-[11px] text-slate-400">Green = matched · Amber = gap · Gray = unclassified</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TabScreening({
   report,
+  detail,
   onRegenerate,
   regenerating,
-  candidateId,
 }: {
   report: ScreeningReport | null;
+  detail: CandidateDetail;
   onRegenerate: () => void;
   regenerating: boolean;
-  candidateId: string;
 }) {
+  const hasJobMatches = detail.matches.length > 0;
+
   if (!report || report.status === "pending") {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-10 text-center space-y-3">
-        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-violet-600" />
-        <p className="text-sm font-semibold text-slate-700">Generating Screening Report…</p>
-        <p className="text-xs text-slate-400">This runs automatically after upload. Usually takes 10–20 seconds.</p>
+      <div className="space-y-5">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-10 text-center space-y-3">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-violet-600" />
+          <p className="text-sm font-semibold text-slate-700">Generating Screening Report…</p>
+          <p className="text-xs text-slate-400">Runs automatically after upload — usually 10–20 seconds.</p>
+        </div>
+        {hasJobMatches && <JobAnalysisSection detail={detail} />}
       </div>
     );
   }
 
   if (report.status === "failed" || !report.report) {
     return (
-      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-8 text-center space-y-3">
-        <p className="text-sm font-semibold text-rose-700">Screening report failed.</p>
-        <button
-          type="button"
-          onClick={onRegenerate}
-          disabled={regenerating}
-          className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
-        >
-          {regenerating ? "Retrying…" : "Retry"}
-        </button>
+      <div className="space-y-5">
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-8 text-center space-y-3">
+          <p className="text-sm font-semibold text-rose-700">Screening report failed.</p>
+          <button type="button" onClick={onRegenerate} disabled={regenerating}
+            className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50">
+            {regenerating ? "Retrying…" : "Retry"}
+          </button>
+        </div>
+        {hasJobMatches && <JobAnalysisSection detail={detail} />}
       </div>
     );
   }
@@ -319,7 +441,7 @@ function TabScreening({
 
   return (
     <div className="space-y-5">
-      {/* Decision banner */}
+      {/* ── Decision banner ── */}
       <div className={`rounded-2xl border ${ds.border} ${ds.bg} px-5 py-4 flex items-center justify-between gap-4`}>
         <div className="flex items-center gap-3">
           <span className={`h-2.5 w-2.5 rounded-full ${ds.dot} flex-shrink-0`} />
@@ -336,13 +458,13 @@ function TabScreening({
         </div>
       </div>
 
-      {/* Executive summary */}
+      {/* ── Executive summary ── */}
       <div className="rounded-2xl border border-slate-200 bg-white p-5">
         <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Executive Summary</p>
         <p className="text-sm leading-6 text-slate-700">{d.executive_summary}</p>
       </div>
 
-      {/* Score breakdown */}
+      {/* ── Score breakdown ── */}
       <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3">
         <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Scoring Criteria</p>
         {scoreItems.map(([label, key]) => (
@@ -353,15 +475,14 @@ function TabScreening({
         </div>
       </div>
 
-      {/* Why Hire + Risks */}
+      {/* ── Why Hire + Risks ── */}
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
           <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-600">Why Hire</p>
           <ul className="space-y-2">
             {d.why_hire.map((r, i) => (
               <li key={i} className="flex gap-2 text-xs leading-5 text-emerald-800">
-                <span className="mt-0.5 flex-shrink-0 text-emerald-400">✓</span>
-                {r}
+                <span className="mt-0.5 flex-shrink-0 text-emerald-400">✓</span>{r}
               </li>
             ))}
           </ul>
@@ -371,19 +492,18 @@ function TabScreening({
           <ul className="space-y-2">
             {d.risks.map((r, i) => (
               <li key={i} className="flex gap-2 text-xs leading-5 text-rose-800">
-                <span className="mt-0.5 flex-shrink-0 text-rose-400">✕</span>
-                {r}
+                <span className="mt-0.5 flex-shrink-0 text-rose-400">✕</span>{r}
               </li>
             ))}
           </ul>
         </div>
       </div>
 
-      {/* Recommendation */}
+      {/* ── Recommendation ── */}
       <div className="rounded-2xl border border-slate-200 bg-white p-5">
         <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Final Recommendation</p>
         <div className="flex items-center gap-3 flex-wrap">
-          <span className={`rounded-full px-3 py-1 text-xs font-bold ${ds.bg} ${ds.text} border ${ds.border}`}>
+          <span className={`rounded-full px-3 py-1 text-xs font-bold border ${ds.bg} ${ds.text} ${ds.border}`}>
             {d.recommendation.decision}
           </span>
           <span className="text-xs text-slate-400">→</span>
@@ -392,195 +512,28 @@ function TabScreening({
         <p className="mt-2 text-xs text-slate-500 leading-5">{d.recommendation.reason}</p>
       </div>
 
-      {/* Quick flags */}
+      {/* ── Quick flags ── */}
       {d.quick_flags.length > 0 && (
         <div>
           <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Quick Flags</p>
           <div className="flex flex-wrap gap-2">
             {d.quick_flags.map((f) => (
-              <span key={f} className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                {f}
-              </span>
+              <span key={f} className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">{f}</span>
             ))}
           </div>
         </div>
       )}
 
-      {/* Re-generate */}
+      {/* ── Job Analysis section (merged) ── */}
+      <JobAnalysisSection detail={detail} />
+
+      {/* ── Re-generate ── */}
       <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={onRegenerate}
-          disabled={regenerating}
-          className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50 disabled:opacity-40"
-        >
+        <button type="button" onClick={onRegenerate} disabled={regenerating}
+          className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50 disabled:opacity-40">
           {regenerating ? "Regenerating…" : "↺ Regenerate Report"}
         </button>
       </div>
-    </div>
-  );
-}
-
-// ─── Tab: AI Analysis ─────────────────────────────────────────────────────────
-
-type GptPayload = {
-  strengths?: string[];
-  gaps?: string[];
-  hiring_suggestion?: string;
-  recommendation?: string;
-};
-
-function isGptPayload(payload: unknown): payload is GptPayload {
-  return typeof payload === "object" && payload !== null && "hiring_suggestion" in payload;
-}
-
-function TabAnalysis({ detail }: { detail: CandidateDetail }) {
-  const bestMatch = detail.matches[0] ?? null;
-  const freshness = analysisFreshness(detail.analysis_completed_at);
-  const gptData = bestMatch?.raw_payload && isGptPayload(bestMatch.raw_payload)
-    ? bestMatch.raw_payload
-    : null;
-
-  if (!bestMatch) {
-    return (
-      <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
-        <p className="text-sm font-semibold text-slate-700">No analysis available</p>
-        <p className="mt-2 text-xs text-slate-500">Add jobs and run matching to see analysis results here.</p>
-      </div>
-    );
-  }
-
-  const strengths = bestMatch.matching_keywords.slice(0, 6);
-  const gaps = bestMatch.missing_keywords.slice(0, 6);
-
-  return (
-    <div className="space-y-5">
-      {/* Freshness */}
-      {freshness && (
-        <div className={`flex items-center justify-between rounded-2xl border px-4 py-3 ${
-          freshness.stale ? "border-amber-200 bg-amber-50" : "border-emerald-100 bg-emerald-50"
-        }`}>
-          <p className={`text-xs font-semibold ${freshness.stale ? "text-amber-700" : "text-emerald-700"}`}>
-            {freshness.stale ? "⚠ Analysis may be outdated" : "✓ Analysis is current"}
-          </p>
-          <span className={`text-xs ${freshness.stale ? "text-amber-600" : "text-emerald-600"}`}>
-            {freshness.label}
-          </span>
-        </div>
-      )}
-
-      {/* Top score */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Best Match</p>
-            <p className="mt-1 text-base font-semibold text-slate-900">{bestMatch.job_title}</p>
-          </div>
-          <span className={`text-2xl font-bold tabular-nums ${scoreText(bestMatch.overall_score)}`}>
-            {bestMatch.overall_score.toFixed(1)}%
-          </span>
-        </div>
-        <div className="mt-3">
-          <ScoreBar score={bestMatch.overall_score} />
-        </div>
-      </div>
-
-      {/* Strengths + Gaps side by side */}
-      {/* GPT badge */}
-      {gptData && (
-        <div className="flex items-center gap-2 rounded-2xl border border-violet-200 bg-violet-50 px-4 py-2">
-          <span className="text-xs font-bold text-violet-600">✦ Deep AI Analysis</span>
-          {gptData.hiring_suggestion && (
-            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-              gptData.hiring_suggestion === "shortlist" ? "bg-emerald-100 text-emerald-700" :
-              gptData.hiring_suggestion === "interview" ? "bg-violet-100 text-violet-700" :
-              gptData.hiring_suggestion === "reject" ? "bg-rose-100 text-rose-700" :
-              "bg-slate-100 text-slate-600"
-            }`}>
-              {String(gptData.hiring_suggestion)}
-            </span>
-          )}
-        </div>
-      )}
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
-          <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-emerald-600">✦ Strengths</p>
-          {/* GPT provides narrative strengths; TF-IDF provides keyword list */}
-          {gptData?.strengths && gptData.strengths.length > 0 ? (
-            <ul className="space-y-1.5">
-              {gptData.strengths.map((s, i) => (
-                <li key={i} className="text-xs leading-5 text-emerald-800">· {String(s)}</li>
-              ))}
-            </ul>
-          ) : strengths.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {strengths.map((k) => (
-                <span key={k} className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800">
-                  {k}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-emerald-600">No strong matches found.</p>
-          )}
-        </div>
-
-        <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
-          <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-amber-600">⚠ Gaps</p>
-          {gptData?.gaps && gptData.gaps.length > 0 ? (
-            <ul className="space-y-1.5">
-              {gptData.gaps.map((g, i) => (
-                <li key={i} className="text-xs leading-5 text-amber-800">· {String(g)}</li>
-              ))}
-            </ul>
-          ) : gaps.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {gaps.map((k) => (
-                <span key={k} className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
-                  {k}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-amber-600">No significant gaps.</p>
-          )}
-        </div>
-      </div>
-
-      {/* Recommendation */}
-      {detail.top_recommendation && (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <p className="mb-1 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">AI Recommendation</p>
-          <p className="text-sm leading-6 text-slate-700">{detail.top_recommendation.reason}</p>
-        </div>
-      )}
-
-      {/* All skills */}
-      {detail.skills.length > 0 && (
-        <div>
-          <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">All Extracted Skills</p>
-          <div className="flex flex-wrap gap-2">
-            {detail.skills.map((skill) => {
-              const isMatch = bestMatch.matching_keywords.map((k) => k.toLowerCase()).includes(skill.toLowerCase());
-              const isGap = bestMatch.missing_keywords.map((k) => k.toLowerCase()).includes(skill.toLowerCase());
-              return (
-                <span
-                  key={skill}
-                  className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                    isMatch ? "border-emerald-200 bg-emerald-50 text-emerald-700" :
-                    isGap ? "border-amber-200 bg-amber-50 text-amber-700" :
-                    "border-slate-200 bg-slate-50 text-slate-600"
-                  }`}
-                >
-                  {skill}
-                </span>
-              );
-            })}
-          </div>
-          <p className="mt-2 text-[11px] text-slate-400">Green = matched · Amber = gap · Gray = unclassified</p>
-        </div>
-      )}
     </div>
   );
 }
@@ -1038,7 +991,6 @@ export default function CandidateProfilePage() {
 
   const TABS: { key: Tab; label: string }[] = [
     { key: "screening", label: "✦ Screening" },
-    { key: "analysis", label: "AI Analysis" },
     { key: "matches", label: `Job Matches ${detail.matches.length > 0 ? `(${detail.matches.length})` : ""}` },
     { key: "preview", label: "Resume" },
     { key: "notes", label: "Notes" },
@@ -1258,12 +1210,11 @@ export default function CandidateProfilePage() {
         {activeTab === "screening" && (
           <TabScreening
             report={screening}
+            detail={detail}
             onRegenerate={() => void handleRegenerate()}
             regenerating={regenerating}
-            candidateId={id}
           />
         )}
-        {activeTab === "analysis" && <TabAnalysis detail={detail} />}
         {activeTab === "matches" && <TabMatches detail={detail} />}
         {activeTab === "preview" && <TabPreview detail={detail} />}
         {activeTab === "notes" && <TabNotes candidateId={id} />}

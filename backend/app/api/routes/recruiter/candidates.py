@@ -134,6 +134,10 @@ class ScreeningReportResponse(BaseModel):
     report: dict | None
 
 
+class ScreenAllResponse(BaseModel):
+    queued: int
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -756,6 +760,39 @@ def bulk_delete_candidates(
                 pass
     db.commit()
     return BulkDeleteResponse(deleted=deleted)
+
+
+@router.post("/screen-all", response_model=ScreenAllResponse)
+def screen_all_candidates(
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_recruiter),
+) -> ScreenAllResponse:
+    """Queue screening reports for all candidates that don't have one yet."""
+    resumes = list(db.scalars(select(Resume).where(Resume.user_id == current_user.id)))
+    queued = 0
+    for resume in resumes:
+        if resume.raw_text or resume.normalized_text:
+            background_tasks.add_task(run_screening_report_task, resume.id, current_user.id, False)
+            queued += 1
+    return ScreenAllResponse(queued=queued)
+
+
+@router.post("/bulk-screen", response_model=ScreenAllResponse)
+def bulk_screen_candidates(
+    payload: BulkIdsPayload,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_recruiter),
+) -> ScreenAllResponse:
+    """Re-run screening report for a selected set of candidates (force refresh)."""
+    queued = 0
+    for resume_id in payload.ids:
+        resume = db.get(Resume, resume_id)
+        if resume and resume.user_id == current_user.id:
+            background_tasks.add_task(run_screening_report_task, resume_id, current_user.id, True)
+            queued += 1
+    return ScreenAllResponse(queued=queued)
 
 
 @router.post("/bulk-analyze", response_model=BulkAnalyzeResponse)

@@ -66,8 +66,11 @@ Rules:
 """
 
 
-def run_screening_report_task(resume_id: str, user_id: str) -> None:
-    """Background task: generate a screening report for *resume_id*."""
+def run_screening_report_task(resume_id: str, user_id: str, force: bool = False) -> None:
+    """Background task: generate a screening report for *resume_id*.
+
+    force=True deletes any existing completed report before re-running.
+    """
     from app.db.session import SessionLocal
 
     db: Session = SessionLocal()
@@ -82,7 +85,6 @@ def run_screening_report_task(resume_id: str, user_id: str) -> None:
         if not resume_text:
             return
 
-        # Reuse existing pending record or skip if already completed
         existing = db.scalar(
             select(AIAnalysisReport)
             .where(
@@ -93,7 +95,12 @@ def run_screening_report_task(resume_id: str, user_id: str) -> None:
             .limit(1)
         )
         if existing and existing.status == "completed":
-            return
+            if not force:
+                return
+            db.delete(existing)
+            db.commit()
+            existing = None
+
         if existing and existing.status == "pending":
             report = existing
         else:
