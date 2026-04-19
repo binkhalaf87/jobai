@@ -482,9 +482,24 @@ export default function AIInterviewPage() {
             </div>
           )}
           {sendError && (
-            <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-              {sendError}
-            </div>
+            sendError.toLowerCase().includes("smtp") || sendError.toLowerCase().includes("smart send") ? (
+              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 space-y-2">
+                <p className="text-sm font-semibold text-amber-800">Gmail connection not set up</p>
+                <p className="text-xs text-amber-700">
+                  You need to connect and verify a Gmail account before sending interview invites.
+                </p>
+                <Link
+                  href="/recruiter/profile?tab=send-settings"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-amber-700"
+                >
+                  Set up Send Settings →
+                </Link>
+              </div>
+            ) : (
+              <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {sendError}
+              </div>
+            )
           )}
 
           {activeInterview.candidate_summary && (
