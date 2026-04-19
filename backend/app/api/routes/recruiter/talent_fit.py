@@ -87,7 +87,16 @@ def list_talent_fit(
     if job_id:
         stmt = stmt.where(Analysis.job_description_id == job_id)
 
-    analyses = list(db.scalars(stmt))
+    all_analyses = list(db.scalars(stmt))
+
+    # Deduplicate: keep only the best-scoring analysis per (resume_id, job_id) pair
+    best: dict[tuple[str, str], Analysis] = {}
+    for a in all_analyses:
+        key = (a.resume_id, a.job_description_id)
+        if key not in best or float(a.overall_score) > float(best[key].overall_score):
+            best[key] = a
+    analyses = list(best.values())
+    analyses.sort(key=lambda a: float(a.overall_score), reverse=True)
 
     # Pre-load all deep_match reports for this user
     existing_reports: dict[tuple[str, str], AIAnalysisReport] = {}
