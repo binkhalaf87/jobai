@@ -29,6 +29,14 @@ class RecruiterJobCreate(BaseModel):
     employment_type: EmploymentType | None = None
 
 
+class RecruiterJobUpdate(BaseModel):
+    title: str
+    description: str
+    company_name: str | None = None
+    location: str | None = None
+    employment_type: EmploymentType | None = None
+
+
 class RecruiterJobListItem(BaseModel):
     id: str
     title: str
@@ -37,6 +45,7 @@ class RecruiterJobListItem(BaseModel):
     employment_type: EmploymentType | None
     created_at: datetime
     candidate_count: int
+    description: str | None
 
     model_config = {"from_attributes": True}
 
@@ -134,6 +143,7 @@ def create_job(
         employment_type=job.employment_type,
         created_at=job.created_at,
         candidate_count=0,
+        description=job.source_text,
     )
 
 
@@ -166,6 +176,7 @@ def list_jobs(
             employment_type=job.employment_type,
             created_at=job.created_at,
             candidate_count=int(count),
+            description=job.source_text,
         )
         for job, count in rows
     ]
@@ -220,6 +231,40 @@ def get_job(
         employment_type=job.employment_type,
         created_at=job.created_at,
         top_candidates=candidates,
+    )
+
+
+@router.patch("/{job_id}", response_model=RecruiterJobListItem)
+def update_job(
+    job_id: str,
+    payload: RecruiterJobUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_recruiter),
+) -> RecruiterJobListItem:
+    """Update an existing job posting."""
+    job = _get_owned_job(db, job_id, current_user.id)
+    job.title = payload.title.strip()
+    job.source_text = payload.description.strip()
+    job.company_name = payload.company_name.strip() if payload.company_name else None
+    job.location_text = payload.location.strip() if payload.location else None
+    job.employment_type = payload.employment_type
+    db.commit()
+    db.refresh(job)
+
+    count = db.scalar(
+        select(func.count(Analysis.id))
+        .where(Analysis.job_description_id == job_id, Analysis.status == AnalysisStatus.COMPLETED)
+    ) or 0
+
+    return RecruiterJobListItem(
+        id=job.id,
+        title=job.title,
+        company_name=job.company_name,
+        location=job.location_text,
+        employment_type=job.employment_type,
+        created_at=job.created_at,
+        candidate_count=int(count),
+        description=job.source_text,
     )
 
 
