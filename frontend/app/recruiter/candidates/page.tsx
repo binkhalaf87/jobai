@@ -102,22 +102,46 @@ function UploadZone({ onFilesAdded }: { onFilesAdded: (files: File[]) => void })
 
 function UploadQueue({ items }: { items: FileUploadItem[] }) {
   if (!items.length) return null;
+  const active = items.filter((i) => i.status !== "error");
+  const totalProgress =
+    active.length > 0
+      ? Math.round(active.reduce((s, i) => s + (i.status === "done" ? 100 : i.progress), 0) / active.length)
+      : 0;
+  const allDone = items.every((i) => i.status === "done" || i.status === "error");
+  const uploading = items.some((i) => i.status === "uploading");
   return (
-    <ul className="space-y-1.5 rounded-xl border border-slate-200 bg-white p-3">
-      {items.map((item) => (
-        <li key={item.uid} className="flex items-center gap-3 text-xs">
-          <span className="min-w-0 flex-1 truncate font-medium text-slate-700">{item.name}</span>
-          <span className={`font-semibold ${item.status === "done" ? "text-emerald-600" : item.status === "error" ? "text-rose-600" : "text-slate-400"}`}>
-            {item.status === "done" ? "✓" : item.status === "error" ? "✗" : `${item.progress}%`}
-          </span>
-          {item.status === "uploading" && (
-            <div className="h-1 w-20 overflow-hidden rounded-full bg-slate-200">
-              <div className="h-full rounded-full bg-slate-800 transition-all" style={{ width: `${item.progress}%` }} />
-            </div>
-          )}
-        </li>
-      ))}
-    </ul>
+    <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-2">
+      {/* Overall progress bar */}
+      {!allDone && (
+        <div className="space-y-1">
+          <div className="flex items-center justify-between text-[11px] text-slate-500">
+            <span>{uploading ? "Uploading…" : "Preparing…"}</span>
+            <span className="font-semibold">{totalProgress}%</span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+            <div
+              className="h-full rounded-full bg-brand-700 transition-all duration-300"
+              style={{ width: `${totalProgress}%` }}
+            />
+          </div>
+        </div>
+      )}
+      <ul className="space-y-1.5">
+        {items.map((item) => (
+          <li key={item.uid} className="flex items-center gap-3 text-xs">
+            <span className="min-w-0 flex-1 truncate font-medium text-slate-700">{item.name}</span>
+            <span className={`font-semibold ${item.status === "done" ? "text-emerald-600" : item.status === "error" ? "text-rose-600" : "text-slate-400"}`}>
+              {item.status === "done" ? "✓" : item.status === "error" ? "✗" : `${item.progress}%`}
+            </span>
+            {item.status === "uploading" && (
+              <div className="h-1 w-20 overflow-hidden rounded-full bg-slate-200">
+                <div className="h-full rounded-full bg-brand-700 transition-all" style={{ width: `${item.progress}%` }} />
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -137,6 +161,8 @@ export default function RecruiterCandidatesPage() {
   const [bulkAction, setBulkAction] = useState(false);
   const [bulkResult, setBulkResult] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [actionProgress, setActionProgress] = useState(0);
+  const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   async function loadCandidates() {
     try {
@@ -170,21 +196,42 @@ export default function RecruiterCandidatesPage() {
     }
   }
 
+  function startProgress() {
+    setActionProgress(0);
+    progressTimer.current = setInterval(() => {
+      setActionProgress((prev) => {
+        if (prev >= 82) { clearInterval(progressTimer.current!); return 82; }
+        return prev + 3;
+      });
+    }, 60);
+  }
+
+  function finishProgress(cb?: () => void) {
+    if (progressTimer.current) clearInterval(progressTimer.current);
+    setActionProgress(100);
+    setTimeout(() => { setActionProgress(0); cb?.(); }, 400);
+  }
+
   async function handleBulkDelete() {
     if (selected.size === 0) return;
     setBulkAction(true);
     setBulkResult(null);
     setConfirmDelete(false);
+    startProgress();
     try {
       const res = await api.post<{ deleted: number }>(
         "/recruiter/candidates/bulk-delete",
         { ids: Array.from(selected) },
         { auth: true }
       );
-      setBulkResult({ type: "success", text: `${res.deleted} candidate${res.deleted !== 1 ? "s" : ""} deleted.` });
+      finishProgress(() => {
+        setBulkResult({ type: "success", text: `${res.deleted} candidate${res.deleted !== 1 ? "s" : ""} deleted.` });
+      });
       setLoading(true);
       void loadCandidates();
     } catch {
+      if (progressTimer.current) clearInterval(progressTimer.current);
+      setActionProgress(0);
       setBulkResult({ type: "error", text: "Delete failed. Please try again." });
     } finally {
       setBulkAction(false);
@@ -195,19 +242,24 @@ export default function RecruiterCandidatesPage() {
     if (selected.size === 0) return;
     setBulkAction(true);
     setBulkResult(null);
+    startProgress();
     try {
       const res = await api.post<{ analyses_created: number; analyses_skipped: number; no_text_count: number }>(
         "/recruiter/candidates/bulk-analyze",
         { ids: Array.from(selected) },
         { auth: true }
       );
-      setBulkResult({
-        type: "success",
-        text: `${res.analyses_created} analyses created. ${res.no_text_count > 0 ? `${res.no_text_count} skipped (no text).` : ""}`,
+      finishProgress(() => {
+        setBulkResult({
+          type: "success",
+          text: `${res.analyses_created} analyses created. ${res.no_text_count > 0 ? `${res.no_text_count} skipped (no text).` : ""}`,
+        });
       });
       setLoading(true);
       void loadCandidates();
     } catch {
+      if (progressTimer.current) clearInterval(progressTimer.current);
+      setActionProgress(0);
       setBulkResult({ type: "error", text: "Analysis failed. Make sure you have jobs added." });
     } finally {
       setBulkAction(false);
@@ -312,59 +364,72 @@ export default function RecruiterCandidatesPage() {
 
       {/* ── Floating bulk action bar ── */}
       {someSelected && (
-        <div className="sticky top-4 z-20 flex items-center justify-between gap-3 rounded-2xl border border-slate-300 bg-white px-4 py-3 shadow-lg">
-          <span className="text-sm font-semibold text-slate-800">
-            {selected.size} selected
-          </span>
-          <div className="flex items-center gap-2">
-            {confirmDelete ? (
-              <>
-                <span className="text-xs text-rose-600 font-medium">Delete {selected.size} candidate{selected.size !== 1 ? "s" : ""}?</span>
-                <button
-                  type="button"
-                  onClick={() => void handleBulkDelete()}
-                  disabled={bulkAction}
-                  className="rounded-xl bg-rose-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700 disabled:opacity-50"
-                >
-                  {bulkAction ? "Deleting…" : "Confirm Delete"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirmDelete(false)}
-                  className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={() => void handleBulkAnalyze()}
-                  disabled={bulkAction}
-                  className="flex items-center gap-1.5 rounded-xl bg-violet-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50"
-                >
-                  <RefreshCw size={12} />
-                  {bulkAction ? "Analyzing…" : "Re-analyze"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirmDelete(true)}
-                  disabled={bulkAction}
-                  className="flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50"
-                >
-                  <Trash2 size={12} />
-                  Delete
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelected(new Set())}
-                  className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50"
-                >
-                  Clear
-                </button>
-              </>
-            )}
+        <div className="sticky top-4 z-20 rounded-2xl border border-slate-300 bg-white shadow-lg overflow-hidden">
+          {/* Progress bar strip */}
+          {bulkAction && (
+            <div className="h-1 w-full bg-slate-100">
+              <div
+                className={`h-full transition-all duration-300 ${confirmDelete ? "bg-rose-500" : "bg-violet-500"}`}
+                style={{ width: `${actionProgress}%` }}
+              />
+            </div>
+          )}
+          <div className="flex items-center justify-between gap-3 px-4 py-3">
+            <span className="text-sm font-semibold text-slate-800">
+              {selected.size} selected
+            </span>
+            <div className="flex items-center gap-2">
+              {confirmDelete ? (
+                <>
+                  <span className="text-xs text-rose-600 font-medium">Delete {selected.size} candidate{selected.size !== 1 ? "s" : ""}?</span>
+                  <button
+                    type="button"
+                    onClick={() => void handleBulkDelete()}
+                    disabled={bulkAction}
+                    className="rounded-xl bg-rose-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700 disabled:opacity-50"
+                  >
+                    {bulkAction ? `Deleting… ${actionProgress}%` : "Confirm Delete"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(false)}
+                    disabled={bulkAction}
+                    className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => void handleBulkAnalyze()}
+                    disabled={bulkAction}
+                    className="flex items-center gap-1.5 rounded-xl bg-violet-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50"
+                  >
+                    <RefreshCw size={12} className={bulkAction ? "animate-spin" : ""} />
+                    {bulkAction ? `Analyzing… ${actionProgress}%` : "Re-analyze"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(true)}
+                    disabled={bulkAction}
+                    className="flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50"
+                  >
+                    <Trash2 size={12} />
+                    Delete
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelected(new Set())}
+                    disabled={bulkAction}
+                    className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50 disabled:opacity-40"
+                  >
+                    Clear
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}
