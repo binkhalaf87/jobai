@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -18,16 +19,7 @@ function formatDate(iso: string) {
 
 type ReportSection = { id: string; title: string; shortTitle: string; content: string };
 
-const SHORT_TITLES: Record<number, string> = {
-  1: "Summary",
-  2: "ATS Score",
-  3: "Pro Analysis",
-  4: "Career Plan",
-  5: "Quick Wins",
-  6: "Interview Q&A",
-};
-
-function parseReportSections(text: string): ReportSection[] {
+function parseReportSections(text: string, shortTitles: Record<number, string>): ReportSection[] {
   const regex = /^## (Section (\d+) — .+)$/gm;
   const sections: ReportSection[] = [];
   let match: RegExpExecArray | null;
@@ -40,7 +32,7 @@ function parseReportSections(text: string): ReportSection[] {
       sections.push({
         id: `sec-${lastNum}`,
         title: lastTitle,
-        shortTitle: SHORT_TITLES[lastNum] ?? `Section ${lastNum}`,
+        shortTitle: shortTitles[lastNum] ?? `Section ${lastNum}`,
         content: text.slice(lastEnd, match.index).trim(),
       });
     }
@@ -52,7 +44,7 @@ function parseReportSections(text: string): ReportSection[] {
     sections.push({
       id: `sec-${lastNum}`,
       title: lastTitle,
-      shortTitle: SHORT_TITLES[lastNum] ?? `Section ${lastNum}`,
+      shortTitle: shortTitles[lastNum] ?? `Section ${lastNum}`,
       content: text.slice(lastEnd).trim(),
     });
   }
@@ -72,8 +64,8 @@ function scoreRingColor(s: number) {
 function scoreGrade(s: number) {
   return s >= 85 ? "A" : s >= 70 ? "B" : s >= 55 ? "C" : "D";
 }
-function scoreLabel(s: number) {
-  return s >= 80 ? "Excellent" : s >= 65 ? "Good" : s >= 50 ? "Fair" : "Needs Work";
+function scoreLabel(s: number, labels: { excellent: string; good: string; fair: string; needsWork: string }) {
+  return s >= 80 ? labels.excellent : s >= 65 ? labels.good : s >= 50 ? labels.fair : labels.needsWork;
 }
 function scoreTextColor(s: number) {
   return s >= 80 ? "text-teal" : s >= 65 ? "text-amber-600" : s >= 50 ? "text-orange-500" : "text-rose-500";
@@ -90,7 +82,15 @@ function scoreBorderBg(s: number) {
 
 // ─── ATS Score Ring ───────────────────────────────────────────────────────────
 
-function AtsScoreRing({ score }: { score: number }) {
+type ScoreLabels = { excellent: string; good: string; fair: string; needsWork: string };
+type AtsMessages = { strong: string; good: string; moderate: string; gaps: string };
+
+function AtsScoreRing({ score, atsMatchScore, scoreLabels, atsMessages }: {
+  score: number;
+  atsMatchScore: string;
+  scoreLabels: ScoreLabels;
+  atsMessages: AtsMessages;
+}) {
   const r = 44;
   const circ = 2 * Math.PI * r;
   const filled = (score / 100) * circ;
@@ -133,16 +133,10 @@ function AtsScoreRing({ score }: { score: number }) {
 
       {/* Info */}
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">ATS Match Score</p>
-        <p className={`mt-1 text-2xl font-black tracking-tight ${scoreTextColor(score)}`}>{scoreLabel(score)}</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{atsMatchScore}</p>
+        <p className={`mt-1 text-2xl font-black tracking-tight ${scoreTextColor(score)}`}>{scoreLabel(score, scoreLabels)}</p>
         <p className="mt-2 max-w-xs text-xs leading-5 text-slate-500">
-          {score >= 80
-            ? "Your resume is well-optimized for applicant tracking systems."
-            : score >= 65
-            ? "Good fit — minor improvements can push you into the top tier."
-            : score >= 50
-            ? "Moderate match — consider tailoring keywords and formatting."
-            : "Significant gaps detected — review the ATS section below."}
+          {score >= 80 ? atsMessages.strong : score >= 65 ? atsMessages.good : score >= 50 ? atsMessages.moderate : atsMessages.gaps}
         </p>
       </div>
     </div>
@@ -224,16 +218,29 @@ function SectionContent({ content }: { content: string }) {
 
 // ─── Structured report view ───────────────────────────────────────────────────
 
+type StructuredReportTranslations = {
+  cvAnalysisReport: string;
+  resumeWithTitle: (title: string) => string;
+  exportPdf: string;
+  sectionOf: (n: number, total: number) => string;
+  atsMatchScore: string;
+  scoreLabels: ScoreLabels;
+  atsMessages: AtsMessages;
+  shortTitles: Record<number, string>;
+};
+
 function StructuredReport({
   text,
   resumeTitle,
   date,
+  translations,
 }: {
   text: string;
   resumeTitle?: string;
   date?: string;
+  translations: StructuredReportTranslations;
 }) {
-  const sections = parseReportSections(text);
+  const sections = parseReportSections(text, translations.shortTitles);
   const atsScore = extractAtsScore(text);
 
   if (sections.length === 0) {
@@ -250,10 +257,10 @@ function StructuredReport({
     <div id="analysis-print-root">
       {/* Print header */}
       <div className="mb-5 hidden print:block">
-        <h1 className="text-2xl font-bold text-slate-900">CV Analysis Report</h1>
+        <h1 className="text-2xl font-bold text-slate-900">{translations.cvAnalysisReport}</h1>
         {resumeTitle && (
           <p className="mt-1 text-sm text-slate-500">
-            Resume: {resumeTitle}{date ? ` · ${date}` : ""}
+            {translations.resumeWithTitle(resumeTitle)}{date ? ` · ${date}` : ""}
           </p>
         )}
       </div>
@@ -270,11 +277,18 @@ function StructuredReport({
               <path d="M12 17V3M7 12l5 5 5-5" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M3 17v2a2 2 0 002 2h14a2 2 0 002-2v-2" strokeLinecap="round" />
             </svg>
-            Export PDF
+            {translations.exportPdf}
           </button>
         </div>
 
-        {atsScore !== null && <AtsScoreRing score={atsScore} />}
+        {atsScore !== null && (
+          <AtsScoreRing
+            score={atsScore}
+            atsMatchScore={translations.atsMatchScore}
+            scoreLabels={translations.scoreLabels}
+            atsMessages={translations.atsMessages}
+          />
+        )}
       </div>
 
       {/* Sections */}
@@ -298,7 +312,7 @@ function StructuredReport({
                 </div>
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
-                    Section {num} of {sections.length}
+                    {translations.sectionOf(num, sections.length)}
                   </p>
                   <h2 className="mt-0.5 text-sm font-bold text-slate-900">{s.title}</h2>
                 </div>
@@ -326,6 +340,8 @@ function NextStepsPanel({
   jobDescription: string;
   jobTitle?: string;
 }) {
+  const t = useTranslations("analysisPage.nextSteps");
+
   function goToInterview() {
     if (typeof window !== "undefined") {
       if (jobDescription) sessionStorage.setItem("jobai_interview_jd", jobDescription);
@@ -338,16 +354,16 @@ function NextStepsPanel({
     atsScore === null
       ? null
       : atsScore >= 80
-      ? "Your score is strong. Apply with confidence."
+      ? t("scoreStrong")
       : atsScore >= 60
-      ? "Good score. A few quick improvements can push you higher."
-      : "Your score needs work. Consider improving your CV before applying.";
+      ? t("scoreGood")
+      : t("scoreNeedsWork");
 
   return (
     <div className="mt-4 overflow-hidden rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-800/8 via-white to-teal/5" data-no-print>
       <div className="px-6 py-5">
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-700">Next Steps</p>
-        <h2 className="mt-0.5 text-lg font-bold tracking-tight text-slate-900">Keep moving</h2>
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-700">{t("eyebrow")}</p>
+        <h2 className="mt-0.5 text-lg font-bold tracking-tight text-slate-900">{t("title")}</h2>
         {scoreMsg && <p className="mt-1.5 text-sm text-slate-500">{scoreMsg}</p>}
       </div>
 
@@ -363,8 +379,8 @@ function NextStepsPanel({
             </svg>
           </div>
           <div>
-            <p className="text-sm font-bold text-slate-900">Find jobs</p>
-            <p className="mt-0.5 text-xs leading-5 text-slate-500">See roles that fit your profile.</p>
+            <p className="text-sm font-bold text-slate-900">{t("findJobs")}</p>
+            <p className="mt-0.5 text-xs leading-5 text-slate-500">{t("findJobsDesc")}</p>
           </div>
         </Link>
 
@@ -381,9 +397,9 @@ function NextStepsPanel({
             </svg>
           </div>
           <div>
-            <p className="text-sm font-bold text-brand-900">Practice interview</p>
+            <p className="text-sm font-bold text-brand-900">{t("practiceInterview")}</p>
             <p className="mt-0.5 text-xs leading-5 text-brand-700">
-              {jobDescription ? "JD will be pre-loaded automatically." : "Simulate a mock interview session."}
+              {jobDescription ? t("jdPreloaded") : t("simulateMock")}
             </p>
           </div>
         </button>
@@ -399,8 +415,8 @@ function NextStepsPanel({
             </svg>
           </div>
           <div>
-            <p className="text-sm font-bold text-teal">Send with SmartSend</p>
-            <p className="mt-0.5 text-xs leading-5 text-teal/80">Send your CV in batches.</p>
+            <p className="text-sm font-bold text-teal">{t("sendWithSmartSend")}</p>
+            <p className="mt-0.5 text-xs leading-5 text-teal/80">{t("sendInBatches")}</p>
           </div>
         </Link>
       </div>
@@ -416,31 +432,26 @@ const STATUS_BADGE: Record<string, string> = {
   failed:    "bg-rose-50 text-rose-700 border-rose-200",
 };
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status, label }: { status: string; label?: string }) {
   return (
     <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${STATUS_BADGE[status] ?? STATUS_BADGE.pending}`}>
-      {status}
+      {label ?? status}
     </span>
   );
 }
 
 // ─── Streaming stage indicator ────────────────────────────────────────────────
 
-const STREAM_STAGES = [
-  { label: "Connecting to AI engine…",  pct: 10 },
-  { label: "Reading your CV…",          pct: 30 },
-  { label: "Running deep analysis…",    pct: 60 },
-  { label: "Composing the report…",     pct: 85 },
-];
+const STREAM_STAGE_PCTS = [10, 30, 60, 85];
 
-function useStreamStage(isStreaming: boolean, textLen: number) {
+function useStreamStage(isStreaming: boolean, textLen: number): number | null {
   const idx =
     !isStreaming ? -1
     : textLen === 0 ? 0
     : textLen < 200 ? 1
     : textLen < 1000 ? 2
     : 3;
-  return idx >= 0 ? STREAM_STAGES[idx] : null;
+  return idx >= 0 ? idx : null;
 }
 
 // ─── Page ────────────────────────────────────────────────────────────────────
@@ -448,6 +459,7 @@ function useStreamStage(isStreaming: boolean, textLen: number) {
 type PageState = "idle" | "streaming" | "done" | "error";
 
 export default function DashboardAnalysisPage() {
+  const t = useTranslations("analysisPage");
   const [resumes, setResumes]               = useState<ResumeListItem[]>([]);
   const [selectedResume, setSelectedResume] = useState("");
   const [jobDescription, setJobDescription] = useState("");
@@ -524,7 +536,48 @@ export default function DashboardAnalysisPage() {
   const hasOutput = streamText.length > 0;
   const canSubmit = selectedResume && pageState !== "streaming";
   const activeReport = viewReport ?? (activeReportId ? reports.find((r) => r.id === activeReportId) : null);
-  const streamStage = useStreamStage(pageState === "streaming", streamText.length);
+  const stageIdx = useStreamStage(pageState === "streaming", streamText.length);
+
+  const streamStageLabels = [
+    t("streamStages.connecting"),
+    t("streamStages.reading"),
+    t("streamStages.analyzing"),
+    t("streamStages.composing"),
+  ];
+  const scoreLabels: ScoreLabels = {
+    excellent: t("scoreLabels.excellent"),
+    good:      t("scoreLabels.good"),
+    fair:      t("scoreLabels.fair"),
+    needsWork: t("scoreLabels.needsWork"),
+  };
+  const atsMessages: AtsMessages = {
+    strong:   t("atsMessages.strong"),
+    good:     t("atsMessages.good"),
+    moderate: t("atsMessages.moderate"),
+    gaps:     t("atsMessages.gaps"),
+  };
+  const statusLabels: Record<string, string> = {
+    completed: t("statusLabels.completed"),
+    pending:   t("statusLabels.pending"),
+    failed:    t("statusLabels.failed"),
+  };
+  const reportTranslations: StructuredReportTranslations = {
+    cvAnalysisReport: t("cvAnalysisReport"),
+    resumeWithTitle: (title) => t("resumeWithTitle", { title }),
+    exportPdf: t("exportPdf"),
+    sectionOf: (n, total) => t("sectionOf", { n, total }),
+    atsMatchScore: t("atsMatchScore"),
+    scoreLabels,
+    atsMessages,
+    shortTitles: {
+      1: t("shortTitles.summary"),
+      2: t("shortTitles.atsScore"),
+      3: t("shortTitles.proAnalysis"),
+      4: t("shortTitles.careerPlan"),
+      5: t("shortTitles.quickWins"),
+      6: t("shortTitles.interviewQA"),
+    },
+  };
 
   return (
     <div className="space-y-6">
@@ -540,11 +593,9 @@ export default function DashboardAnalysisPage() {
               </svg>
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-700">AI Analysis</p>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">Analyze Your CV</h1>
-              <p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">
-                AI-powered report: ATS score, keyword gaps, hiring manager view, career plan, and interview prep.
-              </p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-700">{t("eyebrow")}</p>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t("title")}</h1>
+              <p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">{t("description")}</p>
             </div>
           </div>
 
@@ -559,8 +610,8 @@ export default function DashboardAnalysisPage() {
               >
                 <span className="text-2xl font-black tabular-nums" style={{ color: scoreRingColor(s) }}>{s}</span>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">ATS Score</p>
-                  <p className="text-xs font-semibold" style={{ color: scoreRingColor(s) }}>{scoreLabel(s)}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{t("atsScore")}</p>
+                  <p className="text-xs font-semibold" style={{ color: scoreRingColor(s) }}>{scoreLabel(s, scoreLabels)}</p>
                 </div>
               </div>
             );
@@ -570,17 +621,17 @@ export default function DashboardAnalysisPage() {
 
       {/* ─── Input panel ──────────────────────────────────────────── */}
       <Panel className="p-6 md:p-8" data-no-print>
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">New Analysis</p>
-        <h2 className="mt-1 text-lg font-bold tracking-tight text-slate-900">Pick a CV and run</h2>
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{t("newAnalysis")}</p>
+        <h2 className="mt-1 text-lg font-bold tracking-tight text-slate-900">{t("pickAndRun")}</h2>
 
         <div className="mt-5 space-y-4">
           {/* Resume selector */}
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700" htmlFor="resume-select">Resume</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700" htmlFor="resume-select">{t("resumeLabel")}</label>
             {resumes.length === 0 ? (
               <p className="text-sm text-slate-500">
-                No resumes yet.{" "}
-                <a href="/dashboard/resumes" className="font-semibold text-brand-800 underline underline-offset-2">Upload CV →</a>
+                {t("noResumesYet")}{" "}
+                <a href="/dashboard/resumes" className="font-semibold text-brand-800 underline underline-offset-2">{t("uploadCvLink")}</a>
               </p>
             ) : (
               <select
@@ -599,15 +650,15 @@ export default function DashboardAnalysisPage() {
           {/* JD textarea */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700" htmlFor="jd-input">
-              Target Job Description{" "}
-              <span className="font-normal text-slate-400">(optional)</span>
+              {t("jdLabel")}{" "}
+              <span className="font-normal text-slate-400">{t("jdOptional")}</span>
             </label>
             <textarea
               id="jd-input"
               rows={4}
               value={jobDescription}
               onChange={(e) => setJobDescription(e.target.value)}
-              placeholder="Paste job description…"
+              placeholder={t("jdPlaceholder")}
               className="w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm placeholder-slate-400 shadow-sm focus:border-brand-500 focus:outline-none"
             />
           </div>
@@ -622,14 +673,14 @@ export default function DashboardAnalysisPage() {
             {pageState === "streaming" ? (
               <>
                 <span className="h-2 w-2 animate-pulse rounded-full bg-teal" />
-                Generating report…
+                {t("generatingReport")}
               </>
             ) : (
               <>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
                   <polygon points="5 3 19 12 5 21 5 3" />
                 </svg>
-                Run Analysis
+                {t("runAnalysis")}
               </>
             )}
           </button>
@@ -649,13 +700,13 @@ export default function DashboardAnalysisPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-700">Building your report</p>
-                  <p className="text-sm font-semibold text-slate-800">{streamStage?.label ?? "Processing…"}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-700">{t("buildingReport")}</p>
+                  <p className="text-sm font-semibold text-slate-800">{stageIdx !== null ? streamStageLabels[stageIdx] : "…"}</p>
                 </div>
               </div>
               <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-teal" />
-                Streaming
+                {t("streaming")}
               </span>
             </div>
 
@@ -664,18 +715,16 @@ export default function DashboardAnalysisPage() {
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-brand-700 to-teal transition-all duration-700"
-                  style={{ width: `${streamStage?.pct ?? 10}%` }}
+                  style={{ width: `${stageIdx !== null ? STREAM_STAGE_PCTS[stageIdx] : 10}%` }}
                 />
               </div>
               <div className="mt-2 flex justify-between text-[10px] text-slate-400">
-                {STREAM_STAGES.map((st, i) => (
+                {STREAM_STAGE_PCTS.map((pct, i) => (
                   <span
                     key={i}
-                    className={`font-medium ${
-                      streamStage && STREAM_STAGES.indexOf(streamStage) >= i ? "text-brand-700" : ""
-                    }`}
+                    className={`font-medium ${stageIdx !== null && stageIdx >= i ? "text-brand-700" : ""}`}
                   >
-                    {st.pct}%
+                    {pct}%
                   </span>
                 ))}
               </div>
@@ -720,6 +769,7 @@ export default function DashboardAnalysisPage() {
             text={streamText}
             resumeTitle={activeReport?.resume_title ?? undefined}
             date={activeReport ? formatDate(activeReport.created_at) : undefined}
+            translations={reportTranslations}
           />
           <NextStepsPanel
             atsScore={extractAtsScore(streamText)}
@@ -732,9 +782,9 @@ export default function DashboardAnalysisPage() {
       {/* ─── History panel ───────────────────────────────────────── */}
       <Panel className="overflow-hidden" data-no-print>
         <div className="px-6 py-5">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Past reports</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{t("pastReports")}</p>
           <h2 className="mt-1 text-lg font-bold tracking-tight text-slate-900">
-            {reports.length} saved report{reports.length !== 1 ? "s" : ""}
+            {reports.length === 1 ? t("savedReports_one") : t("savedReports_other", { count: reports.length })}
           </h2>
         </div>
 
@@ -745,28 +795,30 @@ export default function DashboardAnalysisPage() {
                 <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
               </svg>
             </div>
-            <p className="text-sm font-bold text-slate-900">No reports yet</p>
-            <p className="mt-1 text-xs text-slate-500">Run your first analysis above to see results here.</p>
+            <p className="text-sm font-bold text-slate-900">{t("noReports")}</p>
+            <p className="mt-1 text-xs text-slate-500">{t("noReportsDesc")}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-y border-slate-100 bg-slate-50">
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Resume</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Date</th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">{t("table.resume")}</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">{t("table.status")}</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">{t("table.date")}</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">{t("table.actions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {reports.map((r) => (
                   <tr key={r.id} className="transition-colors hover:bg-brand-50/30">
                     <td className="px-6 py-4">
-                      <p className="font-semibold text-slate-900">{r.resume_title ?? "Resume"}</p>
+                      <p className="font-semibold text-slate-900">{r.resume_title ?? t("resumeLabel")}</p>
                       <p className="mt-0.5 font-mono text-[10px] text-slate-400">{r.id.slice(0, 8)}…</p>
                     </td>
-                    <td className="px-4 py-4"><StatusBadge status={r.status} /></td>
+                    <td className="px-4 py-4">
+                      <StatusBadge status={r.status} label={statusLabels[r.status] ?? r.status} />
+                    </td>
                     <td className="px-4 py-4 text-slate-500">{formatDate(r.created_at)}</td>
                     <td className="px-6 py-4 text-right">
                       <button
@@ -781,7 +833,7 @@ export default function DashboardAnalysisPage() {
                           "disabled:cursor-not-allowed disabled:opacity-40",
                         ].join(" ")}
                       >
-                        {viewReport?.id === r.id ? "Close" : "View"}
+                        {viewReport?.id === r.id ? t("close") : t("view")}
                       </button>
                     </td>
                   </tr>
@@ -795,12 +847,13 @@ export default function DashboardAnalysisPage() {
         {viewReport && viewReport.report_text && pageState === "done" && !activeReportId && (
           <div className="border-t border-slate-100 px-6 py-6">
             <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
-              Viewing saved report — {viewReport.resume_title} — {formatDate(viewReport.created_at)}
+              {t("viewingReport", { title: viewReport.resume_title, date: formatDate(viewReport.created_at) })}
             </p>
             <StructuredReport
               text={viewReport.report_text}
               resumeTitle={viewReport.resume_title ?? undefined}
               date={formatDate(viewReport.created_at)}
+              translations={reportTranslations}
             />
           </div>
         )}

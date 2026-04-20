@@ -745,6 +745,674 @@
         "topMatch": "أفضل تطابق",
         "fileUnavailable": "الملف غير متاح"
       }
+    },
+    "dashboard": {
+      "eyebrow": "لوحة التوظيف",
+      "title": "اعثر على المرشحين وراجعهم وحرّك مساراتهم بشكل أسرع",
+      "description": "مكان واحد للوظائف والمرشحين والتحليل والخطوات التالية.",
+      "pipeline": {
+        "label": "المسار",
+        "alreadyShortlisted": "تمت إضافتهم للقائمة المختصرة."
+      },
+      "nextStep": {
+        "label": "الخطوة التالية",
+        "postJob": "أضف وظيفة",
+        "runAnalysis": "شغّل تحليل المرشحين",
+        "reviewTopCandidates": "راجع أفضل المرشحين",
+        "addJobDesc": "أضف دوراً نشطاً لبدء التصنيف وتقييم التوافق.",
+        "waitingAnalysis": "{count} سيرة ذاتية بانتظار التحليل بالذكاء الاصطناعي.",
+        "pipelineReady": "مسارك جاهز لاتخاذ قرارات القائمة المختصرة والمقابلات."
+      },
+      "coverage": {
+        "label": "التغطية",
+        "noActiveJobs": "لا توجد وظائف نشطة",
+        "activeRoles_one": "دور نشط واحد",
+        "activeRoles_other": "{count} أدوار نشطة",
+        "rankingStronger": "التصنيف يكون أقوى عندما تكون الوظائف نشطة."
+      },
+      "actions": {
+        "label": "الإجراءات",
+        "movePipeline": "تحريك المسار",
+        "movePipelineDesc": "افتح المرشحين لتحليلهم وتحريك المراحل ومراجعة التوافق.",
+        "currentRisk": "المخاطر الحالية",
+        "riskUnanalyzed": "المرشحون غير المحللين يخفون تطابقات قوية. أزلهم أولاً لتصبح التصنيفات موثوقة.",
+        "riskReview": "العائق التالي هو سرعة المراجعة البشرية. استخدم مراحل القائمة المختصرة والمقابلات للحفاظ على الزخم."
+      },
+      "metrics": {
+        "candidates": "المرشحون",
+        "openJobs": "الوظائف المفتوحة",
+        "avgMatchScore": "متوسط درجة التطابق",
+        "awaitingAnalysis": "بانتظار التحليل",
+        "uploadToStart": "ارفع السير الذاتية للبدء.",
+        "resumesReady": "سير ذاتية جاهزة للمراجعة.",
+        "addJob": "أضف وظيفة لتفعيل التصنيف.",
+        "activeJobs": "وظائف نشطة في هذا الحساب.",
+        "averageFit": "متوسط التوافق للمرشحين المحللين.",
+        "waitingAnalysis": "سير ذاتية بانتظار التحليل."
+      },
+      "pipelineOverview": {
+        "label": "المسار",
+        "title": "نظرة عامة على المسار",
+        "openCandidates": "فتح المرشحين",
+        "applied": "مقدم",
+        "shortlisted": "مختصر",
+        "interview": "مقابلة",
+        "rejected": "مرفوض"
+      },
+      "topMatches": {
+        "label": "أفضل التطابقات",
+        "title": "أفضل المرشحين",
+        "empty": "لا يوجد مرشحون مصنّفون بعد",
+        "emptyDesc": "ارفع المرشحين وشغّل تحليل الذكاء الاصطناعي مقارنةً بوظائفك لرؤية التصنيف هنا."
+      },
+      "recentCandidates": {
+        "label": "المرشحون الأخيرون",
+        "title": "أحدث السير الذاتية",
+        "openPipeline": "فتح المسار",
+        "empty": "لا يوجد مرشحون بعد",
+        "emptyDesc": "ارفع السير الذاتية من صفحة المرشحين.",
+        "noRankedJob": "لا توجد وظيفة مصنّفة بعد",
+        "awaitingAnalysis": "بانتظار التحليل"
+      },
+      "noData": "لا توجد بيانات متاحة",
+      "failedToLoad": "تعذّر تحميل بيانات لوحة التحكم."
+    },
+    "candidatesPage": {
+      "count_one": "مرشح واحد",
+      "count_other": "{count} مرشح",
+      "screeningAll": "جارٍ الفرز…",
+      "screenAll": "✦ فرز الجميع",
+      "uploadZone": {
+        "dropResumes": "اسحب السير الذاتية أو",
+        "browse": "تصفح",
+        "types": "PDF · DOCX"
+      },
+      "uploadQueue": {
+        "uploading": "جارٍ الرفع…",
+        "preparing": "جارٍ التحضير…"
+      },
+      "bulk": {
+        "selected_one": "تم تحديد {count}",
+        "selected_other": "تم تحديد {count}",
+        "deleteConfirm_one": "هل تريد حذف {count} مرشح؟",
+        "deleteConfirm_other": "هل تريد حذف {count} مرشحين؟",
+        "confirmDelete": "تأكيد الحذف",
+        "deleting": "جارٍ الحذف… {progress}%",
+        "screenBtn": "✦ فرز",
+        "screening": "جارٍ الفرز… {progress}%",
+        "delete": "حذف",
+        "clear": "مسح",
+        "cancel": "إلغاء",
+        "deleted_one": "تم حذف {count} مرشح.",
+        "deleted_other": "تم حذف {count} مرشحين.",
+        "screened_one": "✦ جارٍ فرز {count} مرشح في الخلفية…",
+        "screened_other": "✦ جارٍ فرز {count} مرشحين في الخلفية…",
+        "allScreened": "جميع المرشحين تم فرزهم بالفعل.",
+        "screenFailed": "فشل الفرز. يرجى المحاولة مجدداً.",
+        "deleteFailed": "فشل الحذف. يرجى المحاولة مجدداً."
+      },
+      "table": {
+        "candidate": "المرشح",
+        "extractedSkills": "المهارات المستخرجة",
+        "stage": "المرحلة",
+        "bestMatch": "أفضل تطابق",
+        "added": "تاريخ الإضافة",
+        "view": "عرض",
+        "noAnalysis": "لا يوجد تحليل"
+      },
+      "stages": {
+        "new": "مقدّم",
+        "shortlisted": "مختصر",
+        "interview": "مقابلة",
+        "rejected": "مرفوض"
+      },
+      "empty": {
+        "title": "لا يوجد مرشحون بعد",
+        "desc": "ارفع السير الذاتية أعلاه للبدء."
+      },
+      "error": {
+        "failedToLoad": "تعذّر تحميل المرشحين.",
+        "retry": "إعادة المحاولة"
+      },
+      "footer_one": "مرشح واحد",
+      "footer_other": "{count} مرشح",
+      "footerSelected": "· {count} محدد"
+    },
+    "jobsPage": {
+      "title": "الوظائف المنشورة",
+      "addJob": "+ إضافة وظيفة",
+      "cancel": "إلغاء",
+      "newJob": "وظيفة جديدة",
+      "editJob": "تعديل الوظيفة",
+      "form": {
+        "jobTitle": "المسمى الوظيفي",
+        "required": "*",
+        "companyName": "اسم الشركة",
+        "location": "الموقع",
+        "employmentType": "نوع التوظيف",
+        "jobDescription": "وصف الوظيفة",
+        "titlePlaceholder": "مثال: مهندس برمجيات أول",
+        "companyPlaceholder": "اختياري",
+        "locationPlaceholder": "مثال: الرياض، المملكة العربية السعودية",
+        "jdPlaceholder": "أدخل متطلبات الوظيفة والمهارات المطلوبة والمسؤوليات…",
+        "selectType": "— اختر —",
+        "validationError": "المسمى الوظيفي والوصف مطلوبان.",
+        "saving": "جارٍ الحفظ…",
+        "saveChanges": "حفظ التغييرات",
+        "addJobBtn": "إضافة وظيفة",
+        "cancel": "إلغاء",
+        "failedToSave": "فشل الحفظ."
+      },
+      "employmentTypes": {
+        "full_time": "دوام كامل",
+        "part_time": "دوام جزئي",
+        "contract": "عقد",
+        "internship": "تدريب",
+        "temporary": "مؤقت"
+      },
+      "card": {
+        "candidatesScreened_one": "مرشح واحد تم فرزه",
+        "candidatesScreened_other": "{count} مرشح تم فرزهم",
+        "edit": "تعديل",
+        "delete": "حذف",
+        "deleteConfirm": "هل تريد حذف هذه الوظيفة؟",
+        "confirm": "تأكيد",
+        "cancel": "إلغاء"
+      },
+      "error": "تعذّر تحميل الوظائف.",
+      "empty": {
+        "title": "لا توجد وظائف بعد",
+        "desc": "أضف وظيفتك الأولى لبدء فرز المرشحين ضدها."
+      }
+    },
+    "aiScreeningPage": {
+      "title": "توافق المواهب",
+      "candidatesJobs": "{candidates} مرشح · {jobs} وظيفة",
+      "allJobs": "جميع الوظائف",
+      "allScores": "جميع الدرجات",
+      "filtersActive": "فلاتر نشطة",
+      "clearFilters": "مسح",
+      "table": {
+        "candidate": "المرشح",
+        "job": "الوظيفة",
+        "fitScore": "درجة التوافق",
+        "stage": "المرحلة",
+        "aiSuggestion": "اقتراح الذكاء الاصطناعي",
+        "generating": "جارٍ التوليد…",
+        "viewReport": "عرض التقرير",
+        "requesting": "جارٍ الطلب…",
+        "requestReport": "طلب تقرير"
+      },
+      "empty": {
+        "title": "لا توجد بيانات تطابق بعد",
+        "desc": "ارفع المرشحين وشغّل تحليل الذكاء الاصطناعي لرؤية درجات التوافق هنا."
+      },
+      "error": "تعذّر تحميل بيانات توافق المواهب.",
+      "stages": {
+        "new": "مقدّم",
+        "shortlisted": "مختصر",
+        "interview": "مقابلة",
+        "rejected": "مرفوض"
+      }
+    }
+  },
+
+  "analysisPage": {
+    "eyebrow": "تحليل ذكي",
+    "title": "تحليل سيرتك الذاتية",
+    "description": "تقرير بالذكاء الاصطناعي: درجة ATS، فجوات الكلمات المفتاحية، نظرة مدير التوظيف، خطة المسار، والتحضير للمقابلة.",
+    "newAnalysis": "تحليل جديد",
+    "pickAndRun": "اختر سيرة ذاتية وشغّل التحليل",
+    "resumeLabel": "السيرة الذاتية",
+    "noResumesYet": "لا توجد سير ذاتية بعد.",
+    "uploadCvLink": "ارفع سيرتك ←",
+    "jdLabel": "وصف الوظيفة المستهدفة",
+    "jdOptional": "(اختياري)",
+    "jdPlaceholder": "الصق وصف الوظيفة…",
+    "generatingReport": "جارٍ توليد التقرير…",
+    "runAnalysis": "تشغيل التحليل",
+    "buildingReport": "جارٍ بناء تقريرك",
+    "streaming": "بث مباشر",
+    "exportPdf": "تصدير PDF",
+    "atsMatchScore": "درجة توافق ATS",
+    "atsScore": "درجة ATS",
+    "scoreLabels": {
+      "excellent": "ممتاز",
+      "good": "جيد",
+      "fair": "مقبول",
+      "needsWork": "يحتاج تحسين"
+    },
+    "atsMessages": {
+      "strong": "سيرتك الذاتية محسّنة جيداً لأنظمة تتبع المتقدمين.",
+      "good": "توافق جيد — تحسينات بسيطة ستدفعك إلى المستوى الأعلى.",
+      "moderate": "توافق متوسط — فكر في تعديل الكلمات المفتاحية والتنسيق.",
+      "gaps": "رُصدت فجوات كبيرة — راجع قسم ATS أدناه."
+    },
+    "sectionOf": "القسم {n} من {total}",
+    "cvAnalysisReport": "تقرير تحليل السيرة الذاتية",
+    "resumeWithTitle": "السيرة الذاتية: {title}",
+    "nextSteps": {
+      "eyebrow": "الخطوات التالية",
+      "title": "استمر في التقدم",
+      "scoreStrong": "درجتك قوية. تقدّم بثقة.",
+      "scoreGood": "درجة جيدة. بضعة تحسينات ستدفعك أعلى.",
+      "scoreNeedsWork": "درجتك تحتاج تحسيناً. فكر في تحسين سيرتك قبل التقديم.",
+      "findJobs": "ابحث عن وظائف",
+      "findJobsDesc": "اعثر على الأدوار التي تناسب ملفك المهني.",
+      "practiceInterview": "تدرّب على المقابلة",
+      "jdPreloaded": "سيتم تحميل وصف الوظيفة تلقائياً.",
+      "simulateMock": "محاكاة مقابلة تجريبية.",
+      "sendWithSmartSend": "أرسل عبر SmartSend",
+      "sendInBatches": "أرسل سيرتك في دفعات."
+    },
+    "pastReports": "التقارير السابقة",
+    "savedReports_one": "تقرير واحد محفوظ",
+    "savedReports_other": "{count} تقارير محفوظة",
+    "noReports": "لا توجد تقارير بعد",
+    "noReportsDesc": "شغّل تحليلك الأول أعلاه لرؤية النتائج هنا.",
+    "table": {
+      "resume": "السيرة الذاتية",
+      "status": "الحالة",
+      "date": "التاريخ",
+      "actions": "الإجراءات"
+    },
+    "close": "إغلاق",
+    "view": "عرض",
+    "viewingReport": "عرض تقرير محفوظ — {title} — {date}",
+    "statusLabels": {
+      "completed": "مكتمل",
+      "pending": "قيد الانتظار",
+      "failed": "فشل"
+    },
+    "streamStages": {
+      "connecting": "جارٍ الاتصال بمحرك الذكاء الاصطناعي…",
+      "reading": "جارٍ قراءة سيرتك الذاتية…",
+      "analyzing": "جارٍ التحليل المعمّق…",
+      "composing": "جارٍ كتابة التقرير…"
+    },
+    "shortTitles": {
+      "summary": "ملخص",
+      "atsScore": "درجة ATS",
+      "proAnalysis": "تحليل احترافي",
+      "careerPlan": "خطة مسار",
+      "quickWins": "مكاسب سريعة",
+      "interviewQA": "أسئلة المقابلة"
+    }
+  },
+
+  "enhancementPage": {
+    "newImprovement": "تحسين جديد",
+    "title": "أعِد كتابة سيرتك الذاتية بالذكاء الاصطناعي — محسّنة لـ ATS بصيغة STAR",
+    "resumeLabel": "السيرة الذاتية",
+    "noResumesYet": "لم يتم رفع أي سيرة ذاتية بعد.",
+    "uploadFirst": "ارفع واحدة أولاً ←",
+    "jdLabel": "وصف الوظيفة المستهدفة",
+    "jdOptional": "(اختياري)",
+    "jdPlaceholder": "الصق وصف الوظيفة…",
+    "rewriting": "جارٍ إعادة كتابة السيرة…",
+    "enhanceBtn": "تحسين السيرة",
+    "outputLabel": {
+      "rewriting": "جارٍ إعادة الكتابة…",
+      "done": "السيرة الذاتية المحسّنة",
+      "error": "خطأ"
+    },
+    "streaming": "بث مباشر",
+    "pastImprovements": "التحسينات السابقة",
+    "savedRewrites_one": "إعادة كتابة واحدة محفوظة",
+    "savedRewrites_other": "{count} إعادة كتابة محفوظة",
+    "noRewrites": "لا توجد إعادة كتابة بعد. شغّل تحسينك الأول أعلاه.",
+    "table": {
+      "resume": "السيرة الذاتية",
+      "status": "الحالة",
+      "date": "التاريخ",
+      "actions": "الإجراءات"
+    },
+    "close": "إغلاق",
+    "view": "عرض",
+    "viewingTitle": "السيرة المحسّنة — {title} — {date}"
+  },
+
+  "aiInterviewPage": {
+    "eyebrow": "تدريب ذكي",
+    "title": "المقابلة بالذكاء الاصطناعي",
+    "description": "تدرّب على مقابلة أكثر واقعية مع أسئلة مخصصة للدور وسياق السيرة الذاتية ومتابعات تكيّفية وتقييم تدريبي بعد كل إجابة.",
+    "readiness": {
+      "label": "مستوى الجاهزية",
+      "notScored": "لم يُقيَّم بعد",
+      "strong": "قوي",
+      "improving": "يتحسن",
+      "needsPractice": "يحتاج ممارسة",
+      "firstSession": "أكمل جلسة تدريبية أولى لتأسيس معيار قياسي.",
+      "latestScore": "آخر جلسة مكتملة سجّلت {score}/10."
+    },
+    "resumeContext": {
+      "label": "سياق السيرة الذاتية",
+      "available": "متاحة",
+      "optional": "اختياري",
+      "hasResumes_one": "سيرة ذاتية واحدة محفوظة يمكنها تخصيص الأسئلة.",
+      "hasResumes_other": "{count} سيرة ذاتية محفوظة يمكنها تخصيص الأسئلة.",
+      "noResumes": "يمكنك التدرب بدون سيرة ذاتية، لكن السياق يحسّن المحاكاة."
+    },
+    "openSessions": {
+      "label": "الجلسات المفتوحة",
+      "hint": "استأنف تدريباً غير مكتمل بدلاً من البدء من جديد عندما تريد الاستمرارية."
+    },
+    "bestPractice": {
+      "label": "أفضل ممارسة",
+      "step1Title": "١. حدّد الدور المستهدف",
+      "step1Desc": "استخدم المسمى الوظيفي الدقيق والوصف حتى يتكيّف المحاور مع الدور الذي تريده.",
+      "step2Title": "٢. تدرّب بأدلة",
+      "step2Desc": "أجب كما في مقابلة حقيقية ودع النظام يُقيّم الصلة والوضوح والاحترافية والتوافق.",
+      "step3Title": "٣. حوّل الملاحظات إلى تدريبات",
+      "step3Desc": "استخدم التقرير النهائي لتحسين نقاط الضعف قبل جولة المقابلة التالية."
+    },
+    "unfinishedSession": "لديك جلسة غير مكتملة",
+    "configure": "إعداد",
+    "setupSimulation": "إعداد محاكاة مقابلة حقيقية",
+    "form": {
+      "jobTitlePlaceholder": "المسمى الوظيفي",
+      "noResumeContext": "بدون سياق سيرة ذاتية",
+      "companyNamePlaceholder": "اسم الشركة (اختياري)",
+      "jdPlaceholder": "الصق وصف الوظيفة (اختياري لكن يُنصح به)",
+      "english": "الإنجليزية",
+      "arabic": "العربية",
+      "preparingInterviewer": "جارٍ تحضير المحاور...",
+      "startInterview": "ابدأ المقابلة"
+    },
+    "styles": {
+      "supportive": "داعم",
+      "supportiveDesc": "دافئ وتدريبي",
+      "direct": "مباشر",
+      "directDesc": "موجز وتنفيذي",
+      "challenging": "صعب",
+      "challengingDesc": "يطلب الأدلة"
+    },
+    "levels": {
+      "entry": "مستوى مبتدئ (0-2 سنة)",
+      "mid": "مستوى متوسط (3-5 سنوات)",
+      "senior": "مستوى متقدم (6+ سنوات)"
+    },
+    "types": {
+      "hr": "مقابلة الموارد البشرية",
+      "technical": "مقابلة تقنية",
+      "mixed": "مقابلة مختلطة"
+    },
+    "session": {
+      "questionOf": "السؤال {n} من {total}",
+      "endSession": "إنهاء الجلسة",
+      "technical": "تقني",
+      "behavioral": "سلوكي",
+      "followUp": "متابعة",
+      "planned": "مخطط",
+      "opening": "افتتاحي",
+      "endConfirm": "هل تريد إنهاء هذه الجلسة؟ سيضيع تقدمك.",
+      "interviewerStyle": "محاور {style}",
+      "resumeChip": "السيرة: {title}",
+      "companyChip": "الشركة: {name}",
+      "jdLoadedChip": "تم تحميل وصف الوظيفة"
+    },
+    "evaluation": {
+      "interviewerReply": "رد المحاور",
+      "answerScore": "درجة الإجابة",
+      "coachingTip": "نصيحة تدريبية",
+      "strengths": "نقاط القوة",
+      "improvements": "نقاط التحسين",
+      "suggestedAnswer": "إجابة مقترحة أقوى",
+      "nextQuestion": "السؤال التالي جاهز",
+      "generatingReport": "جارٍ توليد التقرير النهائي...",
+      "viewFinalReport": "عرض التقرير النهائي",
+      "nextQuestionBtn": "السؤال التالي ←",
+      "evaluationFailed": "فشل التقييم.",
+      "failedFinalReport": "فشل توليد التقرير النهائي."
+    },
+    "finalReport": {
+      "eyebrow": "التقرير النهائي",
+      "topStrengths": "أبرز نقاط القوة",
+      "priorityImprovements": "أولويات التحسين",
+      "recommendedDrills": "تمارين موصى بها",
+      "practiceAgain": "تدرّب مجدداً",
+      "questions": "{count} سؤال",
+      "breakdown": {
+        "relevance": "الصلة",
+        "clarity": "الوضوح",
+        "professionalism": "الاحترافية",
+        "confidence": "الثقة",
+        "roleFit": "التوافق مع الدور"
+      }
+    },
+    "history": {
+      "eyebrow": "الجلسات السابقة",
+      "title_one": "جلسة واحدة محفوظة",
+      "title_other": "{count} جلسات محفوظة",
+      "empty": "لا توجد جلسات بعد. أكمل مقابلتك الأولى أعلاه.",
+      "table": {
+        "role": "الدور",
+        "type": "النوع",
+        "score": "الدرجة",
+        "date": "التاريخ",
+        "actions": "الإجراءات"
+      },
+      "review": "مراجعة"
+    },
+    "failedToStart": "تعذّر تحضير المقابلة."
+  },
+
+  "jobSearchPage": {
+    "step": "الخطوة 4",
+    "title": "ابحث عن الأدوار المناسبة ثم تصرّف",
+    "description": "ابحث في الوظائف الحية، وقيّمها مقارنةً بسيرتك الذاتية، وافهم سبب التطابق، وانتقل مباشرة إلى تحليل السيرة أو SmartSend أو التدريب على المقابلة دون فقدان السياق.",
+    "focus": {
+      "label": "التركيز",
+      "buildShortlist": "ابنِ قائمتك المختصرة الأولى",
+      "turnToAction": "حوّل الأدوار المحفوظة إلى إجراءات",
+      "startBroad": "ابدأ بنطاق واسع، احفظ الأقوى، ثم عمّق التحليل على القائمة المختصرة فقط.",
+      "promising": "{count} من الأدوار المحفوظة تبدو واعدة بما يكفي للإرسال أو التدريب."
+    },
+    "nextStep": {
+      "label": "الخطوة التالية",
+      "continueWorkflow": "متابعة سير العمل",
+      "launchSmartSend": "تشغيل SmartSend",
+      "runCvAnalysis": "تشغيل تحليل السيرة"
+    },
+    "headers": {
+      "activeResume": "السيرة النشطة",
+      "noneSelected": "لم يتم الاختيار",
+      "scoresUseCv": "الدرجات في هذه الصفحة تستخدم هذه السيرة.",
+      "pickCv": "اختر سيرة ذاتية لتفعيل التقييم.",
+      "savedRoles": "الأدوار المحفوظة",
+      "saveStrongJobs": "احفظ الوظائف القوية لتبقى في متناولك.",
+      "savedLookPromising": "{count} من الأدوار المحفوظة تبدو واعدة.",
+      "decisionMode": "وضع القرار",
+      "personalizedMatching": "مطابقة مخصصة",
+      "manualScouting": "بحث يدوي",
+      "useFitSignals": "استخدم إشارات التوافق لتقرير ما يجب فعله.",
+      "resultsImproveAfterCv": "يمكنك البحث، لكن النتائج تتحسن بعد اختيار سيرة ذاتية."
+    },
+    "searchPlaceholder": "المسمى الوظيفي أو الدور أو الكلمات المفتاحية",
+    "locationPlaceholder": "المدينة أو الدولة",
+    "searching": "جارٍ البحث...",
+    "searchJobs": "البحث عن وظائف",
+    "filters": {
+      "anyTime": "في أي وقت",
+      "today": "اليوم",
+      "last3Days": "آخر 3 أيام",
+      "lastWeek": "الأسبوع الماضي",
+      "lastMonth": "الشهر الماضي",
+      "allTypes": "جميع الأنواع",
+      "fullTime": "دوام كامل",
+      "partTime": "دوام جزئي",
+      "contract": "عقد",
+      "internship": "تدريب",
+      "scoreWith": "تقييم باستخدام:",
+      "noScore": "بدون تقييم"
+    },
+    "tabs": {
+      "searchResults": "نتائج البحث",
+      "searchResultsWithCount": "نتائج البحث ({count})",
+      "saved": "المحفوظة ({count})"
+    },
+    "results": {
+      "showing": "عرض {current} من {total} نتيجة",
+      "for": "لـ",
+      "in": "في",
+      "resumeScoringOn": "تقييم السيرة مفعّل",
+      "resumeScoringOff": "تقييم السيرة معطّل",
+      "loadMore": "تحميل المزيد",
+      "noJobsFound": "لا توجد وظائف",
+      "tryBroader": "جرّب مسمى أوسع أو أزل الموقع.",
+      "idleTitle": "ابحث عن وظائف",
+      "idleDesc": "ابدأ بمسمى وظيفي. إذا اخترت سيرة ذاتية أعلاه، ستتضمن كل نتيجة درجة توافق مخصصة."
+    },
+    "savedJobs": {
+      "empty": "لا توجد وظائف محفوظة بعد",
+      "emptyDesc": "احفظ الوظائف من البحث لتبقى في قائمتك المختصرة.",
+      "count_one": "دور واحد محفوظ",
+      "count_other": "{count} دور محفوظ"
+    },
+    "jobCard": {
+      "whyItMatches": "لماذا يتطابق",
+      "howToImprove": "كيف تتحسن",
+      "resumeScoringOff": "تقييم السيرة معطّل",
+      "savedToShortlist": "محفوظ في القائمة المختصرة",
+      "saveRole": "حفظ الدور",
+      "analyzeAgainstCv": "تحليل مقارنةً بالسيرة",
+      "noJdAvailable": "لا يوجد وصف وظيفي",
+      "addToSmartSend": "إضافة إلى SmartSend",
+      "smartSendNeedsContext": "SmartSend يحتاج سياق الوظيفة",
+      "practiceInterview": "تدرّب على المقابلة",
+      "interviewPrepNeedsContext": "التحضير للمقابلة يحتاج سياق الوظيفة",
+      "openExternalApplication": "فتح التقديم الخارجي",
+      "removeFromSaved": "حذف من المحفوظات",
+      "source": "المصدر: {source}",
+      "matchPercent": "{score}% تطابق"
+    }
+  },
+
+  "smartSendPage": {
+    "eyebrow": "التواصل الوظيفي",
+    "title": "حملات الإرسال الذكي",
+    "description": "حوّل وظيفة مستهدفة إلى تدفق تواصل موجّه: أنشئ نصوص بريد مخصصة، وراجع المتغيرات، وأرسل في دفعات منظمة من حساب Gmail.",
+    "connection": {
+      "label": "الاتصال",
+      "setupNeeded": "يحتاج إعداداً",
+      "verified": "مفعّل",
+      "savedVerifyNext": "محفوظ، التحقق لاحقاً",
+      "addGmailBeforeSending": "أضف اتصال Gmail قبل إرسال الحملات.",
+      "readyToSend": "جاهز للإرسال من {email}.",
+      "verifyBeforeSending": "الاتصال موجود، لكن يجب اكتمال التحقق قبل الإرسال الفعلي."
+    },
+    "campaign": {
+      "label": "حالة الحملة",
+      "inProgress": "حملة جارية",
+      "draftReady": "مسودة جاهزة",
+      "noDraft": "لا توجد حملة مسودة",
+      "inProgressDesc": "راجع المتغيرات المولّدة وتحكم في الإرسال الدفعي من مكان واحد.",
+      "draftReadyDesc": "لديك متغيرات بريد إلكتروني جاهزة للمعاينة.",
+      "noDraftDesc": "ابدأ بدور مستهدف وتفاصيل الشركة ثم أنشئ تواصلاً مخصصاً."
+    },
+    "currentStep": "الخطوة الحالية",
+    "currentStepDesc": "إنشاء ومعاينة وإرسال ومراجعة السجل دون مغادرة تدفق الحملة.",
+    "flow": {
+      "label": "التدفق الموصى به",
+      "step1Title": "١. أنشئ مسودة الحملة",
+      "step1Desc": "حدد الدور والشركة ووصف الوظيفة حتى يضع الذكاء الاصطناعي رسالة صحيحة.",
+      "step2Title": "٢. تحقق من التسليم",
+      "step2Desc": "اربط Gmail مرة واحدة ثم أعد استخدامه في الحملات المستقبلية.",
+      "step3Title": "٣. أرسل بتحكم",
+      "step3Desc": "راجع المتغيرات أولاً ثم تابع نشاط الإرسال والإخفاق في السجل."
+    },
+    "tabs": {
+      "compose": "إنشاء",
+      "history": "السجل",
+      "gmailSetup": "إعداد Gmail",
+      "gmailVerified": "Gmail ✓",
+      "gmail": "Gmail"
+    },
+    "backToCompose": "← العودة للإنشاء",
+    "backToHistory": "← العودة للسجل",
+    "loading": "جارٍ التحميل…",
+    "smtpSetup": {
+      "title": "إعداد Gmail",
+      "description": "اربط Gmail مرة واحدة ثم أنشئ وأرسل بشكل أسرع.",
+      "instructionsTitle": "إنشاء كلمة مرور تطبيق Gmail:",
+      "step1": "فعّل التحقق بخطوتين في حسابك على Google",
+      "step2": "اذهب إلى إعدادات Google → الأمان → كلمات مرور التطبيقات",
+      "step3": "اختر التطبيق: Mail، الجهاز: Other → اكتب \"JobAI\"",
+      "step4": "انسخ كلمة المرور المكونة من 16 حرفاً والصقها أدناه",
+      "gmailAddress": "عنوان Gmail",
+      "gmailPlaceholder": "you@gmail.com",
+      "displayName": "الاسم المعروض",
+      "displayNamePlaceholder": "اسمك",
+      "appPassword": "كلمة مرور التطبيق",
+      "appPasswordHint": "(16 حرفاً، المسافات تُتجاهل)",
+      "appPasswordPlaceholder": "xxxx xxxx xxxx xxxx",
+      "saving": "جارٍ الحفظ…",
+      "update": "تحديث",
+      "save": "حفظ",
+      "verifying": "جارٍ التحقق…",
+      "test": "اختبار",
+      "current": "الحالي:",
+      "verified": "✓ مُفعّل",
+      "saved": "تم الحفظ.",
+      "failedToSave": "فشل الحفظ",
+      "verificationFailed": "فشل التحقق",
+      "connectionVerified": "تم التحقق من الاتصال."
+    },
+    "compose": {
+      "title": "إنشاء بريد التواصل",
+      "description": "الذكاء الاصطناعي يولّد 3 متغيرات: رسمي، إبداعي، ومختصر. عدّل قبل الإرسال.",
+      "jobTitle": "المسمى الوظيفي *",
+      "jobTitlePlaceholder": "مثال: مهندس برمجيات",
+      "companyName": "اسم الشركة",
+      "companyOptional": "اختياري",
+      "resumeLabel": "السيرة الذاتية",
+      "resumeOptional": "(اختياري — يساعد في تخصيص الرسالة)",
+      "noResume": "بدون سيرة ذاتية",
+      "jobDescription": "وصف الوظيفة",
+      "jdPlaceholder": "الصق وصف الوظيفة لتخصيص البريد (اختياري)",
+      "generating": "جارٍ توليد 3 متغيرات…",
+      "generateBtn": "توليد الرسائل",
+      "generationFailed": "فشل التوليد"
+    },
+    "preview": {
+      "title": "مراجعة وإرسال",
+      "description": "اختر متغيراً، عدّل، أضف مستلمين، ثم أرسل.",
+      "subject": "الموضوع",
+      "body": "نص الرسالة",
+      "recipients": "المستلمون",
+      "recipientPlaceholder": "email@example.com الاسم الاختياري",
+      "addBtn": "إضافة",
+      "recipientHint": "البريد الإلكتروني ثم الاسم الاختياري مفصولاً بمسافة. الحد الأقصى 100.",
+      "invalidEmail": "أدخل عنوان بريد إلكتروني صحيح",
+      "alreadyAdded": "تمت إضافته بالفعل",
+      "atLeastOne": "أضف مستلماً واحداً على الأقل",
+      "confirming": "جارٍ التأكيد…",
+      "sendTo_one": "إرسال إلى {count} مستلم",
+      "sendTo_other": "إرسال إلى {count} مستلم",
+      "failedToConfirm": "فشل التأكيد"
+    },
+    "sending": {
+      "title": "جارٍ الإرسال…",
+      "doNotClose": "يتم إرسال الرسائل واحدة تلو الأخرى. لا تغلق هذه الصفحة.",
+      "progress": "{sent} / {total}",
+      "sent": "{count} مُرسل",
+      "failed_one": "{count} فاشل",
+      "noErrorMessage": "(لم يتم إرجاع رسالة خطأ)",
+      "campaignComplete": "اكتملت الحملة — {sent} مُرسل",
+      "campaignWithFailed": "، {failed} فاشل",
+      "viewHistory": "عرض السجل",
+      "sendFailed": "فشل الإرسال"
+    },
+    "history": {
+      "title": "سجل الحملات",
+      "loading": "جارٍ تحميل السجل…",
+      "noCampaigns": "لا توجد حملات بعد.",
+      "variant": "المتغير:",
+      "total": "الإجمالي:",
+      "sent": "المُرسل:",
+      "failed": "الفاشل:",
+      "subject": "الموضوع:",
+      "unableToLoad": "تعذّر تحميل إعداد Gmail: {error}"
     }
   }
 }

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Panel } from "@/components/panel";
 import { api } from "@/lib/api";
@@ -108,6 +109,7 @@ function LoadingState() {
 }
 
 export default function RecruiterDashboardPage() {
+  const t = useTranslations("recruiter.dashboard");
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -120,7 +122,7 @@ export default function RecruiterDashboardPage() {
         const data = await api.get<DashboardStats>("/recruiter/dashboard/stats", { auth: true });
         if (!cancelled) setStats(data);
       } catch {
-        if (!cancelled) setError("Failed to load dashboard data.");
+        if (!cancelled) setError(t("failedToLoad"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -130,15 +132,15 @@ export default function RecruiterDashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   if (loading) return <LoadingState />;
 
   if (error || !stats) {
     return (
       <Panel className="p-8 md:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Hiring Dashboard</p>
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{error ?? "No data available"}</h1>
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">{t("eyebrow")}</p>
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{error ?? t("noData")}</h1>
       </Panel>
     );
   }
@@ -153,61 +155,59 @@ export default function RecruiterDashboardPage() {
         : "/recruiter/candidates";
   const nextActionLabel =
     stats.total_jobs === 0
-      ? "Post a job"
+      ? t("nextStep.postJob")
       : stats.awaiting_analysis > 0
-        ? "Run candidate analysis"
-        : "Review top candidates";
+        ? t("nextStep.runAnalysis")
+        : t("nextStep.reviewTopCandidates");
   const nextActionDescription =
     stats.total_jobs === 0
-      ? "Add an active role so ranking and fit scoring can start."
+      ? t("nextStep.addJobDesc")
       : stats.awaiting_analysis > 0
-        ? `${stats.awaiting_analysis} resumes are waiting for AI analysis against your open jobs.`
-        : "Your pipeline is ready for shortlist and interview decisions.";
+        ? t("nextStep.waitingAnalysis", { count: stats.awaiting_analysis })
+        : t("nextStep.pipelineReady");
 
   return (
     <div className="space-y-6">
       <Panel className="overflow-hidden p-0">
         <div className="grid gap-0 lg:grid-cols-[1.35fr_0.65fr]">
           <div className="bg-[radial-gradient(circle_at_top_left,_rgba(15,23,42,0.08),_transparent_55%),linear-gradient(135deg,_#ffffff_0%,_#eef4ff_46%,_#f8fafc_100%)] px-8 py-8 md:px-10 md:py-10">
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Hiring Dashboard</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">{t("eyebrow")}</p>
             <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
-              Find, review, and move candidates faster
+              {t("title")}
             </h1>
             <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
-              One place for jobs, candidates, analysis, and next steps.
+              {t("description")}
             </p>
 
             <div className="mt-6 grid gap-3 md:grid-cols-3">
               <div className="rounded-[1.75rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Pipeline</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{t("pipeline.label")}</p>
                 <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{shortlistedRatio}%</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">Already shortlisted.</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{t("pipeline.alreadyShortlisted")}</p>
               </div>
               <div className="rounded-[1.75rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Next step</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{t("nextStep.label")}</p>
                 <p className="mt-3 text-lg font-semibold tracking-tight text-slate-950">{nextActionLabel}</p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">{nextActionDescription}</p>
               </div>
               <div className="rounded-[1.75rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Coverage</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{t("coverage.label")}</p>
                 <p className="mt-3 text-lg font-semibold tracking-tight text-slate-950">
-                  {stats.total_jobs > 0 ? `${stats.total_jobs} active role${stats.total_jobs === 1 ? "" : "s"}` : "No active jobs"}
+                  {stats.total_jobs > 0
+                    ? (stats.total_jobs === 1 ? t("coverage.activeRoles_one", { count: 1 }) : t("coverage.activeRoles_other", { count: stats.total_jobs }))
+                    : t("coverage.noActiveJobs")}
                 </p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Ranking is stronger when jobs are active.
-                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{t("coverage.rankingStronger")}</p>
               </div>
             </div>
           </div>
 
           <div className="border-t border-slate-200/70 bg-brand-900 px-8 py-8 text-white lg:border-l lg:border-t-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Actions</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{t("actions.label")}</p>
             <div className="mt-5 space-y-4">
               <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-4">
-                <p className="text-sm font-semibold">Move the pipeline</p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">
-                  Open candidates to analyze, move stages, and review fit.
-                </p>
+                <p className="text-sm font-semibold">{t("actions.movePipeline")}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">{t("actions.movePipelineDesc")}</p>
                 <Link
                   href={nextActionHref}
                   className="mt-4 inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-slate-200"
@@ -216,11 +216,9 @@ export default function RecruiterDashboardPage() {
                 </Link>
               </div>
               <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-4">
-                <p className="text-sm font-semibold">Current risk</p>
+                <p className="text-sm font-semibold">{t("actions.currentRisk")}</p>
                 <p className="mt-2 text-sm leading-6 text-slate-300">
-                  {stats.awaiting_analysis > 0
-                    ? "Unanalyzed candidates are hiding strong matches. Clear them first so ranking becomes trustworthy."
-                    : "The next bottleneck is human review speed. Use shortlist and interview stages to keep momentum visible."}
+                  {stats.awaiting_analysis > 0 ? t("actions.riskUnanalyzed") : t("actions.riskReview")}
                 </p>
               </div>
             </div>
@@ -230,24 +228,24 @@ export default function RecruiterDashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          label="Candidates"
+          label={t("metrics.candidates")}
           value={stats.total_candidates.toString()}
-          note={stats.total_candidates === 0 ? "Upload resumes to start." : "Resumes ready to review."}
+          note={stats.total_candidates === 0 ? t("metrics.uploadToStart") : t("metrics.resumesReady")}
         />
         <MetricCard
-          label="Open Jobs"
+          label={t("metrics.openJobs")}
           value={stats.total_jobs.toString()}
-          note={stats.total_jobs === 0 ? "Add a job to unlock ranking." : "Active jobs in this workspace."}
+          note={stats.total_jobs === 0 ? t("metrics.addJob") : t("metrics.activeJobs")}
         />
         <MetricCard
-          label="Avg Match Score"
+          label={t("metrics.avgMatchScore")}
           value={stats.avg_match_score > 0 ? `${stats.avg_match_score.toFixed(1)}%` : "-"}
-          note="Average fit across analyzed candidates."
+          note={t("metrics.averageFit")}
         />
         <MetricCard
-          label="Awaiting Analysis"
+          label={t("metrics.awaitingAnalysis")}
           value={stats.awaiting_analysis.toString()}
-          note="Resumes still waiting for analysis."
+          note={t("metrics.waitingAnalysis")}
         />
       </div>
 
@@ -255,44 +253,42 @@ export default function RecruiterDashboardPage() {
         <Panel className="p-6 md:p-8">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Pipeline</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Pipeline overview</h2>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{t("pipelineOverview.label")}</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{t("pipelineOverview.title")}</h2>
             </div>
             <Link href="/recruiter/candidates" className="text-sm font-semibold text-slate-700 hover:text-slate-950">
-              Open candidates
+              {t("pipelineOverview.openCandidates")}
             </Link>
           </div>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-700">Applied</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-700">{t("pipelineOverview.applied")}</p>
               <p className="mt-3 text-2xl font-semibold text-slate-950">{stats.pipeline_counts.applied}</p>
             </div>
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">Shortlisted</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">{t("pipelineOverview.shortlisted")}</p>
               <p className="mt-3 text-2xl font-semibold text-slate-950">{stats.pipeline_counts.shortlisted}</p>
             </div>
             <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-700">Interview</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-700">{t("pipelineOverview.interview")}</p>
               <p className="mt-3 text-2xl font-semibold text-slate-950">{stats.pipeline_counts.interview}</p>
             </div>
             <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-700">Rejected</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-700">{t("pipelineOverview.rejected")}</p>
               <p className="mt-3 text-2xl font-semibold text-slate-950">{stats.pipeline_counts.rejected}</p>
             </div>
           </div>
         </Panel>
 
         <Panel className="p-6 md:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Top Matches</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Top candidates</h2>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{t("topMatches.label")}</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{t("topMatches.title")}</h2>
 
           {stats.top_matches.length === 0 ? (
             <div className="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-6">
-              <p className="text-base font-semibold text-slate-900">No ranked candidates yet</p>
-              <p className="mt-2 text-sm leading-7 text-slate-600">
-                Upload candidates and run AI analysis against your jobs to see ranking here.
-              </p>
+              <p className="text-base font-semibold text-slate-900">{t("topMatches.empty")}</p>
+              <p className="mt-2 text-sm leading-7 text-slate-600">{t("topMatches.emptyDesc")}</p>
             </div>
           ) : (
             <ul className="mt-5 space-y-3">
@@ -318,18 +314,18 @@ export default function RecruiterDashboardPage() {
       <Panel className="p-6 md:p-8">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Recent Candidates</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Latest resumes</h2>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{t("recentCandidates.label")}</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{t("recentCandidates.title")}</h2>
           </div>
           <Link href="/recruiter/candidates" className="text-sm font-semibold text-slate-700 hover:text-slate-950">
-            Open pipeline
+            {t("recentCandidates.openPipeline")}
           </Link>
         </div>
 
         {stats.recent_candidates.length === 0 ? (
           <div className="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-6">
-            <p className="text-base font-semibold text-slate-900">No candidates yet</p>
-            <p className="mt-2 text-sm leading-7 text-slate-600">Upload resumes from Candidates.</p>
+            <p className="text-base font-semibold text-slate-900">{t("recentCandidates.empty")}</p>
+            <p className="mt-2 text-sm leading-7 text-slate-600">{t("recentCandidates.emptyDesc")}</p>
           </div>
         ) : (
           <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -338,7 +334,7 @@ export default function RecruiterDashboardPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-slate-950">{candidate.title}</p>
-                    <p className="mt-1 text-xs text-slate-500">{candidate.best_job ?? "No ranked job yet"}</p>
+                    <p className="mt-1 text-xs text-slate-500">{candidate.best_job ?? t("recentCandidates.noRankedJob")}</p>
                   </div>
                   <span className="text-xs text-slate-400">{formatDate(candidate.uploaded_at)}</span>
                 </div>
@@ -347,7 +343,7 @@ export default function RecruiterDashboardPage() {
                     <ScoreBar score={candidate.best_score} />
                   </div>
                 ) : (
-                  <p className="mt-3 text-xs text-amber-600">Awaiting analysis</p>
+                  <p className="mt-3 text-xs text-amber-600">{t("recentCandidates.awaitingAnalysis")}</p>
                 )}
               </div>
             ))}

@@ -65,7 +65,24 @@
       "Bash(git *)",
       "Bash(ls -la /c/github/jobai/frontend/.eslintrc*)",
       "Bash(grep -i \"pytest\\\\|httpx\\\\|testclient\" /c/github/jobai/backend/requirements*.txt)",
-      "Bash(node -e \"require\\('lucide-react'\\)\")"
+      "Bash(node -e \"require\\('lucide-react'\\)\")",
+      "Bash(npx tsc *)",
+      "Bash(xargs grep *)",
+      "mcp__claude_ai_Vercel__list_teams",
+      "mcp__claude_ai_Vercel__list_projects",
+      "mcp__claude_ai_Vercel__get_runtime_logs",
+      "mcp__claude_ai_Vercel__get_deployment_build_logs",
+      "Bash(node -e ' *)",
+      "Bash(node -e \"const en = require\\('./messages/en.json'\\); console.log\\(JSON.stringify\\(en.marketing, null, 2\\)\\);\")",
+      "Bash(node -e \"const ar = require\\('./messages/ar.json'\\); console.log\\(JSON.stringify\\(ar.marketing, null, 2\\)\\);\")",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('messages/en.json','utf8'\\)\\); console.log\\('en.json OK'\\)\")",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('messages/ar.json','utf8'\\)\\); console.log\\('ar.json OK'\\)\")",
+      "Bash(grep -E \"\\\\.py$\")",
+      "Bash(xargs ls *)",
+      "Bash(xargs cat *)",
+      "Bash(python -c \"import ast, pathlib; src=pathlib.Path\\('app/api/routes/recruiter/candidates.py'\\).read_text\\(\\); ast.parse\\(src\\); print\\('OK'\\)\")",
+      "Bash(python -c \"from backend.app.services.screening_report_service import run_screening_report_task; print\\('OK'\\)\")",
+      "Bash(python -c \"from app.services.screening_report_service import run_screening_report_task; print\\('OK'\\)\")"
     ]
   }
 }

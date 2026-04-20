@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Layers, SlidersHorizontal, FileText, ChevronDown, ArrowRight } from "lucide-react";
 
 import { api } from "@/lib/api";
@@ -37,11 +38,11 @@ type JobOption = { id: string; title: string };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const STAGE_LABELS: Record<Stage, string> = {
-  new: "Applied",
-  shortlisted: "Shortlisted",
-  interview: "Interview",
-  rejected: "Rejected",
+const STAGE_LABELS_KEYS: Record<Stage, string> = {
+  new: "stages.new",
+  shortlisted: "stages.shortlisted",
+  interview: "stages.interview",
+  rejected: "stages.rejected",
 };
 
 const STAGE_CLS: Record<Stage, string> = {
@@ -87,6 +88,7 @@ function ScoreBar({ score }: { score: number }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function TalentFitPage() {
+  const t = useTranslations("recruiter.aiScreeningPage");
   const router = useRouter();
   const [data, setData] = useState<TalentFitResponse | null>(null);
   const [jobs, setJobs] = useState<JobOption[]>([]);
@@ -110,9 +112,9 @@ export default function TalentFitPage() {
     if (minScore > 0) params.set("min_score", String(minScore));
     api.get<TalentFitResponse>(`/recruiter/talent-fit/?${params.toString()}`, { auth: true })
       .then(setData)
-      .catch(() => setError("Failed to load talent fit data."))
+      .catch(() => setError(t("error")))
       .finally(() => setLoading(false));
-  }, [selectedJob, minScore]);
+  }, [selectedJob, minScore, t]);
 
   async function handleRequestReport(row: TalentFitRow) {
     const key = `${row.resume_id}-${row.job_id}`;
@@ -143,10 +145,10 @@ export default function TalentFitPage() {
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-4">
         <div className="flex items-center gap-3">
           <Layers size={16} className="text-orange-500" />
-          <p className="text-[15px] font-bold tracking-tight text-slate-900">Talent Fit</p>
+          <p className="text-[15px] font-bold tracking-tight text-slate-900">{t("title")}</p>
           {data && (
             <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
-              {data.total_candidates} candidates · {data.total_jobs} jobs
+              {t("candidatesJobs", { candidates: data.total_candidates, jobs: data.total_jobs })}
             </span>
           )}
         </div>
@@ -160,7 +162,7 @@ export default function TalentFitPage() {
               onChange={(e) => setSelectedJob(e.target.value)}
               className="appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-8 text-xs font-semibold text-slate-700 outline-none focus:border-slate-400"
             >
-              <option value="">All Jobs</option>
+              <option value="">{t("allJobs")}</option>
               {jobs.map((j) => (
                 <option key={j.id} value={j.id}>{j.title}</option>
               ))}
@@ -175,7 +177,7 @@ export default function TalentFitPage() {
               onChange={(e) => setMinScore(Number(e.target.value))}
               className="appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-8 text-xs font-semibold text-slate-700 outline-none focus:border-slate-400"
             >
-              <option value={0}>All Scores</option>
+              <option value={0}>{t("allScores")}</option>
               <option value={40}>≥ 40%</option>
               <option value={60}>≥ 60%</option>
               <option value={80}>≥ 80%</option>
@@ -189,13 +191,13 @@ export default function TalentFitPage() {
       {(selectedJob || minScore > 0) && (
         <div className="flex items-center gap-2 text-xs text-slate-500">
           <SlidersHorizontal size={11} />
-          <span>Filters active</span>
+          <span>{t("filtersActive")}</span>
           <button
             type="button"
             onClick={() => { setSelectedJob(""); setMinScore(0); }}
             className="font-semibold text-slate-700 underline underline-offset-2"
           >
-            Clear
+            {t("clearFilters")}
           </button>
         </div>
       )}
@@ -212,20 +214,18 @@ export default function TalentFitPage() {
       ) : rows.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-14 text-center">
           <Layers size={24} className="mx-auto mb-3 text-slate-300" />
-          <p className="text-sm font-semibold text-slate-700">No match data yet</p>
-          <p className="mt-1 text-xs text-slate-400">
-            Upload candidates and run AI analysis to see Talent Fit scores here.
-          </p>
+          <p className="text-sm font-semibold text-slate-700">{t("empty.title")}</p>
+          <p className="mt-1 text-xs text-slate-400">{t("empty.desc")}</p>
         </div>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
           {/* Table header */}
           <div className="grid grid-cols-[1fr_1fr_120px_90px_120px_auto] items-center gap-3 border-b border-slate-100 bg-slate-50 px-5 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-            <span>Candidate</span>
-            <span>Job</span>
-            <span>Fit Score</span>
-            <span>Stage</span>
-            <span>AI Suggestion</span>
+            <span>{t("table.candidate")}</span>
+            <span>{t("table.job")}</span>
+            <span>{t("table.fitScore")}</span>
+            <span>{t("table.stage")}</span>
+            <span>{t("table.aiSuggestion")}</span>
             <span />
           </div>
 
@@ -263,7 +263,7 @@ export default function TalentFitPage() {
 
                   {/* Stage */}
                   <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${STAGE_CLS[row.candidate_stage]}`}>
-                    {STAGE_LABELS[row.candidate_stage]}
+                    {t(STAGE_LABELS_KEYS[row.candidate_stage])}
                   </span>
 
                   {/* Suggestion */}
@@ -286,7 +286,7 @@ export default function TalentFitPage() {
                         className="flex items-center gap-1 rounded-xl border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-100"
                       >
                         <FileText size={11} />
-                        {isPending ? "Generating…" : "View Report"}
+                        {isPending ? t("table.generating") : t("table.viewReport")}
                         {!isPending && <ArrowRight size={10} />}
                       </button>
                     ) : (
@@ -296,7 +296,7 @@ export default function TalentFitPage() {
                         onClick={() => void handleRequestReport(row)}
                         className="flex items-center gap-1 rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
                       >
-                        {isLoading ? "Requesting…" : "Request Report"}
+                        {isLoading ? t("table.requesting") : t("table.requestReport")}
                       </button>
                     )}
                   </div>

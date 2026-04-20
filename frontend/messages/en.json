@@ -745,6 +745,674 @@
         "topMatch": "Best Match",
         "fileUnavailable": "File not available"
       }
+    },
+    "dashboard": {
+      "eyebrow": "Hiring Dashboard",
+      "title": "Find, review, and move candidates faster",
+      "description": "One place for jobs, candidates, analysis, and next steps.",
+      "pipeline": {
+        "label": "Pipeline",
+        "alreadyShortlisted": "Already shortlisted."
+      },
+      "nextStep": {
+        "label": "Next step",
+        "postJob": "Post a job",
+        "runAnalysis": "Run candidate analysis",
+        "reviewTopCandidates": "Review top candidates",
+        "addJobDesc": "Add an active role so ranking and fit scoring can start.",
+        "waitingAnalysis": "{count} resumes are waiting for AI analysis against your open jobs.",
+        "pipelineReady": "Your pipeline is ready for shortlist and interview decisions."
+      },
+      "coverage": {
+        "label": "Coverage",
+        "noActiveJobs": "No active jobs",
+        "activeRoles_one": "{count} active role",
+        "activeRoles_other": "{count} active roles",
+        "rankingStronger": "Ranking is stronger when jobs are active."
+      },
+      "actions": {
+        "label": "Actions",
+        "movePipeline": "Move the pipeline",
+        "movePipelineDesc": "Open candidates to analyze, move stages, and review fit.",
+        "currentRisk": "Current risk",
+        "riskUnanalyzed": "Unanalyzed candidates are hiding strong matches. Clear them first so ranking becomes trustworthy.",
+        "riskReview": "The next bottleneck is human review speed. Use shortlist and interview stages to keep momentum visible."
+      },
+      "metrics": {
+        "candidates": "Candidates",
+        "openJobs": "Open Jobs",
+        "avgMatchScore": "Avg Match Score",
+        "awaitingAnalysis": "Awaiting Analysis",
+        "uploadToStart": "Upload resumes to start.",
+        "resumesReady": "Resumes ready to review.",
+        "addJob": "Add a job to unlock ranking.",
+        "activeJobs": "Active jobs in this workspace.",
+        "averageFit": "Average fit across analyzed candidates.",
+        "waitingAnalysis": "Resumes still waiting for analysis."
+      },
+      "pipelineOverview": {
+        "label": "Pipeline",
+        "title": "Pipeline overview",
+        "openCandidates": "Open candidates",
+        "applied": "Applied",
+        "shortlisted": "Shortlisted",
+        "interview": "Interview",
+        "rejected": "Rejected"
+      },
+      "topMatches": {
+        "label": "Top Matches",
+        "title": "Top candidates",
+        "empty": "No ranked candidates yet",
+        "emptyDesc": "Upload candidates and run AI analysis against your jobs to see ranking here."
+      },
+      "recentCandidates": {
+        "label": "Recent Candidates",
+        "title": "Latest resumes",
+        "openPipeline": "Open pipeline",
+        "empty": "No candidates yet",
+        "emptyDesc": "Upload resumes from Candidates.",
+        "noRankedJob": "No ranked job yet",
+        "awaitingAnalysis": "Awaiting analysis"
+      },
+      "noData": "No data available",
+      "failedToLoad": "Failed to load dashboard data."
+    },
+    "candidatesPage": {
+      "count_one": "{count} candidate",
+      "count_other": "{count} candidates",
+      "screeningAll": "Screening…",
+      "screenAll": "✦ Screen All",
+      "uploadZone": {
+        "dropResumes": "Drop resumes or",
+        "browse": "browse",
+        "types": "PDF · DOCX"
+      },
+      "uploadQueue": {
+        "uploading": "Uploading…",
+        "preparing": "Preparing…"
+      },
+      "bulk": {
+        "selected_one": "{count} selected",
+        "selected_other": "{count} selected",
+        "deleteConfirm_one": "Delete {count} candidate?",
+        "deleteConfirm_other": "Delete {count} candidates?",
+        "confirmDelete": "Confirm Delete",
+        "deleting": "Deleting… {progress}%",
+        "screenBtn": "✦ Screen",
+        "screening": "Screening… {progress}%",
+        "delete": "Delete",
+        "clear": "Clear",
+        "cancel": "Cancel",
+        "deleted_one": "{count} candidate deleted.",
+        "deleted_other": "{count} candidates deleted.",
+        "screened_one": "✦ Screening {count} candidate in background…",
+        "screened_other": "✦ Screening {count} candidates in background…",
+        "allScreened": "All candidates already screened.",
+        "screenFailed": "Screening failed. Please try again.",
+        "deleteFailed": "Delete failed. Please try again."
+      },
+      "table": {
+        "candidate": "Candidate",
+        "extractedSkills": "Extracted Skills",
+        "stage": "Stage",
+        "bestMatch": "Best Match",
+        "added": "Added",
+        "view": "View",
+        "noAnalysis": "No analysis"
+      },
+      "stages": {
+        "new": "Applied",
+        "shortlisted": "Shortlisted",
+        "interview": "Interview",
+        "rejected": "Rejected"
+      },
+      "empty": {
+        "title": "No candidates yet",
+        "desc": "Upload resumes above to get started."
+      },
+      "error": {
+        "failedToLoad": "Failed to load candidates.",
+        "retry": "Retry"
+      },
+      "footer_one": "{count} candidate",
+      "footer_other": "{count} candidates",
+      "footerSelected": "· {count} selected"
+    },
+    "jobsPage": {
+      "title": "Job Listings",
+      "addJob": "+ Add Job",
+      "cancel": "Cancel",
+      "newJob": "New Job",
+      "editJob": "Edit Job",
+      "form": {
+        "jobTitle": "Job Title",
+        "required": "*",
+        "companyName": "Company Name",
+        "location": "Location",
+        "employmentType": "Employment Type",
+        "jobDescription": "Job Description",
+        "titlePlaceholder": "e.g. Senior Software Engineer",
+        "companyPlaceholder": "Optional",
+        "locationPlaceholder": "e.g. Riyadh, Saudi Arabia",
+        "jdPlaceholder": "Enter job requirements, required skills, and responsibilities…",
+        "selectType": "— Select —",
+        "validationError": "Job title and description are required.",
+        "saving": "Saving…",
+        "saveChanges": "Save Changes",
+        "addJobBtn": "Add Job",
+        "cancel": "Cancel",
+        "failedToSave": "Failed to save."
+      },
+      "employmentTypes": {
+        "full_time": "Full Time",
+        "part_time": "Part Time",
+        "contract": "Contract",
+        "internship": "Internship",
+        "temporary": "Temporary"
+      },
+      "card": {
+        "candidatesScreened_one": "{count} candidate screened",
+        "candidatesScreened_other": "{count} candidates screened",
+        "edit": "Edit",
+        "delete": "Delete",
+        "deleteConfirm": "Delete this job?",
+        "confirm": "Confirm",
+        "cancel": "Cancel"
+      },
+      "error": "Failed to load jobs.",
+      "empty": {
+        "title": "No jobs yet",
+        "desc": "Add your first job to start screening candidates against it."
+      }
+    },
+    "aiScreeningPage": {
+      "title": "Talent Fit",
+      "candidatesJobs": "{candidates} candidates · {jobs} jobs",
+      "allJobs": "All Jobs",
+      "allScores": "All Scores",
+      "filtersActive": "Filters active",
+      "clearFilters": "Clear",
+      "table": {
+        "candidate": "Candidate",
+        "job": "Job",
+        "fitScore": "Fit Score",
+        "stage": "Stage",
+        "aiSuggestion": "AI Suggestion",
+        "generating": "Generating…",
+        "viewReport": "View Report",
+        "requesting": "Requesting…",
+        "requestReport": "Request Report"
+      },
+      "empty": {
+        "title": "No match data yet",
+        "desc": "Upload candidates and run AI analysis to see Talent Fit scores here."
+      },
+      "error": "Failed to load talent fit data.",
+      "stages": {
+        "new": "Applied",
+        "shortlisted": "Shortlisted",
+        "interview": "Interview",
+        "rejected": "Rejected"
+      }
+    }
+  },
+
+  "analysisPage": {
+    "eyebrow": "AI Analysis",
+    "title": "Analyze Your CV",
+    "description": "AI-powered report: ATS score, keyword gaps, hiring manager view, career plan, and interview prep.",
+    "newAnalysis": "New Analysis",
+    "pickAndRun": "Pick a CV and run",
+    "resumeLabel": "Resume",
+    "noResumesYet": "No resumes yet.",
+    "uploadCvLink": "Upload CV →",
+    "jdLabel": "Target Job Description",
+    "jdOptional": "(optional)",
+    "jdPlaceholder": "Paste job description…",
+    "generatingReport": "Generating report…",
+    "runAnalysis": "Run Analysis",
+    "buildingReport": "Building your report",
+    "streaming": "Streaming",
+    "exportPdf": "Export PDF",
+    "atsMatchScore": "ATS Match Score",
+    "atsScore": "ATS Score",
+    "scoreLabels": {
+      "excellent": "Excellent",
+      "good": "Good",
+      "fair": "Fair",
+      "needsWork": "Needs Work"
+    },
+    "atsMessages": {
+      "strong": "Your resume is well-optimized for applicant tracking systems.",
+      "good": "Good fit — minor improvements can push you into the top tier.",
+      "moderate": "Moderate match — consider tailoring keywords and formatting.",
+      "gaps": "Significant gaps detected — review the ATS section below."
+    },
+    "sectionOf": "Section {n} of {total}",
+    "cvAnalysisReport": "CV Analysis Report",
+    "resumeWithTitle": "Resume: {title}",
+    "nextSteps": {
+      "eyebrow": "Next Steps",
+      "title": "Keep moving",
+      "scoreStrong": "Your score is strong. Apply with confidence.",
+      "scoreGood": "Good score. A few quick improvements can push you higher.",
+      "scoreNeedsWork": "Your score needs work. Consider improving your CV before applying.",
+      "findJobs": "Find jobs",
+      "findJobsDesc": "See roles that fit your profile.",
+      "practiceInterview": "Practice interview",
+      "jdPreloaded": "JD will be pre-loaded automatically.",
+      "simulateMock": "Simulate a mock interview session.",
+      "sendWithSmartSend": "Send with SmartSend",
+      "sendInBatches": "Send your CV in batches."
+    },
+    "pastReports": "Past reports",
+    "savedReports_one": "1 saved report",
+    "savedReports_other": "{count} saved reports",
+    "noReports": "No reports yet",
+    "noReportsDesc": "Run your first analysis above to see results here.",
+    "table": {
+      "resume": "Resume",
+      "status": "Status",
+      "date": "Date",
+      "actions": "Actions"
+    },
+    "close": "Close",
+    "view": "View",
+    "viewingReport": "Viewing saved report — {title} — {date}",
+    "statusLabels": {
+      "completed": "Completed",
+      "pending": "Pending",
+      "failed": "Failed"
+    },
+    "streamStages": {
+      "connecting": "Connecting to AI engine…",
+      "reading": "Reading your CV…",
+      "analyzing": "Running deep analysis…",
+      "composing": "Composing the report…"
+    },
+    "shortTitles": {
+      "summary": "Summary",
+      "atsScore": "ATS Score",
+      "proAnalysis": "Pro Analysis",
+      "careerPlan": "Career Plan",
+      "quickWins": "Quick Wins",
+      "interviewQA": "Interview Q&A"
+    }
+  },
+
+  "enhancementPage": {
+    "newImprovement": "New improvement",
+    "title": "Rewrite your resume with AI — ATS-optimized, STAR format",
+    "resumeLabel": "Resume",
+    "noResumesYet": "No resumes uploaded yet.",
+    "uploadFirst": "Upload one first →",
+    "jdLabel": "Target Job Description",
+    "jdOptional": "(optional)",
+    "jdPlaceholder": "Paste job description…",
+    "rewriting": "Rewriting resume…",
+    "enhanceBtn": "Enhance Resume",
+    "outputLabel": {
+      "rewriting": "Rewriting…",
+      "done": "Enhanced Resume",
+      "error": "Error"
+    },
+    "streaming": "Streaming",
+    "pastImprovements": "Past improvements",
+    "savedRewrites_one": "1 saved rewrite",
+    "savedRewrites_other": "{count} saved rewrites",
+    "noRewrites": "No rewrites yet. Run your first improvement above.",
+    "table": {
+      "resume": "Resume",
+      "status": "Status",
+      "date": "Date",
+      "actions": "Actions"
+    },
+    "close": "Close",
+    "view": "View",
+    "viewingTitle": "Enhanced Resume — {title} — {date}"
+  },
+
+  "aiInterviewPage": {
+    "eyebrow": "AI Practice",
+    "title": "AI Interview",
+    "description": "Practice a more realistic mock interview with role-aware questions, resume context, adaptive follow-ups, and scored coaching after every answer.",
+    "readiness": {
+      "label": "Readiness",
+      "notScored": "Not scored yet",
+      "strong": "Strong",
+      "improving": "Improving",
+      "needsPractice": "Needs practice",
+      "firstSession": "Complete your first practice session to establish a benchmark.",
+      "latestScore": "Latest completed session scored {score}/10."
+    },
+    "resumeContext": {
+      "label": "Resume Context",
+      "available": "Available",
+      "optional": "Optional",
+      "hasResumes_one": "{count} saved resume can personalize the question set.",
+      "hasResumes_other": "{count} saved resumes can personalize the question set.",
+      "noResumes": "You can still practice without a resume, but context improves the simulation."
+    },
+    "openSessions": {
+      "label": "Open Sessions",
+      "hint": "Resume an unfinished practice instead of starting over when you want continuity."
+    },
+    "bestPractice": {
+      "label": "Best Practice Flow",
+      "step1Title": "1. Define the target role",
+      "step1Desc": "Use the exact job title and description so the interviewer adapts to the role you want.",
+      "step2Title": "2. Practice with evidence",
+      "step2Desc": "Answer like a real interview and let the system score relevance, clarity, professionalism, and fit.",
+      "step3Title": "3. Turn feedback into drills",
+      "step3Desc": "Use the final report to improve weak spots before the next interview round."
+    },
+    "unfinishedSession": "You have an unfinished session",
+    "configure": "Configure",
+    "setupSimulation": "Set up a real interview simulation",
+    "form": {
+      "jobTitlePlaceholder": "Job Title",
+      "noResumeContext": "No resume context",
+      "companyNamePlaceholder": "Company Name (optional)",
+      "jdPlaceholder": "Paste job description (optional but recommended)",
+      "english": "English",
+      "arabic": "Arabic",
+      "preparingInterviewer": "Preparing interviewer...",
+      "startInterview": "Start AI Interview"
+    },
+    "styles": {
+      "supportive": "Supportive",
+      "supportiveDesc": "Warm and coaching",
+      "direct": "Direct",
+      "directDesc": "Concise and executive",
+      "challenging": "Challenging",
+      "challengingDesc": "Pushes for evidence"
+    },
+    "levels": {
+      "entry": "Entry Level (0-2 yrs)",
+      "mid": "Mid Level (3-5 yrs)",
+      "senior": "Senior Level (6+ yrs)"
+    },
+    "types": {
+      "hr": "HR Interview",
+      "technical": "Technical Interview",
+      "mixed": "Mixed Interview"
+    },
+    "session": {
+      "questionOf": "Question {n} of {total}",
+      "endSession": "End Session",
+      "technical": "Technical",
+      "behavioral": "Behavioral",
+      "followUp": "Follow-up",
+      "planned": "Planned",
+      "opening": "Opening",
+      "endConfirm": "End this session? Your progress will be lost.",
+      "interviewerStyle": "{style} interviewer",
+      "resumeChip": "Resume: {title}",
+      "companyChip": "Company: {name}",
+      "jdLoadedChip": "JD loaded"
+    },
+    "evaluation": {
+      "interviewerReply": "Interviewer Reply",
+      "answerScore": "Answer Score",
+      "coachingTip": "Coaching Tip",
+      "strengths": "Strengths",
+      "improvements": "Improvements",
+      "suggestedAnswer": "Suggested Stronger Answer",
+      "nextQuestion": "Next Question Ready",
+      "generatingReport": "Generating final report...",
+      "viewFinalReport": "View Final Report",
+      "nextQuestionBtn": "Next Question →",
+      "evaluationFailed": "Evaluation failed.",
+      "failedFinalReport": "Failed to generate final report."
+    },
+    "finalReport": {
+      "eyebrow": "Final Report",
+      "topStrengths": "Top Strengths",
+      "priorityImprovements": "Priority Improvements",
+      "recommendedDrills": "Recommended Drills",
+      "practiceAgain": "Practice Again",
+      "questions": "{count} questions",
+      "breakdown": {
+        "relevance": "Relevance",
+        "clarity": "Clarity",
+        "professionalism": "Professionalism",
+        "confidence": "Confidence",
+        "roleFit": "Role Fit"
+      }
+    },
+    "history": {
+      "eyebrow": "Past Sessions",
+      "title_one": "1 saved session",
+      "title_other": "{count} saved sessions",
+      "empty": "No sessions yet. Complete your first AI interview above.",
+      "table": {
+        "role": "Role",
+        "type": "Type",
+        "score": "Score",
+        "date": "Date",
+        "actions": "Actions"
+      },
+      "review": "Review"
+    },
+    "failedToStart": "Failed to prepare the interview."
+  },
+
+  "jobSearchPage": {
+    "step": "Step 4",
+    "title": "Match roles, then act on them",
+    "description": "Search live jobs, score them against your selected resume, understand why they match, and move directly into CV analysis, SmartSend, or interview practice without losing context.",
+    "focus": {
+      "label": "Focus",
+      "buildShortlist": "Build your first shortlist",
+      "turnToAction": "Turn saved roles into action",
+      "startBroad": "Start broad, save the strongest roles, then deepen analysis only on the shortlist.",
+      "promising": "{count} saved roles already look promising enough to send or practice against."
+    },
+    "nextStep": {
+      "label": "Next step",
+      "continueWorkflow": "Continue workflow",
+      "launchSmartSend": "Launch SmartSend",
+      "runCvAnalysis": "Run CV analysis"
+    },
+    "headers": {
+      "activeResume": "Active Resume",
+      "noneSelected": "None selected",
+      "scoresUseCv": "Scores on this page use this CV.",
+      "pickCv": "Pick a CV to unlock scoring.",
+      "savedRoles": "Saved Roles",
+      "saveStrongJobs": "Save strong jobs to keep them handy.",
+      "savedLookPromising": "{count} saved roles already look promising.",
+      "decisionMode": "Decision Mode",
+      "personalizedMatching": "Personalized matching",
+      "manualScouting": "Manual scouting",
+      "useFitSignals": "Use fit signals to decide what to do next.",
+      "resultsImproveAfterCv": "You can still search, but results improve after you pick a CV."
+    },
+    "searchPlaceholder": "Job title, role, or keywords",
+    "locationPlaceholder": "City or country",
+    "searching": "Searching...",
+    "searchJobs": "Search jobs",
+    "filters": {
+      "anyTime": "Any time",
+      "today": "Today",
+      "last3Days": "Last 3 days",
+      "lastWeek": "Last week",
+      "lastMonth": "Last month",
+      "allTypes": "All types",
+      "fullTime": "Full-time",
+      "partTime": "Part-time",
+      "contract": "Contract",
+      "internship": "Internship",
+      "scoreWith": "Score with:",
+      "noScore": "No score"
+    },
+    "tabs": {
+      "searchResults": "Search Results",
+      "searchResultsWithCount": "Search Results ({count})",
+      "saved": "Saved ({count})"
+    },
+    "results": {
+      "showing": "Showing {current} of {total} results",
+      "for": "for",
+      "in": "in",
+      "resumeScoringOn": "Resume scoring on",
+      "resumeScoringOff": "Resume scoring off",
+      "loadMore": "Load more",
+      "noJobsFound": "No jobs found",
+      "tryBroader": "Try a broader title or remove location.",
+      "idleTitle": "Search jobs",
+      "idleDesc": "Start with a role title. If you select a resume above, each result will include a personalized fit score."
+    },
+    "savedJobs": {
+      "empty": "No saved jobs yet",
+      "emptyDesc": "Save jobs from search to keep them in your shortlist.",
+      "count_one": "1 saved role",
+      "count_other": "{count} saved roles"
+    },
+    "jobCard": {
+      "whyItMatches": "Why it matches",
+      "howToImprove": "How to improve",
+      "resumeScoringOff": "Resume scoring off",
+      "savedToShortlist": "Saved to shortlist",
+      "saveRole": "Save role",
+      "analyzeAgainstCv": "Analyze against CV",
+      "noJdAvailable": "No job description available",
+      "addToSmartSend": "Add to SmartSend",
+      "smartSendNeedsContext": "SmartSend needs job context",
+      "practiceInterview": "Practice interview",
+      "interviewPrepNeedsContext": "Interview prep needs job context",
+      "openExternalApplication": "Open external application",
+      "removeFromSaved": "Remove from saved",
+      "source": "Source: {source}",
+      "matchPercent": "{score}% match"
+    }
+  },
+
+  "smartSendPage": {
+    "eyebrow": "Application Outreach",
+    "title": "Smart Send campaigns",
+    "description": "Turn a target job into a guided outreach flow: generate tailored email copy, review variants, and send in controlled batches from your Gmail account.",
+    "connection": {
+      "label": "Connection",
+      "setupNeeded": "Setup needed",
+      "verified": "Verified",
+      "savedVerifyNext": "Saved, verify next",
+      "addGmailBeforeSending": "Add your Gmail SMTP connection before sending campaigns.",
+      "readyToSend": "Ready to send from {email}.",
+      "verifyBeforeSending": "Connection exists, but verification should be completed before live sending."
+    },
+    "campaign": {
+      "label": "Campaign Status",
+      "inProgress": "Campaign in progress",
+      "draftReady": "Draft ready",
+      "noDraft": "No campaign drafted",
+      "inProgressDesc": "Review the generated variants and control batch sending from one place.",
+      "draftReadyDesc": "You already have AI-generated email variants ready for preview.",
+      "noDraftDesc": "Start with a target role and company details, then generate personalized outreach."
+    },
+    "currentStep": "Current Step",
+    "currentStepDesc": "Compose, preview, send, and review history without leaving the campaign flow.",
+    "flow": {
+      "label": "Recommended Flow",
+      "step1Title": "1. Draft the campaign",
+      "step1Desc": "Set the role, company, and job description so the AI can anchor the message correctly.",
+      "step2Title": "2. Verify delivery",
+      "step2Desc": "Connect Gmail once, then reuse it across future campaigns and batch sends.",
+      "step3Title": "3. Send with control",
+      "step3Desc": "Preview variants first, then watch sent and failed activity move into history."
+    },
+    "tabs": {
+      "compose": "Compose",
+      "history": "History",
+      "gmailSetup": "Gmail Setup",
+      "gmailVerified": "Gmail ✓",
+      "gmail": "Gmail"
+    },
+    "backToCompose": "← Back to Compose",
+    "backToHistory": "← Back to History",
+    "loading": "Loading…",
+    "smtpSetup": {
+      "title": "Gmail setup",
+      "description": "Connect Gmail once, then generate and send faster.",
+      "instructionsTitle": "Create a Gmail App Password:",
+      "step1": "Enable 2-Step Verification on your Google account",
+      "step2": "Go to Google Account → Security → App Passwords",
+      "step3": "Select app: Mail, device: Other → type \"JobAI\"",
+      "step4": "Copy the 16-character password and paste it below",
+      "gmailAddress": "Gmail address",
+      "gmailPlaceholder": "you@gmail.com",
+      "displayName": "Display name",
+      "displayNamePlaceholder": "Your Name",
+      "appPassword": "App Password",
+      "appPasswordHint": "(16 characters, spaces ignored)",
+      "appPasswordPlaceholder": "xxxx xxxx xxxx xxxx",
+      "saving": "Saving…",
+      "update": "Update",
+      "save": "Save",
+      "verifying": "Verifying…",
+      "test": "Test",
+      "current": "Current:",
+      "verified": "✓ Verified",
+      "saved": "Saved.",
+      "failedToSave": "Failed to save",
+      "verificationFailed": "Verification failed",
+      "connectionVerified": "Connection verified."
+    },
+    "compose": {
+      "title": "Compose Outreach Email",
+      "description": "AI generates 3 variants: Formal, Creative, and Concise. Edit before sending.",
+      "jobTitle": "Job Title *",
+      "jobTitlePlaceholder": "e.g. Software Engineer",
+      "companyName": "Company Name",
+      "companyOptional": "Optional",
+      "resumeLabel": "Resume",
+      "resumeOptional": "(optional — helps tailor the letter)",
+      "noResume": "No resume",
+      "jobDescription": "Job Description",
+      "jdPlaceholder": "Paste the job description to tailor the email (optional)",
+      "generating": "Generating 3 variants…",
+      "generateBtn": "Generate Letters",
+      "generationFailed": "Generation failed"
+    },
+    "preview": {
+      "title": "Review & Send",
+      "description": "Choose a variant, edit, add recipients, then send.",
+      "subject": "Subject",
+      "body": "Body",
+      "recipients": "Recipients",
+      "recipientPlaceholder": "email@example.com Optional Name",
+      "addBtn": "Add",
+      "recipientHint": "Email then optional name separated by space. Max 100.",
+      "invalidEmail": "Enter a valid email address",
+      "alreadyAdded": "Already added",
+      "atLeastOne": "Add at least one recipient",
+      "confirming": "Confirming…",
+      "sendTo_one": "Send to {count} recipient",
+      "sendTo_other": "Send to {count} recipients",
+      "failedToConfirm": "Failed to confirm"
+    },
+    "sending": {
+      "title": "Sending…",
+      "doNotClose": "Emails are being sent one by one. Do not close this page.",
+      "progress": "{sent} / {total}",
+      "sent": "{count} sent",
+      "failed_one": "{count} failed",
+      "noErrorMessage": "(no error message returned)",
+      "campaignComplete": "Campaign complete — {sent} sent",
+      "campaignWithFailed": ", {failed} failed",
+      "viewHistory": "View History",
+      "sendFailed": "Send failed"
+    },
+    "history": {
+      "title": "Campaign History",
+      "loading": "Loading history…",
+      "noCampaigns": "No campaigns yet.",
+      "variant": "Variant:",
+      "total": "Total:",
+      "sent": "Sent:",
+      "failed": "Failed:",
+      "subject": "Subject:",
+      "unableToLoad": "Unable to load Gmail setup right now: {error}"
     }
   }
 }

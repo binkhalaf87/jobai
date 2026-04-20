@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Users, Upload, Sparkles, ChevronRight, Trash2 } from "lucide-react";
 
 import { api, uploadRequest } from "@/lib/api";
@@ -48,8 +49,8 @@ const STAGE_COLORS: Record<Stage, string> = {
   rejected:   "bg-rose-100 text-rose-500",
 };
 
-const STAGE_LABELS: Record<Stage, string> = {
-  new: "Applied", shortlisted: "Shortlisted", interview: "Interview", rejected: "Rejected",
+const STAGE_LABEL_KEYS: Record<Stage, string> = {
+  new: "stages.new", shortlisted: "stages.shortlisted", interview: "stages.interview", rejected: "stages.rejected",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -71,6 +72,7 @@ function scoreText(s: number) {
 // ─── Upload Zone ──────────────────────────────────────────────────────────────
 
 function UploadZone({ onFilesAdded }: { onFilesAdded: (files: File[]) => void }) {
+  const t = useTranslations("recruiter.candidatesPage");
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
 
@@ -93,14 +95,15 @@ function UploadZone({ onFilesAdded }: { onFilesAdded: (files: File[]) => void })
       <input ref={inputRef} type="file" accept=".pdf,.docx" multiple className="hidden"
         onChange={(e) => { collect(e.target.files); e.currentTarget.value = ""; }} />
       <p className="text-sm font-medium text-slate-600">
-        Drop resumes or <span className="font-semibold text-slate-900 underline underline-offset-2">browse</span>
-        <span className="ml-2 text-xs text-slate-400">PDF · DOCX</span>
+        {t("uploadZone.dropResumes")} <span className="font-semibold text-slate-900 underline underline-offset-2">{t("uploadZone.browse")}</span>
+        <span className="ml-2 text-xs text-slate-400">{t("uploadZone.types")}</span>
       </p>
     </div>
   );
 }
 
 function UploadQueue({ items }: { items: FileUploadItem[] }) {
+  const t = useTranslations("recruiter.candidatesPage");
   if (!items.length) return null;
   const active = items.filter((i) => i.status !== "error");
   const totalProgress =
@@ -115,7 +118,7 @@ function UploadQueue({ items }: { items: FileUploadItem[] }) {
       {!allDone && (
         <div className="space-y-1">
           <div className="flex items-center justify-between text-[11px] text-slate-500">
-            <span>{uploading ? "Uploading…" : "Preparing…"}</span>
+            <span>{uploading ? t("uploadQueue.uploading") : t("uploadQueue.preparing")}</span>
             <span className="font-semibold">{totalProgress}%</span>
           </div>
           <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
@@ -148,6 +151,7 @@ function UploadQueue({ items }: { items: FileUploadItem[] }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function RecruiterCandidatesPage() {
+  const t = useTranslations("recruiter.candidatesPage");
   const [candidates, setCandidates] = useState<CandidateListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -169,7 +173,7 @@ export default function RecruiterCandidatesPage() {
       const data = await api.get<CandidateListItem[]>("/recruiter/candidates/", { auth: true });
       setCandidates(data);
     } catch {
-      setError("Failed to load candidates.");
+      setError(t("error.failedToLoad"));
     } finally {
       setLoading(false);
     }
@@ -225,14 +229,14 @@ export default function RecruiterCandidatesPage() {
         { auth: true }
       );
       finishProgress(() => {
-        setBulkResult({ type: "success", text: `${res.deleted} candidate${res.deleted !== 1 ? "s" : ""} deleted.` });
+        setBulkResult({ type: "success", text: res.deleted === 1 ? t("bulk.deleted_one", { count: 1 }) : t("bulk.deleted_other", { count: res.deleted }) });
       });
       setLoading(true);
       void loadCandidates();
     } catch {
       if (progressTimer.current) clearInterval(progressTimer.current);
       setActionProgress(0);
-      setBulkResult({ type: "error", text: "Delete failed. Please try again." });
+      setBulkResult({ type: "error", text: t("bulk.deleteFailed") });
     } finally {
       setBulkAction(false);
     }
@@ -252,13 +256,13 @@ export default function RecruiterCandidatesPage() {
       finishProgress(() => {
         setBulkResult({
           type: "success",
-          text: `✦ Screening ${res.queued} candidate${res.queued !== 1 ? "s" : ""} in background…`,
+          text: res.queued === 1 ? t("bulk.screened_one", { count: 1 }) : t("bulk.screened_other", { count: res.queued }),
         });
       });
     } catch {
       if (progressTimer.current) clearInterval(progressTimer.current);
       setActionProgress(0);
-      setBulkResult({ type: "error", text: "Screening failed. Please try again." });
+      setBulkResult({ type: "error", text: t("bulk.screenFailed") });
     } finally {
       setBulkAction(false);
     }
@@ -305,11 +309,11 @@ export default function RecruiterCandidatesPage() {
       );
       setScreenResult(
         res.queued > 0
-          ? `✦ Screening ${res.queued} candidate${res.queued !== 1 ? "s" : ""} in background…`
-          : "All candidates already screened."
+          ? (res.queued === 1 ? t("bulk.screened_one", { count: 1 }) : t("bulk.screened_other", { count: res.queued }))
+          : t("bulk.allScreened")
       );
     } catch {
-      setScreenResult("Screening failed. Please try again.");
+      setScreenResult(t("bulk.screenFailed"));
     } finally {
       setScreeningAll(false);
     }
@@ -327,7 +331,9 @@ export default function RecruiterCandidatesPage() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2 rounded-xl bg-white border border-slate-200 px-3 py-2">
           <Users size={14} className="text-violet-500" />
-          <span className="text-sm font-semibold text-slate-700">{candidates.length} candidates</span>
+          <span className="text-sm font-semibold text-slate-700">
+            {candidates.length === 1 ? t("count_one", { count: 1 }) : t("count_other", { count: candidates.length })}
+          </span>
         </div>
         <button
           type="button"
@@ -336,7 +342,7 @@ export default function RecruiterCandidatesPage() {
           className="flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:opacity-40"
         >
           <Sparkles size={13} />
-          {screeningAll ? "Screening…" : "✦ Screen All"}
+          {screeningAll ? t("screeningAll") : t("screenAll")}
         </button>
         {screenResult && (
           <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium ${
@@ -376,19 +382,21 @@ export default function RecruiterCandidatesPage() {
           )}
           <div className="flex items-center justify-between gap-3 px-4 py-3">
             <span className="text-sm font-semibold text-slate-800">
-              {selected.size} selected
+              {selected.size === 1 ? t("bulk.selected_one", { count: selected.size }) : t("bulk.selected_other", { count: selected.size })}
             </span>
             <div className="flex items-center gap-2">
               {confirmDelete ? (
                 <>
-                  <span className="text-xs text-rose-600 font-medium">Delete {selected.size} candidate{selected.size !== 1 ? "s" : ""}?</span>
+                  <span className="text-xs text-rose-600 font-medium">
+                    {selected.size === 1 ? t("bulk.deleteConfirm_one", { count: selected.size }) : t("bulk.deleteConfirm_other", { count: selected.size })}
+                  </span>
                   <button
                     type="button"
                     onClick={() => void handleBulkDelete()}
                     disabled={bulkAction}
                     className="rounded-xl bg-rose-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700 disabled:opacity-50"
                   >
-                    {bulkAction ? `Deleting… ${actionProgress}%` : "Confirm Delete"}
+                    {bulkAction ? t("bulk.deleting", { progress: actionProgress }) : t("bulk.confirmDelete")}
                   </button>
                   <button
                     type="button"
@@ -396,7 +404,7 @@ export default function RecruiterCandidatesPage() {
                     disabled={bulkAction}
                     className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40"
                   >
-                    Cancel
+                    {t("bulk.cancel")}
                   </button>
                 </>
               ) : (
@@ -408,7 +416,7 @@ export default function RecruiterCandidatesPage() {
                     className="flex items-center gap-1.5 rounded-xl bg-violet-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50"
                   >
                     <Sparkles size={12} />
-                    {bulkAction ? `Screening… ${actionProgress}%` : "✦ Screen"}
+                    {bulkAction ? t("bulk.screening", { progress: actionProgress }) : t("bulk.screenBtn")}
                   </button>
                   <button
                     type="button"
@@ -417,7 +425,7 @@ export default function RecruiterCandidatesPage() {
                     className="flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50"
                   >
                     <Trash2 size={12} />
-                    Delete
+                    {t("bulk.delete")}
                   </button>
                   <button
                     type="button"
@@ -425,7 +433,7 @@ export default function RecruiterCandidatesPage() {
                     disabled={bulkAction}
                     className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50 disabled:opacity-40"
                   >
-                    Clear
+                    {t("bulk.clear")}
                   </button>
                 </>
               )}
@@ -445,13 +453,13 @@ export default function RecruiterCandidatesPage() {
         <div className="rounded-xl border border-rose-200 bg-rose-50 p-5">
           <p className="text-sm font-semibold text-rose-600">{error}</p>
           <button type="button" onClick={() => { setError(null); setLoading(true); void loadCandidates(); }}
-            className="mt-3 rounded-lg bg-brand-800 px-4 py-1.5 text-xs font-semibold text-white">Retry</button>
+            className="mt-3 rounded-lg bg-brand-800 px-4 py-1.5 text-xs font-semibold text-white">{t("error.retry")}</button>
         </div>
       ) : candidates.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
           <Upload size={24} className="mx-auto mb-3 text-slate-300" />
-          <p className="text-sm font-semibold text-slate-700">No candidates yet</p>
-          <p className="mt-1 text-xs text-slate-400">Upload resumes above to get started.</p>
+          <p className="text-sm font-semibold text-slate-700">{t("empty.title")}</p>
+          <p className="mt-1 text-xs text-slate-400">{t("empty.desc")}</p>
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -468,11 +476,11 @@ export default function RecruiterCandidatesPage() {
                     className="h-4 w-4 cursor-pointer rounded border-slate-300 accent-violet-600"
                   />
                 </th>
-                <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Candidate</th>
-                <th className="hidden px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 md:table-cell">Extracted Skills</th>
-                <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Stage</th>
-                <th className="hidden px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 lg:table-cell">Best Match</th>
-                <th className="hidden px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 xl:table-cell">Added</th>
+                <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">{t("table.candidate")}</th>
+                <th className="hidden px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 md:table-cell">{t("table.extractedSkills")}</th>
+                <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">{t("table.stage")}</th>
+                <th className="hidden px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 lg:table-cell">{t("table.bestMatch")}</th>
+                <th className="hidden px-4 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 xl:table-cell">{t("table.added")}</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
@@ -527,7 +535,7 @@ export default function RecruiterCandidatesPage() {
                     {/* Stage */}
                     <td className="px-4 py-3">
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${STAGE_COLORS[c.stage]}`}>
-                        {STAGE_LABELS[c.stage]}
+                        {t(STAGE_LABEL_KEYS[c.stage])}
                       </span>
                     </td>
 
@@ -541,7 +549,7 @@ export default function RecruiterCandidatesPage() {
                           </p>
                         </div>
                       ) : (
-                        <span className="text-[11px] text-slate-300">No analysis</span>
+                        <span className="text-[11px] text-slate-300">{t("table.noAnalysis")}</span>
                       )}
                     </td>
 
@@ -556,7 +564,7 @@ export default function RecruiterCandidatesPage() {
                         href={`/recruiter/candidates/${c.id}`}
                         className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 opacity-0 transition hover:border-brand-300 hover:text-brand-700 group-hover:opacity-100"
                       >
-                        View <ChevronRight size={11} />
+                        {t("table.view")} <ChevronRight size={11} />
                       </Link>
                     </td>
                   </tr>
@@ -565,8 +573,8 @@ export default function RecruiterCandidatesPage() {
             </tbody>
           </table>
           <div className="border-t border-slate-100 px-4 py-2.5 text-[11px] text-slate-400">
-            {candidates.length} candidate{candidates.length !== 1 ? "s" : ""}
-            {someSelected && <span className="ml-2 font-semibold text-violet-600">· {selected.size} selected</span>}
+            {candidates.length === 1 ? t("footer_one", { count: 1 }) : t("footer_other", { count: candidates.length })}
+            {someSelected && <span className="ml-2 font-semibold text-violet-600">{t("footerSelected", { count: selected.size })}</span>}
           </div>
         </div>
       )}
