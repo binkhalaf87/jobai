@@ -588,14 +588,18 @@ function SendingPanel({
         {failed > 0 && <span className="text-red-600 font-medium">{failed} failed</span>}
       </div>
 
-      <div className="max-h-60 overflow-y-auto space-y-1">
+      <div className="max-h-60 overflow-y-auto space-y-2">
         {logs.map((log, i) => (
-          <div key={i} className="flex items-center gap-2 text-xs">
-            <span className={log.status === "sent" ? "text-teal" : "text-red-500"}>
-              {log.status === "sent" ? "✓" : "✗"}
-            </span>
-            <span className="text-gray-700 truncate">{log.email}</span>
-            {log.error && <span className="text-red-400 truncate">— {log.error}</span>}
+          <div key={i} className="flex flex-col gap-0.5 text-xs">
+            <div className="flex items-center gap-2">
+              <span className={log.status === "sent" ? "text-teal" : "text-red-500"}>
+                {log.status === "sent" ? "✓" : "✗"}
+              </span>
+              <span className="text-gray-700">{log.email}</span>
+            </div>
+            {log.error && (
+              <p className="text-red-400 ml-4 break-all">{log.error}</p>
+            )}
           </div>
         ))}
       </div>
