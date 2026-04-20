@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Panel } from "@/components/panel";
 import { api, ApiError } from "@/lib/api";
@@ -99,15 +100,6 @@ function typeBadge(type: string) {
   return map[type] ?? "bg-slate-100 text-slate-600";
 }
 
-function typeLabel(type: string) {
-  const map: Record<string, string> = {
-    hr: "HR / Behavioral",
-    technical: "Technical",
-    mixed: "Mixed",
-  };
-  return map[type] ?? type;
-}
-
 function responseStatusBadge(status: string) {
   const map: Record<string, string> = {
     pending: "bg-slate-100 text-slate-600",
@@ -116,16 +108,6 @@ function responseStatusBadge(status: string) {
     completed: "bg-teal-100 text-teal-700",
   };
   return map[status] ?? "bg-slate-100 text-slate-500";
-}
-
-function responseStatusLabel(status: string) {
-  const map: Record<string, string> = {
-    pending: "Not Sent",
-    sent: "Invite Sent",
-    in_progress: "In Progress",
-    completed: "Completed",
-  };
-  return map[status] ?? status;
 }
 
 function hireBadge(rec: string) {
@@ -138,17 +120,9 @@ function hireBadge(rec: string) {
   return map[rec] ?? "bg-slate-100 text-slate-600";
 }
 
-function hireLabel(rec: string) {
-  const map: Record<string, string> = {
-    strong_yes: "Strong Yes",
-    yes: "Yes",
-    maybe: "Maybe",
-    no: "No",
-  };
-  return map[rec] ?? rec;
-}
-
 export default function AIInterviewPage() {
+  const t = useTranslations("recruiter.aiInterviewPage");
+
   const [jobs, setJobs] = useState<Job[]>([]);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [history, setHistory] = useState<InterviewListItem[]>([]);
@@ -187,13 +161,13 @@ export default function AIInterviewPage() {
         if (jobsData.length > 0) setSelectedJobId(jobsData[0].id);
         if (interviewCandidates.length > 0) setSelectedCandidateId(interviewCandidates[0].id);
       } catch {
-        setError("Failed to load data.");
+        setError(t("error.failedToLoad"));
       } finally {
         setLoadingSetup(false);
       }
     }
     void loadSetup();
-  }, []);
+  }, [t]);
 
   async function generate() {
     if (!selectedJobId || !selectedCandidateId) return;
@@ -219,7 +193,7 @@ export default function AIInterviewPage() {
       const updated = await api.get<InterviewListItem[]>("/recruiter/interviews/", { auth: true });
       setHistory(updated);
     } catch {
-      setError("Failed to generate interview questions. Please try again.");
+      setError(t("error.failedToGenerate"));
     } finally {
       setGenerating(false);
     }
@@ -235,7 +209,7 @@ export default function AIInterviewPage() {
       setActiveInterview(data);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch {
-      setError("Failed to load interview.");
+      setError(t("error.failedToLoadInterview"));
     }
   }
 
@@ -249,7 +223,7 @@ export default function AIInterviewPage() {
         {},
         { auth: true }
       );
-      setSendSuccess(`Invite sent to ${res.candidate_email}`);
+      setSendSuccess(t("inviteSent", { email: res.candidate_email }));
       // Refresh history and active interview
       const [updated, refreshed] = await Promise.all([
         api.get<InterviewListItem[]>("/recruiter/interviews/", { auth: true }),
@@ -258,7 +232,7 @@ export default function AIInterviewPage() {
       setHistory(updated);
       setActiveInterview(refreshed);
     } catch (e) {
-      setSendError(e instanceof ApiError ? e.detail : "Failed to send invite. Check your SMTP settings.");
+      setSendError(e instanceof ApiError ? e.detail : t("error.failedToSendInvite"));
     } finally {
       setSending(false);
     }
@@ -275,7 +249,7 @@ export default function AIInterviewPage() {
       setResponses(data);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch {
-      setError("Failed to load responses.");
+      setError(t("error.failedToLoadResponses"));
     } finally {
       setLoadingResponses(false);
     }
@@ -300,37 +274,34 @@ export default function AIInterviewPage() {
     <div className="space-y-6">
       {/* Generator */}
       <Panel className="p-6 md:p-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">AI Interview</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{t("eyebrow")}</p>
         <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-          Generate & send interview questions
+          {t("title")}
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          Shows only candidates you've moved to the <strong>Interview</strong> stage. Generate
-          tailored questions and send a video interview link directly to the candidate's email.
+          {t("desc")}
         </p>
 
         {noJobs || noInterviewCandidates ? (
           <div className="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-6">
             <p className="text-base font-semibold text-slate-900">
-              {noJobs ? "No jobs found" : "No candidates in Interview stage"}
+              {noJobs ? t("noJobs.title") : t("noCandidates.title")}
             </p>
             <p className="mt-2 text-sm leading-7 text-slate-600">
-              {noJobs
-                ? "Add at least one job before generating interview questions."
-                : "Move candidates to the Interview stage from the Candidates page first."}
+              {noJobs ? t("noJobs.desc") : t("noCandidates.desc")}
             </p>
             <Link
               href={noJobs ? "/recruiter/jobs" : "/recruiter/candidates"}
               className="mt-4 inline-flex rounded-full bg-brand-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
             >
-              {noJobs ? "Add a job" : "Go to Candidates"}
+              {noJobs ? t("noJobs.action") : t("noCandidates.action")}
             </Link>
           </div>
         ) : (
           <div className="mt-6 space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-slate-600">Candidate (Interview Stage)</label>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-600">{t("form.candidateLabel")}</label>
                 <select
                   value={selectedCandidateId}
                   onChange={(e) => setSelectedCandidateId(e.target.value)}
@@ -345,7 +316,7 @@ export default function AIInterviewPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-slate-600">Job</label>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-600">{t("form.jobLabel")}</label>
                 <select
                   value={selectedJobId}
                   onChange={(e) => setSelectedJobId(e.target.value)}
@@ -362,33 +333,33 @@ export default function AIInterviewPage() {
 
             <div className="grid gap-4 sm:grid-cols-3">
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-slate-600">Interview Type</label>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-600">{t("form.typeLabel")}</label>
                 <select
                   value={interviewType}
                   onChange={(e) => setInterviewType(e.target.value as "hr" | "technical" | "mixed")}
                   className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400"
                 >
-                  <option value="mixed">Mixed (HR + Technical)</option>
-                  <option value="hr">HR / Behavioral</option>
-                  <option value="technical">Technical</option>
+                  <option value="mixed">{t("form.typeOptions.mixed")}</option>
+                  <option value="hr">{t("form.typeOptions.hr")}</option>
+                  <option value="technical">{t("form.typeOptions.technical")}</option>
                 </select>
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-slate-600">Language</label>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-600">{t("form.languageLabel")}</label>
                 <select
                   value={language}
                   onChange={(e) => setLanguage(e.target.value as "en" | "ar")}
                   className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400"
                 >
-                  <option value="en">English</option>
-                  <option value="ar">Arabic</option>
+                  <option value="en">{t("form.languageOptions.en")}</option>
+                  <option value="ar">{t("form.languageOptions.ar")}</option>
                 </select>
               </div>
 
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-slate-600">
-                  Questions: {questionCount}
+                  {t("form.questionsLabel", { count: questionCount })}
                 </label>
                 <input
                   type="range"
@@ -409,7 +380,7 @@ export default function AIInterviewPage() {
                 disabled={generating || !selectedJobId || !selectedCandidateId}
                 className="rounded-2xl bg-brand-800 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50"
               >
-                {generating ? "Generating questions…" : "Generate Interview"}
+                {generating ? t("form.generating") : t("form.generateBtn")}
               </button>
             </div>
           </div>
@@ -427,24 +398,24 @@ export default function AIInterviewPage() {
         <Panel className="p-6 md:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Generated Questions</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{t("generated.eyebrow")}</p>
               <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">
                 {activeInterview.candidate_name}
-                <span className="font-normal text-slate-500"> for </span>
+                <span className="font-normal text-slate-500"> {t("generated.for")} </span>
                 {activeInterview.job_title}
               </h2>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${typeBadge(activeInterview.interview_type)}`}>
-                  {typeLabel(activeInterview.interview_type)}
+                  {t(`typeLabels.${activeInterview.interview_type}`)}
                 </span>
                 <span className="text-xs text-slate-500">
-                  {activeInterview.language === "ar" ? "Arabic" : "English"} · {activeInterview.questions.length} questions
+                  {activeInterview.language === "ar" ? t("generated.languageAr") : t("generated.languageEn")} · {t("generated.questions", { count: activeInterview.questions.length })}
                 </span>
                 <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${responseStatusBadge(activeInterview.response_status)}`}>
-                  {responseStatusLabel(activeInterview.response_status)}
+                  {t(`responseStatus.${activeInterview.response_status}`)}
                 </span>
                 {activeInterview.invite_sent_at && (
-                  <span className="text-xs text-slate-400">Sent {formatDate(activeInterview.invite_sent_at)}</span>
+                  <span className="text-xs text-slate-400">{t("generated.sentDate", { date: formatDate(activeInterview.invite_sent_at) })}</span>
                 )}
               </div>
             </div>
@@ -457,7 +428,7 @@ export default function AIInterviewPage() {
                   disabled={loadingResponses}
                   className="rounded-2xl bg-teal-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-teal-500 disabled:opacity-50"
                 >
-                  {loadingResponses ? "Loading…" : "View Responses"}
+                  {loadingResponses ? t("generated.loading") : t("generated.viewResponses")}
                 </button>
               ) : (
                 <button
@@ -467,10 +438,10 @@ export default function AIInterviewPage() {
                   className="rounded-2xl bg-brand-800 px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50"
                 >
                   {sending
-                    ? "Sending…"
+                    ? t("generated.sending")
                     : activeInterview.response_status === "sent" || activeInterview.response_status === "in_progress"
-                    ? "Resend Invite"
-                    : "Send to Candidate"}
+                    ? t("generated.resendInvite")
+                    : t("generated.sendToCandidate")}
                 </button>
               )}
             </div>
@@ -484,15 +455,15 @@ export default function AIInterviewPage() {
           {sendError && (
             sendError.toLowerCase().includes("smtp") || sendError.toLowerCase().includes("smart send") ? (
               <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 space-y-2">
-                <p className="text-sm font-semibold text-amber-800">Gmail connection not set up</p>
+                <p className="text-sm font-semibold text-amber-800">{t("smtpError.title")}</p>
                 <p className="text-xs text-amber-700">
-                  You need to connect and verify a Gmail account before sending interview invites.
+                  {t("smtpError.desc")}
                 </p>
                 <Link
                   href="/recruiter/profile?tab=send-settings"
                   className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-amber-700"
                 >
-                  Set up Send Settings →
+                  {t("smtpError.action")}
                 </Link>
               </div>
             ) : (
@@ -504,14 +475,14 @@ export default function AIInterviewPage() {
 
           {activeInterview.candidate_summary && (
             <div className="mt-5 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Candidate Summary</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">{t("candidateSummary")}</p>
               <p className="mt-2 text-sm leading-7 text-slate-700">{activeInterview.candidate_summary}</p>
             </div>
           )}
 
           {activeInterview.focus_areas.length > 0 && (
             <div className="mt-4">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Focus Areas</p>
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">{t("focusAreas")}</p>
               <div className="flex flex-wrap gap-2">
                 {activeInterview.focus_areas.map((area) => (
                   <span key={area} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
@@ -552,7 +523,7 @@ export default function AIInterviewPage() {
         <Panel className="p-6 md:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Candidate Responses</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{t("responses.eyebrow")}</p>
               <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">
                 {responses.candidate_name}
                 <span className="font-normal text-slate-500"> — </span>
@@ -564,7 +535,7 @@ export default function AIInterviewPage() {
                 <span className="text-3xl font-bold text-slate-900">{responses.overall_score}<span className="text-lg font-normal text-slate-400">/100</span></span>
                 {responses.hire_recommendation && (
                   <span className={`mt-1 rounded-full px-3 py-0.5 text-xs font-semibold ${hireBadge(responses.hire_recommendation)}`}>
-                    {hireLabel(responses.hire_recommendation)}
+                    {t(`hireLabels.${responses.hire_recommendation}`)}
                   </span>
                 )}
               </div>
@@ -573,7 +544,7 @@ export default function AIInterviewPage() {
 
           {responses.overall_impression && (
             <div className="mt-5 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Overall Impression</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">{t("responses.overallImpression")}</p>
               <p className="mt-2 text-sm leading-7 text-slate-700">{responses.overall_impression}</p>
             </div>
           )}
@@ -592,7 +563,7 @@ export default function AIInterviewPage() {
 
                   {resp.has_video && resp.video_data && (
                     <div className="mb-3">
-                      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500">Video Answer</p>
+                      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500">{t("responses.videoAnswer")}</p>
                       <video
                         controls
                         playsInline
@@ -604,7 +575,7 @@ export default function AIInterviewPage() {
 
                   {resp.text_answer && (
                     <div className="mb-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 mb-1.5">Text Answer</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 mb-1.5">{t("responses.textAnswer")}</p>
                       <p className="text-sm leading-7 text-slate-700">{resp.text_answer}</p>
                     </div>
                   )}
@@ -612,7 +583,7 @@ export default function AIInterviewPage() {
                   {feedback && (
                     <div className="mt-3 space-y-2 border-t border-slate-100 pt-3">
                       <div className="flex items-center justify-between">
-                        <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">GPT Assessment</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">{t("responses.gptAssessment")}</p>
                         <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
                           {feedback.score}/100
                         </span>
@@ -642,8 +613,8 @@ export default function AIInterviewPage() {
       {/* History */}
       {history.length > 0 && (
         <Panel className="p-6 md:p-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">History</p>
-          <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">Previous interview sets</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{t("history.eyebrow")}</p>
+          <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">{t("history.title")}</h2>
 
           <div className="mt-5 space-y-3">
             {history.map((item) => (
@@ -660,12 +631,12 @@ export default function AIInterviewPage() {
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${typeBadge(item.interview_type)}`}>
-                      {typeLabel(item.interview_type)}
+                      {t(`typeLabels.${item.interview_type}`)}
                     </span>
                     <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${responseStatusBadge(item.response_status)}`}>
-                      {responseStatusLabel(item.response_status)}
+                      {t(`responseStatus.${item.response_status}`)}
                     </span>
-                    <span className="text-xs text-slate-500">{item.question_count}Q</span>
+                    <span className="text-xs text-slate-500">{t("history.questionsCount", { count: item.question_count })}</span>
                     <span className="text-xs text-slate-400">{formatDate(item.created_at)}</span>
                   </div>
                 </div>

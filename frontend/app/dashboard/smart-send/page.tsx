@@ -2,6 +2,8 @@
 // Smart Send — Gmail SMTP + AI cover letters + live send stream
 import { useEffect, useRef, useState } from "react";
 
+import { useTranslations } from "next-intl";
+
 import { Panel } from "@/components/panel";
 import {
   confirmCampaign,
@@ -58,6 +60,7 @@ function SmtpSetup({
   conn: SmtpConnection | null;
   onSaved: (c: SmtpConnection) => void;
 }) {
+  const t = useTranslations("smartSendPage");
   const [form, setForm] = useState({
     gmail_address: conn?.gmail_address ?? "",
     display_name: conn?.display_name ?? "",
@@ -76,9 +79,9 @@ function SmtpSetup({
     try {
       const saved = await saveSmtpConnection(form);
       onSaved(saved);
-      setOk("Saved.");
+      setOk(t("smtpSetup.saved"));
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to save");
+      setError(err instanceof Error ? err.message : t("smtpSetup.failedToSave"));
     } finally {
       setSaving(false);
     }
@@ -90,9 +93,9 @@ function SmtpSetup({
     setVerifying(true);
     try {
       await verifySmtpConnection();
-      setOk("Connection verified.");
+      setOk(t("smtpSetup.connectionVerified"));
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Verification failed");
+      setError(err instanceof Error ? err.message : t("smtpSetup.verificationFailed"));
     } finally {
       setVerifying(false);
     }
@@ -101,40 +104,40 @@ function SmtpSetup({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold mb-1">Gmail setup</h2>
+        <h2 className="text-lg font-semibold mb-1">{t("smtpSetup.title")}</h2>
         <p className="text-sm text-gray-500">
-          Connect Gmail once, then generate and send faster.
+          {t("smtpSetup.description")}
         </p>
       </div>
 
       <div className="bg-brand-50 border border-brand-200 rounded-xl p-4 text-sm text-brand-800 space-y-1">
-        <p className="font-medium">Create a Gmail App Password:</p>
+        <p className="font-medium">{t("smtpSetup.instructionsTitle")}</p>
         <ol className="list-decimal list-inside space-y-0.5 text-brand-700">
-          <li>Enable 2-Step Verification on your Google account</li>
-          <li>Go to Google Account → Security → App Passwords</li>
-          <li>Select app: Mail, device: Other → type &quot;JobAI&quot;</li>
-          <li>Copy the 16-character password and paste it below</li>
+          <li>{t("smtpSetup.step1")}</li>
+          <li>{t("smtpSetup.step2")}</li>
+          <li>{t("smtpSetup.step3")}</li>
+          <li>{t("smtpSetup.step4")}</li>
         </ol>
       </div>
 
       <form onSubmit={handleSave} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Gmail address</label>
+          <label className="block text-sm font-medium mb-1">{t("smtpSetup.gmailAddress")}</label>
           <input
             type="email"
             className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-            placeholder="you@gmail.com"
+            placeholder={t("smtpSetup.gmailPlaceholder")}
             value={form.gmail_address}
             onChange={(e) => setForm({ ...form, gmail_address: e.target.value })}
             required
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Display name</label>
+          <label className="block text-sm font-medium mb-1">{t("smtpSetup.displayName")}</label>
           <input
             type="text"
             className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-            placeholder="Your Name"
+            placeholder={t("smtpSetup.displayNamePlaceholder")}
             value={form.display_name}
             onChange={(e) => setForm({ ...form, display_name: e.target.value })}
             required
@@ -142,13 +145,13 @@ function SmtpSetup({
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">
-            App Password{" "}
-            <span className="text-gray-400 font-normal">(16 characters, spaces ignored)</span>
+            {t("smtpSetup.appPassword")}{" "}
+            <span className="text-gray-400 font-normal">{t("smtpSetup.appPasswordHint")}</span>
           </label>
           <input
             type="password"
             className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-            placeholder="xxxx xxxx xxxx xxxx"
+            placeholder={t("smtpSetup.appPasswordPlaceholder")}
             value={form.app_password}
             onChange={(e) => setForm({ ...form, app_password: e.target.value })}
             required
@@ -164,7 +167,7 @@ function SmtpSetup({
             disabled={saving}
             className="flex-1 bg-brand-800 text-white rounded-lg py-2 text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
           >
-            {saving ? "Saving…" : conn ? "Update" : "Save"}
+            {saving ? t("smtpSetup.saving") : conn ? t("smtpSetup.update") : t("smtpSetup.save")}
           </button>
           {conn && (
             <button
@@ -173,7 +176,7 @@ function SmtpSetup({
               disabled={verifying}
               className="flex-1 border border-brand-300 text-brand-700 rounded-lg py-2 text-sm font-medium hover:bg-brand-50 disabled:opacity-50"
             >
-              {verifying ? "Verifying…" : "Test"}
+              {verifying ? t("smtpSetup.verifying") : t("smtpSetup.test")}
             </button>
           )}
         </div>
@@ -182,10 +185,10 @@ function SmtpSetup({
       {conn && (
         <div className="border-t pt-4">
           <p className="text-sm text-gray-500">
-            Current:{" "}
+            {t("smtpSetup.current")}{" "}
             <span className="font-medium text-gray-700">{conn.gmail_address}</span>
             {conn.is_verified && (
-              <span className="ml-2 text-teal text-xs font-medium">✓ Verified</span>
+              <span className="ml-2 text-teal text-xs font-medium">{t("smtpSetup.verified")}</span>
             )}
           </p>
         </div>
@@ -201,6 +204,7 @@ function ComposePanel({
 }: {
   onGenerated: (campaignId: string, letters: GeneratedLetters) => void;
 }) {
+  const t = useTranslations("smartSendPage");
   const [form, setForm] = useState({
     job_title: "",
     company_name: "",
@@ -251,7 +255,7 @@ function ComposePanel({
       });
       onGenerated(res.campaign_id, res.letters);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Generation failed");
+      setError(err instanceof Error ? err.message : t("compose.generationFailed"));
     } finally {
       setGenerating(false);
     }
@@ -260,30 +264,30 @@ function ComposePanel({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold mb-1">Compose Outreach Email</h2>
+        <h2 className="text-lg font-semibold mb-1">{t("compose.title")}</h2>
         <p className="text-sm text-gray-500">
-          AI generates 3 variants: Formal, Creative, and Concise. Edit before sending.
+          {t("compose.description")}
         </p>
       </div>
 
       <form onSubmit={handleGenerate} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Job Title *</label>
+          <label className="block text-sm font-medium mb-1">{t("compose.jobTitle")}</label>
           <input
             type="text"
             className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-            placeholder="e.g. Software Engineer"
+            placeholder={t("compose.jobTitlePlaceholder")}
             value={form.job_title}
             onChange={(e) => setForm({ ...form, job_title: e.target.value })}
             required
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Company Name</label>
+          <label className="block text-sm font-medium mb-1">{t("compose.companyName")}</label>
           <input
             type="text"
             className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-            placeholder="Optional"
+            placeholder={t("compose.companyOptional")}
             value={form.company_name}
             onChange={(e) => setForm({ ...form, company_name: e.target.value })}
           />
@@ -291,14 +295,14 @@ function ComposePanel({
         {resumes.length > 0 && (
           <div>
             <label className="block text-sm font-medium mb-1">
-              Resume <span className="text-gray-400 font-normal">(optional — helps tailor the letter)</span>
+              {t("compose.resumeLabel")} <span className="text-gray-400 font-normal">{t("compose.resumeOptional")}</span>
             </label>
             <select
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
               value={form.resume_id}
               onChange={(e) => setForm({ ...form, resume_id: e.target.value })}
             >
-              <option value="">No resume</option>
+              <option value="">{t("compose.noResume")}</option>
               {resumes.map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.source_filename ?? r.title}
@@ -308,11 +312,11 @@ function ComposePanel({
           </div>
         )}
         <div>
-          <label className="block text-sm font-medium mb-1">Job Description</label>
+          <label className="block text-sm font-medium mb-1">{t("compose.jobDescription")}</label>
           <textarea
             rows={4}
             className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
-            placeholder="Paste the job description to tailor the email (optional)"
+            placeholder={t("compose.jdPlaceholder")}
             value={form.job_description}
             onChange={(e) => setForm({ ...form, job_description: e.target.value })}
           />
@@ -331,10 +335,10 @@ function ComposePanel({
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
               </svg>
-              Generating 3 variants…
+              {t("compose.generating")}
             </>
           ) : (
-            "Generate Letters"
+            t("compose.generateBtn")
           )}
         </button>
       </form>
@@ -353,6 +357,7 @@ function PreviewPanel({
   letters: GeneratedLetters;
   onSent: () => void;
 }) {
+  const t = useTranslations("smartSendPage");
   const [selectedVariant, setSelectedVariant] = useState<Variant>("formal");
   const [editedSubject, setEditedSubject] = useState(letters.formal.subject);
   const [editedBody, setEditedBody] = useState(letters.formal.body);
@@ -380,11 +385,11 @@ function PreviewPanel({
     const email = parts[0];
     const name = parts.slice(1).join(" ") || undefined;
     if (!email.includes("@")) {
-      setRecipientError("Enter a valid email address");
+      setRecipientError(t("preview.invalidEmail"));
       return;
     }
     if (recipients.some((r) => r.email.toLowerCase() === email.toLowerCase())) {
-      setRecipientError("Already added");
+      setRecipientError(t("preview.alreadyAdded"));
       return;
     }
     setRecipients([...recipients, { email: email.toLowerCase(), name }]);
@@ -397,7 +402,7 @@ function PreviewPanel({
 
   async function handleConfirm() {
     if (recipients.length === 0) {
-      setError("Add at least one recipient");
+      setError(t("preview.atLeastOne"));
       return;
     }
     setError("");
@@ -411,7 +416,7 @@ function PreviewPanel({
       });
       onSent();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to confirm");
+      setError(err instanceof Error ? err.message : t("preview.failedToConfirm"));
     } finally {
       setConfirming(false);
     }
@@ -420,8 +425,8 @@ function PreviewPanel({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold mb-1">Review &amp; Send</h2>
-        <p className="text-sm text-gray-500">Choose a variant, edit, add recipients, then send.</p>
+        <h2 className="text-lg font-semibold mb-1">{t("preview.title")}</h2>
+        <p className="text-sm text-gray-500">{t("preview.description")}</p>
       </div>
 
       <div className="flex gap-2">
@@ -441,7 +446,7 @@ function PreviewPanel({
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Subject</label>
+        <label className="block text-sm font-medium mb-1">{t("preview.subject")}</label>
         <input
           type="text"
           className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -451,7 +456,7 @@ function PreviewPanel({
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Body</label>
+        <label className="block text-sm font-medium mb-1">{t("preview.body")}</label>
         <textarea
           rows={10}
           className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none font-mono"
@@ -461,12 +466,12 @@ function PreviewPanel({
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Recipients</label>
+        <label className="block text-sm font-medium mb-1">{t("preview.recipients")}</label>
         <div className="flex gap-2">
           <input
             type="text"
             className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-            placeholder="email@example.com Optional Name"
+            placeholder={t("preview.recipientPlaceholder")}
             value={recipientInput}
             onChange={(e) => setRecipientInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addRecipient())}
@@ -476,12 +481,12 @@ function PreviewPanel({
             onClick={addRecipient}
             className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-sm hover:bg-slate-200"
           >
-            Add
+            {t("preview.addBtn")}
           </button>
         </div>
         {recipientError && <p className="text-red-500 text-xs mt-1">{recipientError}</p>}
         <p className="text-xs text-gray-400 mt-1">
-          Email then optional name separated by space. Max 100.
+          {t("preview.recipientHint")}
         </p>
         {recipients.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-2">
@@ -512,8 +517,8 @@ function PreviewPanel({
         className="w-full bg-teal text-white rounded-lg py-2 text-sm font-medium hover:bg-teal/90 disabled:opacity-50"
       >
         {confirming
-          ? "Confirming…"
-          : `Send to ${recipients.length} recipient${recipients.length !== 1 ? "s" : ""}`}
+          ? t("preview.confirming")
+          : t("preview.sendTo", { count: recipients.length })}
       </button>
     </div>
   );
@@ -528,6 +533,7 @@ function SendingPanel({
   campaignId: string;
   onDone: () => void;
 }) {
+  const t = useTranslations("smartSendPage");
   const [logs, setLogs] = useState<SendProgress[]>([]);
   const [total, setTotal] = useState(0);
   const [done, setDone] = useState(false);
@@ -555,10 +561,10 @@ function SendingPanel({
         setDone(true);
       }
     }).catch((err: unknown) => {
-      setError(err instanceof Error ? err.message : "Send failed");
+      setError(err instanceof Error ? err.message : t("sending.sendFailed"));
       setDone(true);
     });
-  }, [campaignId]);
+  }, [campaignId, t]);
 
   const sent = logs.filter((l) => l.status === "sent").length;
   const failed = logs.filter((l) => l.status === "failed").length;
@@ -567,9 +573,9 @@ function SendingPanel({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold mb-1">Sending…</h2>
+        <h2 className="text-lg font-semibold mb-1">{t("sending.title")}</h2>
         {!done && (
-          <p className="text-sm text-gray-500">Emails are being sent one by one. Do not close this page.</p>
+          <p className="text-sm text-gray-500">{t("sending.doNotClose")}</p>
         )}
       </div>
 
@@ -584,8 +590,8 @@ function SendingPanel({
       </div>
 
       <div className="flex gap-4 text-sm">
-        <span className="text-teal font-medium">{sent} sent</span>
-        {failed > 0 && <span className="text-red-600 font-medium">{failed} failed</span>}
+        <span className="text-teal font-medium">{t("sending.sent", { count: sent })}</span>
+        {failed > 0 && <span className="text-red-600 font-medium">{t("sending.failed", { count: failed })}</span>}
       </div>
 
       <div className="max-h-60 overflow-y-auto space-y-2">
@@ -598,7 +604,7 @@ function SendingPanel({
               <span className="text-gray-700">{log.email}</span>
             </div>
             {log.status === "failed" && (
-              <p className="text-red-400 ml-4 break-all">{log.error || "(no error message returned)"}</p>
+              <p className="text-red-400 ml-4 break-all">{log.error || t("sending.noErrorMessage")}</p>
             )}
           </div>
         ))}
@@ -610,15 +616,15 @@ function SendingPanel({
         <div className="space-y-3">
           {summary && (
             <div className="bg-teal-light/20 border border-teal-light rounded-xl p-4 text-sm text-teal">
-              Campaign complete — {summary.sent} sent
-              {summary.failed > 0 && `, ${summary.failed} failed`}
+              {t("sending.campaignComplete", { sent: summary.sent })}
+              {summary.failed > 0 && t("sending.campaignWithFailed", { failed: summary.failed })}
             </div>
           )}
           <button
             onClick={onDone}
             className="w-full bg-brand-800 text-white rounded-lg py-2 text-sm font-medium hover:bg-brand-700"
           >
-            View History
+            {t("sending.viewHistory")}
           </button>
         </div>
       )}
@@ -629,6 +635,7 @@ function SendingPanel({
 // ─── History Panel ────────────────────────────────────────────────────────────
 
 function HistoryPanel() {
+  const t = useTranslations("smartSendPage");
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -640,19 +647,19 @@ function HistoryPanel() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <p className="text-sm text-gray-400">Loading history…</p>;
+  if (loading) return <p className="text-sm text-gray-400">{t("history.loading")}</p>;
 
   if (campaigns.length === 0) {
     return (
       <div className="text-center text-gray-400 py-12">
-        <p className="text-sm">No campaigns yet.</p>
+        <p className="text-sm">{t("history.noCampaigns")}</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      <h2 className="text-lg font-semibold">Campaign History</h2>
+      <h2 className="text-lg font-semibold">{t("history.title")}</h2>
       {campaigns.map((c) => (
         <div key={c.id} className="border rounded-lg overflow-hidden">
           <button
@@ -674,16 +681,16 @@ function HistoryPanel() {
           {expanded === c.id && (
             <div className="border-t px-4 py-3 bg-slate-50 space-y-3">
               <div className="flex gap-6 text-xs text-gray-500 flex-wrap">
-                <span>Variant: <strong>{c.selected_variant ?? "—"}</strong></span>
-                <span>Total: <strong>{c.total_recipients}</strong></span>
-                <span className="text-teal">Sent: <strong>{c.sent_count}</strong></span>
+                <span>{t("history.variant")} <strong>{c.selected_variant ?? "—"}</strong></span>
+                <span>{t("history.total")} <strong>{c.total_recipients}</strong></span>
+                <span className="text-teal">{t("history.sent")} <strong>{c.sent_count}</strong></span>
                 {c.failed_count > 0 && (
-                  <span className="text-red-600">Failed: <strong>{c.failed_count}</strong></span>
+                  <span className="text-red-600">{t("history.failed")} <strong>{c.failed_count}</strong></span>
                 )}
               </div>
               {c.subject && (
                 <p className="text-xs text-gray-600">
-                  <strong>Subject:</strong> {c.subject}
+                  <strong>{t("history.subject")}</strong> {c.subject}
                 </p>
               )}
               {c.logs.length > 0 && (
@@ -716,6 +723,7 @@ function HistoryPanel() {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function SmartSendPage() {
+  const t = useTranslations("smartSendPage");
   const [step, setStep] = useState<Step>("compose");
   const [smtpConn, setSmtpConn] = useState<SmtpConnection | null>(null);
   const [smtpLoading, setSmtpLoading] = useState(true);
@@ -730,10 +738,10 @@ export default function SmartSendPage() {
         setSmtpLoadError("");
       })
       .catch((err: unknown) => {
-        setSmtpLoadError(err instanceof Error ? err.message : "Failed to load Gmail setup.");
+        setSmtpLoadError(err instanceof Error ? err.message : t("history.unableToLoad", { error: "" }));
       })
       .finally(() => setSmtpLoading(false));
-  }, []);
+  }, [t]);
 
   function handleGenerated(id: string, l: GeneratedLetters) {
     if (!smtpConn) {
@@ -755,81 +763,96 @@ export default function SmartSendPage() {
   if (smtpLoading) {
     return (
       <div className="flex items-center justify-center h-40">
-        <p className="text-sm text-gray-400">Loading…</p>
+        <p className="text-sm text-gray-400">{t("loading")}</p>
       </div>
     );
   }
 
   const tabs: { id: Step; label: string }[] = [
-    { id: "compose", label: "Compose" },
-    { id: "history", label: "History" },
-    { id: "smtp", label: smtpConn ? (smtpConn.is_verified ? "Gmail ✓" : "Gmail") : "Gmail Setup" },
+    { id: "compose", label: t("tabs.compose") },
+    { id: "history", label: t("tabs.history") },
+    {
+      id: "smtp",
+      label: smtpConn
+        ? smtpConn.is_verified
+          ? t("tabs.gmailVerified")
+          : t("tabs.gmail")
+        : t("tabs.gmailSetup"),
+    },
   ];
-  const connectionLabel = !smtpConn ? "Setup needed" : smtpConn.is_verified ? "Verified" : "Saved, verify next";
-  const connectionDescription = !smtpConn
-    ? "Add your Gmail SMTP connection before sending campaigns."
+
+  const connectionLabel = !smtpConn
+    ? t("connection.setupNeeded")
     : smtpConn.is_verified
-      ? `Ready to send from ${smtpConn.gmail_address}.`
-      : "Connection exists, but verification should be completed before live sending.";
+      ? t("connection.verified")
+      : t("connection.savedVerifyNext");
+
+  const connectionDescription = !smtpConn
+    ? t("connection.addGmailBeforeSending")
+    : smtpConn.is_verified
+      ? t("connection.readyToSend", { email: smtpConn.gmail_address })
+      : t("connection.verifyBeforeSending");
+
   const campaignStateLabel =
     step === "preview" || step === "sending"
-      ? "Campaign in progress"
+      ? t("campaign.inProgress")
       : campaignId && letters
-        ? "Draft ready"
-        : "No campaign drafted";
+        ? t("campaign.draftReady")
+        : t("campaign.noDraft");
+
   const campaignStateDescription =
     step === "preview" || step === "sending"
-      ? "Review the generated variants and control batch sending from one place."
+      ? t("campaign.inProgressDesc")
       : campaignId && letters
-        ? "You already have AI-generated email variants ready for preview."
-        : "Start with a target role and company details, then generate personalized outreach.";
+        ? t("campaign.draftReadyDesc")
+        : t("campaign.noDraftDesc");
 
   return (
     <div className="space-y-6">
       <Panel className="overflow-hidden p-0">
         <div className="grid gap-0 lg:grid-cols-[1.35fr_0.65fr]">
           <div className="bg-gradient-to-br from-brand-800/8 via-white to-teal/5 px-6 py-6 md:px-8 md:py-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Application Outreach</p>
-            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-950">Smart Send campaigns</h1>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{t("eyebrow")}</p>
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-950">{t("title")}</h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-              Turn a target job into a guided outreach flow: generate tailored email copy, review variants, and send in controlled batches from your Gmail account.
+              {t("description")}
             </p>
 
             <div className="mt-6 grid gap-3 md:grid-cols-3">
               <div className="rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Connection</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{t("connection.label")}</p>
                 <p className="mt-3 text-lg font-semibold tracking-tight text-slate-950">{connectionLabel}</p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">{connectionDescription}</p>
               </div>
               <div className="rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Campaign Status</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{t("campaign.label")}</p>
                 <p className="mt-3 text-lg font-semibold tracking-tight text-slate-950">{campaignStateLabel}</p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">{campaignStateDescription}</p>
               </div>
               <div className="rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Current Step</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{t("currentStep")}</p>
                 <p className="mt-3 text-lg font-semibold tracking-tight capitalize text-slate-950">{step}</p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Compose, preview, send, and review history without leaving the campaign flow.
+                  {t("currentStepDesc")}
                 </p>
               </div>
             </div>
           </div>
 
           <div className="border-t border-slate-200 bg-brand-900 px-6 py-6 text-white lg:border-l lg:border-t-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Recommended Flow</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{t("flow.label")}</p>
             <div className="mt-4 space-y-3">
               <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
-                <p className="text-sm font-semibold">1. Draft the campaign</p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">Set the role, company, and job description so the AI can anchor the message correctly.</p>
+                <p className="text-sm font-semibold">{t("flow.step1Title")}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">{t("flow.step1Desc")}</p>
               </div>
               <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
-                <p className="text-sm font-semibold">2. Verify delivery</p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">Connect Gmail once, then reuse it across future campaigns and batch sends.</p>
+                <p className="text-sm font-semibold">{t("flow.step2Title")}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">{t("flow.step2Desc")}</p>
               </div>
               <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
-                <p className="text-sm font-semibold">3. Send with control</p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">Preview variants first, then watch sent and failed activity move into history.</p>
+                <p className="text-sm font-semibold">{t("flow.step3Title")}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">{t("flow.step3Desc")}</p>
               </div>
             </div>
           </div>
@@ -838,23 +861,23 @@ export default function SmartSendPage() {
 
       {smtpLoadError && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          Unable to load Gmail setup right now: {smtpLoadError}
+          {t("history.unableToLoad", { error: smtpLoadError })}
         </div>
       )}
 
       {step !== "preview" && step !== "sending" && (
         <div className="flex flex-wrap gap-2">
-          {tabs.map((t) => (
+          {tabs.map((tab) => (
             <button
-              key={t.id}
-              onClick={() => setStep(t.id)}
+              key={tab.id}
+              onClick={() => setStep(tab.id)}
               className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                step === t.id
+                step === tab.id
                   ? "bg-brand-800 text-white shadow-sm"
                   : "bg-white text-gray-500 ring-1 ring-slate-200 hover:text-gray-700"
               }`}
             >
-              {t.label}
+              {tab.label}
             </button>
           ))}
         </div>
@@ -865,7 +888,7 @@ export default function SmartSendPage() {
           onClick={() => setStep(step === "preview" ? "compose" : "history")}
           className="inline-flex rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
         >
-          ← {step === "preview" ? "Back to Compose" : "Back to History"}
+          {step === "preview" ? t("backToCompose") : t("backToHistory")}
         </button>
       )}
 

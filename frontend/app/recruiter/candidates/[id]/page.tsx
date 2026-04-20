@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { api, getApiBaseUrl } from "@/lib/api";
 import { Panel } from "@/components/panel";
@@ -83,11 +84,11 @@ type ScreeningReport = {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const STAGE_OPTIONS: { value: Stage; label: string; cls: string }[] = [
-  { value: "new", label: "Applied", cls: "text-sky-700 bg-sky-50 border-sky-200" },
-  { value: "shortlisted", label: "Shortlisted ★", cls: "text-emerald-700 bg-emerald-50 border-emerald-200" },
-  { value: "interview", label: "Interview →", cls: "text-violet-700 bg-violet-50 border-violet-200" },
-  { value: "rejected", label: "Rejected ✕", cls: "text-rose-600 bg-rose-50 border-rose-200" },
+const STAGE_OPTIONS: { value: Stage; cls: string }[] = [
+  { value: "new",        cls: "text-sky-700 bg-sky-50 border-sky-200" },
+  { value: "shortlisted",cls: "text-emerald-700 bg-emerald-50 border-emerald-200" },
+  { value: "interview",  cls: "text-violet-700 bg-violet-50 border-violet-200" },
+  { value: "rejected",   cls: "text-rose-600 bg-rose-50 border-rose-200" },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -96,12 +97,12 @@ function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
 }
 
-function analysisFreshness(completedAt: string | null) {
+function analysisFreshness(completedAt: string | null): { hours: number; days: number | null; stale: boolean } | null {
   if (!completedAt) return null;
   const hours = (Date.now() - new Date(completedAt).getTime()) / 3_600_000;
-  if (hours < 24) return { label: `Fresh · ${Math.round(hours)}h ago`, stale: false };
+  if (hours < 24) return { hours, days: null, stale: false };
   const days = Math.floor(hours / 24);
-  return { label: `${days} day${days !== 1 ? "s" : ""} ago`, stale: days > 7 };
+  return { hours, days, stale: days > 7 };
 }
 
 function scoreColor(s: number) {
@@ -122,22 +123,22 @@ function initials(name: string) {
 
 // ─── Next Step logic ──────────────────────────────────────────────────────────
 
-type NextStep = { message: string; action: string; variant: "primary" | "warning" | "neutral" };
+type NextStep = { messageKey: string; action: string; variant: "primary" | "warning" | "neutral" };
 
 function computeNextStep(detail: CandidateDetail, hasJobs: boolean): NextStep | null {
   if (detail.status !== "parsed") {
-    return { message: "Resume is being processed. Analysis will run automatically.", action: "", variant: "neutral" };
+    return { messageKey: "nextStepMessages.processing", action: "", variant: "neutral" };
   }
   if (detail.matches.length === 0 && !hasJobs) {
     return {
-      message: "No jobs yet. Add at least one job, then run analysis to see match scores.",
+      messageKey: "nextStepMessages.noJobs",
       action: "Go to Jobs →",
       variant: "warning",
     };
   }
   if (detail.matches.length === 0 && hasJobs) {
     return {
-      message: "Jobs exist but no analysis has been run for this candidate yet.",
+      messageKey: "nextStepMessages.notAnalyzed",
       action: "Run Analysis",
       variant: "primary",
     };
@@ -145,7 +146,7 @@ function computeNextStep(detail: CandidateDetail, hasJobs: boolean): NextStep | 
   const freshness = analysisFreshness(detail.analysis_completed_at);
   if (freshness?.stale) {
     return {
-      message: "Analysis is over 7 days old and may be outdated. Consider refreshing.",
+      messageKey: "nextStepMessages.stale",
       action: "Refresh Analysis",
       variant: "warning",
     };
@@ -153,7 +154,7 @@ function computeNextStep(detail: CandidateDetail, hasJobs: boolean): NextStep | 
   // 0% on all jobs = likely a language mismatch, not a bad candidate
   if (detail.matches.length > 0 && detail.matches.every((m) => m.overall_score === 0)) {
     return {
-      message: "All match scores are 0%. The resume and job description may be in different languages. Use Deep AI Analysis for cross-language semantic matching.",
+      messageKey: "nextStepMessages.zeroScores",
       action: "Deep AI Analysis",
       variant: "warning",
     };
@@ -161,28 +162,28 @@ function computeNextStep(detail: CandidateDetail, hasJobs: boolean): NextStep | 
 
   if (detail.matches.every((m) => m.overall_score < 40)) {
     return {
-      message: "All job match scores are below 40%. This candidate may not be a good fit.",
+      messageKey: "nextStepMessages.lowScores",
       action: "Reject",
       variant: "warning",
     };
   }
   if (detail.stage === "new" && detail.matches.some((m) => m.overall_score >= 70)) {
     return {
-      message: "Strong match detected. Shortlist this candidate to keep them in the pipeline.",
+      messageKey: "nextStepMessages.strongMatch",
       action: "Shortlist",
       variant: "primary",
     };
   }
   if (detail.stage === "shortlisted") {
     return {
-      message: "Candidate is shortlisted. Next step: conduct an interview to complete evaluation.",
+      messageKey: "nextStepMessages.shortlisted",
       action: "Move to Interview",
       variant: "primary",
     };
   }
   if (detail.stage === "interview") {
     return {
-      message: "Interview stage — record your notes below and make a final decision.",
+      messageKey: "nextStepMessages.interview",
       action: "Add Notes",
       variant: "neutral",
     };
@@ -191,7 +192,7 @@ function computeNextStep(detail: CandidateDetail, hasJobs: boolean): NextStep | 
     return null;
   }
   return {
-    message: "Review the analysis and job matches, then make a hiring decision.",
+    messageKey: "nextStepMessages.review",
     action: "Review Matches",
     variant: "neutral",
   };
@@ -280,10 +281,18 @@ function isGptPayload(payload: unknown): payload is GptPayload {
 }
 
 function JobAnalysisSection({ detail }: { detail: CandidateDetail }) {
+  const t = useTranslations("recruiter.candidateDetailPage");
   const bestMatch = detail.matches[0] ?? null;
   if (!bestMatch) return null;
 
   const freshness = analysisFreshness(detail.analysis_completed_at);
+  const freshnessLabel = freshness
+    ? freshness.days === null
+      ? t("freshness.fresh", { hours: Math.round(freshness.hours) })
+      : freshness.days === 1
+        ? t("freshness.days_one", { days: 1 })
+        : t("freshness.days_other", { days: freshness.days })
+    : null;
   const gptData = bestMatch.raw_payload && isGptPayload(bestMatch.raw_payload) ? bestMatch.raw_payload : null;
   const strengths = gptData?.strengths?.length ? gptData.strengths : bestMatch.matching_keywords.slice(0, 6);
   const gaps = gptData?.gaps?.length ? gptData.gaps : bestMatch.missing_keywords.slice(0, 6);
@@ -293,7 +302,7 @@ function JobAnalysisSection({ detail }: { detail: CandidateDetail }) {
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         <div className="h-px flex-1 bg-slate-200" />
-        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Job Match Analysis</span>
+        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">{t("jobAnalysis.sectionTitle")}</span>
         <div className="h-px flex-1 bg-slate-200" />
       </div>
 
@@ -302,16 +311,16 @@ function JobAnalysisSection({ detail }: { detail: CandidateDetail }) {
           freshness.stale ? "border-amber-200 bg-amber-50" : "border-emerald-100 bg-emerald-50"
         }`}>
           <p className={`text-xs font-semibold ${freshness.stale ? "text-amber-700" : "text-emerald-700"}`}>
-            {freshness.stale ? "⚠ Match data may be outdated" : "✓ Match data is current"}
+            {freshness.stale ? t("jobAnalysis.stale") : t("jobAnalysis.current")}
           </p>
-          <span className={`text-xs ${freshness.stale ? "text-amber-600" : "text-emerald-600"}`}>{freshness.label}</span>
+          <span className={`text-xs ${freshness.stale ? "text-amber-600" : "text-emerald-600"}`}>{freshnessLabel}</span>
         </div>
       )}
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Best Job Match</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{t("jobAnalysis.bestJobMatch")}</p>
             <p className="mt-1 text-base font-semibold text-slate-900">{bestMatch.job_title}</p>
             {gptData?.hiring_suggestion && (
               <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
@@ -331,7 +340,7 @@ function JobAnalysisSection({ detail }: { detail: CandidateDetail }) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
-          <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-emerald-600">Strengths</p>
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-emerald-600">{t("jobAnalysis.strengths")}</p>
           {isGptStrings ? (
             <div className="flex flex-wrap gap-1.5">
               {(strengths as string[]).map((k) => (
@@ -347,7 +356,7 @@ function JobAnalysisSection({ detail }: { detail: CandidateDetail }) {
           )}
         </div>
         <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
-          <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-amber-600">Gaps</p>
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-amber-600">{t("jobAnalysis.gaps")}</p>
           {isGptStrings ? (
             <div className="flex flex-wrap gap-1.5">
               {(gaps as string[]).map((k) => (
@@ -366,7 +375,7 @@ function JobAnalysisSection({ detail }: { detail: CandidateDetail }) {
 
       {detail.skills.length > 0 && (
         <div>
-          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">All Extracted Skills</p>
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">{t("jobAnalysis.allExtractedSkills")}</p>
           <div className="flex flex-wrap gap-2">
             {detail.skills.map((skill) => {
               const isMatch = bestMatch.matching_keywords.map((k) => k.toLowerCase()).includes(skill.toLowerCase());
@@ -380,7 +389,7 @@ function JobAnalysisSection({ detail }: { detail: CandidateDetail }) {
               );
             })}
           </div>
-          <p className="mt-2 text-[11px] text-slate-400">Green = matched · Amber = gap · Gray = unclassified</p>
+          <p className="mt-2 text-[11px] text-slate-400">{t("jobAnalysis.skillLegend")}</p>
         </div>
       )}
     </div>
@@ -400,6 +409,7 @@ function TabScreening({
   regenerating: boolean;
   timedOut: boolean;
 }) {
+  const t = useTranslations("recruiter.candidateDetailPage");
   const hasJobMatches = detail.matches.length > 0;
 
   if (!report || report.status === "pending") {
@@ -407,10 +417,10 @@ function TabScreening({
       return (
         <div className="space-y-5">
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center space-y-3">
-            <p className="text-sm font-semibold text-amber-700">Screening report is taking longer than expected.</p>
+            <p className="text-sm font-semibold text-amber-700">{t("screening.timedOut")}</p>
             <button type="button" onClick={onRegenerate} disabled={regenerating}
               className="rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50">
-              {regenerating ? "Starting…" : "Generate Report"}
+              {regenerating ? t("screening.starting") : t("screening.generateReport")}
             </button>
           </div>
           {hasJobMatches && <JobAnalysisSection detail={detail} />}
@@ -421,8 +431,8 @@ function TabScreening({
       <div className="space-y-5">
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-10 text-center space-y-3">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-violet-600" />
-          <p className="text-sm font-semibold text-slate-700">Generating Screening Report…</p>
-          <p className="text-xs text-slate-400">Runs automatically after upload — usually 10–20 seconds.</p>
+          <p className="text-sm font-semibold text-slate-700">{t("screening.pending")}</p>
+          <p className="text-xs text-slate-400">{t("screening.pendingDesc")}</p>
         </div>
         {hasJobMatches && <JobAnalysisSection detail={detail} />}
       </div>
@@ -433,10 +443,10 @@ function TabScreening({
     return (
       <div className="space-y-5">
         <div className="rounded-2xl border border-rose-200 bg-rose-50 p-8 text-center space-y-3">
-          <p className="text-sm font-semibold text-rose-700">Screening report failed.</p>
+          <p className="text-sm font-semibold text-rose-700">{t("screening.failed")}</p>
           <button type="button" onClick={onRegenerate} disabled={regenerating}
             className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50">
-            {regenerating ? "Retrying…" : "Retry"}
+            {regenerating ? t("screening.retrying") : t("screening.retry")}
           </button>
         </div>
         {hasJobMatches && <JobAnalysisSection detail={detail} />}
@@ -448,11 +458,11 @@ function TabScreening({
   const ds = DECISION_STYLES[d.decision] ?? DECISION_STYLES["Consider"];
   const scores = d.scores;
   const scoreItems: [string, keyof Omit<ScreeningScores, "final_score">][] = [
-    ["Relevant Experience", "relevant_experience"],
-    ["Core Skills Match",   "core_skills_match"],
-    ["Stability",           "stability"],
-    ["Growth & Progression","growth_and_progression"],
-    ["Role Fit",            "role_fit"],
+    [t("screening.scoreLabels.relevantExperience"), "relevant_experience"],
+    [t("screening.scoreLabels.coreSkillsMatch"),   "core_skills_match"],
+    [t("screening.scoreLabels.stability"),          "stability"],
+    [t("screening.scoreLabels.growthAndProgression"),"growth_and_progression"],
+    [t("screening.scoreLabels.roleFit"),            "role_fit"],
   ];
 
   return (
@@ -462,39 +472,39 @@ function TabScreening({
         <div className="flex items-center gap-3">
           <span className={`h-2.5 w-2.5 rounded-full ${ds.dot} flex-shrink-0`} />
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Screening Decision</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{t("screening.eyebrow")}</p>
             <p className={`text-xl font-bold ${ds.text}`}>{d.decision}</p>
             <p className="text-xs text-slate-500 mt-0.5">{d.recommendation.action}</p>
           </div>
         </div>
         <div className="text-right flex-shrink-0">
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Final Score</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">{t("screening.finalScore")}</p>
           <p className={`text-3xl font-black tabular-nums ${ds.text}`}>{scores.final_score.toFixed(1)}</p>
-          <p className="text-[10px] text-slate-400">out of 10</p>
+          <p className="text-[10px] text-slate-400">{t("screening.outOf10")}</p>
         </div>
       </div>
 
       {/* ── Executive summary ── */}
       <div className="rounded-2xl border border-slate-200 bg-white p-5">
-        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Executive Summary</p>
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{t("screening.executiveSummary")}</p>
         <p className="text-sm leading-6 text-slate-700">{d.executive_summary}</p>
       </div>
 
       {/* ── Score breakdown ── */}
       <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3">
-        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Scoring Criteria</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{t("screening.scoringCriteria")}</p>
         {scoreItems.map(([label, key]) => (
           <ScoreLine key={key} label={label} value={scores[key]} />
         ))}
         <div className="pt-2 border-t border-slate-100">
-          <ScoreLine label="Final Score (avg)" value={scores.final_score} />
+          <ScoreLine label={t("screening.scoreLabels.finalScoreAvg")} value={scores.final_score} />
         </div>
       </div>
 
       {/* ── Why Hire + Risks ── */}
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
-          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-600">Why Hire</p>
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-600">{t("screening.whyHire")}</p>
           <ul className="space-y-2">
             {d.why_hire.map((r, i) => (
               <li key={i} className="flex gap-2 text-xs leading-5 text-emerald-800">
@@ -504,7 +514,7 @@ function TabScreening({
           </ul>
         </div>
         <div className="rounded-2xl border border-rose-100 bg-rose-50 p-4">
-          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-rose-600">Risks / Why Not</p>
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-rose-600">{t("screening.risks")}</p>
           <ul className="space-y-2">
             {d.risks.map((r, i) => (
               <li key={i} className="flex gap-2 text-xs leading-5 text-rose-800">
@@ -517,7 +527,7 @@ function TabScreening({
 
       {/* ── Recommendation ── */}
       <div className="rounded-2xl border border-slate-200 bg-white p-5">
-        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Final Recommendation</p>
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{t("screening.finalRecommendation")}</p>
         <div className="flex items-center gap-3 flex-wrap">
           <span className={`rounded-full px-3 py-1 text-xs font-bold border ${ds.bg} ${ds.text} ${ds.border}`}>
             {d.recommendation.decision}
@@ -531,7 +541,7 @@ function TabScreening({
       {/* ── Quick flags ── */}
       {d.quick_flags.length > 0 && (
         <div>
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Quick Flags</p>
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{t("screening.quickFlags")}</p>
           <div className="flex flex-wrap gap-2">
             {d.quick_flags.map((f) => (
               <span key={f} className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">{f}</span>
@@ -547,7 +557,7 @@ function TabScreening({
       <div className="flex justify-end">
         <button type="button" onClick={onRegenerate} disabled={regenerating}
           className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50 disabled:opacity-40">
-          {regenerating ? "Regenerating…" : "↺ Regenerate Report"}
+          {regenerating ? t("screening.regenerating") : t("screening.regenerate")}
         </button>
       </div>
     </div>
@@ -557,18 +567,20 @@ function TabScreening({
 // ─── Tab: Job Matches ─────────────────────────────────────────────────────────
 
 function TabMatches({ detail }: { detail: CandidateDetail }) {
+  const t = useTranslations("recruiter.candidateDetailPage");
+
   if (detail.matches.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
-        <p className="text-sm font-semibold text-slate-700">No job matches yet</p>
+        <p className="text-sm font-semibold text-slate-700">{t("matches.noMatches")}</p>
         <p className="mt-2 text-xs text-slate-500">
-          Add jobs from the Jobs page, then re-upload this resume to generate matches.
+          {t("matches.noMatchesDesc")}
         </p>
         <Link
           href="/recruiter/jobs"
           className="mt-4 inline-block rounded-xl bg-brand-800 px-4 py-2 text-xs font-semibold text-white"
         >
-          Go to Jobs →
+          {t("matches.goToJobs")}
         </Link>
       </div>
     );
@@ -590,7 +602,7 @@ function TabMatches({ detail }: { detail: CandidateDetail }) {
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {match.matching_keywords.length > 0 && (
               <div>
-                <p className="mb-1.5 text-[11px] font-semibold text-emerald-600">Matched</p>
+                <p className="mb-1.5 text-[11px] font-semibold text-emerald-600">{t("matches.matched")}</p>
                 <p className="text-xs text-slate-600">
                   {match.matching_keywords.slice(0, 6).join(", ")}
                   {match.matching_keywords.length > 6 && ` +${match.matching_keywords.length - 6}`}
@@ -599,7 +611,7 @@ function TabMatches({ detail }: { detail: CandidateDetail }) {
             )}
             {match.missing_keywords.length > 0 && (
               <div>
-                <p className="mb-1.5 text-[11px] font-semibold text-amber-600">Missing</p>
+                <p className="mb-1.5 text-[11px] font-semibold text-amber-600">{t("matches.missing")}</p>
                 <p className="text-xs text-slate-600">
                   {match.missing_keywords.slice(0, 6).join(", ")}
                   {match.missing_keywords.length > 6 && ` +${match.missing_keywords.length - 6}`}
@@ -616,6 +628,7 @@ function TabMatches({ detail }: { detail: CandidateDetail }) {
 // ─── Tab: Preview ─────────────────────────────────────────────────────────────
 
 function TabPreview({ detail }: { detail: CandidateDetail }) {
+  const t = useTranslations("recruiter.candidateDetailPage");
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [loadingFile, setLoadingFile] = useState(false);
@@ -676,7 +689,7 @@ function TabPreview({ detail }: { detail: CandidateDetail }) {
           <div className="flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
             <span className="text-amber-600">⚠</span>
             <p className="text-xs text-amber-800">
-              Original file is no longer on the server. Showing extracted text instead.
+              {t("preview.fileNotAvailable")}
             </p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
@@ -689,9 +702,9 @@ function TabPreview({ detail }: { detail: CandidateDetail }) {
     }
     return (
       <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
-        <p className="text-sm font-semibold text-slate-700">Preview not available</p>
+        <p className="text-sm font-semibold text-slate-700">{t("preview.notAvailableTitle")}</p>
         <p className="mt-2 text-xs text-slate-500">
-          The original file is no longer on the server and no extracted text was saved.
+          {t("preview.notAvailableDesc")}
         </p>
       </div>
     );
@@ -703,7 +716,7 @@ function TabPreview({ detail }: { detail: CandidateDetail }) {
       <div className="flex h-48 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50">
         <div className="flex items-center gap-2 text-xs text-slate-500">
           <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-700" />
-          Loading resume…
+          {t("preview.loading")}
         </div>
       </div>
     );
@@ -741,7 +754,7 @@ function TabPreview({ detail }: { detail: CandidateDetail }) {
             disabled={!blobUrl}
             className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-40"
           >
-            Open ↗
+            {t("preview.open")}
           </button>
           {isPdf && (
             <button
@@ -750,7 +763,7 @@ function TabPreview({ detail }: { detail: CandidateDetail }) {
               disabled={!blobUrl}
               className="rounded-xl bg-brand-800 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-700 disabled:opacity-40"
             >
-              Print
+              {t("preview.print")}
             </button>
           )}
           {!isPdf && blobUrl && (
@@ -759,7 +772,7 @@ function TabPreview({ detail }: { detail: CandidateDetail }) {
               download={detail.source_filename ?? `resume.${detail.file_type}`}
               className="rounded-xl bg-brand-800 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-700"
             >
-              Download
+              {t("preview.download")}
             </a>
           )}
         </div>
@@ -776,9 +789,9 @@ function TabPreview({ detail }: { detail: CandidateDetail }) {
       ) : !isPdf && blobUrl ? (
         <div className="flex h-40 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50">
           <div className="text-center">
-            <p className="text-sm font-semibold text-slate-700">Word Document</p>
+            <p className="text-sm font-semibold text-slate-700">{t("preview.wordDoc")}</p>
             <p className="mt-1 text-xs text-slate-500">
-              In-browser preview is not supported for DOCX files. Use the Download button above.
+              {t("preview.wordDocDesc")}
             </p>
           </div>
         </div>
@@ -792,6 +805,7 @@ function TabPreview({ detail }: { detail: CandidateDetail }) {
 type Note = { id: string; text: string; date: string };
 
 function TabNotes({ candidateId }: { candidateId: string }) {
+  const t = useTranslations("recruiter.candidateDetailPage");
   const storageKey = `jobai_notes_${candidateId}`;
   const [notes, setNotes] = useState<Note[]>([]);
   const [draft, setDraft] = useState("");
@@ -829,7 +843,7 @@ function TabNotes({ candidateId }: { candidateId: string }) {
         <textarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="Add a note about this candidate…"
+          placeholder={t("notes.placeholder")}
           rows={3}
           className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-slate-400"
         />
@@ -840,13 +854,13 @@ function TabNotes({ candidateId }: { candidateId: string }) {
             disabled={!draft.trim()}
             className="rounded-xl bg-brand-800 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-700 disabled:opacity-40"
           >
-            Save Note
+            {t("notes.save")}
           </button>
         </div>
       </div>
 
       {notes.length === 0 ? (
-        <p className="text-center text-xs text-slate-400">No notes yet.</p>
+        <p className="text-center text-xs text-slate-400">{t("notes.empty")}</p>
       ) : (
         <ul className="space-y-3">
           {notes.map((note) => (
@@ -873,6 +887,7 @@ function TabNotes({ candidateId }: { candidateId: string }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CandidateProfilePage() {
+  const t = useTranslations("recruiter.candidateDetailPage");
   const params = useParams<{ id: string }>();
   const id = params.id;
 
@@ -903,13 +918,14 @@ export default function CandidateProfilePage() {
         setScreening(screen);
         if (!screen || screen.status === "pending") schedulePoll();
       } catch {
-        setError("Failed to load candidate profile.");
+        setError(t("error.failedToLoad"));
       } finally {
         setLoading(false);
       }
     }
     void load();
     return () => { if (pollRef.current) clearTimeout(pollRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   function schedulePoll() {
@@ -966,7 +982,7 @@ export default function CandidateProfilePage() {
       const data = await api.get<CandidateDetail>(`/recruiter/candidates/${id}`, { auth: true });
       setDetail(data);
     } catch (err) {
-      setAnalyzeError(err instanceof Error ? err.message : "Analysis failed.");
+      setAnalyzeError(err instanceof Error ? err.message : t("error.analysisFailed"));
     } finally {
       setAnalyzing(false);
     }
@@ -1001,9 +1017,9 @@ export default function CandidateProfilePage() {
   if (error || !detail) {
     return (
       <Panel className="p-8">
-        <p className="text-sm font-semibold text-rose-600">{error ?? "Not found."}</p>
+        <p className="text-sm font-semibold text-rose-600">{error ?? t("error.notFound")}</p>
         <Link href="/recruiter/candidates" className="mt-4 inline-block text-xs font-medium text-slate-500 underline">
-          ← Back to Candidates
+          {t("error.backToCandidates")}
         </Link>
       </Panel>
     );
@@ -1015,10 +1031,10 @@ export default function CandidateProfilePage() {
   const displayName = detail.parsed_name ?? detail.title;
 
   const TABS: { key: Tab; label: string }[] = [
-    { key: "screening", label: "✦ Screening" },
-    { key: "matches", label: `Job Matches ${detail.matches.length > 0 ? `(${detail.matches.length})` : ""}` },
-    { key: "preview", label: "Resume" },
-    { key: "notes", label: "Notes" },
+    { key: "screening", label: t("tabs.screening") },
+    { key: "matches", label: detail.matches.length > 0 ? t("tabs.jobMatchesWithCount", { count: detail.matches.length }) : t("tabs.jobMatches") },
+    { key: "preview", label: t("tabs.resume") },
+    { key: "notes", label: t("tabs.notes") },
   ];
 
   // ─── Render ─────────────────────────────────────────────────────────────────
@@ -1031,7 +1047,7 @@ export default function CandidateProfilePage() {
         href="/recruiter/candidates"
         className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 transition hover:text-slate-700"
       >
-        ← Candidates
+        {t("backToCandidates")}
       </Link>
 
       {/* ── Sticky header card ─────────────────────────────────── */}
@@ -1046,23 +1062,23 @@ export default function CandidateProfilePage() {
             <div className="min-w-0">
               <h1 className="text-lg font-semibold tracking-tight text-slate-950">{displayName}</h1>
               {detail.parsed_name && detail.parsed_name !== detail.title && (
-                <p className="text-xs text-slate-400">Resume file: {detail.title}</p>
+                <p className="text-xs text-slate-400">{t("resumeFile", { title: detail.title })}</p>
               )}
               {detail.email && (
                 <p className="text-xs text-slate-400">{detail.email}</p>
               )}
-              <p className="mt-0.5 text-xs text-slate-400">Added {fmtDate(detail.created_at)}</p>
+              <p className="mt-0.5 text-xs text-slate-400">{t("added", { date: fmtDate(detail.created_at) })}</p>
             </div>
           </div>
 
           {/* Scores */}
           <div className="flex items-center gap-4">
-            <ScoreRing value={topScore} label="Match" />
+            <ScoreRing value={topScore} label={t("matchLabel")} />
           </div>
 
           {/* Stage selector */}
           <div className="flex-shrink-0">
-            <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Stage</p>
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">{t("stageLabel")}</p>
             <div className="relative">
               <select
                 value={detail.stage}
@@ -1071,7 +1087,7 @@ export default function CandidateProfilePage() {
                 className={`appearance-none rounded-xl border px-3 py-2 pr-7 text-xs font-semibold outline-none transition cursor-pointer ${stageOption.cls}`}
               >
                 {STAGE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option key={opt.value} value={opt.value}>{t(`stageOptions.${opt.value}`)}</option>
                 ))}
               </select>
               <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] opacity-60">▾</span>
@@ -1100,13 +1116,13 @@ export default function CandidateProfilePage() {
                   nextStep.variant === "primary" ? "text-emerald-600" :
                   nextStep.variant === "warning" ? "text-amber-600" : "text-slate-400"
                 }`}>
-                  Next Step
+                  {t("nextStep")}
                 </p>
                 <p className={`mt-0.5 text-sm leading-6 ${
                   nextStep.variant === "primary" ? "text-emerald-800" :
                   nextStep.variant === "warning" ? "text-amber-800" : "text-slate-600"
                 }`}>
-                  {nextStep.message}
+                  {t(nextStep.messageKey)}
                 </p>
               </div>
             </div>
@@ -1119,7 +1135,7 @@ export default function CandidateProfilePage() {
                     onClick={() => void handleStageChange("shortlisted")}
                     className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700"
                   >
-                    Shortlist ★
+                    {t("actions.shortlist")}
                   </button>
                 )}
                 {nextStep.action === "Reject" && (
@@ -1128,7 +1144,7 @@ export default function CandidateProfilePage() {
                     onClick={() => void handleStageChange("rejected")}
                     className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-rose-700"
                   >
-                    Reject
+                    {t("actions.reject")}
                   </button>
                 )}
                 {nextStep.action === "Move to Interview" && (
@@ -1137,7 +1153,7 @@ export default function CandidateProfilePage() {
                     onClick={() => void handleStageChange("interview")}
                     className="rounded-xl bg-violet-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-violet-700"
                   >
-                    Move to Interview →
+                    {t("actions.moveToInterview")}
                   </button>
                 )}
                 {(nextStep.action === "Run Analysis" ||
@@ -1154,7 +1170,7 @@ export default function CandidateProfilePage() {
                     }
                     className="rounded-xl bg-violet-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50"
                   >
-                    {analyzing ? "Running…" : "✦ Analyze with AI"}
+                    {analyzing ? t("actions.running") : t("actions.analyzeWithAi")}
                   </button>
                 )}
                 {nextStep.action === "Go to Jobs →" && (
@@ -1162,7 +1178,7 @@ export default function CandidateProfilePage() {
                     href="/recruiter/jobs"
                     className="rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-amber-700"
                   >
-                    Go to Jobs →
+                    {t("actions.goToJobs")}
                   </Link>
                 )}
                 {nextStep.action === "Add Notes" && (
@@ -1171,7 +1187,7 @@ export default function CandidateProfilePage() {
                     onClick={() => setActiveTab("notes")}
                     className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
                   >
-                    Add Notes
+                    {t("actions.addNotes")}
                   </button>
                 )}
                 {nextStep.action === "Review Matches" && (
@@ -1180,7 +1196,7 @@ export default function CandidateProfilePage() {
                     onClick={() => setActiveTab("matches")}
                     className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
                   >
-                    Review Matches
+                    {t("actions.reviewMatches")}
                   </button>
                 )}
               </>
@@ -1205,7 +1221,7 @@ export default function CandidateProfilePage() {
             onClick={() => void handleRunAnalysis(true)}
             className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 transition hover:bg-violet-100 disabled:opacity-40"
           >
-            {analyzing ? "Running…" : "✦ Re-run AI Analysis"}
+            {analyzing ? t("actions.running") : t("actions.reRunAnalysis")}
           </button>
         </div>
       )}

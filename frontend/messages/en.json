@@ -954,6 +954,312 @@
         "interview": "Interview",
         "rejected": "Rejected"
       }
+    },
+    "reportsPage": {
+      "title": "Match Reports",
+      "talentFitLink": "← Talent Fit",
+      "error": "Failed to load reports.",
+      "matchPercent": "{score}% match",
+      "generating": "Generating…",
+      "failed": "Failed",
+      "viewReport": "View Report",
+      "view": "View",
+      "empty": {
+        "title": "No reports yet",
+        "desc": "Request a report from the Talent Fit page to compare a candidate with a job in depth.",
+        "goToTalentFit": "Go to Talent Fit →"
+      }
+    },
+    "reportDetailPage": {
+      "backToReports": "← Reports",
+      "backToAllReports": "← All Reports",
+      "backToTalentFit": "← Back to Talent Fit",
+      "viewCandidateProfile": "View Candidate Profile →",
+      "error": "Failed to load report.",
+      "reportNotFound": "Report not found.",
+      "overallMatch": "overall match",
+      "deepMatchReport": "Deep Match Report",
+      "generated": "Generated {date}",
+      "executiveSummary": "Executive Summary",
+      "roleAlignment": "Role Alignment",
+      "locationMatch": "Location Match",
+      "experience": "Experience",
+      "education": "Education",
+      "skillsMatch": "Skills Match",
+      "matchedSkills": "Matched Skills",
+      "missingSkills": "Missing Skills",
+      "strengths": "Strengths",
+      "gaps": "Gaps",
+      "finalRecommendation": "Final Recommendation",
+      "notSpecified": "Not specified",
+      "locationMatchLabel": "Match",
+      "locationMismatchLabel": "Mismatch",
+      "years": "~{years} years",
+      "pending": {
+        "title": "Generating Report…",
+        "comparing": "Comparing {candidate} with {job}",
+        "timeHint": "Usually takes 10–20 seconds."
+      },
+      "failedState": {
+        "title": "Report generation failed.",
+        "desc": "The candidate or job may be missing text data."
+      }
+    },
+    "profilePage": {
+      "title": "Account Settings",
+      "tabs": {
+        "profile": "Profile",
+        "sendSettings": "Send Settings"
+      },
+      "profileTab": {
+        "title": "Recruiter Account",
+        "desc": "Profile editing coming soon. Contact support to update your account details."
+      },
+      "sendSettingsTab": {
+        "title": "Gmail SMTP Connection",
+        "desc": "Used to send AI interview invites directly to candidates from your Gmail account."
+      },
+      "smtp": {
+        "statusVerified": "Verified — sending from {email}",
+        "statusSavedNotVerified": "Saved but not verified — click Verify to test",
+        "statusNotConfigured": "No Gmail connection set up",
+        "noConnectionDesc": "Required for sending AI interview invites to candidates.",
+        "howToTitle": "How to create a Gmail App Password:",
+        "step1": "Enable 2-Step Verification on your Google account",
+        "step2": "Go to Google Account → Security → App Passwords",
+        "step3": "Select app: Mail, device: Other → type \"JobAI\"",
+        "step4": "Copy the 16-character password and paste it below",
+        "gmailAddress": "Gmail Address",
+        "displayName": "Display Name",
+        "appPassword": "App Password",
+        "appPasswordHint": "(16 characters)",
+        "keepExistingPassword": "Leave blank to keep existing password",
+        "appPasswordPlaceholder": "xxxx xxxx xxxx xxxx",
+        "displayNamePlaceholder": "e.g. HR Team — Acme Corp",
+        "saving": "Saving…",
+        "updateConnection": "Update Connection",
+        "saveConnection": "Save Connection",
+        "verifying": "Verifying…",
+        "reVerify": "Re-Verify",
+        "verifyConnection": "Verify Connection",
+        "remove": "Remove",
+        "removeConfirm": "Remove this connection?",
+        "confirm": "Confirm",
+        "cancel": "Cancel",
+        "savedSuccess": "Connection saved. Click Verify to test it.",
+        "verifiedSuccess": "Connection verified successfully. You can now send interview invites.",
+        "removed": "Connection removed.",
+        "failedToSave": "Failed to save.",
+        "verificationFailed": "Verification failed. Check your App Password.",
+        "failedToRemove": "Failed to remove connection."
+      }
+    },
+    "aiInterviewPage": {
+      "eyebrow": "AI Interview",
+      "title": "Generate & send interview questions",
+      "desc": "Shows only candidates you've moved to the Interview stage. Generate tailored questions and send a video interview link directly to the candidate's email.",
+      "noJobs": {
+        "title": "No jobs found",
+        "desc": "Add at least one job before generating interview questions.",
+        "action": "Add a job"
+      },
+      "noCandidates": {
+        "title": "No candidates in Interview stage",
+        "desc": "Move candidates to the Interview stage from the Candidates page first.",
+        "action": "Go to Candidates"
+      },
+      "form": {
+        "candidateLabel": "Candidate (Interview Stage)",
+        "jobLabel": "Job",
+        "typeLabel": "Interview Type",
+        "languageLabel": "Language",
+        "questionsLabel": "Questions: {count}",
+        "typeOptions": {
+          "mixed": "Mixed (HR + Technical)",
+          "hr": "HR / Behavioral",
+          "technical": "Technical"
+        },
+        "languageOptions": {
+          "en": "English",
+          "ar": "Arabic"
+        },
+        "generating": "Generating questions…",
+        "generateBtn": "Generate Interview"
+      },
+      "generated": {
+        "eyebrow": "Generated Questions",
+        "for": "for",
+        "languageEn": "English",
+        "languageAr": "Arabic",
+        "questions": "{count} questions",
+        "sentDate": "Sent {date}",
+        "loading": "Loading…",
+        "viewResponses": "View Responses",
+        "sending": "Sending…",
+        "resendInvite": "Resend Invite",
+        "sendToCandidate": "Send to Candidate"
+      },
+      "smtpError": {
+        "title": "Gmail connection not set up",
+        "desc": "You need to connect and verify a Gmail account before sending interview invites.",
+        "action": "Set up Send Settings →"
+      },
+      "inviteSent": "Invite sent to {email}",
+      "candidateSummary": "Candidate Summary",
+      "focusAreas": "Focus Areas",
+      "responses": {
+        "eyebrow": "Candidate Responses",
+        "overallImpression": "Overall Impression",
+        "videoAnswer": "Video Answer",
+        "textAnswer": "Text Answer",
+        "gptAssessment": "GPT Assessment"
+      },
+      "history": {
+        "eyebrow": "History",
+        "title": "Previous interview sets",
+        "questionsCount": "{count}Q"
+      },
+      "responseStatus": {
+        "pending": "Not Sent",
+        "sent": "Invite Sent",
+        "in_progress": "In Progress",
+        "completed": "Completed"
+      },
+      "typeLabels": {
+        "hr": "HR / Behavioral",
+        "technical": "Technical",
+        "mixed": "Mixed"
+      },
+      "hireLabels": {
+        "strong_yes": "Strong Yes",
+        "yes": "Yes",
+        "maybe": "Maybe",
+        "no": "No"
+      },
+      "error": {
+        "failedToLoad": "Failed to load data.",
+        "failedToGenerate": "Failed to generate interview questions. Please try again.",
+        "failedToLoadInterview": "Failed to load interview.",
+        "failedToSendInvite": "Failed to send invite. Check your SMTP settings.",
+        "failedToLoadResponses": "Failed to load responses."
+      }
+    },
+    "candidateDetailPage": {
+      "backToCandidates": "← Candidates",
+      "resumeFile": "Resume file: {title}",
+      "added": "Added {date}",
+      "matchLabel": "Match",
+      "stageLabel": "Stage",
+      "nextStep": "Next Step",
+      "stageOptions": {
+        "new": "Applied",
+        "shortlisted": "Shortlisted ★",
+        "interview": "Interview →",
+        "rejected": "Rejected ✕"
+      },
+      "actions": {
+        "shortlist": "Shortlist ★",
+        "reject": "Reject",
+        "moveToInterview": "Move to Interview →",
+        "running": "Running…",
+        "analyzeWithAi": "✦ Analyze with AI",
+        "goToJobs": "Go to Jobs →",
+        "addNotes": "Add Notes",
+        "reviewMatches": "Review Matches",
+        "reRunAnalysis": "✦ Re-run AI Analysis"
+      },
+      "nextStepMessages": {
+        "processing": "Resume is being processed. Analysis will run automatically.",
+        "noJobs": "No jobs yet. Add at least one job, then run analysis to see match scores.",
+        "notAnalyzed": "Jobs exist but no analysis has been run for this candidate yet.",
+        "stale": "Analysis is over 7 days old and may be outdated. Consider refreshing.",
+        "zeroScores": "All match scores are 0%. The resume and job description may be in different languages. Use Deep AI Analysis for cross-language semantic matching.",
+        "lowScores": "All job match scores are below 40%. This candidate may not be a good fit.",
+        "strongMatch": "Strong match detected. Shortlist this candidate to keep them in the pipeline.",
+        "shortlisted": "Candidate is shortlisted. Next step: conduct an interview to complete evaluation.",
+        "interview": "Interview stage — record your notes below and make a final decision.",
+        "review": "Review the analysis and job matches, then make a hiring decision."
+      },
+      "freshness": {
+        "fresh": "Fresh · {hours}h ago",
+        "days_one": "{days} day ago",
+        "days_other": "{days} days ago"
+      },
+      "tabs": {
+        "screening": "✦ Screening",
+        "jobMatches": "Job Matches",
+        "jobMatchesWithCount": "Job Matches ({count})",
+        "resume": "Resume",
+        "notes": "Notes"
+      },
+      "screening": {
+        "eyebrow": "Screening Decision",
+        "finalScore": "Final Score",
+        "outOf10": "out of 10",
+        "executiveSummary": "Executive Summary",
+        "scoringCriteria": "Scoring Criteria",
+        "scoreLabels": {
+          "relevantExperience": "Relevant Experience",
+          "coreSkillsMatch": "Core Skills Match",
+          "stability": "Stability",
+          "growthAndProgression": "Growth & Progression",
+          "roleFit": "Role Fit",
+          "finalScoreAvg": "Final Score (avg)"
+        },
+        "whyHire": "Why Hire",
+        "risks": "Risks / Why Not",
+        "finalRecommendation": "Final Recommendation",
+        "quickFlags": "Quick Flags",
+        "generateReport": "Generate Report",
+        "starting": "Starting…",
+        "timedOut": "Screening report is taking longer than expected.",
+        "pending": "Generating Screening Report…",
+        "pendingDesc": "Runs automatically after upload — usually 10–20 seconds.",
+        "failed": "Screening report failed.",
+        "retry": "Retry",
+        "retrying": "Retrying…",
+        "regenerate": "↺ Regenerate Report",
+        "regenerating": "Regenerating…"
+      },
+      "jobAnalysis": {
+        "sectionTitle": "Job Match Analysis",
+        "stale": "⚠ Match data may be outdated",
+        "current": "✓ Match data is current",
+        "bestJobMatch": "Best Job Match",
+        "strengths": "Strengths",
+        "gaps": "Gaps",
+        "allExtractedSkills": "All Extracted Skills",
+        "skillLegend": "Green = matched · Amber = gap · Gray = unclassified"
+      },
+      "matches": {
+        "noMatches": "No job matches yet",
+        "noMatchesDesc": "Add jobs from the Jobs page, then re-upload this resume to generate matches.",
+        "goToJobs": "Go to Jobs →",
+        "matched": "Matched",
+        "missing": "Missing"
+      },
+      "preview": {
+        "fileNotAvailable": "Original file is no longer on the server. Showing extracted text instead.",
+        "notAvailableTitle": "Preview not available",
+        "notAvailableDesc": "The original file is no longer on the server and no extracted text was saved.",
+        "loading": "Loading resume…",
+        "open": "Open ↗",
+        "print": "Print",
+        "download": "Download",
+        "wordDoc": "Word Document",
+        "wordDocDesc": "In-browser preview is not supported for DOCX files. Use the Download button above."
+      },
+      "notes": {
+        "placeholder": "Add a note about this candidate…",
+        "save": "Save Note",
+        "empty": "No notes yet."
+      },
+      "error": {
+        "failedToLoad": "Failed to load candidate profile.",
+        "notFound": "Not found.",
+        "backToCandidates": "← Back to Candidates",
+        "analysisFailed": "Analysis failed."
+      }
     }
   },
 

@@ -954,6 +954,312 @@
         "interview": "مقابلة",
         "rejected": "مرفوض"
       }
+    },
+    "reportsPage": {
+      "title": "تقارير التطابق",
+      "talentFitLink": "← ملاءمة المواهب",
+      "error": "تعذّر تحميل التقارير.",
+      "matchPercent": "تطابق {score}%",
+      "generating": "جارٍ الإنشاء…",
+      "failed": "فشل",
+      "viewReport": "عرض التقرير",
+      "view": "عرض",
+      "empty": {
+        "title": "لا توجد تقارير بعد",
+        "desc": "اطلب تقريرًا من صفحة ملاءمة المواهب للمقارنة التفصيلية بين المرشح والوظيفة.",
+        "goToTalentFit": "انتقل إلى ملاءمة المواهب ←"
+      }
+    },
+    "reportDetailPage": {
+      "backToReports": "← التقارير",
+      "backToAllReports": "← جميع التقارير",
+      "backToTalentFit": "← العودة إلى ملاءمة المواهب",
+      "viewCandidateProfile": "عرض ملف المرشح →",
+      "error": "تعذّر تحميل التقرير.",
+      "reportNotFound": "التقرير غير موجود.",
+      "overallMatch": "إجمالي التطابق",
+      "deepMatchReport": "تقرير التطابق العميق",
+      "generated": "أُنشئ في {date}",
+      "executiveSummary": "الملخص التنفيذي",
+      "roleAlignment": "توافق الدور",
+      "locationMatch": "تطابق الموقع",
+      "experience": "الخبرة",
+      "education": "التعليم",
+      "skillsMatch": "تطابق المهارات",
+      "matchedSkills": "المهارات المتطابقة",
+      "missingSkills": "المهارات الناقصة",
+      "strengths": "نقاط القوة",
+      "gaps": "الفجوات",
+      "finalRecommendation": "التوصية النهائية",
+      "notSpecified": "غير محدد",
+      "locationMatchLabel": "متطابق",
+      "locationMismatchLabel": "غير متطابق",
+      "years": "~{years} سنة",
+      "pending": {
+        "title": "جارٍ إنشاء التقرير…",
+        "comparing": "مقارنة {candidate} مع {job}",
+        "timeHint": "يستغرق عادةً 10–20 ثانية."
+      },
+      "failedState": {
+        "title": "فشل إنشاء التقرير.",
+        "desc": "قد تكون بيانات النص مفقودة للمرشح أو الوظيفة."
+      }
+    },
+    "profilePage": {
+      "title": "إعدادات الحساب",
+      "tabs": {
+        "profile": "الملف الشخصي",
+        "sendSettings": "إعدادات الإرسال"
+      },
+      "profileTab": {
+        "title": "حساب المُوظِّف",
+        "desc": "تعديل الملف الشخصي قيد التطوير. تواصل مع الدعم لتحديث بيانات حسابك."
+      },
+      "sendSettingsTab": {
+        "title": "اتصال Gmail SMTP",
+        "desc": "يُستخدم لإرسال دعوات المقابلة بالذكاء الاصطناعي مباشرةً إلى المرشحين من حسابك على Gmail."
+      },
+      "smtp": {
+        "statusVerified": "تم التحقق — الإرسال من {email}",
+        "statusSavedNotVerified": "تم الحفظ لكن لم يُتحقق — انقر على تحقق للاختبار",
+        "statusNotConfigured": "لم يتم إعداد اتصال Gmail",
+        "noConnectionDesc": "مطلوب لإرسال دعوات المقابلة بالذكاء الاصطناعي للمرشحين.",
+        "howToTitle": "كيفية إنشاء كلمة مرور تطبيق Gmail:",
+        "step1": "فعّل التحقق بخطوتين في حسابك على Google",
+        "step2": "انتقل إلى حساب Google ← الأمان ← كلمات مرور التطبيقات",
+        "step3": "اختر التطبيق: Mail، الجهاز: Other ← اكتب \"JobAI\"",
+        "step4": "انسخ كلمة المرور المكونة من 16 حرفًا والصقها أدناه",
+        "gmailAddress": "عنوان Gmail",
+        "displayName": "الاسم المعروض",
+        "appPassword": "كلمة مرور التطبيق",
+        "appPasswordHint": "(16 حرفًا)",
+        "keepExistingPassword": "اتركه فارغًا للإبقاء على كلمة المرور الحالية",
+        "appPasswordPlaceholder": "xxxx xxxx xxxx xxxx",
+        "displayNamePlaceholder": "مثل: فريق الموارد البشرية — شركة ABC",
+        "saving": "جارٍ الحفظ…",
+        "updateConnection": "تحديث الاتصال",
+        "saveConnection": "حفظ الاتصال",
+        "verifying": "جارٍ التحقق…",
+        "reVerify": "إعادة التحقق",
+        "verifyConnection": "التحقق من الاتصال",
+        "remove": "حذف",
+        "removeConfirm": "هل تريد حذف هذا الاتصال؟",
+        "confirm": "تأكيد",
+        "cancel": "إلغاء",
+        "savedSuccess": "تم حفظ الاتصال. انقر على تحقق لاختباره.",
+        "verifiedSuccess": "تم التحقق من الاتصال بنجاح. يمكنك الآن إرسال دعوات المقابلة.",
+        "removed": "تم حذف الاتصال.",
+        "failedToSave": "فشل الحفظ.",
+        "verificationFailed": "فشل التحقق. تحقق من كلمة مرور التطبيق.",
+        "failedToRemove": "فشل حذف الاتصال."
+      }
+    },
+    "aiInterviewPage": {
+      "eyebrow": "مقابلة بالذكاء الاصطناعي",
+      "title": "توليد وإرسال أسئلة المقابلة",
+      "desc": "يعرض المرشحين الذين نقلتهم إلى مرحلة المقابلة فقط. توليد أسئلة مخصصة وإرسال رابط مقابلة فيديو مباشرةً إلى بريد المرشح.",
+      "noJobs": {
+        "title": "لا توجد وظائف",
+        "desc": "أضف وظيفة واحدة على الأقل قبل توليد أسئلة المقابلة.",
+        "action": "إضافة وظيفة"
+      },
+      "noCandidates": {
+        "title": "لا يوجد مرشحون في مرحلة المقابلة",
+        "desc": "انقل المرشحين إلى مرحلة المقابلة من صفحة المرشحين أولًا.",
+        "action": "الذهاب إلى المرشحين"
+      },
+      "form": {
+        "candidateLabel": "المرشح (مرحلة المقابلة)",
+        "jobLabel": "الوظيفة",
+        "typeLabel": "نوع المقابلة",
+        "languageLabel": "اللغة",
+        "questionsLabel": "الأسئلة: {count}",
+        "typeOptions": {
+          "mixed": "مختلط (HR + تقني)",
+          "hr": "HR / سلوكي",
+          "technical": "تقني"
+        },
+        "languageOptions": {
+          "en": "الإنجليزية",
+          "ar": "العربية"
+        },
+        "generating": "جارٍ توليد الأسئلة…",
+        "generateBtn": "توليد المقابلة"
+      },
+      "generated": {
+        "eyebrow": "الأسئلة المُولَّدة",
+        "for": "لـ",
+        "languageEn": "إنجليزي",
+        "languageAr": "عربي",
+        "questions": "{count} أسئلة",
+        "sentDate": "أُرسل في {date}",
+        "loading": "جارٍ التحميل…",
+        "viewResponses": "عرض الإجابات",
+        "sending": "جارٍ الإرسال…",
+        "resendInvite": "إعادة إرسال الدعوة",
+        "sendToCandidate": "إرسال للمرشح"
+      },
+      "smtpError": {
+        "title": "اتصال Gmail غير مُعدّ",
+        "desc": "يجب ربط حساب Gmail والتحقق منه قبل إرسال دعوات المقابلة.",
+        "action": "إعداد إعدادات الإرسال ←"
+      },
+      "inviteSent": "تم إرسال الدعوة إلى {email}",
+      "candidateSummary": "ملخص المرشح",
+      "focusAreas": "محاور التركيز",
+      "responses": {
+        "eyebrow": "إجابات المرشح",
+        "overallImpression": "الانطباع العام",
+        "videoAnswer": "إجابة الفيديو",
+        "textAnswer": "الإجابة النصية",
+        "gptAssessment": "تقييم الذكاء الاصطناعي"
+      },
+      "history": {
+        "eyebrow": "السجل",
+        "title": "مجموعات المقابلات السابقة",
+        "questionsCount": "{count} س"
+      },
+      "responseStatus": {
+        "pending": "لم يُرسل",
+        "sent": "تم إرسال الدعوة",
+        "in_progress": "قيد التنفيذ",
+        "completed": "مكتمل"
+      },
+      "typeLabels": {
+        "hr": "HR / سلوكي",
+        "technical": "تقني",
+        "mixed": "مختلط"
+      },
+      "hireLabels": {
+        "strong_yes": "موصى به بشدة",
+        "yes": "نعم",
+        "maybe": "ربما",
+        "no": "لا"
+      },
+      "error": {
+        "failedToLoad": "تعذّر تحميل البيانات.",
+        "failedToGenerate": "تعذّر توليد أسئلة المقابلة. يرجى المحاولة مجدداً.",
+        "failedToLoadInterview": "تعذّر تحميل المقابلة.",
+        "failedToSendInvite": "تعذّر إرسال الدعوة. تحقق من إعدادات SMTP.",
+        "failedToLoadResponses": "تعذّر تحميل الإجابات."
+      }
+    },
+    "candidateDetailPage": {
+      "backToCandidates": "← المرشحون",
+      "resumeFile": "ملف السيرة الذاتية: {title}",
+      "added": "أُضيف في {date}",
+      "matchLabel": "تطابق",
+      "stageLabel": "المرحلة",
+      "nextStep": "الخطوة التالية",
+      "stageOptions": {
+        "new": "مقدّم",
+        "shortlisted": "مختصر ★",
+        "interview": "مقابلة →",
+        "rejected": "مرفوض ✕"
+      },
+      "actions": {
+        "shortlist": "إضافة للقائمة المختصرة ★",
+        "reject": "رفض",
+        "moveToInterview": "نقل للمقابلة →",
+        "running": "جارٍ التشغيل…",
+        "analyzeWithAi": "✦ تحليل بالذكاء الاصطناعي",
+        "goToJobs": "الذهاب إلى الوظائف →",
+        "addNotes": "إضافة ملاحظات",
+        "reviewMatches": "مراجعة التطابقات",
+        "reRunAnalysis": "✦ إعادة تشغيل التحليل"
+      },
+      "nextStepMessages": {
+        "processing": "جارٍ معالجة السيرة الذاتية. سيعمل التحليل تلقائيًا.",
+        "noJobs": "لا توجد وظائف بعد. أضف وظيفة واحدة على الأقل ثم شغّل التحليل لرؤية درجات التطابق.",
+        "notAnalyzed": "توجد وظائف لكن لم يُشغَّل أي تحليل لهذا المرشح بعد.",
+        "stale": "التحليل أكثر من 7 أيام وقد يكون قديمًا. فكر في تحديثه.",
+        "zeroScores": "جميع درجات التطابق 0%. قد تكون السيرة الذاتية والوصف الوظيفي بلغتين مختلفتين. استخدم التحليل العميق للمقارنة الدلالية.",
+        "lowScores": "جميع درجات التطابق أقل من 40%. قد لا يكون هذا المرشح مناسبًا.",
+        "strongMatch": "تم اكتشاف تطابق قوي. أضف هذا المرشح للقائمة المختصرة للإبقاء عليه في مسار التوظيف.",
+        "shortlisted": "المرشح في القائمة المختصرة. الخطوة التالية: أجرِ مقابلة لإتمام التقييم.",
+        "interview": "مرحلة المقابلة — سجّل ملاحظاتك أدناه واتخذ قرارًا نهائيًا.",
+        "review": "راجع التحليل وتطابقات الوظائف ثم اتخذ قرار التوظيف."
+      },
+      "freshness": {
+        "fresh": "حديث · منذ {hours} ساعة",
+        "days_one": "منذ يوم واحد",
+        "days_other": "منذ {days} أيام"
+      },
+      "tabs": {
+        "screening": "✦ الفرز",
+        "jobMatches": "تطابقات الوظائف",
+        "jobMatchesWithCount": "تطابقات الوظائف ({count})",
+        "resume": "السيرة الذاتية",
+        "notes": "الملاحظات"
+      },
+      "screening": {
+        "eyebrow": "قرار الفرز",
+        "finalScore": "الدرجة النهائية",
+        "outOf10": "من 10",
+        "executiveSummary": "الملخص التنفيذي",
+        "scoringCriteria": "معايير التقييم",
+        "scoreLabels": {
+          "relevantExperience": "الخبرة ذات الصلة",
+          "coreSkillsMatch": "تطابق المهارات الأساسية",
+          "stability": "الاستقرار الوظيفي",
+          "growthAndProgression": "النمو والتطور",
+          "roleFit": "ملاءمة الدور",
+          "finalScoreAvg": "الدرجة النهائية (متوسط)"
+        },
+        "whyHire": "لماذا نوظّف",
+        "risks": "المخاطر / لماذا لا",
+        "finalRecommendation": "التوصية النهائية",
+        "quickFlags": "تنبيهات سريعة",
+        "generateReport": "توليد التقرير",
+        "starting": "جارٍ البدء…",
+        "timedOut": "استغرق تقرير الفرز وقتًا أطول من المتوقع.",
+        "pending": "جارٍ إنشاء تقرير الفرز…",
+        "pendingDesc": "يعمل تلقائيًا بعد الرفع — يستغرق عادةً 10–20 ثانية.",
+        "failed": "فشل تقرير الفرز.",
+        "retry": "إعادة المحاولة",
+        "retrying": "جارٍ المحاولة…",
+        "regenerate": "↺ إعادة توليد التقرير",
+        "regenerating": "جارٍ إعادة التوليد…"
+      },
+      "jobAnalysis": {
+        "sectionTitle": "تحليل تطابق الوظائف",
+        "stale": "⚠ بيانات التطابق قد تكون قديمة",
+        "current": "✓ بيانات التطابق حديثة",
+        "bestJobMatch": "أفضل تطابق وظيفي",
+        "strengths": "نقاط القوة",
+        "gaps": "الفجوات",
+        "allExtractedSkills": "جميع المهارات المستخرجة",
+        "skillLegend": "أخضر = متطابق · أصفر = فجوة · رمادي = غير مصنّف"
+      },
+      "matches": {
+        "noMatches": "لا توجد تطابقات وظيفية بعد",
+        "noMatchesDesc": "أضف وظائف من صفحة الوظائف ثم أعد رفع هذه السيرة الذاتية لتوليد التطابقات.",
+        "goToJobs": "الذهاب إلى الوظائف →",
+        "matched": "المتطابقة",
+        "missing": "الناقصة"
+      },
+      "preview": {
+        "fileNotAvailable": "الملف الأصلي لم يعد موجودًا على الخادم. يُعرض النص المستخرج بدلًا منه.",
+        "notAvailableTitle": "المعاينة غير متاحة",
+        "notAvailableDesc": "الملف الأصلي لم يعد موجودًا على الخادم ولم يُحفظ أي نص مستخرج.",
+        "loading": "جارٍ تحميل السيرة الذاتية…",
+        "open": "فتح ↗",
+        "print": "طباعة",
+        "download": "تنزيل",
+        "wordDoc": "مستند Word",
+        "wordDocDesc": "المعاينة داخل المتصفح غير مدعومة لملفات DOCX. استخدم زر التنزيل أعلاه."
+      },
+      "notes": {
+        "placeholder": "أضف ملاحظة عن هذا المرشح…",
+        "save": "حفظ الملاحظة",
+        "empty": "لا توجد ملاحظات بعد."
+      },
+      "error": {
+        "failedToLoad": "تعذّر تحميل ملف المرشح.",
+        "notFound": "غير موجود.",
+        "backToCandidates": "← العودة إلى المرشحين",
+        "analysisFailed": "فشل التحليل."
+      }
     }
   },
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { UserCircle, Mail, CheckCircle2, AlertCircle, Trash2 } from "lucide-react";
 
 import {
@@ -19,6 +20,7 @@ type Tab = "profile" | "send-settings";
 // ─── Gmail SMTP Setup ─────────────────────────���───────────────────────────────
 
 function SendSettingsTab() {
+  const t = useTranslations("recruiter.profilePage");
   const [conn, setConn] = useState<SmtpConnection | null>(null);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ gmail_address: "", display_name: "", app_password: "" });
@@ -48,10 +50,10 @@ function SendSettingsTab() {
     try {
       const saved = await saveSmtpConnection(form);
       setConn(saved);
-      setSuccess("Connection saved. Click Verify to test it.");
+      setSuccess(t("smtp.savedSuccess"));
       setForm((f) => ({ ...f, app_password: "" }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save.");
+      setError(err instanceof Error ? err.message : t("smtp.failedToSave"));
     } finally {
       setSaving(false);
     }
@@ -64,9 +66,9 @@ function SendSettingsTab() {
       await verifySmtpConnection();
       const fresh = await getSmtpConnection();
       setConn(fresh);
-      setSuccess("Connection verified successfully. You can now send interview invites.");
+      setSuccess(t("smtp.verifiedSuccess"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Verification failed. Check your App Password.");
+      setError(err instanceof Error ? err.message : t("smtp.verificationFailed"));
     } finally {
       setVerifying(false);
     }
@@ -80,9 +82,9 @@ function SendSettingsTab() {
       setConn(null);
       setForm({ gmail_address: "", display_name: "", app_password: "" });
       setConfirmRemove(false);
-      setSuccess("Connection removed.");
+      setSuccess(t("smtp.removed"));
     } catch {
-      setError("Failed to remove connection.");
+      setError(t("smtp.failedToRemove"));
     } finally {
       setRemoving(false);
     }
@@ -114,13 +116,13 @@ function SendSettingsTab() {
               conn?.is_verified ? "text-emerald-700" : conn ? "text-amber-700" : "text-slate-600"
             }`}>
               {conn?.is_verified
-                ? `Verified — sending from ${conn.gmail_address}`
+                ? t("smtp.statusVerified", { email: conn.gmail_address })
                 : conn
-                ? `Saved but not verified — click Verify to test`
-                : "No Gmail connection set up"}
+                ? t("smtp.statusSavedNotVerified")
+                : t("smtp.statusNotConfigured")}
             </p>
             {!conn && (
-              <p className="text-xs text-slate-400 mt-0.5">Required for sending AI interview invites to candidates.</p>
+              <p className="text-xs text-slate-400 mt-0.5">{t("smtp.noConnectionDesc")}</p>
             )}
           </div>
         </div>
@@ -128,12 +130,12 @@ function SendSettingsTab() {
 
       {/* How-to */}
       <div className="rounded-2xl border border-violet-100 bg-violet-50 p-4 text-xs text-violet-800 space-y-1.5">
-        <p className="font-bold">How to create a Gmail App Password:</p>
+        <p className="font-bold">{t("smtp.howToTitle")}</p>
         <ol className="list-decimal list-inside space-y-1 text-violet-700">
-          <li>Enable 2-Step Verification on your Google account</li>
-          <li>Go to Google Account → Security → App Passwords</li>
-          <li>Select app: Mail, device: Other → type "JobAI"</li>
-          <li>Copy the 16-character password and paste it below</li>
+          <li>{t("smtp.step1")}</li>
+          <li>{t("smtp.step2")}</li>
+          <li>{t("smtp.step3")}</li>
+          <li>{t("smtp.step4")}</li>
         </ol>
       </div>
 
@@ -141,7 +143,7 @@ function SendSettingsTab() {
       <form onSubmit={(e) => void handleSave(e)} className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-slate-700">Gmail Address</label>
+            <label className="text-xs font-semibold text-slate-700">{t("smtp.gmailAddress")}</label>
             <input
               type="email"
               value={form.gmail_address}
@@ -152,12 +154,12 @@ function SendSettingsTab() {
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-slate-700">Display Name</label>
+            <label className="text-xs font-semibold text-slate-700">{t("smtp.displayName")}</label>
             <input
               type="text"
               value={form.display_name}
               onChange={(e) => setForm({ ...form, display_name: e.target.value })}
-              placeholder="e.g. HR Team — Acme Corp"
+              placeholder={t("smtp.displayNamePlaceholder")}
               required
               className={inputCls}
             />
@@ -166,14 +168,14 @@ function SendSettingsTab() {
 
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-slate-700">
-            App Password
-            <span className="ml-1.5 font-normal text-slate-400">(16 characters)</span>
+            {t("smtp.appPassword")}
+            <span className="ml-1.5 font-normal text-slate-400">{t("smtp.appPasswordHint")}</span>
           </label>
           <input
             type="password"
             value={form.app_password}
             onChange={(e) => setForm({ ...form, app_password: e.target.value })}
-            placeholder={conn ? "Leave blank to keep existing password" : "xxxx xxxx xxxx xxxx"}
+            placeholder={conn ? t("smtp.keepExistingPassword") : t("smtp.appPasswordPlaceholder")}
             required={!conn}
             className={inputCls}
           />
@@ -196,7 +198,7 @@ function SendSettingsTab() {
             disabled={saving}
             className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
           >
-            {saving ? "Saving…" : conn ? "Update Connection" : "Save Connection"}
+            {saving ? t("smtp.saving") : conn ? t("smtp.updateConnection") : t("smtp.saveConnection")}
           </button>
 
           {conn && (
@@ -206,7 +208,7 @@ function SendSettingsTab() {
               disabled={verifying}
               className="rounded-xl border border-emerald-300 bg-emerald-50 px-5 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50"
             >
-              {verifying ? "Verifying…" : conn.is_verified ? "Re-Verify" : "Verify Connection"}
+              {verifying ? t("smtp.verifying") : conn.is_verified ? t("smtp.reVerify") : t("smtp.verifyConnection")}
             </button>
           )}
 
@@ -216,26 +218,26 @@ function SendSettingsTab() {
               onClick={() => setConfirmRemove(true)}
               className="ml-auto flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-400 transition hover:border-rose-200 hover:text-rose-500"
             >
-              <Trash2 size={12} /> Remove
+              <Trash2 size={12} /> {t("smtp.remove")}
             </button>
           )}
           {confirmRemove && (
             <>
-              <span className="ml-auto text-xs font-medium text-rose-600">Remove this connection?</span>
+              <span className="ml-auto text-xs font-medium text-rose-600">{t("smtp.removeConfirm")}</span>
               <button
                 type="button"
                 onClick={() => void handleRemove()}
                 disabled={removing}
                 className="rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
               >
-                {removing ? "…" : "Confirm"}
+                {removing ? "…" : t("smtp.confirm")}
               </button>
               <button
                 type="button"
                 onClick={() => setConfirmRemove(false)}
                 className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-50"
               >
-                Cancel
+                {t("smtp.cancel")}
               </button>
             </>
           )}
@@ -248,6 +250,7 @@ function SendSettingsTab() {
 // ─── Page ────────────────────────────���───────────────────────────────────���────
 
 export default function RecruiterProfilePage() {
+  const t = useTranslations("recruiter.profilePage");
   const searchParams = useSearchParams();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>(
@@ -260,8 +263,8 @@ export default function RecruiterProfilePage() {
   }
 
   const TABS: { key: Tab; label: string }[] = [
-    { key: "profile",       label: "Profile" },
-    { key: "send-settings", label: "Send Settings" },
+    { key: "profile",       label: t("tabs.profile") },
+    { key: "send-settings", label: t("tabs.sendSettings") },
   ];
 
   return (
@@ -270,7 +273,7 @@ export default function RecruiterProfilePage() {
       {/* ── Header ── */}
       <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4">
         <UserCircle size={16} className="text-slate-400" />
-        <p className="text-[15px] font-bold tracking-tight text-slate-900">Account Settings</p>
+        <p className="text-[15px] font-bold tracking-tight text-slate-900">{t("title")}</p>
       </div>
 
       {/* ── Tabs ── */}
@@ -297,19 +300,15 @@ export default function RecruiterProfilePage() {
       <div className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6">
         {activeTab === "profile" && (
           <div className="space-y-4">
-            <p className="text-sm font-semibold text-slate-900">Recruiter Account</p>
-            <p className="text-sm leading-6 text-slate-500">
-              Profile editing coming soon. Contact support to update your account details.
-            </p>
+            <p className="text-sm font-semibold text-slate-900">{t("profileTab.title")}</p>
+            <p className="text-sm leading-6 text-slate-500">{t("profileTab.desc")}</p>
           </div>
         )}
         {activeTab === "send-settings" && (
           <div className="space-y-4">
             <div>
-              <p className="text-sm font-semibold text-slate-900">Gmail SMTP Connection</p>
-              <p className="mt-1 text-xs text-slate-500">
-                Used to send AI interview invites directly to candidates from your Gmail account.
-              </p>
+              <p className="text-sm font-semibold text-slate-900">{t("sendSettingsTab.title")}</p>
+              <p className="mt-1 text-xs text-slate-500">{t("sendSettingsTab.desc")}</p>
             </div>
             <SendSettingsTab />
           </div>

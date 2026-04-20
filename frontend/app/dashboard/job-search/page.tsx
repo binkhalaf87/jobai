@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Panel } from "@/components/panel";
 import { ApiError } from "@/lib/api";
@@ -18,20 +19,15 @@ import {
 import { listResumes } from "@/lib/resumes";
 import type { JobResult, ResumeListItem, SavedJob } from "@/types";
 
-const DATE_OPTIONS = [
-  { value: "all", label: "Any time" },
-  { value: "today", label: "Today" },
-  { value: "3days", label: "Last 3 days" },
-  { value: "week", label: "Last week" },
-  { value: "month", label: "Last month" },
-] as const;
+const DATE_VALUES = ["all", "today", "3days", "week", "month"] as const;
+type DateValue = (typeof DATE_VALUES)[number];
 
-const TYPE_OPTIONS = [
-  { value: "", label: "All types" },
-  { value: "FULLTIME", label: "Full-time" },
-  { value: "PARTTIME", label: "Part-time" },
-  { value: "CONTRACTOR", label: "Contract" },
-  { value: "INTERN", label: "Internship" },
+const TYPE_VALUES = [
+  { value: "", key: "allTypes" },
+  { value: "FULLTIME", key: "fullTime" },
+  { value: "PARTTIME", key: "partTime" },
+  { value: "CONTRACTOR", key: "contract" },
+  { value: "INTERN", key: "internship" },
 ] as const;
 
 type PageState = "idle" | "searching" | "results" | "error";
@@ -47,10 +43,12 @@ function formatSalary(min: number | null, max: number | null, currency: string |
 }
 
 function FitBadge({ score }: { score: number | null }) {
+  const t = useTranslations("jobSearchPage");
+
   if (score === null) {
     return (
       <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-500">
-        Resume scoring off
+        {t("jobCard.resumeScoringOff")}
       </span>
     );
   }
@@ -65,7 +63,7 @@ function FitBadge({ score }: { score: number | null }) {
 
   return (
     <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${classes}`}>
-      {rounded}% match
+      {t("jobCard.matchPercent", { score: rounded })}
     </span>
   );
 }
@@ -114,6 +112,7 @@ function JobCard({
   onSmartSend: (job: JobResult) => void;
   onPracticeInterview: (job: JobResult) => void;
 }) {
+  const t = useTranslations("jobSearchPage");
   const salary = formatSalary(job.salary_min, job.salary_max, job.salary_currency);
   const isBusy = savingId === job.job_id;
   const insights = buildJobMatchInsights(job);
@@ -160,7 +159,7 @@ function JobCard({
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{insights.headline}</p>
         <div className="mt-3 grid gap-3 md:grid-cols-2">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-teal">Why it matches</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-teal">{t("jobCard.whyItMatches")}</p>
             <ul className="mt-2 space-y-1.5 text-xs leading-5 text-slate-600">
               {insights.reasons.map((reason) => (
                 <li key={reason}>- {reason}</li>
@@ -168,7 +167,7 @@ function JobCard({
             </ul>
           </div>
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700">How to improve</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700">{t("jobCard.howToImprove")}</p>
             <ul className="mt-2 space-y-1.5 text-xs leading-5 text-slate-600">
               {insights.suggestions.map((suggestion) => (
                 <li key={suggestion}>- {suggestion}</li>
@@ -178,7 +177,7 @@ function JobCard({
         </div>
       </div>
 
-      {job.source && <p className="text-[10px] text-slate-400">Source: {job.source}</p>}
+      {job.source && <p className="text-[10px] text-slate-400">{t("jobCard.source", { source: job.source })}</p>}
 
       <div className="grid gap-2 sm:grid-cols-2">
         <button
@@ -191,7 +190,7 @@ function JobCard({
               : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"
           }`}
         >
-          {job.is_saved ? "Saved to shortlist" : "Save role"}
+          {job.is_saved ? t("jobCard.savedToShortlist") : t("jobCard.saveRole")}
         </button>
 
         {job.job_description ? (
@@ -200,11 +199,11 @@ function JobCard({
             onClick={() => onAnalyze(job)}
             className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
           >
-            Analyze against CV
+            {t("jobCard.analyzeAgainstCv")}
           </button>
         ) : (
           <div className="rounded-xl border border-dashed border-slate-200 px-3 py-2 text-center text-xs text-slate-400">
-            No job description available
+            {t("jobCard.noJdAvailable")}
           </div>
         )}
 
@@ -214,11 +213,11 @@ function JobCard({
             onClick={() => onSmartSend(job)}
             className="rounded-xl border border-teal-light bg-teal-light/20 px-3 py-2 text-xs font-semibold text-teal transition hover:bg-teal-light/40"
           >
-            Add to SmartSend
+            {t("jobCard.addToSmartSend")}
           </button>
         ) : (
           <div className="rounded-xl border border-dashed border-slate-200 px-3 py-2 text-center text-xs text-slate-400">
-            SmartSend needs job context
+            {t("jobCard.smartSendNeedsContext")}
           </div>
         )}
 
@@ -228,11 +227,11 @@ function JobCard({
             onClick={() => onPracticeInterview(job)}
             className="rounded-xl border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-700 transition hover:bg-brand-100"
           >
-            Practice interview
+            {t("jobCard.practiceInterview")}
           </button>
         ) : (
           <div className="rounded-xl border border-dashed border-slate-200 px-3 py-2 text-center text-xs text-slate-400">
-            Interview prep needs job context
+            {t("jobCard.interviewPrepNeedsContext")}
           </div>
         )}
       </div>
@@ -244,7 +243,7 @@ function JobCard({
           rel="noopener noreferrer"
           className="inline-flex items-center justify-center rounded-xl bg-brand-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700"
         >
-          Open external application
+          {t("jobCard.openExternalApplication")}
         </a>
       )}
     </div>
@@ -266,6 +265,7 @@ function SavedJobCard({
   onSmartSend: (job: SavedJob) => void;
   onPracticeInterview: (job: SavedJob) => void;
 }) {
+  const t = useTranslations("jobSearchPage");
   const salary = formatSalary(job.salary_min, job.salary_max, job.salary_currency);
 
   return (
@@ -298,7 +298,7 @@ function SavedJobCard({
           onClick={() => onRemove(job.job_id)}
           className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50"
         >
-          Remove from saved
+          {t("jobCard.removeFromSaved")}
         </button>
         {job.job_description ? (
           <button
@@ -306,11 +306,11 @@ function SavedJobCard({
             onClick={() => onAnalyze(job)}
             className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
           >
-            Analyze against CV
+            {t("jobCard.analyzeAgainstCv")}
           </button>
         ) : (
           <div className="rounded-xl border border-dashed border-slate-200 px-3 py-2 text-center text-xs text-slate-400">
-            No job description available
+            {t("jobCard.noJdAvailable")}
           </div>
         )}
         {job.job_description ? (
@@ -319,11 +319,11 @@ function SavedJobCard({
             onClick={() => onSmartSend(job)}
             className="rounded-xl border border-teal-light bg-teal-light/20 px-3 py-2 text-xs font-semibold text-teal transition hover:bg-teal-light/40"
           >
-            Add to SmartSend
+            {t("jobCard.addToSmartSend")}
           </button>
         ) : (
           <div className="rounded-xl border border-dashed border-slate-200 px-3 py-2 text-center text-xs text-slate-400">
-            SmartSend needs job context
+            {t("jobCard.smartSendNeedsContext")}
           </div>
         )}
         {job.job_description ? (
@@ -332,11 +332,11 @@ function SavedJobCard({
             onClick={() => onPracticeInterview(job)}
             className="rounded-xl border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-700 transition hover:bg-brand-100"
           >
-            Practice interview
+            {t("jobCard.practiceInterview")}
           </button>
         ) : (
           <div className="rounded-xl border border-dashed border-slate-200 px-3 py-2 text-center text-xs text-slate-400">
-            Interview prep needs job context
+            {t("jobCard.interviewPrepNeedsContext")}
           </div>
         )}
       </div>
@@ -348,7 +348,7 @@ function SavedJobCard({
           rel="noopener noreferrer"
           className="mt-4 inline-flex items-center justify-center rounded-xl bg-brand-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700"
         >
-          Open external application
+          {t("jobCard.openExternalApplication")}
         </a>
       )}
     </div>
@@ -356,11 +356,25 @@ function SavedJobCard({
 }
 
 export default function DashboardJobSearchPage() {
+  const t = useTranslations("jobSearchPage");
   const router = useRouter();
+
+  const DATE_OPTIONS: { value: DateValue; label: string }[] = [
+    { value: "all", label: t("filters.anyTime") },
+    { value: "today", label: t("filters.today") },
+    { value: "3days", label: t("filters.last3Days") },
+    { value: "week", label: t("filters.lastWeek") },
+    { value: "month", label: t("filters.lastMonth") },
+  ];
+
+  const TYPE_OPTIONS = TYPE_VALUES.map((opt) => ({
+    value: opt.value,
+    label: t(`filters.${opt.key}`),
+  }));
 
   const [query, setQuery] = useState("");
   const [location, setLocation] = useState("");
-  const [datePosted, setDatePosted] = useState<(typeof DATE_OPTIONS)[number]["value"]>("all");
+  const [datePosted, setDatePosted] = useState<DateValue>("all");
   const [employmentType, setEmploymentType] = useState("");
   const [resumeId, setResumeId] = useState("");
   const [resumes, setResumes] = useState<ResumeListItem[]>([]);
@@ -496,7 +510,7 @@ export default function DashboardJobSearchPage() {
   const matchedSavedCount = savedJobs.filter((job) => (job.fit_score ?? 0) >= 55).length;
   const activeResume = resumes.find((resume) => resume.id === resumeId) ?? null;
   const nextActionHref = savedJobs.length > 0 ? "/dashboard/smart-send" : "/dashboard/analysis";
-  const nextActionLabel = savedJobs.length > 0 ? "Launch SmartSend" : "Run CV analysis";
+  const nextActionLabel = savedJobs.length > 0 ? t("nextStep.launchSmartSend") : t("nextStep.runCvAnalysis");
 
   return (
     <div className="space-y-6">
@@ -504,36 +518,35 @@ export default function DashboardJobSearchPage() {
         <div className="border-b border-brand-100 bg-gradient-to-br from-brand-800/8 via-white to-teal/5 px-6 py-7 md:px-8 md:py-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Step 4</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{t("step")}</p>
               <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 md:text-3xl">
-                Match roles, then act on them
+                {t("title")}
               </h1>
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                Search live jobs, score them against your selected resume, understand why they match, and move directly
-                into CV analysis, SmartSend, or interview practice without losing context.
+                {t("description")}
               </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Focus</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">{t("focus.label")}</p>
                 <p className="mt-2 text-sm font-semibold text-slate-950">
-                  {savedJobs.length > 0 ? "Turn saved roles into action" : "Build your first shortlist"}
+                  {savedJobs.length > 0 ? t("focus.turnToAction") : t("focus.buildShortlist")}
                 </p>
                 <p className="mt-1 text-xs leading-5 text-slate-500">
                   {savedJobs.length > 0
-                    ? `${matchedSavedCount} saved roles already look promising enough to send or practice against.`
-                    : "Start broad, save the strongest roles, then deepen analysis only on the shortlist."}
+                    ? t("focus.promising", { count: matchedSavedCount })
+                    : t("focus.startBroad")}
                 </p>
               </div>
               <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white/90 px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Next step</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">{t("nextStep.label")}</p>
                 <p className="text-sm font-semibold text-slate-950">{nextActionLabel}</p>
                 <Link
                   href={nextActionHref}
                   className="inline-flex items-center justify-center rounded-xl bg-brand-800 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-700"
                 >
-                  Continue workflow
+                  {t("nextStep.continueWorkflow")}
                 </Link>
               </div>
             </div>
@@ -542,19 +555,19 @@ export default function DashboardJobSearchPage() {
 
         <div className="grid gap-4 px-6 py-5 lg:grid-cols-3 md:px-8">
           <ScoreHeader
-            label="Active Resume"
-            value={activeResume?.source_filename ?? activeResume?.title ?? "None selected"}
-            note={resumeId ? "Scores on this page use this CV." : "Pick a CV to unlock scoring."}
+            label={t("headers.activeResume")}
+            value={activeResume?.source_filename ?? activeResume?.title ?? t("headers.noneSelected")}
+            note={resumeId ? t("headers.scoresUseCv") : t("headers.pickCv")}
           />
           <ScoreHeader
-            label="Saved Roles"
+            label={t("headers.savedRoles")}
             value={savedJobs.length.toString()}
-            note={savedJobs.length > 0 ? `${matchedSavedCount} saved roles already look promising.` : "Save strong jobs to keep them handy."}
+            note={savedJobs.length > 0 ? t("headers.savedLookPromising", { count: matchedSavedCount }) : t("headers.saveStrongJobs")}
           />
           <ScoreHeader
-            label="Decision Mode"
-            value={resumeId ? "Personalized matching" : "Manual scouting"}
-            note={resumeId ? "Use fit signals to decide what to do next." : "You can still search, but results improve after you pick a CV."}
+            label={t("headers.decisionMode")}
+            value={resumeId ? t("headers.personalizedMatching") : t("headers.manualScouting")}
+            note={resumeId ? t("headers.useFitSignals") : t("headers.resultsImproveAfterCv")}
           />
         </div>
       </Panel>
@@ -571,7 +584,7 @@ export default function DashboardJobSearchPage() {
                   void handleSearch(1);
                 }
               }}
-              placeholder="Job title, role, or keywords"
+              placeholder={t("searchPlaceholder")}
               className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-4 pr-4 text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:border-slate-500 focus:outline-none"
             />
           </div>
@@ -585,7 +598,7 @@ export default function DashboardJobSearchPage() {
                 void handleSearch(1);
               }
             }}
-            placeholder="City or country"
+            placeholder={t("locationPlaceholder")}
             className="sm:w-52 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:border-slate-500 focus:outline-none"
           />
 
@@ -595,14 +608,14 @@ export default function DashboardJobSearchPage() {
             onClick={() => void handleSearch(1)}
             className="inline-flex items-center justify-center rounded-xl bg-brand-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {pageState === "searching" ? "Searching..." : "Search jobs"}
+            {pageState === "searching" ? t("searching") : t("searchJobs")}
           </button>
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <select
             value={datePosted}
-            onChange={(event) => setDatePosted(event.target.value as (typeof DATE_OPTIONS)[number]["value"])}
+            onChange={(event) => setDatePosted(event.target.value as DateValue)}
             className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 focus:outline-none"
           >
             {DATE_OPTIONS.map((option) => (
@@ -626,13 +639,13 @@ export default function DashboardJobSearchPage() {
 
           {resumes.length > 0 && (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-500">Score with:</span>
+              <span className="text-xs text-slate-500">{t("filters.scoreWith")}</span>
               <select
                 value={resumeId}
                 onChange={(event) => setResumeId(event.target.value)}
                 className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 focus:outline-none"
               >
-                <option value="">No score</option>
+                <option value="">{t("filters.noScore")}</option>
                 {resumes.map((resume) => (
                   <option key={resume.id} value={resume.id}>
                     {resume.source_filename ?? resume.title}
@@ -654,7 +667,11 @@ export default function DashboardJobSearchPage() {
               activeTab === tab ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
             }`}
           >
-            {tab === "search" ? `Search Results${results.length > 0 ? ` (${results.length})` : ""}` : `Saved (${savedJobs.length})`}
+            {tab === "search"
+              ? results.length > 0
+                ? t("tabs.searchResultsWithCount", { count: results.length })
+                : t("tabs.searchResults")
+              : t("tabs.saved", { count: savedJobs.length })}
           </button>
         ))}
       </div>
@@ -669,10 +686,9 @@ export default function DashboardJobSearchPage() {
 
           {pageState === "idle" && (
             <Panel className="px-6 py-12 text-center">
-              <p className="text-sm font-semibold text-slate-900">Search jobs</p>
+              <p className="text-sm font-semibold text-slate-900">{t("results.idleTitle")}</p>
               <p className="mt-1 text-xs text-slate-500">
-                Start with a role title. If you select a resume above, each result will include a personalized fit
-                score.
+                {t("results.idleDesc")}
               </p>
             </Panel>
           )}
@@ -689,17 +705,16 @@ export default function DashboardJobSearchPage() {
             <>
               <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
                 <p>
-                  Showing <span className="font-semibold text-slate-700">{results.length}</span> of{" "}
-                  <span className="font-semibold text-slate-700">{totalFound.toLocaleString()}</span> results
+                  {t("results.showing", { current: results.length, total: totalFound.toLocaleString() })}
                   {lastQuery && (
                     <>
-                      {" "}for <span className="font-medium text-slate-700">{lastQuery.q}</span>
-                      {lastQuery.loc && <> in <span className="font-medium text-slate-700">{lastQuery.loc}</span></>}
+                      {" "}{t("results.for")} <span className="font-medium text-slate-700">{lastQuery.q}</span>
+                      {lastQuery.loc && <> {t("results.in")} <span className="font-medium text-slate-700">{lastQuery.loc}</span></>}
                     </>
                   )}
                 </p>
                 <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 font-semibold text-slate-600">
-                  {resumeId ? "Resume scoring on" : "Resume scoring off"}
+                  {resumeId ? t("results.resumeScoringOn") : t("results.resumeScoringOff")}
                 </span>
               </div>
 
@@ -726,7 +741,7 @@ export default function DashboardJobSearchPage() {
                     disabled={pageState === "searching"}
                     className="rounded-xl border border-slate-300 bg-white px-6 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-900 disabled:opacity-50"
                   >
-                    Load more
+                    {t("results.loadMore")}
                   </button>
                 </div>
               )}
@@ -735,8 +750,8 @@ export default function DashboardJobSearchPage() {
 
           {pageState === "results" && results.length === 0 && (
             <Panel className="px-6 py-12 text-center">
-              <p className="text-sm font-semibold text-slate-900">No jobs found</p>
-              <p className="mt-1 text-xs text-slate-500">Try a broader title or remove location.</p>
+              <p className="text-sm font-semibold text-slate-900">{t("results.noJobsFound")}</p>
+              <p className="mt-1 text-xs text-slate-500">{t("results.tryBroader")}</p>
             </Panel>
           )}
         </div>
@@ -746,14 +761,13 @@ export default function DashboardJobSearchPage() {
         <div className="space-y-4">
           {savedJobs.length === 0 ? (
             <Panel className="px-6 py-12 text-center">
-              <p className="text-sm font-semibold text-slate-900">No saved jobs yet</p>
-              <p className="mt-1 text-xs text-slate-500">Save jobs from search to keep them in your shortlist.</p>
+              <p className="text-sm font-semibold text-slate-900">{t("savedJobs.empty")}</p>
+              <p className="mt-1 text-xs text-slate-500">{t("savedJobs.emptyDesc")}</p>
             </Panel>
           ) : (
             <>
               <p className="text-xs text-slate-500">
-                <span className="font-semibold text-slate-700">{savedJobs.length}</span> saved role
-                {savedJobs.length !== 1 ? "s" : ""}
+                {t("savedJobs.count", { count: savedJobs.length })}
               </p>
               <div className="grid gap-4 xl:grid-cols-2">
                 {savedJobs.map((job) => (

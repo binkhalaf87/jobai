@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { FileText, MapPin } from "lucide-react";
 
 import { api } from "@/lib/api";
@@ -137,6 +138,7 @@ function SectionCard({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ReportDetailPage() {
+  const t = useTranslations("recruiter.reportDetailPage");
   const { id } = useParams<{ id: string }>();
   const [report, setReport] = useState<FullReport | null>(null);
   const [loading, setLoading] = useState(true);
@@ -156,7 +158,7 @@ export default function ReportDetailPage() {
       setReport(data);
       if (data.status === "pending") schedulePoll();
     } catch {
-      setError("Failed to load report.");
+      setError(t("error"));
     } finally {
       setLoading(false);
     }
@@ -188,9 +190,9 @@ export default function ReportDetailPage() {
   if (error || !report) {
     return (
       <div className="rounded-2xl border border-rose-200 bg-rose-50 p-8 text-center">
-        <p className="text-sm font-semibold text-rose-700">{error ?? "Report not found."}</p>
+        <p className="text-sm font-semibold text-rose-700">{error ?? t("reportNotFound")}</p>
         <Link href="/recruiter/reports" className="mt-4 inline-block text-xs font-medium text-slate-500 underline">
-          ← Back to Reports
+          {t("backToAllReports")}
         </Link>
       </div>
     );
@@ -201,16 +203,16 @@ export default function ReportDetailPage() {
     return (
       <div className="space-y-5">
         <Link href="/recruiter/reports" className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 transition hover:text-slate-700">
-          ← Reports
+          {t("backToReports")}
         </Link>
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-14 text-center space-y-4">
           <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-teal-600" />
           <div>
-            <p className="text-sm font-semibold text-slate-800">Generating Report…</p>
+            <p className="text-sm font-semibold text-slate-800">{t("pending.title")}</p>
             <p className="mt-1 text-xs text-slate-400">
-              Comparing <span className="font-semibold">{report.candidate_name}</span> with <span className="font-semibold">{report.job_title}</span>
+              {t("pending.comparing", { candidate: report.candidate_name, job: report.job_title })}
             </p>
-            <p className="mt-1 text-xs text-slate-400">Usually takes 10–20 seconds.</p>
+            <p className="mt-1 text-xs text-slate-400">{t("pending.timeHint")}</p>
           </div>
         </div>
       </div>
@@ -222,13 +224,13 @@ export default function ReportDetailPage() {
     return (
       <div className="space-y-5">
         <Link href="/recruiter/reports" className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 transition hover:text-slate-700">
-          ← Reports
+          {t("backToReports")}
         </Link>
         <div className="rounded-2xl border border-rose-200 bg-rose-50 p-10 text-center space-y-3">
-          <p className="text-sm font-semibold text-rose-700">Report generation failed.</p>
-          <p className="text-xs text-rose-500">The candidate or job may be missing text data.</p>
+          <p className="text-sm font-semibold text-rose-700">{t("failedState.title")}</p>
+          <p className="text-xs text-rose-500">{t("failedState.desc")}</p>
           <Link href="/recruiter/ai-screening" className="mt-2 inline-block rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700">
-            ← Back to Talent Fit
+            {t("backToTalentFit")}
           </Link>
         </div>
       </div>
@@ -244,7 +246,7 @@ export default function ReportDetailPage() {
 
       {/* ── Back ── */}
       <Link href="/recruiter/reports" className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 transition hover:text-slate-700">
-        ← Reports
+        {t("backToReports")}
       </Link>
 
       {/* ── Hero card ── */}
@@ -252,7 +254,7 @@ export default function ReportDetailPage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Deep Match Report</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">{t("deepMatchReport")}</p>
             </div>
             <div className="mt-2 flex flex-wrap items-baseline gap-2">
               <h1 className="text-xl font-bold text-slate-900">{report.candidate_name}</h1>
@@ -264,7 +266,7 @@ export default function ReportDetailPage() {
                 <MapPin size={10} />{report.job_location}
               </p>
             )}
-            <p className="mt-1 text-xs text-slate-400">Generated {fmtDate(report.created_at)}</p>
+            <p className="mt-1 text-xs text-slate-400">{t("generated", { date: fmtDate(report.created_at) })}</p>
           </div>
 
           <div className="flex flex-col items-end gap-1 flex-shrink-0">
@@ -273,7 +275,7 @@ export default function ReportDetailPage() {
               <span className={`text-xl font-black ${ds.text}`}>{d.decision}</span>
             </div>
             <p className={`text-4xl font-black tabular-nums ${ds.text}`}>{d.overall_score.toFixed(0)}%</p>
-            <p className="text-[10px] text-slate-400">overall match</p>
+            <p className="text-[10px] text-slate-400">{t("overallMatch")}</p>
           </div>
         </div>
 
@@ -288,32 +290,32 @@ export default function ReportDetailPage() {
 
       {/* ── Executive Summary ── */}
       <div className="rounded-2xl border border-slate-200 bg-white p-5">
-        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Executive Summary</p>
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{t("executiveSummary")}</p>
         <p className="text-sm leading-7 text-slate-700">{d.executive_summary}</p>
       </div>
 
       {/* ── Section cards ── */}
       <div className="grid gap-4 md:grid-cols-2">
         {secs.role_alignment && (
-          <SectionCard title="Role Alignment" score={secs.role_alignment.score}>
+          <SectionCard title={t("roleAlignment")} score={secs.role_alignment.score}>
             <p className="text-xs leading-5 text-slate-600">{secs.role_alignment.analysis}</p>
           </SectionCard>
         )}
 
         {secs.location_match && (
-          <SectionCard title="Location Match" score={secs.location_match.score}>
+          <SectionCard title={t("locationMatch")} score={secs.location_match.score}>
             <div className="flex items-center gap-3 text-xs text-slate-600">
               <span className="flex items-center gap-1">
                 <MapPin size={10} className="text-slate-400" />
-                {secs.location_match.candidate_location ?? "Not specified"}
+                {secs.location_match.candidate_location ?? t("notSpecified")}
               </span>
               <span className="text-slate-300">→</span>
               <span className="flex items-center gap-1">
                 <MapPin size={10} className="text-slate-400" />
-                {secs.location_match.job_location ?? "Not specified"}
+                {secs.location_match.job_location ?? t("notSpecified")}
               </span>
               <span className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold ${secs.location_match.is_match ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-600"}`}>
-                {secs.location_match.is_match ? "Match" : "Mismatch"}
+                {secs.location_match.is_match ? t("locationMatchLabel") : t("locationMismatchLabel")}
               </span>
             </div>
             <p className="text-xs leading-5 text-slate-600">{secs.location_match.analysis}</p>
@@ -321,10 +323,10 @@ export default function ReportDetailPage() {
         )}
 
         {secs.experience_match && (
-          <SectionCard title="Experience" score={secs.experience_match.score}>
+          <SectionCard title={t("experience")} score={secs.experience_match.score}>
             {secs.experience_match.candidate_years !== null && (
               <p className="text-xs font-semibold text-slate-700">
-                ~{secs.experience_match.candidate_years} years
+                {t("years", { years: secs.experience_match.candidate_years })}
               </p>
             )}
             <p className="text-xs leading-5 text-slate-600">{secs.experience_match.analysis}</p>
@@ -332,7 +334,7 @@ export default function ReportDetailPage() {
         )}
 
         {secs.education_match && (
-          <SectionCard title="Education" score={secs.education_match.score}>
+          <SectionCard title={t("education")} score={secs.education_match.score}>
             <p className="text-xs leading-5 text-slate-600">{secs.education_match.analysis}</p>
           </SectionCard>
         )}
@@ -342,7 +344,7 @@ export default function ReportDetailPage() {
       {secs.skills_match && (
         <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4">
           <div className="flex items-center justify-between gap-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Skills Match</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{t("skillsMatch")}</p>
             <span className={`text-sm font-bold tabular-nums ${scoreColor((secs.skills_match.score / 10) * 100)}`}>
               {secs.skills_match.score}/10
             </span>
@@ -352,7 +354,7 @@ export default function ReportDetailPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             {secs.skills_match.matched.length > 0 && (
               <div>
-                <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-600">Matched Skills</p>
+                <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-600">{t("matchedSkills")}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {secs.skills_match.matched.map((s) => (
                     <span key={s} className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">{s}</span>
@@ -362,7 +364,7 @@ export default function ReportDetailPage() {
             )}
             {secs.skills_match.missing.length > 0 && (
               <div>
-                <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-amber-600">Missing Skills</p>
+                <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-amber-600">{t("missingSkills")}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {secs.skills_match.missing.map((s) => (
                     <span key={s} className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">{s}</span>
@@ -378,7 +380,7 @@ export default function ReportDetailPage() {
       {/* ── Strengths & Gaps ── */}
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
-          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-600">Strengths</p>
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-600">{t("strengths")}</p>
           <ul className="space-y-2">
             {d.strengths.map((s, i) => (
               <li key={i} className="flex gap-2 text-xs leading-5 text-emerald-800">
@@ -388,7 +390,7 @@ export default function ReportDetailPage() {
           </ul>
         </div>
         <div className="rounded-2xl border border-rose-100 bg-rose-50 p-5">
-          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-rose-600">Gaps</p>
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-rose-600">{t("gaps")}</p>
           <ul className="space-y-2">
             {d.gaps.map((g, i) => (
               <li key={i} className="flex gap-2 text-xs leading-5 text-rose-800">
@@ -401,7 +403,7 @@ export default function ReportDetailPage() {
 
       {/* ── Final Recommendation ── */}
       <div className="rounded-2xl border border-slate-200 bg-white p-5">
-        <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Final Recommendation</p>
+        <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{t("finalRecommendation")}</p>
         <div className="flex items-center gap-3 flex-wrap">
           <span className={`rounded-full px-3 py-1.5 text-xs font-bold ${ACTION_CLS[d.recommendation.action] ?? "bg-slate-800 text-white"}`}>
             {d.recommendation.action}
@@ -417,10 +419,10 @@ export default function ReportDetailPage() {
       {/* ── Footer ── */}
       <div className="flex items-center justify-between pt-2 text-xs text-slate-400">
         <Link href="/recruiter/reports" className="hover:text-slate-700 underline underline-offset-2">
-          ← All Reports
+          {t("backToAllReports")}
         </Link>
         <Link href={`/recruiter/candidates/${report.resume_id}`} className="flex items-center gap-1 hover:text-slate-700 underline underline-offset-2">
-          <FileText size={10} /> View Candidate Profile →
+          <FileText size={10} /> {t("viewCandidateProfile")}
         </Link>
       </div>
 
