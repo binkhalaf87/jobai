@@ -597,8 +597,8 @@ function SendingPanel({
               </span>
               <span className="text-gray-700">{log.email}</span>
             </div>
-            {log.error && (
-              <p className="text-red-400 ml-4 break-all">{log.error}</p>
+            {log.status === "failed" && (
+              <p className="text-red-400 ml-4 break-all">{log.error || "(no error message returned)"}</p>
             )}
           </div>
         ))}

@@ -161,17 +161,18 @@ async def stream_campaign_send(db: Session, user_id: str, campaign_id: str):
 
         except Exception as exc:
             log.status = "failed"
-            log.error_message = str(exc)[:500]
+            error_msg = f"{type(exc).__name__}: {exc}" if str(exc) else type(exc).__name__
+            log.error_message = error_msg[:500]
             campaign.failed_count = (campaign.failed_count or 0) + 1
             db.commit()
-            logger.warning("Failed to send to %s: %s", email, exc)
+            logger.warning("Failed to send to %s: %s", email, error_msg, exc_info=True)
 
             yield _sse("progress", {
                 "index": i,
                 "total": total,
                 "email": email,
                 "status": "failed",
-                "error": str(exc)[:200],
+                "error": error_msg[:200],
             })
 
         # Small delay to stay inside Gmail rate limits
