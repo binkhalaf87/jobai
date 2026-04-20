@@ -147,6 +147,7 @@ class Settings:
     s3_region: str
     s3_access_key_id: str | None
     s3_secret_access_key: str | None
+    smtp_encryption_key: str | None
 
     def allowed_origins(self) -> list[str]:
         """Build an explicit allowlist for frontend origins."""
@@ -198,6 +199,7 @@ def build_settings() -> Settings:
         s3_region=get_optional_env("S3_REGION", "us-east-1"),
         s3_access_key_id=get_optional_env("S3_ACCESS_KEY_ID", "").strip() or None,
         s3_secret_access_key=get_optional_env("S3_SECRET_ACCESS_KEY", "").strip() or None,
+        smtp_encryption_key=get_optional_env("SMTP_ENCRYPTION_KEY", "").strip() or None,
     )
 
 

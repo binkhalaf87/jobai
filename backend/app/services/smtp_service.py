@@ -22,8 +22,9 @@ _GMAIL_PORT = 465  # SSL
 
 
 def _get_fernet() -> Fernet:
-    """Derive a Fernet key from JWT_SECRET (URL-safe base64, 32 bytes)."""
-    raw = settings.jwt_secret.encode()[:32].ljust(32, b"0")
+    """Derive a Fernet key from SMTP_ENCRYPTION_KEY (preferred) or JWT_SECRET."""
+    secret = settings.smtp_encryption_key or settings.jwt_secret
+    raw = secret.encode()[:32].ljust(32, b"0")
     key = base64.urlsafe_b64encode(raw)
     return Fernet(key)
 
