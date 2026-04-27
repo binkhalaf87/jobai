@@ -216,6 +216,219 @@ function SectionContent({ content }: { content: string }) {
   );
 }
 
+// ─── Section 1 parser & renderer ─────────────────────────────────────────────
+
+type BulletItem = { title: string; detail: string };
+type Section1Data = { intro: string; roles: string[]; strengths: BulletItem[]; gaps: BulletItem[] };
+
+function parseSection1(content: string): Section1Data | null {
+  const lines = content.split("\n");
+
+  function findHeadingLine(pattern: RegExp): number {
+    return lines.findIndex((l) => pattern.test(l));
+  }
+
+  const rolesIdx     = findHeadingLine(/most suitable roles/i);
+  const strengthsIdx = findHeadingLine(/top 3 strengths/i);
+  const gapsIdx      = findHeadingLine(/top 3 gaps|hiring risk/i);
+
+  if (rolesIdx === -1 && strengthsIdx === -1 && gapsIdx === -1) return null;
+
+  const firstIdx = [rolesIdx, strengthsIdx, gapsIdx]
+    .filter((i) => i !== -1)
+    .reduce((a, b) => Math.min(a, b), lines.length);
+
+  const intro = lines.slice(0, firstIdx).join("\n").trim();
+
+  function extractBullets(startIdx: number, endIdx: number): string[] {
+    if (startIdx === -1) return [];
+    const end = endIdx === -1 ? lines.length : endIdx;
+    return lines
+      .slice(startIdx + 1, end)
+      .filter((l) => /^\s*[-*•]\s+/.test(l))
+      .map((l) => l.replace(/^\s*[-*•]\s+/, "").trim())
+      .filter(Boolean);
+  }
+
+  function parseBulletItem(item: string): BulletItem {
+    const boldMatch = item.match(/^\*\*(.+?)\*\*[:\s—–-]+\s*(.*)$/);
+    if (boldMatch) return { title: boldMatch[1].trim(), detail: boldMatch[2].trim() };
+    const colonMatch = item.match(/^([^:]+):\s+(.+)$/);
+    if (colonMatch) return { title: colonMatch[1].trim(), detail: colonMatch[2].trim() };
+    return { title: item, detail: "" };
+  }
+
+  const rolesEnd    = strengthsIdx !== -1 ? strengthsIdx : gapsIdx;
+  const strengthsEnd = gapsIdx;
+
+  return {
+    intro,
+    roles:     extractBullets(rolesIdx, rolesEnd),
+    strengths: extractBullets(strengthsIdx, strengthsEnd).map(parseBulletItem),
+    gaps:      extractBullets(gapsIdx, -1).map(parseBulletItem),
+  };
+}
+
+function Section1Content({ content }: { content: string }) {
+  const parsed = parseSection1(content);
+
+  if (!parsed || (parsed.roles.length === 0 && parsed.strengths.length === 0 && parsed.gaps.length === 0)) {
+    return <SectionContent content={content} />;
+  }
+
+  return (
+    <div className="space-y-5">
+      {parsed.intro && (
+        <div className="rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-3">
+          <p className="text-sm leading-7 text-slate-600">{parsed.intro}</p>
+        </div>
+      )}
+
+      {parsed.roles.length > 0 && (
+        <div>
+          <p className="mb-2.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
+              <rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+            </svg>
+            Most Suitable Roles
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {parsed.roles.map((role, i) => (
+              <span key={i} className="rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700">
+                {role}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {parsed.strengths.length > 0 && (
+        <div>
+          <p className="mb-2.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+            Top Strengths
+          </p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {parsed.strengths.map((item, i) => (
+              <div key={i} className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3">
+                <div className="flex items-start gap-2">
+                  <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="h-2.5 w-2.5">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </span>
+                  <div>
+                    <p className="text-[12px] font-bold leading-tight text-emerald-800">{item.title}</p>
+                    {item.detail && <p className="mt-1 text-[11px] leading-5 text-emerald-700/80">{item.detail}</p>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {parsed.gaps.length > 0 && (
+        <div>
+          <p className="mb-2.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            Gaps / Hiring Risks
+          </p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {parsed.gaps.map((item, i) => (
+              <div key={i} className="rounded-xl border border-amber-200 bg-amber-50/60 p-3">
+                <div className="flex items-start gap-2">
+                  <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-amber-500 text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="h-2.5 w-2.5">
+                      <line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                  </span>
+                  <div>
+                    <p className="text-[12px] font-bold leading-tight text-amber-800">{item.title}</p>
+                    {item.detail && <p className="mt-1 text-[11px] leading-5 text-amber-700/80">{item.detail}</p>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Section 2 parser & renderer ─────────────────────────────────────────────
+
+type MarkdownTable = { headers: string[]; rows: string[][] };
+
+function parseMarkdownTable(content: string): MarkdownTable | null {
+  const tableLines = content.split("\n").filter((l) => l.trim().startsWith("|"));
+  if (tableLines.length < 3) return null;
+
+  const parseRow = (line: string): string[] =>
+    line.split("|").slice(1, -1).map((cell) => cell.trim());
+
+  const headers = parseRow(tableLines[0]);
+  const rows = tableLines.slice(2).map(parseRow).filter((r) => r.some((c) => c.length > 0));
+
+  return headers.length >= 2 && rows.length > 0 ? { headers, rows } : null;
+}
+
+function statusBadgeCls(status: string): string {
+  const s = status.toLowerCase();
+  if (/good|strong|present|excellent|clear|high/.test(s)) return "bg-teal-light/30 text-teal border-teal-light";
+  if (/fair|moderate|partial|average|limited/.test(s)) return "bg-amber-50 text-amber-700 border-amber-200";
+  return "bg-rose-50 text-rose-700 border-rose-200";
+}
+
+function Section2Content({ content }: { content: string }) {
+  const table = parseMarkdownTable(content);
+
+  if (!table) return <SectionContent content={content} />;
+
+  return (
+    <div className="space-y-3">
+      {table.rows.map((row, i) => (
+        <div key={i} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-sm font-bold text-slate-900">{row[0]}</p>
+            {row[1] && (
+              <span className={`inline-flex flex-shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${statusBadgeCls(row[1])}`}>
+                {row[1]}
+              </span>
+            )}
+          </div>
+          {row[2] && (
+            <p className="mt-2 text-xs leading-5 text-amber-700">
+              <span className="font-semibold">Issue: </span>{row[2]}
+            </p>
+          )}
+          {row[3] && (
+            <p className="mt-1.5 flex items-start gap-1.5 text-xs leading-5 text-teal">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 h-3 w-3 flex-shrink-0">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+              {row[3]}
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Section-aware dispatcher ─────────────────────────────────────────────────
+
+function SectionContentByNum({ num, content }: { num: number; content: string }) {
+  if (num === 1) return <Section1Content content={content} />;
+  if (num === 2) return <Section2Content content={content} />;
+  return <SectionContent content={content} />;
+}
+
 // ─── Structured report view ───────────────────────────────────────────────────
 
 type StructuredReportTranslations = {
@@ -242,6 +455,7 @@ function StructuredReport({
 }) {
   const sections = parseReportSections(text, translations.shortTitles);
   const atsScore = extractAtsScore(text);
+  const [activeTab, setActiveTab] = useState(0);
 
   if (sections.length === 0) {
     return (
@@ -252,6 +466,13 @@ function StructuredReport({
       </div>
     );
   }
+
+  const safeTab = Math.min(activeTab, sections.length - 1);
+  const activeSection = sections[safeTab];
+  const activeNum = safeTab + 1;
+  const activeIcon = SECTION_ICONS[activeNum];
+  const activeGradient = SECTION_GRADIENT[activeNum] ?? "from-brand-800/8 via-white to-teal/5";
+  const activeIconBg = SECTION_ICON_BG[activeNum] ?? "bg-brand-50 text-brand-700";
 
   return (
     <div id="analysis-print-root">
@@ -291,17 +512,72 @@ function StructuredReport({
         )}
       </div>
 
-      {/* Sections */}
-      <div className="space-y-4">
+      {/* ── Tabbed sections — screen only ── */}
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white" data-no-print>
+        {/* Tab bar */}
+        <div className="flex overflow-x-auto border-b border-slate-100 bg-slate-50/60">
+          {sections.map((s, i) => {
+            const tabNum = i + 1;
+            const isActive = i === safeTab;
+            const tabIcon = SECTION_ICONS[tabNum];
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => setActiveTab(i)}
+                className={[
+                  "flex items-center gap-2 whitespace-nowrap px-4 py-3.5 text-xs font-semibold transition border-b-2 -mb-px",
+                  isActive
+                    ? "border-brand-800 text-brand-800 bg-white"
+                    : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-white/60",
+                ].join(" ")}
+              >
+                <span
+                  className={[
+                    "flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg transition",
+                    isActive ? SECTION_ICON_BG[tabNum] ?? "bg-brand-50 text-brand-700" : "bg-slate-200/60 text-slate-400",
+                  ].join(" ")}
+                >
+                  {tabIcon}
+                </span>
+                {s.shortTitle}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Active section */}
+        <div className={`bg-gradient-to-br ${activeGradient}`}>
+          <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
+            <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl ${activeIconBg}`}>
+              {activeIcon ?? (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
+                </svg>
+              )}
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                {translations.sectionOf(activeNum, sections.length)}
+              </p>
+              <h2 className="mt-0.5 text-sm font-bold text-slate-900">{activeSection.title}</h2>
+            </div>
+          </div>
+          <div className="p-5 md:p-6">
+            <SectionContentByNum num={activeNum} content={activeSection.content} />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Print: all sections stacked ── */}
+      <div className="hidden print:block space-y-4">
         {sections.map((s, i) => {
           const num = i + 1;
           const icon = SECTION_ICONS[num];
           const gradient = SECTION_GRADIENT[num] ?? "from-brand-800/8 via-white to-teal/5";
           const iconBg = SECTION_ICON_BG[num] ?? "bg-brand-50 text-brand-700";
-
           return (
             <div key={s.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white" data-print-section>
-              {/* Card header */}
               <div className={`flex items-center gap-3 border-b border-slate-100 bg-gradient-to-br ${gradient} px-5 py-4`}>
                 <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl ${iconBg}`}>
                   {icon ?? (
@@ -317,9 +593,8 @@ function StructuredReport({
                   <h2 className="mt-0.5 text-sm font-bold text-slate-900">{s.title}</h2>
                 </div>
               </div>
-              {/* Card body */}
               <div className="p-5 md:p-6">
-                <SectionContent content={s.content} />
+                <SectionContentByNum num={num} content={s.content} />
               </div>
             </div>
           );
