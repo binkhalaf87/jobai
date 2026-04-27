@@ -421,11 +421,250 @@ function Section2Content({ content }: { content: string }) {
   );
 }
 
+// ─── Section 3: Professional Analysis ────────────────────────────────────────
+
+function Section3Content({ content }: { content: string }) {
+  const table = parseMarkdownTable(content);
+  if (!table || table.rows.length === 0) return <SectionContent content={content} />;
+
+  function scoreCls(n: number) {
+    return n >= 8 ? "text-teal" : n >= 6 ? "text-amber-500" : "text-red-500";
+  }
+  function barCls(n: number) {
+    return n >= 8 ? "bg-teal" : n >= 6 ? "bg-amber-400" : "bg-red-400";
+  }
+
+  return (
+    <div className="space-y-3">
+      {table.rows.map((row, i) => {
+        const raw = row[1] ?? "";
+        const m = raw.match(/(\d+)/);
+        const score = m ? parseInt(m[1]) : null;
+        const norm = score !== null ? (score > 10 ? score / 10 : score) : null;
+        return (
+          <div key={i} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-sm font-bold text-slate-900">{row[0]}</p>
+              {norm !== null && (
+                <span className={`text-sm font-black tabular-nums ${scoreCls(norm)}`}>
+                  {score}/10
+                </span>
+              )}
+            </div>
+            {norm !== null && (
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className={`h-full rounded-full transition-all ${barCls(norm)}`}
+                  style={{ width: `${(norm / 10) * 100}%` }}
+                />
+              </div>
+            )}
+            {row[2] && <p className="mt-2 text-xs leading-5 text-slate-500">{row[2]}</p>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Section 4: Career Recommendations ───────────────────────────────────────
+
+function Section4Content({ content }: { content: string }) {
+  const lines = content.split("\n");
+
+  const day30Idx = lines.findIndex((l) => /30.?day/i.test(l));
+  const day60Idx = lines.findIndex((l) => /60.?day/i.test(l));
+  const day90Idx = lines.findIndex((l) => /90.?day/i.test(l));
+
+  const hasPlan = day30Idx !== -1 || day60Idx !== -1 || day90Idx !== -1;
+  if (!hasPlan) return <SectionContent content={content} />;
+
+  const firstIdx = [day30Idx, day60Idx, day90Idx]
+    .filter((i) => i !== -1)
+    .reduce((a, b) => Math.min(a, b), lines.length);
+
+  const introPart = lines.slice(0, firstIdx).join("\n").trim();
+
+  function block(start: number, end: number) {
+    if (start === -1) return "";
+    return lines.slice(start, end === -1 ? undefined : end).join("\n").trim();
+  }
+
+  const day30End = day60Idx !== -1 ? day60Idx : day90Idx;
+  const day60End = day90Idx;
+
+  const planCards = [
+    { label: "30 Days", text: block(day30Idx, day30End), border: "border-brand-200 bg-brand-50/60", badge: "bg-brand-100 text-brand-700" },
+    { label: "60 Days", text: block(day60Idx, day60End), border: "border-teal-light bg-teal-light/20", badge: "bg-teal-light/40 text-teal" },
+    { label: "90 Days", text: block(day90Idx, -1),       border: "border-amber-200 bg-amber-50/60",  badge: "bg-amber-100 text-amber-700" },
+  ].filter((c) => c.text);
+
+  return (
+    <div className="space-y-5">
+      {introPart && (
+        <div className={PROSE_CLS}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{introPart}</ReactMarkdown>
+        </div>
+      )}
+      {planCards.length > 0 && (
+        <div>
+          <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+            30 / 60 / 90-Day Development Plan
+          </p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {planCards.map((card, i) => (
+              <div key={i} className={`rounded-xl border p-4 ${card.border}`}>
+                <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold ${card.badge}`}>
+                  {card.label}
+                </span>
+                <div className={`mt-2 text-xs ${PROSE_CLS}`}>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{card.text}</ReactMarkdown>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Section 5: Quick Wins ────────────────────────────────────────────────────
+
+function Section5Content({ content }: { content: string }) {
+  const table = parseMarkdownTable(content);
+  if (!table || table.rows.length === 0) return <SectionContent content={content} />;
+
+  function priorityCls(p: string) {
+    if (/high/i.test(p)) return { card: "border-rose-200 bg-rose-50 text-rose-700", dot: "bg-rose-500" };
+    if (/medium|med/i.test(p)) return { card: "border-amber-200 bg-amber-50 text-amber-700", dot: "bg-amber-400" };
+    return { card: "border-teal-light bg-teal-light/20 text-teal", dot: "bg-teal" };
+  }
+
+  const pIdx = Math.max(0, table.headers.findIndex((h) => /priority/i.test(h)));
+  const aIdx = Math.max(1, table.headers.findIndex((h) => /action/i.test(h)));
+
+  const groups = [
+    { label: "High Priority",   rows: table.rows.filter((r) => /high/i.test(r[pIdx] ?? "")), cls: priorityCls("high") },
+    { label: "Medium Priority", rows: table.rows.filter((r) => /medium|med/i.test(r[pIdx] ?? "")), cls: priorityCls("medium") },
+    { label: "Low Priority",    rows: table.rows.filter((r) => !/high|medium|med/i.test(r[pIdx] ?? "")), cls: priorityCls("low") },
+  ].filter((g) => g.rows.length > 0);
+
+  let counter = 0;
+  return (
+    <div className="space-y-4">
+      {groups.map((group, gi) => (
+        <div key={gi}>
+          <div className="mb-2 flex items-center gap-2">
+            <span className={`h-2 w-2 rounded-full ${group.cls.dot}`} />
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">{group.label}</p>
+          </div>
+          <div className="space-y-2">
+            {group.rows.map((row, ri) => {
+              counter += 1;
+              const n = counter;
+              return (
+                <div key={ri} className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${group.cls.card}`}>
+                  <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border border-current text-[10px] font-black opacity-70">
+                    {n}
+                  </span>
+                  <p className="text-[12px] font-medium leading-5">{row[aIdx]}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Section 6: Interview Q&A ─────────────────────────────────────────────────
+
+type QAPair = { question: string; answer: string };
+
+function parseInterviewQA(content: string): QAPair[] {
+  const pairs: QAPair[] = [];
+  const lines = content.split("\n");
+  let currentQ: string | null = null;
+  let currentA: string[] = [];
+
+  for (const line of lines) {
+    const m = line.match(/^\*\*Q:\s*(.+?)(\*\*)?$/i);
+    if (m) {
+      if (currentQ) pairs.push({ question: currentQ, answer: currentA.join("\n").trim() });
+      currentQ = m[1].replace(/\*+$/, "").trim();
+      currentA = [];
+    } else if (currentQ && line.trim()) {
+      currentA.push(line);
+    }
+  }
+  if (currentQ) pairs.push({ question: currentQ, answer: currentA.join("\n").trim() });
+  return pairs;
+}
+
+function Section6Content({ content }: { content: string }) {
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+  const pairs = parseInterviewQA(content);
+
+  if (pairs.length === 0) return <SectionContent content={content} />;
+
+  return (
+    <div className="space-y-2">
+      {pairs.map((pair, i) => {
+        const isOpen = openIdx === i;
+        return (
+          <div
+            key={i}
+            className={`overflow-hidden rounded-xl border transition-all ${
+              isOpen ? "border-brand-200 bg-brand-50/40" : "border-slate-200 bg-white hover:border-slate-300"
+            }`}
+          >
+            <button
+              type="button"
+              onClick={() => setOpenIdx(isOpen ? null : i)}
+              className="flex w-full items-start gap-3 px-4 py-3 text-left"
+            >
+              <span className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-brand-50 text-[10px] font-black text-brand-700">
+                {i + 1}
+              </span>
+              <p className={`flex-1 text-sm font-semibold ${isOpen ? "text-brand-800" : "text-slate-800"}`}>
+                {pair.question}
+              </p>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className={`mt-0.5 h-4 w-4 flex-shrink-0 text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            {isOpen && (
+              <div className="border-t border-brand-100 px-4 pb-4 pt-3">
+                <div className={PROSE_CLS}>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{pair.answer}</ReactMarkdown>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Section-aware dispatcher ─────────────────────────────────────────────────
 
 function SectionContentByNum({ num, content }: { num: number; content: string }) {
   if (num === 1) return <Section1Content content={content} />;
   if (num === 2) return <Section2Content content={content} />;
+  if (num === 3) return <Section3Content content={content} />;
+  if (num === 4) return <Section4Content content={content} />;
+  if (num === 5) return <Section5Content content={content} />;
+  if (num === 6) return <Section6Content content={content} />;
   return <SectionContent content={content} />;
 }
 
@@ -748,7 +987,8 @@ export default function DashboardAnalysisPage() {
   const [viewReport, setViewReport] = useState<AIReportFull | null>(null);
   const [viewLoading, setViewLoading] = useState(false);
 
-  const outputRef = useRef<HTMLDivElement>(null);
+  const outputRef  = useRef<HTMLDivElement>(null);
+  const reportRef  = useRef<HTMLDivElement>(null);
 
   const loadData = useCallback(async () => {
     const [resumeList, reportList] = await Promise.all([
@@ -804,6 +1044,7 @@ export default function DashboardAnalysisPage() {
       setViewReport(report);
       setStreamText(report.report_text ?? "");
       setPageState("done");
+      setTimeout(() => reportRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
     } catch { /* ignore */ }
     finally { setViewLoading(false); }
   }
@@ -894,6 +1135,71 @@ export default function DashboardAnalysisPage() {
         </div>
       </div>
 
+      {/* ─── History panel — shown first for quick access ─────────── */}
+      <Panel className="overflow-hidden" data-no-print>
+        <div className="px-6 py-5">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{t("pastReports")}</p>
+          <h2 className="mt-1 text-lg font-bold tracking-tight text-slate-900">
+            {reports.length === 1 ? t("savedReports_one") : t("savedReports_other", { count: reports.length })}
+          </h2>
+        </div>
+
+        {reports.length === 0 ? (
+          <div className="mx-6 mb-6 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/60 px-6 py-10 text-center">
+            <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-5 w-5">
+                <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
+              </svg>
+            </div>
+            <p className="text-sm font-bold text-slate-900">{t("noReports")}</p>
+            <p className="mt-1 text-xs text-slate-500">{t("noReportsDesc")}</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-y border-slate-100 bg-slate-50">
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">{t("table.resume")}</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">{t("table.status")}</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">{t("table.date")}</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">{t("table.actions")}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {reports.map((r) => (
+                  <tr key={r.id} className="transition-colors hover:bg-brand-50/30">
+                    <td className="px-6 py-4">
+                      <p className="font-semibold text-slate-900">{r.resume_title ?? t("resumeLabel")}</p>
+                      <p className="mt-0.5 font-mono text-[10px] text-slate-400">{r.id.slice(0, 8)}…</p>
+                    </td>
+                    <td className="px-4 py-4">
+                      <StatusBadge status={r.status} label={statusLabels[r.status] ?? r.status} />
+                    </td>
+                    <td className="px-4 py-4 text-slate-500">{formatDate(r.created_at)}</td>
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        type="button"
+                        disabled={r.status !== "completed" || viewLoading}
+                        onClick={() => void handleViewReport(r.id)}
+                        className={[
+                          "rounded-xl border px-3 py-1.5 text-xs font-semibold transition",
+                          viewReport?.id === r.id
+                            ? "border-brand-800 bg-brand-800 text-white"
+                            : "border-slate-300 bg-white text-slate-700 hover:border-brand-300 hover:text-brand-800",
+                          "disabled:cursor-not-allowed disabled:opacity-40",
+                        ].join(" ")}
+                      >
+                        {viewReport?.id === r.id ? t("close") : t("view")}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Panel>
+
       {/* ─── Input panel ──────────────────────────────────────────── */}
       <Panel className="p-6 md:p-8" data-no-print>
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{t("newAnalysis")}</p>
@@ -965,7 +1271,6 @@ export default function DashboardAnalysisPage() {
       {/* ─── Streaming: progress bar + live markdown ─────────────── */}
       {pageState === "streaming" && (
         <div className="overflow-hidden rounded-2xl border border-brand-100 bg-white">
-          {/* Stage header */}
           <div className="border-b border-brand-100 bg-gradient-to-br from-brand-800/8 via-white to-teal/5 px-6 py-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -984,8 +1289,6 @@ export default function DashboardAnalysisPage() {
                 {t("streaming")}
               </span>
             </div>
-
-            {/* Progress bar */}
             <div className="mt-4">
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
                 <div
@@ -995,18 +1298,13 @@ export default function DashboardAnalysisPage() {
               </div>
               <div className="mt-2 flex justify-between text-[10px] text-slate-400">
                 {STREAM_STAGE_PCTS.map((pct, i) => (
-                  <span
-                    key={i}
-                    className={`font-medium ${stageIdx !== null && stageIdx >= i ? "text-brand-700" : ""}`}
-                  >
+                  <span key={i} className={`font-medium ${stageIdx !== null && stageIdx >= i ? "text-brand-700" : ""}`}>
                     {pct}%
                   </span>
                 ))}
               </div>
             </div>
           </div>
-
-          {/* Live markdown output */}
           <div className="p-6" ref={outputRef}>
             <div className={PROSE_CLS}>
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{streamText}</ReactMarkdown>
@@ -1025,114 +1323,34 @@ export default function DashboardAnalysisPage() {
         </div>
       )}
 
-      {/* ─── Done: structured report ─────────────────────────────── */}
-      {pageState === "done" && hasOutput && (
-        <div>
-          {/* Report meta */}
-          {activeReport && (
-            <div className="mb-4 flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-2.5 text-xs text-slate-500" data-no-print>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5 flex-shrink-0">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
-              </svg>
-              <span className="font-semibold text-slate-700">{activeReport.resume_title}</span>
-              <span>·</span>
-              <span>{formatDate(activeReport.created_at)}</span>
-            </div>
-          )}
-
-          <StructuredReport
-            text={streamText}
-            resumeTitle={activeReport?.resume_title ?? undefined}
-            date={activeReport ? formatDate(activeReport.created_at) : undefined}
-            translations={reportTranslations}
-          />
-          <NextStepsPanel
-            atsScore={extractAtsScore(streamText)}
-            jobDescription={jobDescription}
-            jobTitle={sessionStorage.getItem?.("jobai_prefill_jd_title") ?? undefined}
-          />
-        </div>
-      )}
-
-      {/* ─── History panel ───────────────────────────────────────── */}
-      <Panel className="overflow-hidden" data-no-print>
-        <div className="px-6 py-5">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{t("pastReports")}</p>
-          <h2 className="mt-1 text-lg font-bold tracking-tight text-slate-900">
-            {reports.length === 1 ? t("savedReports_one") : t("savedReports_other", { count: reports.length })}
-          </h2>
-        </div>
-
-        {reports.length === 0 ? (
-          <div className="mx-6 mb-6 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/60 px-6 py-10 text-center">
-            <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-5 w-5">
-                <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
-              </svg>
-            </div>
-            <p className="text-sm font-bold text-slate-900">{t("noReports")}</p>
-            <p className="mt-1 text-xs text-slate-500">{t("noReportsDesc")}</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-y border-slate-100 bg-slate-50">
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">{t("table.resume")}</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">{t("table.status")}</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">{t("table.date")}</th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">{t("table.actions")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {reports.map((r) => (
-                  <tr key={r.id} className="transition-colors hover:bg-brand-50/30">
-                    <td className="px-6 py-4">
-                      <p className="font-semibold text-slate-900">{r.resume_title ?? t("resumeLabel")}</p>
-                      <p className="mt-0.5 font-mono text-[10px] text-slate-400">{r.id.slice(0, 8)}…</p>
-                    </td>
-                    <td className="px-4 py-4">
-                      <StatusBadge status={r.status} label={statusLabels[r.status] ?? r.status} />
-                    </td>
-                    <td className="px-4 py-4 text-slate-500">{formatDate(r.created_at)}</td>
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        type="button"
-                        disabled={r.status !== "completed" || viewLoading}
-                        onClick={() => void handleViewReport(r.id)}
-                        className={[
-                          "rounded-xl border px-3 py-1.5 text-xs font-semibold transition",
-                          viewReport?.id === r.id
-                            ? "border-brand-800 bg-brand-800 text-white"
-                            : "border-slate-300 bg-white text-slate-700 hover:border-brand-300 hover:text-brand-800",
-                          "disabled:cursor-not-allowed disabled:opacity-40",
-                        ].join(" ")}
-                      >
-                        {viewReport?.id === r.id ? t("close") : t("view")}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Inline report viewer (from history) */}
-        {viewReport && viewReport.report_text && pageState === "done" && !activeReportId && (
-          <div className="border-t border-slate-100 px-6 py-6">
-            <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
-              {t("viewingReport", { title: viewReport.resume_title, date: formatDate(viewReport.created_at) })}
-            </p>
+      {/* ─── Report area — single render location ────────────────── */}
+      <div ref={reportRef}>
+        {pageState === "done" && hasOutput && (
+          <div>
+            {activeReport && (
+              <div className="mb-4 flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-2.5 text-xs text-slate-500" data-no-print>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5 flex-shrink-0">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
+                </svg>
+                <span className="font-semibold text-slate-700">{activeReport.resume_title}</span>
+                <span>·</span>
+                <span>{formatDate(activeReport.created_at)}</span>
+              </div>
+            )}
             <StructuredReport
-              text={viewReport.report_text}
-              resumeTitle={viewReport.resume_title ?? undefined}
-              date={formatDate(viewReport.created_at)}
+              text={streamText}
+              resumeTitle={activeReport?.resume_title ?? undefined}
+              date={activeReport ? formatDate(activeReport.created_at) : undefined}
               translations={reportTranslations}
+            />
+            <NextStepsPanel
+              atsScore={extractAtsScore(streamText)}
+              jobDescription={jobDescription}
+              jobTitle={sessionStorage.getItem?.("jobai_prefill_jd_title") ?? undefined}
             />
           </div>
         )}
-      </Panel>
+      </div>
     </div>
   );
 }
