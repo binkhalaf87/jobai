@@ -1082,14 +1082,17 @@ export default function DashboardAnalysisPage() {
 
       {/* ─── History panel — shown first for quick access ─────────── */}
       <Panel className="overflow-hidden" data-no-print>
+        {(() => {
+          const visibleReports = reports.filter((r) => r.status !== "failed");
+          return (<>
         <div className="px-6 py-5">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{t("pastReports")}</p>
           <h2 className="mt-1 text-lg font-bold tracking-tight text-slate-900">
-            {reports.length === 1 ? t("savedReports_one") : t("savedReports_other", { count: reports.length })}
+            {visibleReports.length === 1 ? t("savedReports_one") : t("savedReports_other", { count: visibleReports.length })}
           </h2>
         </div>
 
-        {reports.length === 0 ? (
+        {visibleReports.length === 0 ? (
           <div className="mx-6 mb-6 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/60 px-6 py-10 text-center">
             <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-5 w-5">
@@ -1111,7 +1114,7 @@ export default function DashboardAnalysisPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {reports.map((r) => (
+                {visibleReports.map((r) => (
                   <tr key={r.id} className="transition-colors hover:bg-brand-50/30">
                     <td className="px-6 py-4">
                       <p className="font-semibold text-slate-900">{r.resume_title ?? t("resumeLabel")}</p>
@@ -1143,6 +1146,8 @@ export default function DashboardAnalysisPage() {
             </table>
           </div>
         )}
+          </>);
+        })()}
       </Panel>
 
       {/* ─── Input panel ──────────────────────────────────────────── */}
@@ -1162,7 +1167,6 @@ export default function DashboardAnalysisPage() {
             >
               <option value="English">English</option>
               <option value="Arabic">العربية</option>
-              <option value="French">Français</option>
             </select>
           </div>
 
