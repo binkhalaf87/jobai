@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
-import { Upload, BarChart3, Pencil, Search, Send, Mic, TrendingUp, Briefcase, SendHorizonal, MonitorPlay, FileText } from "lucide-react";
+import { Upload, BarChart3, Pencil, Search, Send, Mic, TrendingUp, Briefcase, SendHorizonal, MonitorPlay } from "lucide-react";
 
 import { Panel } from "@/components/panel";
 import { loadDashboardOverview, type DashboardActivityItem, type DashboardOverviewData } from "@/lib/dashboard";
@@ -37,14 +37,7 @@ function scoreColor(score: number | null): string {
   return "text-red-500";
 }
 
-function scoreBg(score: number | null): string {
-  if (score === null) return "bg-slate-200";
-  if (score >= 80) return "bg-teal";
-  if (score >= 60) return "bg-amber-500";
-  return "bg-red-500";
-}
-
-/* ──────────────────────────────────── circular progress ── */
+/* ──────────────────────────────────────── circular progress ── */
 function CircleProgress({
   percent,
   size = 56,
@@ -79,7 +72,7 @@ function CircleProgress({
   );
 }
 
-/* ───────────────────────────────────── inline SVG icons ── */
+/* ───────────────────────────────────────── inline SVG icons ── */
 function IconCheck() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
@@ -96,7 +89,7 @@ function IconArrow() {
   );
 }
 
-/* ─────────────────────────────────── journey step card ── */
+/* ───────────────────────────────────────────── step config ── */
 type StepConfig = {
   icon: ReactNode;
   title: string;
@@ -109,70 +102,269 @@ type StepConfig = {
   iconText: string;
 };
 
-function JourneyStepCard({ step }: { step: StepConfig }) {
-  const t = useTranslations();
-  const { icon, title, done, href, score, badge, iconBg, iconText } = step;
-  const hasScore = score !== null && score !== undefined;
+/* ──────────────────────────────────── vertical journey stepper ── */
+function JourneyTimeline({ steps }: { steps: StepConfig[] }) {
+  const firstIncomplete = steps.findIndex((s) => !s.done);
 
   return (
-    <Link
-      href={href}
-      className={[
-        "group flex items-center gap-3 rounded-xl border p-3 transition-all duration-150",
-        done
-          ? "border-teal/20 bg-teal-light/15 hover:bg-teal-light/25"
-          : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm",
-      ].join(" ")}
-    >
-      {/* Icon */}
-      <div className={[
-        "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-all",
-        done ? "bg-teal text-white" : `${iconBg} ${iconText}`,
-      ].join(" ")}>
-        {done ? <IconCheck /> : icon}
-      </div>
+    <div>
+      {steps.map((step, i) => {
+        const isLast = i === steps.length - 1;
+        const isCurrent = i === firstIncomplete;
+        const hasScore = step.done && step.score !== null && step.score !== undefined;
 
-      {/* Title + badge */}
-      <div className="min-w-0 flex-1 flex items-center gap-2">
-        <span className={[
-          "text-[13px] font-semibold leading-none",
-          done ? "text-teal" : "text-slate-800 group-hover:text-slate-950",
-        ].join(" ")}>
-          {title}
-        </span>
-        {badge && (
-          <span className={[
-            "rounded-full px-2 py-0.5 text-[10px] font-semibold",
-            done ? "bg-teal/15 text-teal" : "bg-slate-100 text-slate-500",
-          ].join(" ")}>
-            {badge}
-          </span>
-        )}
-      </div>
+        return (
+          <div key={i} className="flex gap-3">
+            {/* Connector column */}
+            <div className="flex flex-col items-center">
+              <Link href={step.href} tabIndex={-1} aria-hidden="true">
+                <div
+                  className={[
+                    "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border-2 transition-all",
+                    step.done
+                      ? "border-teal bg-teal text-white"
+                      : isCurrent
+                        ? "border-brand-700 bg-brand-50 text-brand-700"
+                        : "border-slate-200 bg-white text-slate-400",
+                  ].join(" ")}
+                >
+                  {step.done ? <IconCheck /> : step.icon}
+                </div>
+              </Link>
+              {!isLast && (
+                <div
+                  className={[
+                    "my-1 w-0.5 flex-1 min-h-[1.25rem]",
+                    step.done ? "bg-teal/30" : "bg-slate-200",
+                  ].join(" ")}
+                />
+              )}
+            </div>
 
-      {/* Right */}
-      <div className="flex flex-shrink-0 items-center gap-2">
-        {done && hasScore ? (
-          <div className="flex items-center gap-1.5">
-            <span className={`text-sm font-black ${scoreColor(score ?? null)}`}>{Math.round(score!)}%</span>
-            <CircleProgress percent={score!} size={28} strokeWidth={2.5}
-              colorClass={score! >= 80 ? "text-teal" : score! >= 60 ? "text-amber-500" : "text-red-500"} />
+            {/* Card */}
+            <Link
+              href={step.href}
+              className={[
+                "group mb-2 flex flex-1 items-start justify-between rounded-xl border p-3 transition-all",
+                step.done
+                  ? "border-teal/20 bg-teal-light/10 hover:bg-teal-light/20"
+                  : isCurrent
+                    ? "border-brand-200 bg-brand-50/50 hover:bg-brand-50"
+                    : "border-slate-100 bg-white hover:border-slate-200",
+              ].join(" ")}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={[
+                      "text-[13px] font-semibold",
+                      step.done ? "text-teal" : isCurrent ? "text-brand-800" : "text-slate-500",
+                    ].join(" ")}
+                  >
+                    {step.title}
+                  </span>
+                  {step.badge && (
+                    <span
+                      className={[
+                        "rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                        step.done ? "bg-teal/15 text-teal" : "bg-slate-100 text-slate-500",
+                      ].join(" ")}
+                    >
+                      {step.badge}
+                    </span>
+                  )}
+                </div>
+                {!step.done && (
+                  <p className="mt-0.5 text-[11px] leading-5 text-slate-500">{step.description}</p>
+                )}
+              </div>
+
+              <div className="ml-3 flex flex-shrink-0 items-center">
+                {hasScore ? (
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-sm font-black ${scoreColor(step.score ?? null)}`}>
+                      {Math.round(step.score!)}%
+                    </span>
+                    <CircleProgress
+                      percent={step.score!}
+                      size={28}
+                      strokeWidth={2.5}
+                      colorClass={step.score! >= 80 ? "text-teal" : step.score! >= 60 ? "text-amber-500" : "text-red-500"}
+                    />
+                  </div>
+                ) : step.done ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4 text-teal">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                ) : (
+                  <span className="text-slate-400 group-hover:text-slate-600">
+                    <IconArrow />
+                  </span>
+                )}
+              </div>
+            </Link>
           </div>
-        ) : done ? (
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4 text-teal">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        ) : (
-          <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-400 group-hover:text-slate-600">
-            <IconArrow />
-          </div>
-        )}
-      </div>
-    </Link>
+        );
+      })}
+    </div>
   );
 }
 
-/* ──────────────────────────────────────────── hero card ── */
+/* ────────────────────────────────────── application funnel ── */
+function ApplicationFunnel({ overview }: { overview: DashboardOverviewData }) {
+  const t = useTranslations();
+
+  const cvs = (overview.resumes.data ?? []).filter((r) => r.processing_status === "parsed").length;
+  const analyzed = (overview.analysisReports.data ?? []).filter((r) => r.status === "completed").length;
+  const improved = (overview.enhancementReports.data ?? []).filter((r) => r.status === "completed").length;
+  const sent = overview.metrics.applicationsSent ?? 0;
+  const interviews = (overview.interviews.data ?? []).filter((i) => i.status === "completed").length;
+
+  const stages = [
+    { label: t("dashboardOverview.funnel.cvs"), value: cvs, icon: <Upload size={11} />, color: "text-violet-600 bg-violet-50 border-violet-200" },
+    { label: t("dashboardOverview.funnel.analyzed"), value: analyzed, icon: <BarChart3 size={11} />, color: "text-amber-600 bg-amber-50 border-amber-200" },
+    { label: t("dashboardOverview.funnel.improved"), value: improved, icon: <Pencil size={11} />, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+    { label: t("dashboardOverview.funnel.sent"), value: sent, icon: <Send size={11} />, color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
+    { label: t("dashboardOverview.funnel.interviews"), value: interviews, icon: <Mic size={11} />, color: "text-rose-600 bg-rose-50 border-rose-200" },
+  ];
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+        {t("dashboardOverview.funnel.title")}
+      </p>
+      <div className="flex items-center gap-1.5">
+        {stages.map((stage, i) => (
+          <div key={i} className="flex items-center gap-1.5 flex-1">
+            <div className={`flex flex-1 flex-col items-center rounded-lg border px-1 py-2 text-center ${stage.color}`}>
+              <div className="mb-1">{stage.icon}</div>
+              <span className="text-base font-black leading-none">{stage.value}</span>
+              <span className="mt-0.5 text-[9px] font-semibold leading-tight">{stage.label}</span>
+            </div>
+            {i < stages.length - 1 && (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3 w-3 flex-shrink-0 text-slate-300">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────── metric card ── */
+function MetricCard({
+  label,
+  value,
+  sub,
+  colorClass = "text-slate-950",
+  icon,
+  iconBg = "bg-slate-100",
+  iconColor = "text-slate-500",
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  colorClass?: string;
+  icon?: ReactNode;
+  iconBg?: string;
+  iconColor?: string;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{label}</p>
+        {icon && (
+          <span className={`flex h-6 w-6 items-center justify-center rounded-lg ${iconBg} ${iconColor}`}>
+            {icon}
+          </span>
+        )}
+      </div>
+      <p className={`text-2xl font-bold tracking-tight ${colorClass}`}>{value}</p>
+      <p className="mt-0.5 text-[11px] leading-5 text-slate-500">{sub}</p>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────── smart nudges ── */
+function SmartNudges({ overview }: { overview: DashboardOverviewData }) {
+  const t = useTranslations();
+
+  const savedJobsCount = overview.savedJobs.data?.length ?? 0;
+  const sent = overview.metrics.applicationsSent ?? 0;
+  const completedInterviews = (overview.interviews.data ?? []).filter((i) => i.status === "completed").length;
+  const atsScore = overview.metrics.atsScore;
+
+  type Nudge = { text: string; href: string; color: string };
+  const nudges: Nudge[] = [];
+
+  if (savedJobsCount > 0 && sent === 0) {
+    nudges.push({
+      text: t("dashboardOverview.nudges.sendSavedJobs", { count: savedJobsCount }),
+      href: "/dashboard/smart-send",
+      color: "border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100",
+    });
+  }
+
+  if (sent > 0 && completedInterviews === 0) {
+    nudges.push({
+      text: t("dashboardOverview.nudges.practiceInterview", { count: sent }),
+      href: "/dashboard/ai-interview",
+      color: "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100",
+    });
+  }
+
+  if (atsScore !== null && atsScore < 65) {
+    nudges.push({
+      text: t("dashboardOverview.nudges.improveCV", { score: Math.round(atsScore) }),
+      href: "/dashboard/enhancement",
+      color: "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100",
+    });
+  }
+
+  if (nudges.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+        {t("dashboardOverview.nudges.title")}
+      </p>
+      {nudges.slice(0, 2).map((nudge, i) => (
+        <Link
+          key={i}
+          href={nudge.href}
+          className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-[12px] font-semibold transition ${nudge.color}`}
+        >
+          <span>{nudge.text}</span>
+          <IconArrow />
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+/* ────────────────────────────── activity kind translation map ── */
+const ACTIVITY_KIND_KEYS = {
+  "resume": "dashboardOverview.activity.kinds.resume",
+  "saved-job": "dashboardOverview.activity.kinds.savedJob",
+  "analysis-report": "dashboardOverview.activity.kinds.analysisReport",
+  "enhancement-report": "dashboardOverview.activity.kinds.enhancementReport",
+  "interview": "dashboardOverview.activity.kinds.interview",
+  "campaign": "dashboardOverview.activity.kinds.campaign",
+} as const;
+
+/* ──────────────────────────────── activity badge styles map ── */
+const ACTIVITY_STYLES: Record<DashboardActivityItem["kind"], string> = {
+  resume: "bg-brand-50 text-brand-700 border-brand-200",
+  "saved-job": "bg-amber-50 text-amber-700 border-amber-200",
+  "analysis-report": "bg-teal-light/40 text-teal border-teal-light",
+  "enhancement-report": "bg-brand-50 text-brand-600 border-brand-100",
+  interview: "bg-rose-50 text-rose-700 border-rose-200",
+  campaign: "bg-cyan-50 text-cyan-700 border-cyan-200",
+};
+
+/* ──────────────────────────────────────────────── hero card ── */
 function HeroCard({
   overview,
   onRefresh,
@@ -189,7 +381,11 @@ function HeroCard({
   const sent = overview.metrics.applicationsSent ?? 0;
 
   const readinessLabel =
-    pct === 100 ? t("dashboard.overview.readiness.complete") : pct >= 60 ? t("dashboard.overview.readiness.good") : t("dashboard.overview.readiness.start");
+    pct === 100
+      ? t("dashboardOverview.hero.readiness.complete")
+      : pct >= 60
+        ? t("dashboardOverview.hero.readiness.good")
+        : t("dashboardOverview.hero.readiness.start");
 
   const stats = [
     {
@@ -199,7 +395,7 @@ function HeroCard({
           <polyline points="14 2 14 8 20 8" />
         </svg>
       ),
-      label: overview.metrics.activeResumeTitle ?? t("dashboard.overview.noResume"),
+      label: overview.metrics.activeResumeTitle ?? t("dashboardOverview.hero.stats.noResume"),
       active: !!overview.metrics.activeResumeTitle,
     },
     {
@@ -233,24 +429,24 @@ function HeroCard({
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-800/8 via-white to-teal/5 p-6 md:p-7">
-      {/* Decorative blobs */}
       <div className="pointer-events-none absolute -right-8 -top-8 h-36 w-36 rounded-full bg-brand-800/8 blur-2xl" />
       <div className="pointer-events-none absolute -bottom-6 -left-6 h-28 w-28 rounded-full bg-teal/10 blur-2xl" />
 
       <div className="relative flex flex-col gap-6 md:flex-row md:items-center">
         {/* Left: progress ring + stats */}
         <div className="flex-1 space-y-4">
-          <div className="flex items-center gap-4">
-            {/* Ring */}
-            <div className="relative h-16 w-16 flex-shrink-0">
-              <CircleProgress percent={pct} size={64} strokeWidth={4} colorClass="text-teal" />
-              <span className="absolute inset-0 flex items-center justify-center text-xs font-black text-brand-800">
-                {pct}%
-              </span>
+          <div className="flex items-center gap-5">
+            {/* Larger ring — 80px */}
+            <div className="relative h-20 w-20 flex-shrink-0">
+              <CircleProgress percent={pct} size={80} strokeWidth={5} colorClass="text-teal" />
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-lg font-black leading-none text-brand-800">{pct}%</span>
+                <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">ready</span>
+              </div>
             </div>
             <div>
               <p className="text-xs text-slate-500">{t("dashboardOverview.hero.professionalReadiness")}</p>
-              <p className="text-base font-bold text-slate-900">{readinessLabel}</p>
+              <p className="text-lg font-bold text-slate-900">{readinessLabel}</p>
               <p className="mt-0.5 text-xs text-slate-500">
                 {t("dashboardOverview.hero.completedSteps", { completed, total })}
               </p>
@@ -301,64 +497,20 @@ function HeroCard({
   );
 }
 
-/* ──────────────────────────────────── metric mini-card ── */
-function MetricCard({
-  label,
-  value,
-  sub,
-  colorClass = "text-slate-950",
-  icon,
-  iconBg = "bg-slate-100",
-  iconColor = "text-slate-500",
-}: {
-  label: string;
-  value: string;
-  sub: string;
-  colorClass?: string;
-  icon?: ReactNode;
-  iconBg?: string;
-  iconColor?: string;
-}) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{label}</p>
-        {icon && (
-          <span className={`flex h-6 w-6 items-center justify-center rounded-lg ${iconBg} ${iconColor}`}>
-            {icon}
-          </span>
-        )}
-      </div>
-      <p className={`text-2xl font-bold tracking-tight ${colorClass}`}>{value}</p>
-      <p className="mt-0.5 text-[11px] leading-5 text-slate-500">{sub}</p>
-    </div>
-  );
-}
-
-/* ─────────────────────────────── activity styles map ── */
-const ACTIVITY_STYLES: Record<DashboardActivityItem["kind"], string> = {
-  resume: "bg-brand-50 text-brand-700 border-brand-200",
-  "saved-job": "bg-amber-50 text-amber-700 border-amber-200",
-  "analysis-report": "bg-teal-light/40 text-teal border-teal-light",
-  "enhancement-report": "bg-brand-50 text-brand-600 border-brand-100",
-  interview: "bg-rose-50 text-rose-700 border-rose-200",
-  campaign: "bg-cyan-50 text-cyan-700 border-cyan-200",
-};
-
-/* ──────────────────────────────── loading skeleton ── */
+/* ──────────────────────────────────────── loading skeleton ── */
 function LoadingSkeleton() {
   return (
     <div className="space-y-6">
-      {/* Hero skeleton */}
-      <div className="h-40 animate-pulse rounded-2xl bg-slate-100" />
+      <div className="h-44 animate-pulse rounded-2xl bg-slate-100" />
       <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
-        <div className="space-y-3">
+        <div className="space-y-2">
           {Array.from({ length: 6 }, (_, i) => (
-            <div key={i} className="h-20 animate-pulse rounded-2xl bg-slate-100" />
+            <div key={i} className="h-16 animate-pulse rounded-2xl bg-slate-100" />
           ))}
+          <div className="mt-4 h-24 animate-pulse rounded-xl bg-slate-100" />
         </div>
         <div className="space-y-3">
-          {Array.from({ length: 4 }, (_, i) => (
+          {Array.from({ length: 5 }, (_, i) => (
             <div key={i} className="h-20 animate-pulse rounded-2xl bg-slate-100" />
           ))}
         </div>
@@ -367,7 +519,7 @@ function LoadingSkeleton() {
   );
 }
 
-/* ════════════════════════════════════ main component ════ */
+/* ════════════════════════════════════════ main component ════ */
 export function DashboardOverview() {
   const t = useTranslations();
   const [overview, setOverview] = useState<DashboardOverviewData | null>(null);
@@ -387,7 +539,9 @@ export function DashboardOverview() {
     }
 
     void load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [refreshIndex]);
 
   if (isLoading || !overview) return <LoadingSkeleton />;
@@ -403,7 +557,6 @@ export function DashboardOverview() {
 
   const resumeCount = parsedResumes.length;
   const savedJobsCount = overview.savedJobs.data?.length ?? 0;
-  const campaignCount = overview.campaigns.data?.length ?? 0;
 
   const interviewBestScore =
     overview.interviews.data
@@ -463,7 +616,11 @@ export function DashboardOverview() {
       description: t("dashboardOverview.steps.interview.description"),
       done: step6Done, href: "/dashboard/ai-interview",
       score: step6Done ? interviewBestScore : null,
-      badge: step6Done ? t("dashboardOverview.steps.interview.badge", { count: (overview.interviews.data ?? []).filter((i) => i.status === "completed").length }) : undefined,
+      badge: step6Done
+        ? t("dashboardOverview.steps.interview.badge", {
+            count: (overview.interviews.data ?? []).filter((i) => i.status === "completed").length,
+          })
+        : undefined,
     },
   ];
 
@@ -511,8 +668,8 @@ export function DashboardOverview() {
         </Panel>
       ) : (
         <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
-          {/* ── Left: Journey Steps ── */}
-          <div className="space-y-3">
+          {/* ── Left: Journey Timeline + Funnel ── */}
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-brand-700">
@@ -525,14 +682,11 @@ export function DashboardOverview() {
               </span>
             </div>
 
-            <div className="space-y-2.5">
-              {journeySteps.map((step, i) => (
-                <JourneyStepCard key={i} step={step} />
-              ))}
-            </div>
+            <JourneyTimeline steps={journeySteps} />
+            <ApplicationFunnel overview={overview} />
           </div>
 
-          {/* ── Right: Metrics + Activity ── */}
+          {/* ── Right: Metrics + Nudges + Activity ── */}
           <div className="space-y-4">
             {/* Metrics grid */}
             <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
@@ -574,6 +728,9 @@ export function DashboardOverview() {
               />
             </div>
 
+            {/* Smart nudges */}
+            <SmartNudges overview={overview} />
+
             {/* Recent activity */}
             <div className="space-y-2.5">
               <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
@@ -605,9 +762,9 @@ export function DashboardOverview() {
                       className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:bg-slate-50"
                     >
                       <span
-                        className={`mt-0.5 inline-flex rounded-full border px-2.5 py-0.5 text-[10px] font-semibold capitalize ${ACTIVITY_STYLES[item.kind]}`}
+                        className={`mt-0.5 inline-flex rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${ACTIVITY_STYLES[item.kind]}`}
                       >
-                        {item.kind.replace("-", " ")}
+                        {t(ACTIVITY_KIND_KEYS[item.kind])}
                       </span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-slate-900">{item.title}</p>
@@ -617,32 +774,6 @@ export function DashboardOverview() {
                   ))}
                 </div>
               )}
-            </div>
-
-            {/* Quick access */}
-            <div className="space-y-2">
-              <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
-                {t("dashboardOverview.quickAccess.title")}
-              </h2>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { label: t("nav.items.cvs"),     href: "/dashboard/resumes",    icon: <FileText size={13} />,  iconBg: "bg-violet-100", iconText: "text-violet-600" },
-                  { label: t("nav.items.analyze"), href: "/dashboard/analysis",   icon: <BarChart3 size={13} />, iconBg: "bg-amber-100",  iconText: "text-amber-600"  },
-                  { label: t("nav.items.jobs"),    href: "/dashboard/job-search", icon: <Search size={13} />,    iconBg: "bg-cyan-100",   iconText: "text-cyan-600"   },
-                  { label: t("nav.items.send"),    href: "/dashboard/smart-send", icon: <Send size={13} />,      iconBg: "bg-indigo-100", iconText: "text-indigo-600" },
-                ].map((item, idx) => (
-                  <Link
-                    key={idx}
-                    href={item.href}
-                    className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-2.5 text-[12.5px] font-medium text-slate-700 transition hover:border-slate-300 hover:shadow-sm"
-                  >
-                    <span className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md ${item.iconBg} ${item.iconText}`}>
-                      {item.icon}
-                    </span>
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
             </div>
           </div>
         </div>

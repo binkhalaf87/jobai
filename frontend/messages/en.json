@@ -18,12 +18,10 @@
     "pages": "Pages",
     "noData": "—"
   },
-
   "language": {
     "switch": "Arabic",
     "current": "English"
   },
-
   "auth": {
     "login": {
       "eyebrow": "Account Access",
@@ -59,7 +57,6 @@
       "emailTaken": "An account with that email already exists."
     }
   },
-
   "nav": {
     "groups": {
       "workspace": "Workspace",
@@ -102,7 +99,6 @@
       "profile": "Keep your account details up to date."
     }
   },
-
   "resumes": {
     "upload": {
       "eyebrow": "Upload CV",
@@ -162,7 +158,6 @@
       }
     }
   },
-
   "analysis": {
     "title": "Resume Analysis",
     "newAnalysis": "New Analysis",
@@ -183,7 +178,6 @@
       "suggestions": "Suggestions"
     }
   },
-
   "interview": {
     "title": "AI Interview",
     "start": "Start Interview",
@@ -257,7 +251,6 @@
       "submitting": "Evaluating answer..."
     }
   },
-
   "jobs": {
     "title": "Job Search",
     "searchPlaceholder": "Job title, skills, or keywords",
@@ -273,7 +266,6 @@
     "type": "Type",
     "posted": "Posted {date}"
   },
-
   "billing": {
     "title": "Billing & Plans",
     "currentPlan": "Current Plan",
@@ -288,7 +280,6 @@
     "noSubscription": "No active subscription.",
     "checkout": "Proceed to Checkout"
   },
-
   "profile": {
     "title": "Profile",
     "fullName": "Full Name",
@@ -301,7 +292,6 @@
     "save": "Save Changes",
     "saved": "Changes saved."
   },
-
   "marketing": {
     "hero": {
       "badge": "Smart hiring platform",
@@ -527,7 +517,6 @@
       "login": "Sign in"
     }
   },
-
   "settingsPage": {
     "eyebrow": "Settings",
     "title": "Workspace settings",
@@ -561,7 +550,6 @@
       }
     }
   },
-
   "profilePage": {
     "eyebrow": "Personal account",
     "title": "Your profile",
@@ -595,7 +583,6 @@
       }
     }
   },
-
   "dashboardOverview": {
     "stepCard": {
       "start": "Start"
@@ -710,9 +697,22 @@
     },
     "quickAccess": {
       "title": "Quick access"
+    },
+    "funnel": {
+      "title": "Application pipeline",
+      "cvs": "CVs",
+      "analyzed": "Analyzed",
+      "improved": "Improved",
+      "sent": "Sent",
+      "interviews": "Interviews"
+    },
+    "nudges": {
+      "title": "Suggested actions",
+      "sendSavedJobs": "You have {count} saved jobs — launch SmartSend",
+      "practiceInterview": "You sent {count} applications — practice your interview",
+      "improveCV": "ATS score is {score}% — improve your CV for more callbacks"
     }
   },
-
   "recruiter": {
     "nav": {
       "groups": {
@@ -1262,7 +1262,6 @@
       }
     }
   },
-
   "analysisPage": {
     "eyebrow": "AI Analysis",
     "title": "Analyze Your CV",
@@ -1345,7 +1344,6 @@
       "interviewQA": "Interview Q&A"
     }
   },
-
   "enhancementPage": {
     "newImprovement": "New improvement",
     "title": "Rewrite your resume with AI — ATS-optimized, STAR format",
@@ -1377,7 +1375,6 @@
     "view": "View",
     "viewingTitle": "Enhanced Resume — {title} — {date}"
   },
-
   "aiInterviewPage": {
     "eyebrow": "AI Practice",
     "title": "AI Interview",
@@ -1502,7 +1499,6 @@
     },
     "failedToStart": "Failed to prepare the interview."
   },
-
   "jobSearchPage": {
     "step": "Step 4",
     "title": "Match roles, then act on them",
@@ -1593,7 +1589,6 @@
       "matchPercent": "{score}% match"
     }
   },
-
   "smartSendPage": {
     "eyebrow": "Application Outreach",
     "title": "Smart Send campaigns",

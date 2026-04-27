@@ -18,12 +18,10 @@
     "pages": "الصفحات",
     "noData": "—"
   },
-
   "language": {
     "switch": "English",
     "current": "العربية"
   },
-
   "auth": {
     "login": {
       "eyebrow": "الوصول إلى حسابك",
@@ -59,7 +57,6 @@
       "emailTaken": "يوجد حساب مسجّل بهذا البريد الإلكتروني."
     }
   },
-
   "nav": {
     "groups": {
       "workspace": "مساحة العمل",
@@ -102,7 +99,6 @@
       "profile": "احتفظ ببيانات حسابك محدّثة في جميع الأوقات."
     }
   },
-
   "resumes": {
     "upload": {
       "eyebrow": "رفع سيرة ذاتية",
@@ -162,7 +158,6 @@
       }
     }
   },
-
   "analysis": {
     "title": "تحليل السيرة الذاتية",
     "newAnalysis": "تحليل جديد",
@@ -183,7 +178,6 @@
       "suggestions": "الاقتراحات"
     }
   },
-
   "interview": {
     "title": "المقابلة الوظيفية الذكية",
     "start": "بدء المقابلة",
@@ -257,7 +251,6 @@
       "submitting": "جارٍ تقييم الإجابة..."
     }
   },
-
   "jobs": {
     "title": "البحث عن وظائف",
     "searchPlaceholder": "المسمى الوظيفي أو المهارات أو الكلمات المفتاحية",
@@ -273,7 +266,6 @@
     "type": "نوع الوظيفة",
     "posted": "نُشرت {date}"
   },
-
   "billing": {
     "title": "الاشتراك والفوترة",
     "currentPlan": "الباقة الحالية",
@@ -288,7 +280,6 @@
     "noSubscription": "لا يوجد اشتراك نشط.",
     "checkout": "الانتقال إلى الدفع"
   },
-
   "profile": {
     "title": "الملف الشخصي",
     "fullName": "الاسم الكامل",
@@ -301,7 +292,6 @@
     "save": "حفظ التغييرات",
     "saved": "تم حفظ التغييرات."
   },
-
   "marketing": {
     "hero": {
       "badge": "منصة توظيف ذكية",
@@ -527,7 +517,6 @@
       "login": "تسجيل دخول"
     }
   },
-
   "settingsPage": {
     "eyebrow": "الإعدادات",
     "title": "إعدادات مساحة العمل",
@@ -561,7 +550,6 @@
       }
     }
   },
-
   "profilePage": {
     "eyebrow": "الحساب الشخصي",
     "title": "ملفك الشخصي",
@@ -595,7 +583,6 @@
       }
     }
   },
-
   "dashboardOverview": {
     "stepCard": {
       "start": "ابدأ"
@@ -710,9 +697,22 @@
     },
     "quickAccess": {
       "title": "وصول سريع"
+    },
+    "funnel": {
+      "title": "مسار الطلبات",
+      "cvs": "سيرة",
+      "analyzed": "محللة",
+      "improved": "محسّنة",
+      "sent": "مُرسَلة",
+      "interviews": "مقابلات"
+    },
+    "nudges": {
+      "title": "إجراءات مقترحة",
+      "sendSavedJobs": "لديك {count} وظيفة محفوظة — أطلق SmartSend الآن",
+      "practiceInterview": "أرسلت {count} طلب — تدرّب على المقابلة",
+      "improveCV": "درجة ATS هي {score}% — حسّن سيرتك لتحصل على ردود أكثر"
     }
   },
-
   "recruiter": {
     "nav": {
       "groups": {
@@ -1262,7 +1262,6 @@
       }
     }
   },
-
   "analysisPage": {
     "eyebrow": "تحليل ذكي",
     "title": "تحليل سيرتك الذاتية",
@@ -1345,7 +1344,6 @@
       "interviewQA": "أسئلة المقابلة"
     }
   },
-
   "enhancementPage": {
     "newImprovement": "تحسين جديد",
     "title": "أعِد كتابة سيرتك الذاتية بالذكاء الاصطناعي — محسّنة لـ ATS بصيغة STAR",
@@ -1377,7 +1375,6 @@
     "view": "عرض",
     "viewingTitle": "السيرة المحسّنة — {title} — {date}"
   },
-
   "aiInterviewPage": {
     "eyebrow": "تدريب ذكي",
     "title": "المقابلة بالذكاء الاصطناعي",
@@ -1502,7 +1499,6 @@
     },
     "failedToStart": "تعذّر تحضير المقابلة."
   },
-
   "jobSearchPage": {
     "step": "الخطوة 4",
     "title": "ابحث عن الأدوار المناسبة ثم تصرّف",
@@ -1593,7 +1589,6 @@
       "matchPercent": "{score}% تطابق"
     }
   },
-
   "smartSendPage": {
     "eyebrow": "التواصل الوظيفي",
     "title": "حملات الإرسال الذكي",
