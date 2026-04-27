@@ -7,6 +7,7 @@ class AIReportRequest(ORMBaseSchema):
     resume_id: str
     job_description: str | None = None
     report_type: str = "analysis"
+    language: str = "English"
 
 
 class AIReportListItem(ORMBaseSchema):

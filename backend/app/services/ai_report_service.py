@@ -22,7 +22,7 @@ style, and format described below — using clear section headings, organized ta
 and actionable recommendations.
 
 === STRICT OUTPUT RULES ===
-- Language: English.
+- Language: You MUST write the entire report in the language the user specifies at the top of their message. This overrides everything else. If the user specifies Arabic, every word must be in Arabic. If not specified, use English.
 - Style: Professional, clear, and structured — use headings, tables, and concise bullet points.
 - Do NOT fabricate any information not present in the resume.
 - Use markdown formatting: ## for section headings, **bold** for labels, tables with | pipes |.
@@ -53,10 +53,10 @@ Fit for Target Role, Presentation Professionalism.
 
 ## Section 4 — Career Recommendations & Saudi Labor Market Guidance
 - Top 3–5 most suitable roles + rationale
-- 30 / 60 / 90-Day Development Plan (concise and actionable)
 - Recommended courses / certifications (role-specific)
 - LinkedIn / Portfolio improvement tips if applicable
 Do NOT include any section about recommended companies or sectors.
+Do NOT include a 30/60/90-day development plan.
 
 ## Section 5 — Quick Wins Checklist
 10–15 prioritized action items (High / Medium / Low priority).
@@ -175,9 +175,26 @@ def _get_system_prompt(report_type: str) -> str:
     return ENHANCEMENT_SYSTEM_PROMPT if report_type == "enhancement" else ANALYSIS_SYSTEM_PROMPT
 
 
-def build_user_message(resume_text: str, job_description: str | None, country: str = "Saudi Arabia") -> str:
+_LANGUAGE_INSTRUCTIONS: dict[str, str] = {
+    "Arabic": (
+        "CRITICAL LANGUAGE REQUIREMENT: You MUST write the ENTIRE report exclusively in Arabic (العربية). "
+        "Every single word — all headings, table headers, table content, bullet points, scores, labels, "
+        "recommendations, and explanations — must be written in Arabic. Do NOT use English anywhere in the report."
+    ),
+    "English": "Write the entire report in English.",
+}
+
+
+def build_user_message(
+    resume_text: str,
+    job_description: str | None,
+    country: str = "Saudi Arabia",
+    language: str = "English",
+) -> str:
     """Compose the user turn combining the resume and optional job description."""
-    lines = [f"**Resume Text:**\n\n{resume_text.strip()}"]
+    lang_instruction = _LANGUAGE_INSTRUCTIONS.get(language, f"Write the entire report in {language}.")
+    lines = [f"**Report Language:** {language}\n\n{lang_instruction}"]
+    lines.append(f"\n**Resume Text:**\n\n{resume_text.strip()}")
 
     if job_description and job_description.strip():
         lines.append(f"\n**Target Job Description:**\n\n{job_description.strip()}")
@@ -236,6 +253,7 @@ def stream_report_to_client(
     resume_text: str,
     job_description: str | None,
     report_type: str = "analysis",
+    language: str = "English",
 ) -> Generator[str, None, None]:
     """
     Stream SSE events to the client while calling OpenAI.
@@ -255,7 +273,7 @@ def stream_report_to_client(
             model=get_rewrite_model_name(),
             messages=[
                 {"role": "system", "content": _get_system_prompt(report_type)},
-                {"role": "user", "content": build_user_message(resume_text, job_description)},
+                {"role": "user", "content": build_user_message(resume_text, job_description, language=language)},
             ],
             stream=True,
             temperature=AI_REPORT_TEMPERATURE,

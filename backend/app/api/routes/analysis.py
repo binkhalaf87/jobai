@@ -342,10 +342,11 @@ def create_ai_report(
         )
 
     report_type = payload.report_type if payload.report_type in ("analysis", "enhancement") else "analysis"
+    language = payload.language if payload.language else "English"
     report = create_pending_report(db, current_user.id, resume, payload.job_description, report_type=report_type)
 
     return StreamingResponse(
-        stream_report_to_client(report.id, resume.raw_text, payload.job_description, report_type=report_type),
+        stream_report_to_client(report.id, resume.raw_text, payload.job_description, report_type=report_type, language=language),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
