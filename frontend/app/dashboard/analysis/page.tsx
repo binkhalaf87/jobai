@@ -470,63 +470,7 @@ function Section3Content({ content }: { content: string }) {
 // ─── Section 4: Career Recommendations ───────────────────────────────────────
 
 function Section4Content({ content }: { content: string }) {
-  const lines = content.split("\n");
-
-  const day30Idx = lines.findIndex((l) => /30.?day/i.test(l));
-  const day60Idx = lines.findIndex((l) => /60.?day/i.test(l));
-  const day90Idx = lines.findIndex((l) => /90.?day/i.test(l));
-
-  const hasPlan = day30Idx !== -1 || day60Idx !== -1 || day90Idx !== -1;
-  if (!hasPlan) return <SectionContent content={content} />;
-
-  const firstIdx = [day30Idx, day60Idx, day90Idx]
-    .filter((i) => i !== -1)
-    .reduce((a, b) => Math.min(a, b), lines.length);
-
-  const introPart = lines.slice(0, firstIdx).join("\n").trim();
-
-  function block(start: number, end: number) {
-    if (start === -1) return "";
-    return lines.slice(start, end === -1 ? undefined : end).join("\n").trim();
-  }
-
-  const day30End = day60Idx !== -1 ? day60Idx : day90Idx;
-  const day60End = day90Idx;
-
-  const planCards = [
-    { label: "30 Days", text: block(day30Idx, day30End), border: "border-brand-200 bg-brand-50/60", badge: "bg-brand-100 text-brand-700" },
-    { label: "60 Days", text: block(day60Idx, day60End), border: "border-teal-light bg-teal-light/20", badge: "bg-teal-light/40 text-teal" },
-    { label: "90 Days", text: block(day90Idx, -1),       border: "border-amber-200 bg-amber-50/60",  badge: "bg-amber-100 text-amber-700" },
-  ].filter((c) => c.text);
-
-  return (
-    <div className="space-y-5">
-      {introPart && (
-        <div className={PROSE_CLS}>
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{introPart}</ReactMarkdown>
-        </div>
-      )}
-      {planCards.length > 0 && (
-        <div>
-          <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
-            30 / 60 / 90-Day Development Plan
-          </p>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {planCards.map((card, i) => (
-              <div key={i} className={`rounded-xl border p-4 ${card.border}`}>
-                <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold ${card.badge}`}>
-                  {card.label}
-                </span>
-                <div className={`mt-2 text-xs ${PROSE_CLS}`}>
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{card.text}</ReactMarkdown>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  return <SectionContent content={content} />;
 }
 
 // ─── Section 5: Quick Wins ────────────────────────────────────────────────────
@@ -976,6 +920,7 @@ export default function DashboardAnalysisPage() {
   const t = useTranslations("analysisPage");
   const [resumes, setResumes]               = useState<ResumeListItem[]>([]);
   const [selectedResume, setSelectedResume] = useState("");
+  const [reportLanguage, setReportLanguage] = useState("English");
   const [jobDescription, setJobDescription] = useState("");
 
   const [pageState, setPageState]     = useState<PageState>("idle");
@@ -1029,7 +974,7 @@ export default function DashboardAnalysisPage() {
         if (event.type === "chunk") setStreamText((prev) => prev + event.text);
         if (event.type === "done")  { setActiveReportId(event.report_id); setPageState("done"); void loadData(); }
         if (event.type === "error") { setStreamError(event.message); setPageState("error"); }
-      });
+      }, "analysis", reportLanguage);
     } catch (e) {
       setStreamError(e instanceof Error ? e.message : "Request failed.");
       setPageState("error");
@@ -1206,6 +1151,21 @@ export default function DashboardAnalysisPage() {
         <h2 className="mt-1 text-lg font-bold tracking-tight text-slate-900">{t("pickAndRun")}</h2>
 
         <div className="mt-5 space-y-4">
+          {/* Language selector */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700" htmlFor="language-select">{t("reportLanguageLabel")}</label>
+            <select
+              id="language-select"
+              value={reportLanguage}
+              onChange={(e) => setReportLanguage(e.target.value)}
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none"
+            >
+              <option value="English">English</option>
+              <option value="Arabic">العربية</option>
+              <option value="French">Français</option>
+            </select>
+          </div>
+
           {/* Resume selector */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700" htmlFor="resume-select">{t("resumeLabel")}</label>

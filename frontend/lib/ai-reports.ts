@@ -43,6 +43,7 @@ export async function streamAIReport(
   jobDescription: string,
   onEvent: (event: SSEEvent) => void,
   reportType: "analysis" | "enhancement" = "analysis",
+  language: string = "English",
 ): Promise<void> {
   const res = await fetch(`${getApiBaseUrl()}/analysis/ai-report`, {
     method: "POST",
@@ -50,7 +51,7 @@ export async function streamAIReport(
       "Content-Type": "application/json",
       Authorization: `Bearer ${getToken()}`,
     },
-    body: JSON.stringify({ resume_id: resumeId, job_description: jobDescription || null, report_type: reportType }),
+    body: JSON.stringify({ resume_id: resumeId, job_description: jobDescription || null, report_type: reportType, language }),
   });
 
   if (!res.ok) {

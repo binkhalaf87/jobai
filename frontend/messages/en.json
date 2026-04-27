@@ -1268,6 +1268,7 @@
     "description": "AI-powered report: ATS score, keyword gaps, hiring manager view, career plan, and interview prep.",
     "newAnalysis": "New Analysis",
     "pickAndRun": "Pick a CV and run",
+    "reportLanguageLabel": "Report Language",
     "resumeLabel": "Resume",
     "noResumesYet": "No resumes yet.",
     "uploadCvLink": "Upload CV →",
