@@ -17,10 +17,15 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
+function isArabicContent(text: string): boolean {
+  return /[؀-ۿ]/.test(text);
+}
+
 type ReportSection = { id: string; title: string; shortTitle: string; content: string };
 
 function parseReportSections(text: string, shortTitles: Record<number, string>): ReportSection[] {
-  const regex = /^## (Section (\d+) — .+)$/gm;
+  // Matches both English "## Section N — Title" and Arabic "## القسم N — العنوان"
+  const regex = /^## ((?:Section|القسم) (\d+)[^\n]*)$/gm;
   const sections: ReportSection[] = [];
   let match: RegExpExecArray | null;
   let lastEnd = 0;
@@ -52,7 +57,7 @@ function parseReportSections(text: string, shortTitles: Record<number, string>):
 }
 
 function extractAtsScore(text: string): number | null {
-  const m = text.match(/\*\*ATS Score:\s*(\d+)\/100\*\*/i);
+  const m = text.match(/\*\*(?:ATS Score|درجة ATS):\s*(\d+)\/100\*\*/i);
   return m ? parseInt(m[1]) : null;
 }
 
@@ -219,9 +224,9 @@ function parseSection1(content: string): Section1Data | null {
     return lines.findIndex((l) => pattern.test(l));
   }
 
-  const rolesIdx     = findHeadingLine(/most suitable roles/i);
-  const strengthsIdx = findHeadingLine(/top 3 strengths/i);
-  const gapsIdx      = findHeadingLine(/top 3 gaps|hiring risk/i);
+  const rolesIdx     = findHeadingLine(/most suitable roles|الأدوار الأكثر ملاءمة|أكثر ملاءمة/i);
+  const strengthsIdx = findHeadingLine(/top 3 strengths|نقاط القوة|أقوى.*نقاط|نقاط قوة/i);
+  const gapsIdx      = findHeadingLine(/top 3 gaps|hiring risk|نقاط ضعف|مخاطر توظيف/i);
 
   if (rolesIdx === -1 && strengthsIdx === -1 && gapsIdx === -1) return null;
 
@@ -234,22 +239,26 @@ function parseSection1(content: string): Section1Data | null {
   function extractBullets(startIdx: number, endIdx: number): string[] {
     if (startIdx === -1) return [];
     const end = endIdx === -1 ? lines.length : endIdx;
-    return lines
-      .slice(startIdx + 1, end)
+    const chunk = lines.slice(startIdx + 1, end);
+    // Try markdown bullet format first
+    const bulleted = chunk
       .filter((l) => /^\s*[-*•]\s+/.test(l))
       .map((l) => l.replace(/^\s*[-*•]\s+/, "").trim())
       .filter(Boolean);
+    if (bulleted.length > 0) return bulleted;
+    // Fallback: plain lines (Arabic AI output often omits bullet markers)
+    return chunk.filter((l) => l.trim() && !/^#+\s/.test(l.trim())).map((l) => l.trim()).filter(Boolean);
   }
 
   function parseBulletItem(item: string): BulletItem {
     const boldMatch = item.match(/^\*\*(.+?)\*\*[:\s—–-]+\s*(.*)$/);
     if (boldMatch) return { title: boldMatch[1].trim(), detail: boldMatch[2].trim() };
-    const colonMatch = item.match(/^([^:]+):\s+(.+)$/);
+    const colonMatch = item.match(/^([^:：]+)[：:]\s+(.+)$/);
     if (colonMatch) return { title: colonMatch[1].trim(), detail: colonMatch[2].trim() };
     return { title: item, detail: "" };
   }
 
-  const rolesEnd    = strengthsIdx !== -1 ? strengthsIdx : gapsIdx;
+  const rolesEnd     = strengthsIdx !== -1 ? strengthsIdx : gapsIdx;
   const strengthsEnd = gapsIdx;
 
   return {
@@ -262,6 +271,7 @@ function parseSection1(content: string): Section1Data | null {
 
 function Section1Content({ content }: { content: string }) {
   const parsed = parseSection1(content);
+  const isAr = isArabicContent(content);
 
   if (!parsed || (parsed.roles.length === 0 && parsed.strengths.length === 0 && parsed.gaps.length === 0)) {
     return <SectionContent content={content} />;
@@ -281,7 +291,7 @@ function Section1Content({ content }: { content: string }) {
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
               <rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
             </svg>
-            Most Suitable Roles
+            {isAr ? "الأدوار الأكثر ملاءمة" : "Most Suitable Roles"}
           </p>
           <div className="flex flex-wrap gap-2">
             {parsed.roles.map((role, i) => (
@@ -299,7 +309,7 @@ function Section1Content({ content }: { content: string }) {
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
             </svg>
-            Top Strengths
+            {isAr ? "أبرز نقاط القوة" : "Top Strengths"}
           </p>
           <div className="grid gap-3 sm:grid-cols-3">
             {parsed.strengths.map((item, i) => (
@@ -327,7 +337,7 @@ function Section1Content({ content }: { content: string }) {
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
               <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
-            Gaps / Hiring Risks
+            {isAr ? "نقاط الضعف / مخاطر التوظيف" : "Gaps / Hiring Risks"}
           </p>
           <div className="grid gap-3 sm:grid-cols-3">
             {parsed.gaps.map((item, i) => (
@@ -371,13 +381,16 @@ function parseMarkdownTable(content: string): MarkdownTable | null {
 
 function statusBadgeCls(status: string): string {
   const s = status.toLowerCase();
-  if (/good|strong|present|excellent|clear|high/.test(s)) return "bg-teal-light/30 text-teal border-teal-light";
-  if (/fair|moderate|partial|average|limited/.test(s)) return "bg-amber-50 text-amber-700 border-amber-200";
+  if (/good|strong|present|excellent|clear|high|جيد|قوي|ممتاز|موجود|واضح|مرتفع|كامل/.test(s))
+    return "bg-teal-light/30 text-teal border-teal-light";
+  if (/fair|moderate|partial|average|limited|متوسط|جزئي|محدود|مقبول|بعض/.test(s))
+    return "bg-amber-50 text-amber-700 border-amber-200";
   return "bg-rose-50 text-rose-700 border-rose-200";
 }
 
 function Section2Content({ content }: { content: string }) {
   const table = parseMarkdownTable(content);
+  const isAr = isArabicContent(content);
 
   if (!table) return <SectionContent content={content} />;
 
@@ -395,7 +408,7 @@ function Section2Content({ content }: { content: string }) {
           </div>
           {row[2] && (
             <p className="mt-2 text-xs leading-5 text-amber-700">
-              <span className="font-semibold">Issue: </span>{row[2]}
+              <span className="font-semibold">{isAr ? "المشكلة: " : "Issue: "}</span>{row[2]}
             </p>
           )}
           {row[3] && (
@@ -468,21 +481,22 @@ function Section4Content({ content }: { content: string }) {
 
 function Section5Content({ content }: { content: string }) {
   const table = parseMarkdownTable(content);
+  const isAr = isArabicContent(content);
   if (!table || table.rows.length === 0) return <SectionContent content={content} />;
 
   function priorityCls(p: string) {
-    if (/high/i.test(p)) return { card: "border-rose-200 bg-rose-50 text-rose-700", dot: "bg-rose-500" };
-    if (/medium|med/i.test(p)) return { card: "border-amber-200 bg-amber-50 text-amber-700", dot: "bg-amber-400" };
+    if (/high|عالية/i.test(p)) return { card: "border-rose-200 bg-rose-50 text-rose-700", dot: "bg-rose-500" };
+    if (/medium|med|متوسطة/i.test(p)) return { card: "border-amber-200 bg-amber-50 text-amber-700", dot: "bg-amber-400" };
     return { card: "border-teal-light bg-teal-light/20 text-teal", dot: "bg-teal" };
   }
 
-  const pIdx = Math.max(0, table.headers.findIndex((h) => /priority/i.test(h)));
-  const aIdx = Math.max(1, table.headers.findIndex((h) => /action/i.test(h)));
+  const pIdx = Math.max(0, table.headers.findIndex((h) => /priority|الأولوية/i.test(h)));
+  const aIdx = Math.max(1, table.headers.findIndex((h) => /action|الإجراء|الإجراءات/i.test(h)));
 
   const groups = [
-    { label: "High Priority",   rows: table.rows.filter((r) => /high/i.test(r[pIdx] ?? "")), cls: priorityCls("high") },
-    { label: "Medium Priority", rows: table.rows.filter((r) => /medium|med/i.test(r[pIdx] ?? "")), cls: priorityCls("medium") },
-    { label: "Low Priority",    rows: table.rows.filter((r) => !/high|medium|med/i.test(r[pIdx] ?? "")), cls: priorityCls("low") },
+    { label: isAr ? "أولوية عالية" : "High Priority",   rows: table.rows.filter((r) => /high|عالية/i.test(r[pIdx] ?? "")), cls: priorityCls("high") },
+    { label: isAr ? "أولوية متوسطة" : "Medium Priority", rows: table.rows.filter((r) => /medium|med|متوسطة/i.test(r[pIdx] ?? "")), cls: priorityCls("medium") },
+    { label: isAr ? "أولوية منخفضة" : "Low Priority",    rows: table.rows.filter((r) => !/high|medium|med|عالية|متوسطة/i.test(r[pIdx] ?? "")), cls: priorityCls("low") },
   ].filter((g) => g.rows.length > 0);
 
   let counter = 0;
@@ -525,7 +539,8 @@ function parseInterviewQA(content: string): QAPair[] {
   let currentA: string[] = [];
 
   for (const line of lines) {
-    const m = line.match(/^\*\*Q:\s*(.+?)(\*\*)?$/i);
+    // Match English **Q: ...** or Arabic **س: ...** or plain Arabic س: ...
+    const m = line.match(/^\*\*(?:Q|س):\s*(.+?)(\*\*)?$/) ?? line.match(/^س:\s*(.+)$/);
     if (m) {
       if (currentQ) pairs.push({ question: currentQ, answer: currentA.join("\n").trim() });
       currentQ = m[1].replace(/\*+$/, "").trim();
