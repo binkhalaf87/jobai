@@ -178,22 +178,13 @@ const SECTION_ICONS: Record<number, JSX.Element> = {
   ),
 };
 
-const SECTION_GRADIENT: Record<number, string> = {
-  1: "from-brand-800/8 via-white to-teal/5",
-  2: "from-teal/8 via-white to-brand-800/5",
-  3: "from-brand-800/8 via-white to-teal/5",
-  4: "from-teal/8 via-white to-brand-800/5",
-  5: "from-amber-500/8 via-white to-amber-500/3",
-  6: "from-brand-800/8 via-white to-teal/5",
-};
-
-const SECTION_ICON_BG: Record<number, string> = {
-  1: "bg-brand-50 text-brand-700",
-  2: "bg-teal-light/30 text-teal",
-  3: "bg-brand-50 text-brand-700",
-  4: "bg-teal-light/30 text-teal",
-  5: "bg-amber-50 text-amber-700",
-  6: "bg-brand-50 text-brand-700",
+const SECTION_HEADER: Record<number, { bar: string; body: string; accent: string }> = {
+  1: { bar: "from-brand-800 to-indigo-600",   body: "from-indigo-50/50 via-white to-brand-50/30",   accent: "bg-white/20" },
+  2: { bar: "from-teal to-emerald-500",        body: "from-teal/8 via-white to-emerald-50/40",       accent: "bg-white/20" },
+  3: { bar: "from-violet-600 to-purple-500",   body: "from-violet-50/60 via-white to-purple-50/30",  accent: "bg-white/20" },
+  4: { bar: "from-emerald-600 to-teal",        body: "from-emerald-50/60 via-white to-teal/8",       accent: "bg-white/20" },
+  5: { bar: "from-amber-500 to-orange-400",    body: "from-amber-50/70 via-white to-orange-50/30",   accent: "bg-white/20" },
+  6: { bar: "from-rose-500 to-pink-500",       body: "from-rose-50/60 via-white to-pink-50/30",      accent: "bg-white/20" },
 };
 
 // ─── Markdown renderer ────────────────────────────────────────────────────────
@@ -630,19 +621,21 @@ function StructuredReport({
   resumeTitle,
   date,
   translations,
+  language,
 }: {
   text: string;
   resumeTitle?: string;
   date?: string;
   translations: StructuredReportTranslations;
+  language?: string;
 }) {
   const sections = parseReportSections(text, translations.shortTitles);
   const atsScore = extractAtsScore(text);
-  const [activeTab, setActiveTab] = useState(0);
+  const isRtl = language === "Arabic";
 
   if (sections.length === 0) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6" dir={isRtl ? "rtl" : undefined}>
         <div className={PROSE_CLS}>
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
         </div>
@@ -650,15 +643,8 @@ function StructuredReport({
     );
   }
 
-  const safeTab = Math.min(activeTab, sections.length - 1);
-  const activeSection = sections[safeTab];
-  const activeNum = safeTab + 1;
-  const activeIcon = SECTION_ICONS[activeNum];
-  const activeGradient = SECTION_GRADIENT[activeNum] ?? "from-brand-800/8 via-white to-teal/5";
-  const activeIconBg = SECTION_ICON_BG[activeNum] ?? "bg-brand-50 text-brand-700";
-
   return (
-    <div id="analysis-print-root">
+    <div id="analysis-print-root" dir={isRtl ? "rtl" : undefined}>
       {/* Print header */}
       <div className="mb-5 hidden print:block">
         <h1 className="text-2xl font-bold text-slate-900">{translations.cvAnalysisReport}</h1>
@@ -670,8 +656,8 @@ function StructuredReport({
       </div>
 
       {/* Export + ATS hero */}
-      <div className="mb-6 space-y-4" data-no-print>
-        <div className="flex justify-end">
+      <div className="mb-6 space-y-4">
+        <div className={`flex ${isRtl ? "justify-start" : "justify-end"}`}>
           <button
             type="button"
             onClick={() => window.print()}
@@ -695,88 +681,35 @@ function StructuredReport({
         )}
       </div>
 
-      {/* ── Tabbed sections — screen only ── */}
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white" data-no-print>
-        {/* Tab bar */}
-        <div className="flex overflow-x-auto border-b border-slate-100 bg-slate-50/60">
-          {sections.map((s, i) => {
-            const tabNum = i + 1;
-            const isActive = i === safeTab;
-            const tabIcon = SECTION_ICONS[tabNum];
-            return (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => setActiveTab(i)}
-                className={[
-                  "flex items-center gap-2 whitespace-nowrap px-4 py-3.5 text-xs font-semibold transition border-b-2 -mb-px",
-                  isActive
-                    ? "border-brand-800 text-brand-800 bg-white"
-                    : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-white/60",
-                ].join(" ")}
-              >
-                <span
-                  className={[
-                    "flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg transition",
-                    isActive ? SECTION_ICON_BG[tabNum] ?? "bg-brand-50 text-brand-700" : "bg-slate-200/60 text-slate-400",
-                  ].join(" ")}
-                >
-                  {tabIcon}
-                </span>
-                {s.shortTitle}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Active section */}
-        <div className={`bg-gradient-to-br ${activeGradient}`}>
-          <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
-            <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl ${activeIconBg}`}>
-              {activeIcon ?? (
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
-                </svg>
-              )}
-            </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
-                {translations.sectionOf(activeNum, sections.length)}
-              </p>
-              <h2 className="mt-0.5 text-sm font-bold text-slate-900">{activeSection.title}</h2>
-            </div>
-          </div>
-          <div className="p-5 md:p-6">
-            <SectionContentByNum num={activeNum} content={activeSection.content} />
-          </div>
-        </div>
-      </div>
-
-      {/* ── Print: all sections stacked ── */}
-      <div className="hidden print:block space-y-4">
+      {/* All sections stacked */}
+      <div className="space-y-5">
         {sections.map((s, i) => {
           const num = i + 1;
           const icon = SECTION_ICONS[num];
-          const gradient = SECTION_GRADIENT[num] ?? "from-brand-800/8 via-white to-teal/5";
-          const iconBg = SECTION_ICON_BG[num] ?? "bg-brand-50 text-brand-700";
+          const hdr = SECTION_HEADER[num] ?? SECTION_HEADER[1];
           return (
-            <div key={s.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white" data-print-section>
-              <div className={`flex items-center gap-3 border-b border-slate-100 bg-gradient-to-br ${gradient} px-5 py-4`}>
-                <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl ${iconBg}`}>
-                  {icon ?? (
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
-                    </svg>
-                  )}
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
-                    {translations.sectionOf(num, sections.length)}
-                  </p>
-                  <h2 className="mt-0.5 text-sm font-bold text-slate-900">{s.title}</h2>
+            <div key={s.id} className="overflow-hidden rounded-2xl shadow-sm" id={s.id}>
+              {/* Colored header */}
+              <div className={`bg-gradient-to-r ${hdr.bar} px-5 py-4`}>
+                <div className={`flex items-center gap-3 ${isRtl ? "flex-row-reverse" : ""}`}>
+                  <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl ${hdr.accent} text-white`}>
+                    {icon ?? (
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
+                      </svg>
+                    )}
+                  </div>
+                  <div className={isRtl ? "text-right" : ""}>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">
+                      {translations.sectionOf(num, sections.length)}
+                    </p>
+                    <h2 className="mt-0.5 text-sm font-bold text-white">{s.title}</h2>
+                  </div>
                 </div>
               </div>
-              <div className="p-5 md:p-6">
+
+              {/* Section body */}
+              <div className={`bg-gradient-to-br ${hdr.body} border border-t-0 border-slate-200 p-5 md:p-6 ${isRtl ? "text-right" : ""}`}>
                 <SectionContentByNum num={num} content={s.content} />
               </div>
             </div>
@@ -1306,6 +1239,7 @@ export default function DashboardAnalysisPage() {
               resumeTitle={activeReport?.resume_title ?? undefined}
               date={activeReport ? formatDate(activeReport.created_at) : undefined}
               translations={reportTranslations}
+              language={reportLanguage}
             />
             <NextStepsPanel
               atsScore={extractAtsScore(streamText)}
