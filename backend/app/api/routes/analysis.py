@@ -24,7 +24,7 @@ from app.schemas.analysis import (
 )
 from app.services.analysis_ats import create_ats_analysis
 from app.services.analysis_orchestrator import run_full_analysis
-from app.schemas.job_description import JobDescriptionCreate, JobDescriptionSubmitResponse
+from app.schemas.job_description import JobDescriptionCreate, JobDescriptionListItem, JobDescriptionSubmitResponse
 from app.schemas.rewrite_suggestion import RewriteSuggestionGenerateRequest, RewriteSuggestionGenerateResponse, RewriteSuggestionRead
 from app.services.analysis_matching import (
     create_match_analysis,
@@ -41,7 +41,7 @@ from app.services.ai_report_service import (
     update_report_text,
 )
 from app.services.analysis_scoring import create_scoring_analysis
-from app.services.job_descriptions import create_job_description
+from app.services.job_descriptions import create_job_description, list_user_job_descriptions
 from app.services.resume_preview import build_text_preview, get_user_resume
 
 # This router is reserved for analysis preparation, requests, and result retrieval.
@@ -52,6 +52,15 @@ router = APIRouter(prefix="/analysis", tags=["analysis"])
 def analysis_status() -> dict[str, str]:
     """Placeholder endpoint confirming the analysis route group is wired."""
     return {"status": "analysis routes ready"}
+
+
+@router.get("/job-descriptions", response_model=list[JobDescriptionListItem])
+def get_job_descriptions(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[JobDescriptionListItem]:
+    """Return all job descriptions saved by the current user."""
+    return list_user_job_descriptions(db, current_user.id)  # type: ignore[return-value]
 
 
 @router.post("/job-description", response_model=JobDescriptionSubmitResponse, status_code=status.HTTP_201_CREATED)

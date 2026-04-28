@@ -1,5 +1,9 @@
 import { api, ApiError } from "@/lib/api";
-import type { JobDescriptionPayload, JobDescriptionSubmitResponse } from "@/types";
+import type { JobDescriptionListItem, JobDescriptionPayload, JobDescriptionSubmitResponse } from "@/types";
+
+export async function listJobDescriptions(): Promise<JobDescriptionListItem[]> {
+  return api.get<JobDescriptionListItem[]>("/analysis/job-descriptions", { auth: true });
+}
 
 
 export async function submitJobDescription(

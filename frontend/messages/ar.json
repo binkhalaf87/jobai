@@ -1438,6 +1438,8 @@
       "noResumeContext": "بدون سياق سيرة ذاتية",
       "companyNamePlaceholder": "اسم الشركة (اختياري)",
       "jdPlaceholder": "الصق وصف الوظيفة (اختياري لكن يُنصح به)",
+      "loadFromJobLabel": "تحميل من وصف وظيفة محفوظة",
+      "loadFromJobDefault": "— أو الصق يدوياً أدناه —",
       "english": "الإنجليزية",
       "arabic": "العربية",
       "preparingInterviewer": "جارٍ تحضير المحاور...",
@@ -1477,7 +1479,9 @@
       "ttsOn": "🔊 تشغيل الصوت",
       "ttsOff": "🔇 إيقاف الصوت",
       "timerLabel": "الوقت",
-      "timerExpired": "انتهى الوقت"
+      "timerExpired": "انتهى الوقت",
+      "saveQuestion": "حفظ السؤال",
+      "questionSaved": "تم حفظ السؤال"
     },
     "timer": {
       "none": "بدون توقيت",
@@ -1509,6 +1513,7 @@
       "priorityImprovements": "أولويات التحسين",
       "recommendedDrills": "تمارين موصى بها",
       "practiceAgain": "تدرّب مجدداً",
+      "exportPdf": "تصدير PDF",
       "questions": "{count} سؤال",
       "progressTrend": "مسار التقدم",
       "progressTrendLatest": "الأخيرة",
@@ -1535,7 +1540,15 @@
       },
       "review": "مراجعة"
     },
-    "failedToStart": "تعذّر تحضير المقابلة."
+    "failedToStart": "تعذّر تحضير المقابلة.",
+    "questionBank": {
+      "eyebrow": "بنك الأسئلة",
+      "title_one": "سؤال محفوظ واحد",
+      "title_other": "{count} أسئلة محفوظة",
+      "empty": "لا توجد أسئلة محفوظة بعد. احفظ الأسئلة أثناء جلسات المقابلة.",
+      "remove": "حذف",
+      "jobLabel": "الدور: {title}"
+    }
   },
   "jobSearchPage": {
     "step": "الخطوة 4",

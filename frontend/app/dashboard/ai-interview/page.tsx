@@ -7,6 +7,7 @@ import { InterviewAnswerComposer } from "@/components/interview-answer-composer"
 import { Panel } from "@/components/panel";
 import { ApiError } from "@/lib/api";
 import { completeInterview, extractStreamingReply, getInterview, listInterviews, startInterview, submitAnswer, submitAnswerStream } from "@/lib/interviews";
+import { listJobDescriptions } from "@/lib/job-descriptions";
 import { listResumes } from "@/lib/resumes";
 import type {
   AnswerEvaluation,
@@ -17,6 +18,7 @@ import type {
   InterviewQuestion,
   InterviewType,
   InterviewerStyle,
+  JobDescriptionListItem,
   QuestionCount,
   ResumeListItem,
 } from "@/types";
@@ -28,6 +30,15 @@ const INTERVIEWER_STYLE_VALUES: InterviewerStyle[] = ["supportive", "direct", "c
 
 type PageState = "setup" | "generating" | "brief" | "interviewing" | "evaluating" | "completing" | "completed";
 type TimerDuration = 0 | 60 | 120 | 180;
+
+type SavedQuestion = {
+  id: string;
+  question: string;
+  type: "hr" | "technical";
+  focus_area: string | null;
+  job_title: string;
+  saved_at: string;
+};
 
 type SetupValues = {
   jobTitle: string;
@@ -129,6 +140,12 @@ export default function DashboardAiInterviewPage() {
   const [streamingReply, setStreamingReply] = useState("");
   const [ttsEnabled, setTtsEnabled] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [jobDescriptions, setJobDescriptions] = useState<JobDescriptionListItem[]>([]);
+  const [savedQuestions, setSavedQuestions] = useState<SavedQuestion[]>(() => {
+    if (typeof window === "undefined") return [];
+    try { return JSON.parse(localStorage.getItem("jobai_question_bank") ?? "[]") as SavedQuestion[]; }
+    catch { return []; }
+  });
 
   const loadHistory = useCallback(async () => {
     try { setSessions(await listInterviews()); } catch {}
@@ -140,6 +157,7 @@ export default function DashboardAiInterviewPage() {
       setResumes(items);
       if (items.length > 0) setSetup((prev) => ({ ...prev, resumeId: prev.resumeId || items[0]!.id }));
     }).catch(() => {});
+    void listJobDescriptions().then(setJobDescriptions).catch(() => {});
   }, []);
 
   // Pre-fill from Analysis or Job Search navigation
@@ -317,6 +335,71 @@ export default function DashboardAiInterviewPage() {
     }
   }
 
+  function getQuestionId(q: InterviewQuestion): string {
+    return `${setup.jobTitle}:${q.index}:${q.question.slice(0, 60)}`;
+  }
+
+  function toggleSaveQuestion(q: InterviewQuestion) {
+    const id = getQuestionId(q);
+    const alreadySaved = savedQuestions.some((s) => s.id === id);
+    const updated = alreadySaved
+      ? savedQuestions.filter((s) => s.id !== id)
+      : [...savedQuestions, { id, question: q.question, type: q.type, focus_area: q.focus_area ?? null, job_title: setup.jobTitle, saved_at: new Date().toISOString() }];
+    setSavedQuestions(updated);
+    localStorage.setItem("jobai_question_bank", JSON.stringify(updated));
+  }
+
+  function isQuestionSaved(q: InterviewQuestion): boolean {
+    return savedQuestions.some((s) => s.id === getQuestionId(q));
+  }
+
+  function removeSavedQuestion(id: string) {
+    const updated = savedQuestions.filter((s) => s.id !== id);
+    setSavedQuestions(updated);
+    localStorage.setItem("jobai_question_bank", JSON.stringify(updated));
+  }
+
+  function exportReportPdf() {
+    if (!completedSession) return;
+    const win = window.open("", "_blank");
+    if (!win) return;
+    const r = completedSession.final_report;
+    const date = new Date(completedSession.created_at).toLocaleDateString();
+    const breakdownRows = Object.entries(r.breakdown ?? {})
+      .map(([k, v]) => `<div class="bar-row"><span class="lbl">${k.replace(/_/g, " ")}</span><div class="bar" style="width:${Math.round((Number(v) / 10) * 180)}px"></div><span class="bv">${Number(v).toFixed(1)}</span></div>`)
+      .join("");
+    const qaDetail = completedSession.answers
+      .map((a, i) => {
+        const ev = a.evaluation;
+        const strengths = ev.strengths.length ? `<p class="pos">+ ${ev.strengths.join(" · ")}</p>` : "";
+        const weaknesses = ev.weaknesses.length ? `<p class="neg">→ ${ev.weaknesses.join(" · ")}</p>` : "";
+        return `<div class="qa"><p class="qt">Q${i + 1}: ${a.question}</p><p class="ans">${a.answer}</p><p class="sc">Score: ${ev.score.toFixed(1)}/10${ev.star_score != null ? ` · STAR: ${ev.star_score.toFixed(1)}/10` : ""}</p>${strengths}${weaknesses}</div>`;
+      })
+      .join("");
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Interview Report</title><style>
+      body{font-family:Arial,sans-serif;font-size:13px;margin:2cm;color:#111;}
+      h1{font-size:1.5em;color:#0f172a;margin-bottom:.2em;}h2{font-size:1.1em;margin-top:1.4em;border-bottom:2px solid #e2e8f0;padding-bottom:.3em;color:#334155;}
+      .score-big{font-size:2.2em;font-weight:700;color:#0f766e;}.readiness{display:inline-block;padding:2px 12px;border-radius:20px;background:#f0fdf4;color:#15803d;font-weight:600;margin-left:8px;}
+      .bar-row{display:flex;align-items:center;margin:5px 0;}.lbl{width:145px;font-size:.88em;text-transform:capitalize;}.bar{height:9px;border-radius:4px;background:#0f766e;margin-right:8px;}.bv{font-weight:700;font-size:.88em;}
+      ul{padding-left:1.2em;}li{margin:3px 0;}
+      .qa{border-left:3px solid #e2e8f0;padding-left:12px;margin:12px 0;}.qt{font-weight:700;margin-bottom:3px;}.ans{color:#475569;margin-bottom:3px;}.sc{font-weight:600;color:#0f766e;font-size:.9em;}
+      .pos{color:#15803d;font-size:.88em;}.neg{color:#b45309;font-size:.88em;}
+      @media print{body{margin:1cm;}}
+    </style></head><body>
+      <h1>Interview Report</h1>
+      <p style="color:#64748b">${completedSession.job_title} · ${completedSession.question_count} questions · ${date}</p>
+      <p><span class="score-big">${completedSession.overall_score.toFixed(1)}</span><span style="font-size:.9em;color:#64748b">/10</span><span class="readiness">${r.readiness}</span></p>
+      <h2>Summary</h2><p>${r.summary}</p>
+      <h2>Score Breakdown</h2>${breakdownRows}
+      <h2>Top Strengths</h2><ul>${(r.top_strengths ?? []).map((s: string) => `<li>${s}</li>`).join("")}</ul>
+      <h2>Priority Improvements</h2><ul>${(r.priority_improvements ?? []).map((s: string) => `<li>${s}</li>`).join("")}</ul>
+      <h2>Recommended Drills</h2><ul>${(r.recommended_drills ?? []).map((s: string) => `<li>${s}</li>`).join("")}</ul>
+      <h2>Q&A Detail</h2>${qaDetail}
+    </body></html>`);
+    win.document.close();
+    win.print();
+  }
+
   function speakText(text: string) {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
@@ -468,6 +551,24 @@ export default function DashboardAiInterviewPage() {
             <div className="md:col-span-2 grid gap-3 md:grid-cols-3">
               {interviewerStyles.map((style) => <button key={style.value} type="button" onClick={() => setSetup((p) => ({ ...p, interviewerStyle: style.value }))} className={`rounded-2xl border p-4 text-left ${setup.interviewerStyle === style.value ? "border-brand-800 bg-brand-800 text-white" : "border-slate-200 bg-slate-50 text-slate-700"}`}><p className="text-sm font-semibold">{style.label}</p><p className={`mt-2 text-xs ${setup.interviewerStyle === style.value ? "text-slate-200" : "text-slate-500"}`}>{style.desc}</p></button>)}
             </div>
+            {jobDescriptions.length > 0 && (
+              <div className="md:col-span-2 space-y-1.5">
+                <label className="text-xs font-semibold text-slate-500">{t("form.loadFromJobLabel")}</label>
+                <select
+                  defaultValue=""
+                  onChange={(e) => {
+                    const jd = jobDescriptions.find((j) => j.id === e.target.value);
+                    if (jd) setSetup((p) => ({ ...p, jobTitle: p.jobTitle || jd.title, jobDescription: jd.normalized_text ?? p.jobDescription }));
+                  }}
+                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm"
+                >
+                  <option value="">{t("form.loadFromJobDefault")}</option>
+                  {jobDescriptions.map((jd) => (
+                    <option key={jd.id} value={jd.id}>{jd.title}{jd.company_name ? ` — ${jd.company_name}` : ""}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <textarea value={setup.jobDescription} onChange={(e) => setSetup((p) => ({ ...p, jobDescription: e.target.value }))} rows={6} placeholder={t("form.jdPlaceholder")} className="md:col-span-2 rounded-xl border border-slate-300 px-4 py-3 text-sm" />
           </div>
           {pageError && <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{pageError}</div>}
@@ -571,7 +672,17 @@ export default function DashboardAiInterviewPage() {
               <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] uppercase tracking-wider text-slate-500">{currentQuestion.source === "follow_up" ? t("session.followUp") : currentQuestion.source === "planned" ? t("session.planned") : t("session.opening")}</span>
               {currentQuestion.focus_area && <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] text-slate-500">{currentQuestion.focus_area}</span>}
             </div>
-            <p className="text-base font-semibold leading-snug text-slate-900">{currentQuestion.question}</p>
+            <div className="flex items-start gap-2">
+              <p className="flex-1 text-base font-semibold leading-snug text-slate-900">{currentQuestion.question}</p>
+              <button
+                type="button"
+                title={isQuestionSaved(currentQuestion) ? t("session.questionSaved") : t("session.saveQuestion")}
+                onClick={() => toggleSaveQuestion(currentQuestion)}
+                className={`mt-0.5 shrink-0 rounded-lg border px-2 py-1 text-xs transition-colors ${isQuestionSaved(currentQuestion) ? "border-teal-light bg-teal-light/20 text-teal" : "border-slate-200 bg-white text-slate-400 hover:border-teal-light hover:text-teal"}`}
+              >
+                {isQuestionSaved(currentQuestion) ? "🔖" : "☆"}
+              </button>
+            </div>
           </div>
           {!currentEvaluation ? (
             <>
@@ -654,7 +765,10 @@ export default function DashboardAiInterviewPage() {
               <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4"><p className="text-xs font-semibold uppercase tracking-widest text-amber-700">{t("finalReport.priorityImprovements")}</p><ul className="mt-3 space-y-2 text-sm text-amber-900">{(completedSession.final_report?.priority_improvements ?? []).map((item: string) => <li key={item}>-&gt; {item}</li>)}</ul></div>
               <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4"><p className="text-xs font-semibold uppercase tracking-widest text-sky-700">{t("finalReport.recommendedDrills")}</p><ul className="mt-3 space-y-2 text-sm text-sky-900">{(completedSession.final_report?.recommended_drills ?? []).map((item: string) => <li key={item}>• {item}</li>)}</ul></div>
             </div>
-            <button type="button" onClick={handleRetry} className="mt-6 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700">{t("finalReport.practiceAgain")}</button>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button type="button" onClick={handleRetry} className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700">{t("finalReport.practiceAgain")}</button>
+              <button type="button" onClick={exportReportPdf} className="rounded-xl border border-brand-800 bg-white px-5 py-2.5 text-sm font-semibold text-brand-800 hover:bg-brand-50">{t("finalReport.exportPdf")}</button>
+            </div>
 
             {completedSessions.length > 1 && (
               <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
@@ -708,6 +822,33 @@ export default function DashboardAiInterviewPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </Panel>
+      )}
+
+      {(pageState === "setup" || pageState === "completed") && (
+        <Panel className="overflow-hidden">
+          <div className="px-6 py-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{t("questionBank.eyebrow")}</p>
+            <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-900">
+              {savedQuestions.length === 1 ? t("questionBank.title_one") : t("questionBank.title_other", { count: savedQuestions.length })}
+            </h2>
+          </div>
+          {savedQuestions.length === 0 ? (
+            <div className="mx-6 mb-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-8 text-center text-sm text-slate-500">{t("questionBank.empty")}</div>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {savedQuestions.map((sq) => (
+                <div key={sq.id} className="flex items-start gap-3 px-6 py-4">
+                  <span className={`mt-0.5 shrink-0 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${typeClass(sq.type)}`}>{sq.type === "technical" ? t("session.technical") : t("session.behavioral")}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-slate-800">{sq.question}</p>
+                    <p className="mt-1 text-[11px] text-slate-400">{t("questionBank.jobLabel", { title: sq.job_title })} · {formatDate(sq.saved_at)}</p>
+                  </div>
+                  <button type="button" onClick={() => removeSavedQuestion(sq.id)} className="shrink-0 rounded-lg border border-rose-200 px-2.5 py-1 text-xs text-rose-600 hover:bg-rose-50">{t("questionBank.remove")}</button>
+                </div>
+              ))}
             </div>
           )}
         </Panel>

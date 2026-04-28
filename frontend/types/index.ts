@@ -87,6 +87,14 @@ export type JobDescriptionSubmitResponse = {
   normalized_text_preview: string;
 };
 
+export type JobDescriptionListItem = {
+  id: string;
+  title: string;
+  company_name: string | null;
+  normalized_text: string | null;
+  created_at: string;
+};
+
 export type AnalysisRequestPayload = {
   resume_id: string;
   job_description_id: string;

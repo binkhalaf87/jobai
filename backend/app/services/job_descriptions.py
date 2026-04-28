@@ -1,3 +1,4 @@
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.job_description import JobDescription
@@ -32,6 +33,17 @@ def create_job_description(db: Session, user: User, payload: JobDescriptionCreat
     db.commit()
     db.refresh(job_description)
     return job_description
+
+
+def list_user_job_descriptions(db: Session, user_id: str) -> list[JobDescription]:
+    """Return all job descriptions for a user, newest first."""
+    return list(
+        db.scalars(
+            select(JobDescription)
+            .where(JobDescription.user_id == user_id)
+            .order_by(JobDescription.created_at.desc())
+        )
+    )
 
 
 def ensure_job_description_keywords(db: Session, job_description: JobDescription) -> JobDescription:

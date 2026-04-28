@@ -1438,6 +1438,8 @@
       "noResumeContext": "No resume context",
       "companyNamePlaceholder": "Company Name (optional)",
       "jdPlaceholder": "Paste job description (optional but recommended)",
+      "loadFromJobLabel": "Load from saved job descriptions",
+      "loadFromJobDefault": "— or paste manually below —",
       "english": "English",
       "arabic": "Arabic",
       "preparingInterviewer": "Preparing interviewer...",
@@ -1477,7 +1479,9 @@
       "ttsOn": "🔊 Voice On",
       "ttsOff": "🔇 Voice Off",
       "timerLabel": "Time",
-      "timerExpired": "Time's up"
+      "timerExpired": "Time's up",
+      "saveQuestion": "Save question",
+      "questionSaved": "Question saved"
     },
     "timer": {
       "none": "No timer",
@@ -1509,6 +1513,7 @@
       "priorityImprovements": "Priority Improvements",
       "recommendedDrills": "Recommended Drills",
       "practiceAgain": "Practice Again",
+      "exportPdf": "Export PDF",
       "questions": "{count} questions",
       "progressTrend": "Progress Trend",
       "progressTrendLatest": "Latest",
@@ -1535,7 +1540,15 @@
       },
       "review": "Review"
     },
-    "failedToStart": "Failed to prepare the interview."
+    "failedToStart": "Failed to prepare the interview.",
+    "questionBank": {
+      "eyebrow": "Question Bank",
+      "title_one": "1 saved question",
+      "title_other": "{count} saved questions",
+      "empty": "No saved questions yet. Bookmark questions during your interview sessions.",
+      "remove": "Remove",
+      "jobLabel": "Role: {title}"
+    }
   },
   "jobSearchPage": {
     "step": "Step 4",

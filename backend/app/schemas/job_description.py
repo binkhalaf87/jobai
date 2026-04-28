@@ -33,6 +33,13 @@ class JobDescriptionRead(JobDescriptionBase, TimestampedSchema):
     keyword_data: JobDescriptionKeywordData | None = None
 
 
+class JobDescriptionListItem(TimestampedSchema):
+    id: str
+    title: str
+    company_name: str | None = None
+    normalized_text: str | None = None
+
+
 class JobDescriptionSubmitResponse(ORMBaseSchema):
     job_description_id: str
     title: str
