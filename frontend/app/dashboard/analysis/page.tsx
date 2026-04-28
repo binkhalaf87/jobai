@@ -181,6 +181,11 @@ const SECTION_ICONS: Record<number, JSX.Element> = {
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
     </svg>
   ),
+  7: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+      <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+    </svg>
+  ),
 };
 
 const SECTION_HEADER: Record<number, { bar: string; body: string; accent: string }> = {
@@ -190,6 +195,7 @@ const SECTION_HEADER: Record<number, { bar: string; body: string; accent: string
   4: { bar: "from-emerald-600 to-teal",        body: "from-emerald-50/60 via-white to-teal/8",       accent: "bg-white/20" },
   5: { bar: "from-amber-500 to-orange-400",    body: "from-amber-50/70 via-white to-orange-50/30",   accent: "bg-white/20" },
   6: { bar: "from-rose-500 to-pink-500",       body: "from-rose-50/60 via-white to-pink-50/30",      accent: "bg-white/20" },
+  7: { bar: "from-cyan-600 to-sky-500",        body: "from-cyan-50/60 via-white to-sky-50/30",       accent: "bg-white/20" },
 };
 
 // ─── Markdown renderer ────────────────────────────────────────────────────────
@@ -606,6 +612,101 @@ function Section6Content({ content }: { content: string }) {
   );
 }
 
+// ─── Section 7: Salary Insights ──────────────────────────────────────────────
+
+function demandBadgeCls(demand: string): { badge: string; dot: string } {
+  if (/high|مرتفع|عالٍ|عالي/i.test(demand))   return { badge: "bg-teal-light/30 text-teal border-teal-light",         dot: "bg-teal" };
+  if (/medium|متوسط/i.test(demand))            return { badge: "bg-amber-50 text-amber-700 border-amber-200",          dot: "bg-amber-400" };
+  return                                               { badge: "bg-rose-50 text-rose-700 border-rose-200",             dot: "bg-rose-400" };
+}
+
+function Section7Content({ content }: { content: string }) {
+  const table = parseMarkdownTable(content);
+  const isAr  = isArabicContent(content);
+
+  // Extract bullet-point notes after the table
+  const noteLines = content
+    .split("\n")
+    .filter((l) => /^\s*[-*•]\s+/.test(l))
+    .map((l) => l.replace(/^\s*[-*•]\s+/, "").trim())
+    .filter(Boolean);
+
+  if (!table || table.rows.length === 0) return <SectionContent content={content} />;
+
+  // Column index helpers — tolerant to Arabic/English headers
+  const headers = table.headers;
+  const roleIdx   = 0;
+  const entryIdx  = 1;
+  const midIdx    = 2;
+  const seniorIdx = 3;
+  const demandIdx = headers.length > 4 ? 4 : -1;
+
+  const levelLabel = (idx: number) => headers[idx] ?? (isAr ? `العمود ${idx + 1}` : `Col ${idx + 1}`);
+
+  return (
+    <div className="space-y-5">
+      {/* Salary cards */}
+      <div className="grid gap-3 sm:grid-cols-1 md:gap-4">
+        {table.rows.map((row, i) => {
+          const role   = row[roleIdx]   ?? "";
+          const entry  = row[entryIdx]  ?? "—";
+          const mid    = row[midIdx]    ?? "—";
+          const senior = row[seniorIdx] ?? "—";
+          const demand = demandIdx >= 0 ? (row[demandIdx] ?? "") : "";
+          const { badge, dot } = demandBadgeCls(demand);
+
+          return (
+            <div key={i} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+              {/* Role header */}
+              <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/60 px-4 py-3">
+                <p className="text-sm font-bold text-slate-900">{role}</p>
+                {demand && (
+                  <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${badge}`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+                    {demand}
+                  </span>
+                )}
+              </div>
+
+              {/* Salary range bars */}
+              <div className="grid grid-cols-3 divide-x divide-slate-100 px-0">
+                {[
+                  { label: levelLabel(entryIdx),  value: entry,  color: "from-sky-400 to-cyan-400",      bg: "bg-sky-50",     text: "text-sky-700"    },
+                  { label: levelLabel(midIdx),     value: mid,    color: "from-brand-600 to-indigo-500",  bg: "bg-indigo-50",  text: "text-indigo-700" },
+                  { label: levelLabel(seniorIdx),  value: senior, color: "from-violet-600 to-purple-500", bg: "bg-violet-50",  text: "text-violet-700" },
+                ].map((col, ci) => (
+                  <div key={ci} className={`flex flex-col items-center gap-1 px-3 py-4 ${col.bg}`}>
+                    <p className="text-center text-[9px] font-bold uppercase tracking-[0.15em] text-slate-400">{col.label}</p>
+                    <div className={`mt-1 h-1 w-10 rounded-full bg-gradient-to-r ${col.color}`} />
+                    <p className={`mt-1 text-center text-xs font-black tabular-nums ${col.text}`}>{col.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Notes */}
+      {noteLines.length > 0 && (
+        <div className="rounded-xl border border-cyan-100 bg-cyan-50/60 px-4 py-3">
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-600">
+            {isAr ? "عوامل مؤثرة على الراتب" : "Key Salary Factors"}
+          </p>
+          <ul className="space-y-1.5">
+            {noteLines.map((note, i) => (
+              <li key={i} className="flex items-start gap-2 text-xs leading-5 text-slate-600">
+                <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-cyan-400" />
+                {note}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Section-aware dispatcher ─────────────────────────────────────────────────
 
 function SectionContentByNum({ num, content }: { num: number; content: string }) {
@@ -615,6 +716,7 @@ function SectionContentByNum({ num, content }: { num: number; content: string })
   if (num === 4) return <Section4Content content={content} />;
   if (num === 5) return <Section5Content content={content} />;
   if (num === 6) return <Section6Content content={content} />;
+  if (num === 7) return <Section7Content content={content} />;
   return <SectionContent content={content} />;
 }
 
@@ -985,6 +1087,7 @@ export default function DashboardAnalysisPage() {
       4: t("shortTitles.careerPlan"),
       5: t("shortTitles.quickWins"),
       6: t("shortTitles.interviewQA"),
+      7: t("shortTitles.salaryInsights"),
     },
   };
 

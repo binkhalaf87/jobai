@@ -12,7 +12,7 @@ from app.models.ai_report import AIAnalysisReport
 from app.models.resume import Resume
 from app.services.rewrite_engine import get_rewrite_model_name
 
-AI_REPORT_MAX_TOKENS = 4096
+AI_REPORT_MAX_TOKENS = 6000
 AI_REPORT_TEMPERATURE = 0.3
 
 ANALYSIS_SYSTEM_PROMPT = """\
@@ -67,6 +67,15 @@ Format as a table: | Priority | Action |
 8–12 common questions relevant to the target role.
 For each question: provide a 3–5 line answer framework.
 Format: **Q: [question]** followed by the answer framework.
+
+## Section 7 — Salary Insights & Market Benchmarks
+Provide realistic salary benchmarks for the top 3–5 recommended roles in the Saudi/GCC market (or the region implied by the candidate's profile).
+Format as a table with these exact columns:
+| Role | Entry Level (SAR/month) | Mid Level (SAR/month) | Senior Level (SAR/month) | Market Demand |
+- Market Demand values: High / Medium / Low
+- Use realistic current Saudi market ranges (e.g. 8,000–12,000 / 12,000–18,000 / 18,000–30,000+)
+- After the table, add 2–3 bullet points about key factors that affect salary in this field (certifications, company size, city, Vision 2030 impact).
+- If the candidate's profile is outside Saudi Arabia, adjust the salary ranges to the relevant regional market.
 
 === ACCURACY & INTEGRITY RULES ===
 - Never fabricate experience, companies, or certifications.
