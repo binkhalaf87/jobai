@@ -32,12 +32,13 @@ from app.services.analysis_matching import (
     get_user_resume_for_analysis,
 )
 from app.services.rewrite_engine import get_user_analysis_for_rewrite, replace_rewrite_suggestions
-from app.schemas.ai_report import AIReportFull, AIReportListItem, AIReportRequest
+from app.schemas.ai_report import AIReportFull, AIReportListItem, AIReportRequest, AIReportUpdateRequest
 from app.services.ai_report_service import (
     create_pending_report,
     get_user_report,
     list_user_reports,
     stream_report_to_client,
+    update_report_text,
 )
 from app.services.analysis_scoring import create_scoring_analysis
 from app.services.job_descriptions import create_job_description
@@ -370,6 +371,20 @@ def get_ai_report(
 ) -> AIReportFull:
     """Return the full content of a single AI analysis report."""
     report = get_user_report(db, current_user.id, report_id)
+    if not report:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found.")
+    return report
+
+
+@router.patch("/ai-report/{report_id}", response_model=AIReportFull)
+def patch_ai_report(
+    report_id: str,
+    payload: AIReportUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> AIReportFull:
+    """Update the report_text of an existing AI report (user edits)."""
+    report = update_report_text(db, current_user.id, report_id, payload.report_text)
     if not report:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found.")
     return report

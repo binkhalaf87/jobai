@@ -1375,7 +1375,16 @@
     },
     "close": "إغلاق",
     "view": "عرض",
-    "viewingTitle": "السيرة المحسّنة — {title} — {date}"
+    "viewingTitle": "السيرة المحسّنة — {title} — {date}",
+    "editLabel": "تعديل",
+    "previewLabel": "معاينة",
+    "copyLabel": "نسخ",
+    "copiedLabel": "تم النسخ!",
+    "exportWord": "تصدير Word",
+    "exportPdf": "تصدير PDF",
+    "saveLabel": "حفظ التعديلات",
+    "savingLabel": "جارٍ الحفظ…",
+    "savedLabel": "تم الحفظ!"
   },
   "aiInterviewPage": {
     "eyebrow": "تدريب ذكي",

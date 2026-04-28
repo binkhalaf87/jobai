@@ -1375,7 +1375,16 @@
     },
     "close": "Close",
     "view": "View",
-    "viewingTitle": "Enhanced Resume — {title} — {date}"
+    "viewingTitle": "Enhanced Resume — {title} — {date}",
+    "editLabel": "Edit",
+    "previewLabel": "Preview",
+    "copyLabel": "Copy",
+    "copiedLabel": "Copied!",
+    "exportWord": "Export Word",
+    "exportPdf": "Export PDF",
+    "saveLabel": "Save Edits",
+    "savingLabel": "Saving…",
+    "savedLabel": "Saved!"
   },
   "aiInterviewPage": {
     "eyebrow": "AI Practice",

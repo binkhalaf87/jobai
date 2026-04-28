@@ -6,7 +6,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { Panel } from "@/components/panel";
-import { getAIReport, listAIReports, streamAIReport } from "@/lib/ai-reports";
+import { getAIReport, listAIReports, streamAIReport, updateAIReport } from "@/lib/ai-reports";
 import { listResumes } from "@/lib/resumes";
 import type { AIReportFull, AIReportListItem, ResumeListItem } from "@/types";
 
@@ -49,6 +49,13 @@ export default function DashboardEnhancementPage() {
   const [viewReport, setViewReport]   = useState<AIReportFull | null>(null);
   const [viewLoading, setViewLoading] = useState(false);
 
+  // Edit / export state
+  const [editMode, setEditMode]   = useState<"preview" | "edit">("preview");
+  const [editText, setEditText]   = useState("");
+  const [copied, setCopied]       = useState(false);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [activeReportIdForSave, setActiveReportIdForSave] = useState<string | null>(null);
+
   const outputRef = useRef<HTMLDivElement>(null);
 
   // Load resumes + report history on mount
@@ -66,6 +73,11 @@ export default function DashboardEnhancementPage() {
 
   useEffect(() => { void loadData(); }, [loadData]);
 
+  // Sync editText when streaming finishes
+  useEffect(() => {
+    if (pageState === "done") setEditText(streamText);
+  }, [streamText, pageState]);
+
   // Auto-scroll output as text streams in
   useEffect(() => {
     if (pageState === "streaming") {
@@ -81,12 +93,13 @@ export default function DashboardEnhancementPage() {
     setStreamError("");
     setActiveReportId(null);
     setViewReport(null);
+    setEditMode("preview");
 
     try {
       await streamAIReport(selectedResume, jobDescription, (event) => {
         if (event.type === "id")    setActiveReportId(event.report_id);
         if (event.type === "chunk") setStreamText((prev) => prev + event.text);
-        if (event.type === "done")  { setActiveReportId(event.report_id); setPageState("done"); void loadData(); }
+        if (event.type === "done")  { setActiveReportId(event.report_id); setActiveReportIdForSave(event.report_id); setSaveState("idle"); setPageState("done"); void loadData(); }
         if (event.type === "error") { setStreamError(event.message); setPageState("error"); }
       }, "enhancement");
     } catch (e) {
@@ -96,13 +109,16 @@ export default function DashboardEnhancementPage() {
   }
 
   async function handleViewReport(id: string) {
-    if (viewReport?.id === id) { setViewReport(null); return; }
+    if (viewReport?.id === id) { setViewReport(null); setStreamText(""); setPageState("idle"); return; }
     setViewLoading(true);
     try {
       const report = await getAIReport(id);
       setViewReport(report);
       setStreamText(report.report_text ?? "");
+      setActiveReportIdForSave(report.id);
+      setSaveState("idle");
       setPageState("done");
+      setEditMode("preview");
     } catch {
       // ignore
     } finally {
@@ -110,9 +126,70 @@ export default function DashboardEnhancementPage() {
     }
   }
 
+  // ─── Export helpers ──────────────────────────────────────────────────────
+  async function exportWord() {
+    const { Document, Paragraph, HeadingLevel, Packer } = await import("docx");
+    const { saveAs } = await import("file-saver");
+
+    const lines = editText.split("\n");
+    const children = lines.map((line) => {
+      if (line.startsWith("# "))   return new Paragraph({ text: line.slice(2).replace(/\*\*(.*?)\*\*/g, "$1"), heading: HeadingLevel.HEADING_1 });
+      if (line.startsWith("## "))  return new Paragraph({ text: line.slice(3).replace(/\*\*(.*?)\*\*/g, "$1"), heading: HeadingLevel.HEADING_2 });
+      if (line.startsWith("### ")) return new Paragraph({ text: line.slice(4).replace(/\*\*(.*?)\*\*/g, "$1"), heading: HeadingLevel.HEADING_3 });
+      if (/^[-*] /.test(line))     return new Paragraph({ text: line.slice(2).replace(/\*\*(.*?)\*\*/g, "$1"), bullet: { level: 0 } });
+      return new Paragraph({ text: line.replace(/\*\*(.*?)\*\*/g, "$1") });
+    });
+
+    const doc = new Document({ sections: [{ children }] });
+    const blob = await Packer.toBlob(doc);
+    const title = viewReport?.resume_title ?? resumes.find((r) => r.id === selectedResume)?.title ?? "resume";
+    saveAs(blob, `${title}-enhanced.docx`);
+  }
+
+  function exportPdf() {
+    const title = viewReport?.resume_title ?? resumes.find((r) => r.id === selectedResume)?.title ?? "resume";
+    const win = window.open("", "_blank");
+    if (!win) return;
+    const html = outputRef.current?.innerHTML ?? editText;
+    win.document.write(`<!DOCTYPE html><html><head>
+      <meta charset="utf-8"/>
+      <title>${title} — Enhanced Resume</title>
+      <style>
+        body { font-family: Arial, sans-serif; font-size: 13px; margin: 2cm; color: #111; }
+        h1 { font-size: 1.4em; margin-bottom: 0.3em; }
+        h2 { font-size: 1.15em; margin-top: 1.2em; border-bottom: 1px solid #ccc; padding-bottom: 0.2em; }
+        h3 { font-size: 1em; margin-top: 0.8em; }
+        ul { margin: 0.3em 0 0.3em 1.5em; } li { margin-bottom: 0.2em; }
+        p  { margin: 0.3em 0; }
+      </style>
+    </head><body>${html}</body></html>`);
+    win.document.close();
+    win.focus();
+    win.print();
+  }
+
+  async function saveEdits() {
+    if (!activeReportIdForSave) return;
+    setSaveState("saving");
+    try {
+      await updateAIReport(activeReportIdForSave, editText);
+      setSaveState("saved");
+      setTimeout(() => setSaveState("idle"), 2500);
+    } catch {
+      setSaveState("idle");
+    }
+  }
+
+  async function copyToClipboard() {
+    await navigator.clipboard.writeText(editText);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   const t = useTranslations("enhancementPage");
   const hasOutput = streamText.length > 0;
   const canSubmit = selectedResume && pageState !== "streaming";
+  const showToolbar = pageState === "done" && hasOutput;
 
   return (
     <div className="space-y-6">
@@ -180,15 +257,61 @@ export default function DashboardEnhancementPage() {
       {/* ─── Output panel ────────────────────────────────────────── */}
       {(hasOutput || pageState === "streaming" || pageState === "error") && (
         <Panel className="p-6 md:p-8">
-          <div className="mb-4 flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-              {pageState === "streaming" ? t("outputLabel.rewriting") : pageState === "done" ? t("outputLabel.done") : t("outputLabel.error")}
-            </p>
-            {pageState === "streaming" && (
-              <span className="inline-flex items-center gap-2 text-xs text-slate-500">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-teal" />
-                {t("streaming")}
-              </span>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                {pageState === "streaming" ? t("outputLabel.rewriting") : pageState === "done" ? t("outputLabel.done") : t("outputLabel.error")}
+              </p>
+              {pageState === "streaming" && (
+                <span className="inline-flex items-center gap-2 text-xs text-slate-500">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-teal" />
+                  {t("streaming")}
+                </span>
+              )}
+            </div>
+
+            {/* Toolbar — visible only when done */}
+            {showToolbar && (
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditMode((m) => (m === "edit" ? "preview" : "edit"))}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-900"
+                >
+                  {editMode === "edit" ? t("previewLabel") : t("editLabel")}
+                </button>
+                {editMode === "edit" && (
+                  <button
+                    type="button"
+                    disabled={saveState === "saving"}
+                    onClick={() => void saveEdits()}
+                    className="rounded-lg border border-brand-800 bg-brand-800 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50"
+                  >
+                    {saveState === "saving" ? t("savingLabel") : saveState === "saved" ? t("savedLabel") : t("saveLabel")}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => void copyToClipboard()}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-900"
+                >
+                  {copied ? t("copiedLabel") : t("copyLabel")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void exportWord()}
+                  className="rounded-lg border border-teal bg-teal-light/20 px-3 py-1.5 text-xs font-semibold text-teal transition hover:bg-teal-light/40"
+                >
+                  {t("exportWord")}
+                </button>
+                <button
+                  type="button"
+                  onClick={exportPdf}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-900"
+                >
+                  {t("exportPdf")}
+                </button>
+              </div>
             )}
           </div>
 
@@ -199,12 +322,22 @@ export default function DashboardEnhancementPage() {
           )}
 
           {hasOutput && (
-            <div
-              ref={outputRef}
-              className="prose prose-slate max-w-none text-sm [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-slate-200 [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-slate-200 [&_th]:bg-slate-50 [&_th]:px-3 [&_th]:py-2 [&_th]:font-semibold"
-            >
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{streamText}</ReactMarkdown>
-            </div>
+            editMode === "edit" ? (
+              <textarea
+                value={editText}
+                onChange={(e) => setEditText(e.target.value)}
+                rows={30}
+                dir="auto"
+                className="w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3 font-mono text-sm text-slate-900 shadow-sm focus:border-teal focus:outline-none"
+              />
+            ) : (
+              <div
+                ref={outputRef}
+                className="prose prose-slate max-w-none text-sm [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-slate-200 [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-slate-200 [&_th]:bg-slate-50 [&_th]:px-3 [&_th]:py-2 [&_th]:font-semibold"
+              >
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{editText || streamText}</ReactMarkdown>
+              </div>
+            )
           )}
         </Panel>
       )}
@@ -260,14 +393,70 @@ export default function DashboardEnhancementPage() {
         )}
 
         {/* Inline view of a selected historical rewrite */}
-        {viewReport && viewReport.report_text && (
+        {viewReport && viewReport.report_text && pageState === "done" && (
           <div className="border-t border-slate-100 px-6 py-6">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-              {t("viewingTitle", { title: viewReport.resume_title, date: formatDate(viewReport.created_at) })}
-            </p>
-            <div className="prose prose-slate max-w-none text-sm [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-slate-200 [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-slate-200 [&_th]:bg-slate-50 [&_th]:px-3 [&_th]:py-2 [&_th]:font-semibold">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{viewReport.report_text}</ReactMarkdown>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                {t("viewingTitle", { title: viewReport.resume_title, date: formatDate(viewReport.created_at) })}
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditMode((m) => (m === "edit" ? "preview" : "edit"))}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-900"
+                >
+                  {editMode === "edit" ? t("previewLabel") : t("editLabel")}
+                </button>
+                {editMode === "edit" && (
+                  <button
+                    type="button"
+                    disabled={saveState === "saving"}
+                    onClick={() => void saveEdits()}
+                    className="rounded-lg border border-brand-800 bg-brand-800 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50"
+                  >
+                    {saveState === "saving" ? t("savingLabel") : saveState === "saved" ? t("savedLabel") : t("saveLabel")}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => void copyToClipboard()}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-900"
+                >
+                  {copied ? t("copiedLabel") : t("copyLabel")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void exportWord()}
+                  className="rounded-lg border border-teal bg-teal-light/20 px-3 py-1.5 text-xs font-semibold text-teal transition hover:bg-teal-light/40"
+                >
+                  {t("exportWord")}
+                </button>
+                <button
+                  type="button"
+                  onClick={exportPdf}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-900"
+                >
+                  {t("exportPdf")}
+                </button>
+              </div>
             </div>
+
+            {editMode === "edit" ? (
+              <textarea
+                value={editText}
+                onChange={(e) => setEditText(e.target.value)}
+                rows={30}
+                dir="auto"
+                className="w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3 font-mono text-sm text-slate-900 shadow-sm focus:border-teal focus:outline-none"
+              />
+            ) : (
+              <div
+                ref={outputRef}
+                className="prose prose-slate max-w-none text-sm [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-slate-200 [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-slate-200 [&_th]:bg-slate-50 [&_th]:px-3 [&_th]:py-2 [&_th]:font-semibold"
+              >
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{editText}</ReactMarkdown>
+              </div>
+            )}
           </div>
         )}
       </Panel>

@@ -20,6 +20,10 @@ class AIReportListItem(ORMBaseSchema):
     completed_at: datetime | None
 
 
+class AIReportUpdateRequest(ORMBaseSchema):
+    report_text: str
+
+
 class AIReportFull(ORMBaseSchema):
     id: str
     resume_id: str

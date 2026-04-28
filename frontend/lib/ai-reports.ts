@@ -28,6 +28,19 @@ export async function getAIReport(reportId: string): Promise<AIReportFull> {
 }
 
 
+export async function updateAIReport(reportId: string, reportText: string): Promise<void> {
+  const res = await fetch(`${getApiBaseUrl()}/analysis/ai-report/${reportId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getToken()}`,
+    },
+    body: JSON.stringify({ report_text: reportText }),
+  });
+  if (!res.ok) throw new Error("Failed to save report.");
+}
+
+
 export type SSEEvent =
   | { type: "id"; report_id: string }
   | { type: "chunk"; text: string }

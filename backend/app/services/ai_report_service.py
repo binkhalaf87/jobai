@@ -257,6 +257,17 @@ def list_user_reports(db: Session, user_id: str, report_type: str | None = None)
     return list(db.scalars(query.order_by(AIAnalysisReport.created_at.desc())))
 
 
+def update_report_text(db: Session, user_id: str, report_id: str, new_text: str) -> AIAnalysisReport | None:
+    """Overwrite report_text for a report that belongs to the user. Returns None if not found."""
+    report = get_user_report(db, user_id, report_id)
+    if not report:
+        return None
+    report.report_text = new_text
+    db.commit()
+    db.refresh(report)
+    return report
+
+
 def stream_report_to_client(
     report_id: str,
     resume_text: str,
