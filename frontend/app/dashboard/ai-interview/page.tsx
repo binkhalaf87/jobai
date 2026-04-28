@@ -28,6 +28,25 @@ const INTERVIEW_TYPE_VALUES: InterviewType[] = ["hr", "technical", "mixed"];
 const QUESTION_COUNTS: QuestionCount[] = [3, 5, 10];
 const INTERVIEWER_STYLE_VALUES: InterviewerStyle[] = ["supportive", "direct", "challenging"];
 
+const WEEKLY_CHALLENGES = [
+  { jobTitle: "Frontend Engineer", type: "technical" as InterviewType, level: "mid" as ExperienceLevel, focus: "React, TypeScript, performance & system design" },
+  { jobTitle: "Product Manager", type: "hr" as InterviewType, level: "mid" as ExperienceLevel, focus: "Stakeholder management, product vision & prioritization" },
+  { jobTitle: "Data Scientist", type: "mixed" as InterviewType, level: "mid" as ExperienceLevel, focus: "ML modelling, data analysis & business storytelling" },
+  { jobTitle: "UX Designer", type: "hr" as InterviewType, level: "entry" as ExperienceLevel, focus: "User research, wireframing & design thinking" },
+  { jobTitle: "DevOps Engineer", type: "technical" as InterviewType, level: "senior" as ExperienceLevel, focus: "CI/CD, Kubernetes, cloud infrastructure & incident response" },
+  { jobTitle: "Sales Manager", type: "hr" as InterviewType, level: "mid" as ExperienceLevel, focus: "Revenue growth, team leadership & forecasting" },
+  { jobTitle: "Backend Engineer", type: "technical" as InterviewType, level: "senior" as ExperienceLevel, focus: "Microservices, database design & high-scale systems" },
+  { jobTitle: "Marketing Manager", type: "mixed" as InterviewType, level: "mid" as ExperienceLevel, focus: "Growth campaigns, SEO/SEM & performance analytics" },
+];
+
+const WEAKNESS_TYPE_CLASS: Record<string, string> = {
+  vague: "border-amber-200 bg-amber-50 text-amber-700",
+  missing_example: "border-orange-200 bg-orange-50 text-orange-700",
+  technical_gap: "border-rose-200 bg-rose-50 text-rose-700",
+  off_topic: "border-red-200 bg-red-50 text-red-700",
+  strong: "border-teal-light bg-teal-light/30 text-teal",
+};
+
 type PageState = "setup" | "generating" | "brief" | "interviewing" | "evaluating" | "completing" | "completed";
 type TimerDuration = 0 | 60 | 120 | 180;
 
@@ -141,6 +160,9 @@ export default function DashboardAiInterviewPage() {
   const [ttsEnabled, setTtsEnabled] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [jobDescriptions, setJobDescriptions] = useState<JobDescriptionListItem[]>([]);
+  const [showAnswerPreview, setShowAnswerPreview] = useState(false);
+  const [videoRecordings, setVideoRecordings] = useState<Record<number, string>>({});
+  const weeklyChallenge = WEEKLY_CHALLENGES[Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) % WEEKLY_CHALLENGES.length]!;
   const [savedQuestions, setSavedQuestions] = useState<SavedQuestion[]>(() => {
     if (typeof window === "undefined") return [];
     try { return JSON.parse(localStorage.getItem("jobai_question_bank") ?? "[]") as SavedQuestion[]; }
@@ -252,6 +274,7 @@ export default function DashboardAiInterviewPage() {
   }
 
   async function handleNext() {
+    setShowAnswerPreview(false);
     if (currentIndex + 1 < questions.length) {
       setCurrentIndex((prev) => prev + 1);
       setCurrentAnswer("");
@@ -289,6 +312,8 @@ export default function DashboardAiInterviewPage() {
     setContextSummary(null);
     setCompletedSession(null);
     setAnswerScores({});
+    setShowAnswerPreview(false);
+    setVideoRecordings({});
   }
 
   async function handleViewHistory(id: string) {
@@ -333,6 +358,42 @@ export default function DashboardAiInterviewPage() {
     } finally {
       setHistoryLoading(false);
     }
+  }
+
+  function handleQuickPractice() {
+    setSetup((prev) => ({ ...prev, count: 3 }));
+    void (async () => {
+      setPageError("");
+      setPageState("generating");
+      try {
+        const session = await startInterview({
+          job_title: setup.jobTitle.trim() || weeklyChallenge.jobTitle,
+          experience_level: setup.level,
+          interview_type: setup.type,
+          language: setup.language,
+          question_count: 3,
+          resume_id: setup.resumeId || undefined,
+          company_name: setup.companyName.trim() || undefined,
+          job_description: setup.jobDescription.trim() || undefined,
+          interviewer_style: setup.interviewerStyle,
+        });
+        setSessionId(session.id);
+        setQuestionCount(3);
+        setQuestions(session.questions);
+        setCurrentIndex(0);
+        setCurrentAnswer("");
+        setCurrentEvaluation(null);
+        setNextQuestion(null);
+        setOpeningMessage(session.opening_message ?? null);
+        setContextSummary(session.context_summary ?? null);
+        setCompletedSession(null);
+        setAnswerScores({});
+        setPageState("brief");
+      } catch (error) {
+        setPageError(error instanceof ApiError ? error.detail : t("failedToStart"));
+        setPageState("setup");
+      }
+    })();
   }
 
   function getQuestionId(q: InterviewQuestion): string {
@@ -417,6 +478,18 @@ export default function DashboardAiInterviewPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, ttsEnabled]);
+
+  // D2: After evaluation lands, warm the connection by touching the session endpoint in background
+  useEffect(() => {
+    if (pageState === "interviewing" && currentEvaluation && sessionId) {
+      fetch(`/api/interviews/sessions/${sessionId}`, { method: "HEAD" }).catch(() => {});
+    }
+  }, [pageState, currentEvaluation, sessionId]);
+
+  function handleVideoRecorded(blob: Blob) {
+    const url = URL.createObjectURL(blob);
+    setVideoRecordings((prev) => ({ ...prev, [currentIndex]: url }));
+  }
 
   // Countdown timer — resets when question changes or answering resumes
   const isAnsweringNow = pageState === "interviewing" && !currentEvaluation;
@@ -523,6 +596,32 @@ export default function DashboardAiInterviewPage() {
         </div>
       )}
 
+      {pageState === "setup" && (
+        <div className="rounded-2xl border border-brand-200 bg-gradient-to-r from-brand-800/5 to-brand-800/10 px-5 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-600">{t("weeklyChallenge.eyebrow")}</p>
+              <p className="mt-0.5 text-sm font-semibold text-slate-900">{t("weeklyChallenge.title", { role: weeklyChallenge.jobTitle })}</p>
+              <p className="mt-0.5 text-xs text-slate-500">{t("weeklyChallenge.focus", { focus: weeklyChallenge.focus })}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex rounded-full border border-brand-200 bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-brand-700">{weeklyChallenge.level}</span>
+              <span className="inline-flex rounded-full border border-brand-200 bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-brand-700">{weeklyChallenge.type}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setSetup((prev) => ({ ...prev, jobTitle: weeklyChallenge.jobTitle, type: weeklyChallenge.type, level: weeklyChallenge.level, count: 5 }));
+                  void handleStart();
+                }}
+                className="rounded-xl bg-brand-800 px-4 py-2 text-xs font-semibold text-white hover:bg-brand-700"
+              >
+                {t("weeklyChallenge.start")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {(pageState === "setup" || pageState === "generating") && (
         <Panel className="p-6 md:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{t("configure")}</p>
@@ -572,7 +671,12 @@ export default function DashboardAiInterviewPage() {
             <textarea value={setup.jobDescription} onChange={(e) => setSetup((p) => ({ ...p, jobDescription: e.target.value }))} rows={6} placeholder={t("form.jdPlaceholder")} className="md:col-span-2 rounded-xl border border-slate-300 px-4 py-3 text-sm" />
           </div>
           {pageError && <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{pageError}</div>}
-          <button type="button" disabled={!setup.jobTitle.trim() || pageState === "generating"} onClick={() => void handleStart()} className="mt-6 rounded-xl bg-brand-800 px-6 py-3 text-sm font-semibold text-white disabled:opacity-50">{pageState === "generating" ? t("form.preparingInterviewer") : t("form.startInterview")}</button>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button type="button" disabled={!setup.jobTitle.trim() || pageState === "generating"} onClick={() => void handleStart()} className="rounded-xl bg-brand-800 px-6 py-3 text-sm font-semibold text-white disabled:opacity-50">{pageState === "generating" ? t("form.preparingInterviewer") : t("form.startInterview")}</button>
+            <button type="button" disabled={pageState === "generating"} onClick={handleQuickPractice} className="rounded-xl border border-brand-800 bg-white px-5 py-3 text-sm font-semibold text-brand-800 hover:bg-brand-50 disabled:opacity-50">
+              {t("session.quickPractice")} <span className="ml-1 text-xs font-normal text-slate-400">{t("session.quickPracticeDesc")}</span>
+            </button>
+          </div>
         </Panel>
       )}
 
@@ -695,8 +799,26 @@ export default function DashboardAiInterviewPage() {
                 questionKey={`${sessionId ?? "session"}:${currentIndex}:${currentQuestion.index}`}
                 isSubmitting={pageState === "evaluating"}
                 error={answerError}
-                onSubmit={() => void handleSubmitAnswer()}
+                onVideoRecorded={handleVideoRecorded}
+                onSubmit={() => {
+                  if (!showAnswerPreview && currentAnswer.trim().length > 0) {
+                    setShowAnswerPreview(true);
+                  } else {
+                    setShowAnswerPreview(false);
+                    void handleSubmitAnswer();
+                  }
+                }}
               />
+              {showAnswerPreview && pageState !== "evaluating" && (
+                <div className="mt-3 rounded-2xl border border-brand-200 bg-brand-50 p-4 space-y-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-brand-600">{t("session.previewAnswer")}</p>
+                  <p className="text-sm leading-relaxed text-slate-800 whitespace-pre-wrap">{currentAnswer}</p>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => { setShowAnswerPreview(false); void handleSubmitAnswer(); }} className="rounded-xl bg-brand-800 px-4 py-2 text-sm font-semibold text-white">{t("session.confirmSubmit")}</button>
+                    <button type="button" onClick={() => setShowAnswerPreview(false)} className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700">{t("session.editAnswer")}</button>
+                  </div>
+                </div>
+              )}
               {pageState === "evaluating" && (
                 <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   {streamingReply ? (
@@ -734,6 +856,11 @@ export default function DashboardAiInterviewPage() {
                     <p className="mt-2 text-2xl font-bold text-slate-700">{currentEvaluation.star_score.toFixed(1)}<span className="text-sm font-normal text-slate-400">/10</span></p>
                   </div>
                 )}
+                {currentEvaluation.weakness_type && currentEvaluation.weakness_type !== "strong" && (
+                  <div className={`flex items-center rounded-xl border px-4 py-3 ${WEAKNESS_TYPE_CLASS[currentEvaluation.weakness_type] ?? "border-slate-200 bg-slate-50 text-slate-600"}`}>
+                    <p className="text-xs font-semibold">{t(`weaknessType.${currentEvaluation.weakness_type}`)}</p>
+                  </div>
+                )}
               </div>
               {currentEvaluation.communication_tip && <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700"><p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{t("evaluation.coachingTip")}</p><p className="mt-2">{currentEvaluation.communication_tip}</p></div>}
               {currentEvaluation.strengths.length > 0 && <div><p className="mb-2 text-xs font-semibold uppercase tracking-widest text-teal">{t("evaluation.strengths")}</p><ul className="space-y-1.5 text-sm text-slate-700">{currentEvaluation.strengths.map((item) => <li key={item}>+ {item}</li>)}</ul></div>}
@@ -765,6 +892,19 @@ export default function DashboardAiInterviewPage() {
               <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4"><p className="text-xs font-semibold uppercase tracking-widest text-amber-700">{t("finalReport.priorityImprovements")}</p><ul className="mt-3 space-y-2 text-sm text-amber-900">{(completedSession.final_report?.priority_improvements ?? []).map((item: string) => <li key={item}>-&gt; {item}</li>)}</ul></div>
               <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4"><p className="text-xs font-semibold uppercase tracking-widest text-sky-700">{t("finalReport.recommendedDrills")}</p><ul className="mt-3 space-y-2 text-sm text-sky-900">{(completedSession.final_report?.recommended_drills ?? []).map((item: string) => <li key={item}>• {item}</li>)}</ul></div>
             </div>
+            {Object.keys(videoRecordings).length > 0 && (
+              <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{t("finalReport.yourRecordings")}</p>
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  {Object.entries(videoRecordings).map(([idx, url]) => (
+                    <div key={idx} className="space-y-1">
+                      <p className="text-[11px] font-semibold text-slate-500">Q{Number(idx) + 1}</p>
+                      <video controls src={url} className="w-full rounded-xl border border-slate-200 bg-black" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="mt-6 flex flex-wrap gap-3">
               <button type="button" onClick={handleRetry} className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700">{t("finalReport.practiceAgain")}</button>
               <button type="button" onClick={exportReportPdf} className="rounded-xl border border-brand-800 bg-white px-5 py-2.5 text-sm font-semibold text-brand-800 hover:bg-brand-50">{t("finalReport.exportPdf")}</button>

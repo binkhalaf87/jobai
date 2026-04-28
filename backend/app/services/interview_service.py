@@ -298,16 +298,15 @@ def _build_eval_prompt(
         "- Relevance\n"
         "- Clarity\n"
         "- Professionalism\n"
-        "- Confidence\n"
+        "- Confidence (based on textual signals — see rules below)\n"
         "- Role-fit\n\n"
-        "Then decide what the interviewer should say next and what the next question should be.\n"
-        "If the answer is vague, weak, or missing evidence, use a follow-up question that probes deeper. "
-        "If the answer is solid, move to another competency that has not been covered yet.\n\n"
+        "Then decide what the interviewer should say next and what the next question should be.\n\n"
         "Return ONLY valid JSON with this exact shape:\n"
         "{\n"
         '  "interviewer_reply": "string",\n'
         '  "score": 7.4,\n'
         '  "star_score": 6.5,\n'
+        '  "weakness_type": "vague",\n'
         '  "strengths": ["string"],\n'
         '  "weaknesses": ["string"],\n'
         '  "improved_answer": "string",\n'
@@ -324,11 +323,28 @@ def _build_eval_prompt(
         "- star_score: a float 0–10 rating how well the answer follows the STAR method "
         "(Situation, Task, Action, Result). Set to null if the question is purely technical "
         "(e.g. coding, architecture) with no behavioral component.\n"
+        "- weakness_type: diagnose the primary answer gap — choose exactly one:\n"
+        "  'vague' — answer lacks specifics, timeline, or measurable outcomes;\n"
+        "  'missing_example' — a claim is made but no concrete story or proof is given;\n"
+        "  'technical_gap' — technical knowledge is incorrect or incomplete;\n"
+        "  'off_topic' — candidate did not address the core of the question;\n"
+        "  'strong' — answer is genuinely solid with no critical gap.\n"
+        "  Then use weakness_type to intelligently shape next_question:\n"
+        "  'vague' → probe for a specific metric, date, or concrete outcome;\n"
+        "  'missing_example' → request a concrete example or a brief story;\n"
+        "  'technical_gap' → dig deeper into the technical area where knowledge was weak;\n"
+        "  'off_topic' → rephrase or redirect to address the actual question intent;\n"
+        "  'strong' → advance to the next uncovered focus area from the competency list.\n"
         "- strengths: 2-3 specific positives.\n"
         "- weaknesses: 1-3 specific gaps. Use [] only when the answer is genuinely strong.\n"
         "- improved_answer: keep the same facts, improve structure and specificity. Apply STAR format where applicable.\n"
         "- interviewer_reply: 1-2 short sentences that sound like a real interviewer responding live.\n"
         "- communication_tip: one focused coaching note.\n"
+        "- Confidence score MUST be derived from textual signals in the answer:\n"
+        "  Lower confidence when: hedging words present (maybe, I think, probably, sort of, I believe, I guess),\n"
+        "  passive voice used ('it was done', 'the team decided'), vague claims ('a lot', 'very good', 'sometime').\n"
+        "  Higher confidence when: decisive action verbs used (I built, I led, I achieved, I delivered, I designed),\n"
+        "  first-person active voice, specific numbers/dates/metrics present, named deliverables mentioned.\n"
         f"- There are {remaining_questions} remaining interview slots after this answer.\n"
         "- If there are 0 remaining slots, set next_question to null.\n"
         "- next_question.type must be 'hr' or 'technical'.\n"
@@ -555,12 +571,16 @@ def evaluate_answer(
     raw = response.choices[0].message.content or "{}"
     payload = _extract_json(raw)
 
+    _VALID_WEAKNESS_TYPES = {"vague", "missing_example", "technical_gap", "off_topic", "strong"}
     score = float(payload.get("score", 0))
     raw_star = payload.get("star_score")
     star_score = round(max(0.0, min(10.0, float(raw_star))), 1) if raw_star is not None else None
+    raw_weakness_type = str(payload.get("weakness_type", "")).strip().lower()
+    weakness_type = raw_weakness_type if raw_weakness_type in _VALID_WEAKNESS_TYPES else None
     evaluation = {
         "score": round(max(0.0, min(10.0, score)), 1),
         "star_score": star_score,
+        "weakness_type": weakness_type,
         "strengths": [str(item).strip() for item in payload.get("strengths", []) if str(item).strip()],
         "weaknesses": [str(item).strip() for item in payload.get("weaknesses", []) if str(item).strip()],
         "improved_answer": str(payload.get("improved_answer", "")).strip(),
@@ -759,12 +779,16 @@ def stream_evaluate_answer(
         yield f"data: {json.dumps({'type': 'error', 'detail': 'Could not parse evaluation response.'})}\n\n"
         return
 
+    _VALID_WEAKNESS_TYPES_STREAM = {"vague", "missing_example", "technical_gap", "off_topic", "strong"}
     score = float(payload.get("score", 0))
     raw_star = payload.get("star_score")
     star_score = round(max(0.0, min(10.0, float(raw_star))), 1) if raw_star is not None else None
+    raw_weakness_type_s = str(payload.get("weakness_type", "")).strip().lower()
+    weakness_type = raw_weakness_type_s if raw_weakness_type_s in _VALID_WEAKNESS_TYPES_STREAM else None
     evaluation = {
         "score": round(max(0.0, min(10.0, score)), 1),
         "star_score": star_score,
+        "weakness_type": weakness_type,
         "strengths": [str(item).strip() for item in payload.get("strengths", []) if str(item).strip()],
         "weaknesses": [str(item).strip() for item in payload.get("weaknesses", []) if str(item).strip()],
         "improved_answer": str(payload.get("improved_answer", "")).strip(),

@@ -1481,7 +1481,27 @@
       "timerLabel": "الوقت",
       "timerExpired": "انتهى الوقت",
       "saveQuestion": "حفظ السؤال",
-      "questionSaved": "تم حفظ السؤال"
+      "questionSaved": "تم حفظ السؤال",
+      "quickPractice": "سؤال سريع",
+      "quickPracticeDesc": "تدريب على سؤال واحد",
+      "previewAnswer": "معاينة الإجابة",
+      "confirmSubmit": "تأكيد وإرسال",
+      "editAnswer": "تعديل الإجابة"
+    },
+    "weeklyChallenge": {
+      "eyebrow": "تحدي الأسبوع",
+      "title": "مقابلة {role}",
+      "focus": "التركيز: {focus}",
+      "start": "ابدأ التحدي",
+      "level": "{level}",
+      "type": "{type}"
+    },
+    "weaknessType": {
+      "vague": "الإجابة غامضة",
+      "missing_example": "مثال عملي مفقود",
+      "technical_gap": "ثغرة تقنية",
+      "off_topic": "خارج الموضوع",
+      "strong": "إجابة قوية"
     },
     "timer": {
       "none": "بدون توقيت",
@@ -1514,6 +1534,7 @@
       "recommendedDrills": "تمارين موصى بها",
       "practiceAgain": "تدرّب مجدداً",
       "exportPdf": "تصدير PDF",
+      "yourRecordings": "تسجيلات الجلسة",
       "questions": "{count} سؤال",
       "progressTrend": "مسار التقدم",
       "progressTrendLatest": "الأخيرة",

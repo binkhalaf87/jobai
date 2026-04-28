@@ -16,6 +16,7 @@ type InterviewAnswerComposerProps = {
   isSubmitting: boolean;
   error: string;
   onSubmit: () => void;
+  onVideoRecorded?: (blob: Blob) => void;
 };
 
 type SpeechRecognitionAlternativeLike = {
@@ -70,6 +71,7 @@ export function InterviewAnswerComposer({
   isSubmitting,
   error,
   onSubmit,
+  onVideoRecorded,
 }: InterviewAnswerComposerProps) {
   const t = useTranslations("interview.answerComposer");
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -245,6 +247,7 @@ export function InterviewAnswerComposer({
           resetRecordedVideoUrl();
           setRecordedVideoUrl(URL.createObjectURL(blob));
           setIsRecordingVideo(false);
+          if (onVideoRecorded) onVideoRecorded(blob);
         };
         recorder.start();
         mediaRecorderRef.current = recorder;

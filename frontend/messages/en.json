@@ -1481,7 +1481,27 @@
       "timerLabel": "Time",
       "timerExpired": "Time's up",
       "saveQuestion": "Save question",
-      "questionSaved": "Question saved"
+      "questionSaved": "Question saved",
+      "quickPractice": "Quick Question",
+      "quickPracticeDesc": "1-question warm-up",
+      "previewAnswer": "Preview Answer",
+      "confirmSubmit": "Confirm & Submit",
+      "editAnswer": "Edit Answer"
+    },
+    "weeklyChallenge": {
+      "eyebrow": "Challenge of the Week",
+      "title": "{role} Interview",
+      "focus": "Focus: {focus}",
+      "start": "Start Challenge",
+      "level": "{level}",
+      "type": "{type}"
+    },
+    "weaknessType": {
+      "vague": "Answer too vague",
+      "missing_example": "Missing concrete example",
+      "technical_gap": "Technical gap detected",
+      "off_topic": "Off-topic response",
+      "strong": "Solid answer"
     },
     "timer": {
       "none": "No timer",
@@ -1514,6 +1534,7 @@
       "recommendedDrills": "Recommended Drills",
       "practiceAgain": "Practice Again",
       "exportPdf": "Export PDF",
+      "yourRecordings": "Your Session Recordings",
       "questions": "{count} questions",
       "progressTrend": "Progress Trend",
       "progressTrendLatest": "Latest",
