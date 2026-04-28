@@ -109,16 +109,16 @@ export default function DashboardEnhancementPage() {
   }
 
   async function handleViewReport(id: string) {
-    if (viewReport?.id === id) { setViewReport(null); setStreamText(""); setPageState("idle"); return; }
+    if (viewReport?.id === id) { setViewReport(null); return; }
     setViewLoading(true);
     try {
       const report = await getAIReport(id);
       setViewReport(report);
-      setStreamText(report.report_text ?? "");
+      setEditText(report.report_text ?? "");
       setActiveReportIdForSave(report.id);
       setSaveState("idle");
-      setPageState("done");
       setEditMode("preview");
+      // Don't touch streamText/pageState — keeps the streaming output panel independent
     } catch {
       // ignore
     } finally {
@@ -127,23 +127,46 @@ export default function DashboardEnhancementPage() {
   }
 
   // ─── Export helpers ──────────────────────────────────────────────────────
-  async function exportWord() {
-    const { Document, Paragraph, HeadingLevel, Packer } = await import("docx");
-    const { saveAs } = await import("file-saver");
+  function exportWord() {
+    const bold = (s: string) => s.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+    const bodyHtml = editText
+      .split("\n")
+      .map((line) => {
+        if (line.startsWith("### ")) return `<h3>${bold(line.slice(4))}</h3>`;
+        if (line.startsWith("## "))  return `<h2>${bold(line.slice(3))}</h2>`;
+        if (line.startsWith("# "))   return `<h1>${bold(line.slice(2))}</h1>`;
+        if (/^[-*] /.test(line))     return `<li>${bold(line.slice(2))}</li>`;
+        if (line.trim() === "---")   return "<hr>";
+        if (line.trim() === "")      return "<br>";
+        return `<p>${bold(line)}</p>`;
+      })
+      .join("\n");
 
-    const lines = editText.split("\n");
-    const children = lines.map((line) => {
-      if (line.startsWith("# "))   return new Paragraph({ text: line.slice(2).replace(/\*\*(.*?)\*\*/g, "$1"), heading: HeadingLevel.HEADING_1 });
-      if (line.startsWith("## "))  return new Paragraph({ text: line.slice(3).replace(/\*\*(.*?)\*\*/g, "$1"), heading: HeadingLevel.HEADING_2 });
-      if (line.startsWith("### ")) return new Paragraph({ text: line.slice(4).replace(/\*\*(.*?)\*\*/g, "$1"), heading: HeadingLevel.HEADING_3 });
-      if (/^[-*] /.test(line))     return new Paragraph({ text: line.slice(2).replace(/\*\*(.*?)\*\*/g, "$1"), bullet: { level: 0 } });
-      return new Paragraph({ text: line.replace(/\*\*(.*?)\*\*/g, "$1") });
-    });
+    const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office'
+      xmlns:w='urn:schemas-microsoft-com:office:word'
+      xmlns='http://www.w3.org/TR/REC-html40'>
+      <head><meta charset='utf-8'>
+      <style>
+        body{font-family:Arial,sans-serif;font-size:12pt;margin:2cm;color:#111;}
+        h1{font-size:16pt;margin-bottom:4pt;}
+        h2{font-size:14pt;margin-top:12pt;border-bottom:1px solid #ccc;padding-bottom:2pt;}
+        h3{font-size:12pt;margin-top:8pt;}
+        li{margin-bottom:2pt;}
+        p{margin:2pt 0;}
+        hr{border:none;border-top:1px solid #ccc;margin:8pt 0;}
+      </style></head>
+      <body>${bodyHtml}</body></html>`;
 
-    const doc = new Document({ sections: [{ children }] });
-    const blob = await Packer.toBlob(doc);
+    const blob = new Blob([html], { type: "application/msword" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
     const title = viewReport?.resume_title ?? resumes.find((r) => r.id === selectedResume)?.title ?? "resume";
-    saveAs(blob, `${title}-enhanced.docx`);
+    a.href = url;
+    a.download = `${title}-enhanced.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   function exportPdf() {
@@ -190,6 +213,7 @@ export default function DashboardEnhancementPage() {
   const hasOutput = streamText.length > 0;
   const canSubmit = selectedResume && pageState !== "streaming";
   const showToolbar = pageState === "done" && hasOutput;
+  const showHistoryToolbar = viewReport !== null && editText.length > 0;
 
   return (
     <div className="space-y-6">
@@ -393,7 +417,7 @@ export default function DashboardEnhancementPage() {
         )}
 
         {/* Inline view of a selected historical rewrite */}
-        {viewReport && viewReport.report_text && pageState === "done" && (
+        {viewReport && viewReport.report_text && (
           <div className="border-t border-slate-100 px-6 py-6">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
