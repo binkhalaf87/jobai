@@ -123,6 +123,7 @@ class AnswerSubmitRequest(BaseModel):
 
 class AnswerEvaluation(BaseModel):
     score: float
+    star_score: float | None = None
     strengths: list[str]
     weaknesses: list[str]
     improved_answer: str

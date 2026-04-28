@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { InterviewAnswerComposer } from "@/components/interview-answer-composer";
 import { Panel } from "@/components/panel";
 import { ApiError } from "@/lib/api";
-import { completeInterview, getInterview, listInterviews, startInterview, submitAnswer } from "@/lib/interviews";
+import { completeInterview, extractStreamingReply, getInterview, listInterviews, startInterview, submitAnswer, submitAnswerStream } from "@/lib/interviews";
 import { listResumes } from "@/lib/resumes";
 import type {
   AnswerEvaluation,
@@ -26,7 +26,9 @@ const INTERVIEW_TYPE_VALUES: InterviewType[] = ["hr", "technical", "mixed"];
 const QUESTION_COUNTS: QuestionCount[] = [3, 5, 10];
 const INTERVIEWER_STYLE_VALUES: InterviewerStyle[] = ["supportive", "direct", "challenging"];
 
-type PageState = "setup" | "generating" | "interviewing" | "evaluating" | "completing" | "completed";
+type PageState = "setup" | "generating" | "brief" | "interviewing" | "evaluating" | "completing" | "completed";
+type TimerDuration = 0 | 60 | 120 | 180;
+
 type SetupValues = {
   jobTitle: string;
   level: ExperienceLevel;
@@ -37,6 +39,7 @@ type SetupValues = {
   companyName: string;
   jobDescription: string;
   interviewerStyle: InterviewerStyle;
+  timerDuration: TimerDuration;
 };
 
 function formatDate(iso: string) {
@@ -103,6 +106,7 @@ export default function DashboardAiInterviewPage() {
     companyName: "",
     jobDescription: "",
     interviewerStyle: "supportive",
+    timerDuration: 0,
   });
   const [pageState, setPageState] = useState<PageState>("setup");
   const [pageError, setPageError] = useState("");
@@ -121,6 +125,10 @@ export default function DashboardAiInterviewPage() {
   const [openingMessage, setOpeningMessage] = useState<string | null>(null);
   const [contextSummary, setContextSummary] = useState<InterviewContextSummary | null>(null);
   const [completedSession, setCompletedSession] = useState<InterviewCompleteResponse | null>(null);
+  const [answerScores, setAnswerScores] = useState<Record<number, number>>({});
+  const [streamingReply, setStreamingReply] = useState("");
+  const [ttsEnabled, setTtsEnabled] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
   const loadHistory = useCallback(async () => {
     try { setSessions(await listInterviews()); } catch {}
@@ -175,7 +183,7 @@ export default function DashboardAiInterviewPage() {
       setOpeningMessage(session.opening_message ?? null);
       setContextSummary(session.context_summary ?? null);
       setCompletedSession(null);
-      setPageState("interviewing");
+      setPageState("brief");
     } catch (error) {
       setPageError(error instanceof ApiError ? error.detail : t("failedToStart"));
       setPageState("setup");
@@ -186,17 +194,43 @@ export default function DashboardAiInterviewPage() {
     const currentQuestion = questions[currentIndex];
     if (!sessionId || !currentQuestion || !currentAnswer.trim()) return;
     setAnswerError("");
+    setStreamingReply("");
     setPageState("evaluating");
+    let accumulatedText = "";
     try {
-      const result = await submitAnswer(sessionId, currentIndex, currentQuestion.question, currentAnswer.trim());
-      setCurrentEvaluation(result.evaluation);
-      setQuestions(result.questions);
-      setNextQuestion(result.next_question);
-      setPageState("interviewing");
+      const stream = submitAnswerStream(sessionId, currentIndex, currentQuestion.question, currentAnswer.trim());
+      for await (const event of stream) {
+        if (event.type === "chunk") {
+          accumulatedText += event.text;
+          const reply = extractStreamingReply(accumulatedText);
+          if (reply) setStreamingReply(reply);
+        } else if (event.type === "done") {
+          setCurrentEvaluation(event.payload.evaluation);
+          setQuestions(event.payload.questions);
+          setNextQuestion(event.payload.next_question);
+          setAnswerScores((prev) => ({ ...prev, [currentIndex]: event.payload.evaluation.score }));
+          setStreamingReply("");
+          setPageState("interviewing");
+        } else if (event.type === "error") {
+          throw new Error(event.detail);
+        }
+      }
     } catch (error) {
-      setAnswerError(error instanceof ApiError ? error.detail : t("evaluation.evaluationFailed"));
-      setPageState("interviewing");
+      // Fallback to regular endpoint if streaming fails
+      try {
+        const result = await submitAnswer(sessionId, currentIndex, currentQuestion.question, currentAnswer.trim());
+        setCurrentEvaluation(result.evaluation);
+        setQuestions(result.questions);
+        setNextQuestion(result.next_question);
+        setAnswerScores((prev) => ({ ...prev, [currentIndex]: result.evaluation.score }));
+        setPageState("interviewing");
+      } catch (fallbackError) {
+        setAnswerError(fallbackError instanceof ApiError ? fallbackError.detail : t("evaluation.evaluationFailed"));
+        setPageState("interviewing");
+      }
+      void error; // suppress unused warning
     }
+    setStreamingReply("");
   }
 
   async function handleNext() {
@@ -236,6 +270,7 @@ export default function DashboardAiInterviewPage() {
     setOpeningMessage(null);
     setContextSummary(null);
     setCompletedSession(null);
+    setAnswerScores({});
   }
 
   async function handleViewHistory(id: string) {
@@ -244,6 +279,14 @@ export default function DashboardAiInterviewPage() {
       const session = await getInterview(id);
       setOpeningMessage(session.opening_message ?? null);
       setContextSummary(session.context_summary ?? null);
+
+      const restoredScores: Record<number, number> = {};
+      for (const answer of session.answers ?? []) {
+        if (answer.evaluation?.score != null) {
+          restoredScores[answer.index] = answer.evaluation.score;
+        }
+      }
+      setAnswerScores(restoredScores);
 
       if (session.status === "active") {
         // Resume the unfinished session
@@ -273,6 +316,39 @@ export default function DashboardAiInterviewPage() {
       setHistoryLoading(false);
     }
   }
+
+  function speakText(text: string) {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = setup.language === "ar" ? "ar-SA" : "en-US";
+    utterance.rate = 0.9;
+    window.speechSynthesis.speak(utterance);
+  }
+
+  // Auto-speak new questions when TTS is enabled
+  useEffect(() => {
+    const q = questions[currentIndex];
+    if (ttsEnabled && q && pageState === "interviewing" && !currentEvaluation) {
+      speakText(q.question);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentIndex, ttsEnabled]);
+
+  // Countdown timer — resets when question changes or answering resumes
+  const isAnsweringNow = pageState === "interviewing" && !currentEvaluation;
+  useEffect(() => {
+    if (setup.timerDuration === 0 || !isAnsweringNow) {
+      setTimeLeft(null);
+      return;
+    }
+    setTimeLeft(setup.timerDuration);
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => (prev !== null && prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentIndex, isAnsweringNow ? 1 : 0, setup.timerDuration]);
 
   const currentQuestion = questions[currentIndex];
   const activeSessionCount = sessions.filter((session) => session.status === "active").length;
@@ -379,6 +455,16 @@ export default function DashboardAiInterviewPage() {
             <div className="space-y-2">{interviewTypes.map((item) => <label key={item.value} className="flex items-center gap-2 text-sm"><input type="radio" checked={setup.type === item.value} onChange={() => setSetup((p) => ({ ...p, type: item.value }))} />{item.label}</label>)}</div>
             <div className="flex gap-3">{(["en", "ar"] as const).map((language) => <label key={language} className="flex items-center gap-2 text-sm"><input type="radio" checked={setup.language === language} onChange={() => setSetup((p) => ({ ...p, language }))} />{language === "en" ? t("form.english") : t("form.arabic")}</label>)}</div>
             <div className="flex gap-3">{QUESTION_COUNTS.map((count) => <button key={count} type="button" onClick={() => setSetup((p) => ({ ...p, count }))} className={`rounded-xl border px-4 py-2 text-sm font-semibold ${setup.count === count ? "border-brand-800 bg-brand-800 text-white" : "border-slate-300 bg-white text-slate-700"}`}>{count}</button>)}</div>
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-semibold text-slate-600">{t("timer.label")}</p>
+              <div className="flex gap-2">
+                {([0, 60, 120, 180] as TimerDuration[]).map((d) => (
+                  <button key={d} type="button" onClick={() => setSetup((p) => ({ ...p, timerDuration: d }))} className={`rounded-xl border px-3 py-1.5 text-xs font-semibold ${setup.timerDuration === d ? "border-brand-800 bg-brand-800 text-white" : "border-slate-300 bg-white text-slate-700"}`}>
+                    {d === 0 ? t("timer.none") : t(`timer.${d}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="md:col-span-2 grid gap-3 md:grid-cols-3">
               {interviewerStyles.map((style) => <button key={style.value} type="button" onClick={() => setSetup((p) => ({ ...p, interviewerStyle: style.value }))} className={`rounded-2xl border p-4 text-left ${setup.interviewerStyle === style.value ? "border-brand-800 bg-brand-800 text-white" : "border-slate-200 bg-slate-50 text-slate-700"}`}><p className="text-sm font-semibold">{style.label}</p><p className={`mt-2 text-xs ${setup.interviewerStyle === style.value ? "text-slate-200" : "text-slate-500"}`}>{style.desc}</p></button>)}
             </div>
@@ -389,6 +475,48 @@ export default function DashboardAiInterviewPage() {
         </Panel>
       )}
 
+      {pageState === "brief" && (
+        <Panel className="p-6 md:p-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{t("brief.eyebrow")}</p>
+          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">{setup.jobTitle}</h2>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{t("brief.format")}</p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">{t(`types.${setup.type}`)}</p>
+              <p className="mt-1 text-xs text-slate-500">{t("brief.questionsCount", { count: setup.count })}</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{t("brief.duration")}</p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">{t("brief.estimatedDuration", { minutes: setup.count * 3 })}</p>
+            </div>
+            <div className={`rounded-2xl border p-4 ${styleClass(setup.interviewerStyle)}`}>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">{t("brief.style")}</p>
+              <p className="mt-2 text-sm font-semibold">{t(`styles.${setup.interviewerStyle}`)}</p>
+            </div>
+          </div>
+
+          {contextSummary?.focus_areas && contextSummary.focus_areas.length > 0 && (
+            <div className="mt-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{t("brief.focusAreas")}</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {contextSummary.focus_areas.map((area) => (
+                  <span key={area} className="inline-flex rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">{area}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {openingMessage && (
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">{openingMessage}</div>
+          )}
+
+          <button type="button" onClick={() => setPageState("interviewing")} className="mt-6 rounded-xl bg-brand-800 px-6 py-3 text-sm font-semibold text-white">
+            {t("brief.beginInterview")}
+          </button>
+        </Panel>
+      )}
+
       {(pageState === "interviewing" || pageState === "evaluating" || pageState === "completing") && currentQuestion && (
         <Panel className="p-6 md:p-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -396,17 +524,43 @@ export default function DashboardAiInterviewPage() {
               <p className="text-sm font-semibold text-slate-900">{setup.jobTitle}</p>
               <p className="text-xs text-slate-400">{t("session.questionOf", { n: currentIndex + 1, total: questionCount })}</p>
             </div>
-            <button type="button" onClick={handleRetry} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs text-slate-500">{t("session.endSession")}</button>
+            <div className="flex items-center gap-2">
+              {timeLeft !== null && (
+                <span className={`rounded-lg border px-2.5 py-1 text-xs font-bold tabular-nums ${timeLeft === 0 ? "border-rose-300 bg-rose-50 text-rose-700 animate-pulse" : timeLeft <= 30 ? "border-amber-300 bg-amber-50 text-amber-700" : "border-slate-200 bg-slate-50 text-slate-600"}`}>
+                  {timeLeft === 0 ? t("session.timerExpired") : `${Math.floor(timeLeft / 60)}:${String(timeLeft % 60).padStart(2, "0")}`}
+                </span>
+              )}
+              <button type="button" onClick={() => { setTtsEnabled((v) => !v); if (!ttsEnabled && currentQuestion) speakText(currentQuestion.question); }} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs text-slate-500 hover:border-slate-300">
+                {ttsEnabled ? t("session.ttsOn") : t("session.ttsOff")}
+              </button>
+              <button type="button" onClick={handleRetry} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs text-slate-500">{t("session.endSession")}</button>
+            </div>
           </div>
-          <div className="mt-3 flex gap-1.5">
-            {Array.from({ length: questionCount }).map((_, i) => (
-              <div
-                key={i}
-                className={`h-1.5 flex-1 rounded-full transition-colors ${
-                  i < currentIndex ? "bg-slate-700" : i === currentIndex ? "bg-brand-700" : "bg-slate-200"
-                }`}
-              />
-            ))}
+          <div className="mt-3 flex items-center gap-2">
+            {Array.from({ length: questionCount }).map((_, i) => {
+              const score = answerScores[i];
+              const isDone = i < currentIndex;
+              const isCurrent = i === currentIndex;
+              const circleClass = isDone
+                ? score !== undefined && score >= 7.5
+                  ? "bg-teal text-white"
+                  : score !== undefined && score >= 5
+                    ? "bg-amber-400 text-white"
+                    : "bg-rose-400 text-white"
+                : isCurrent
+                  ? "bg-brand-700 text-white ring-2 ring-brand-200"
+                  : "border border-slate-200 bg-slate-100 text-slate-400";
+              return (
+                <div
+                  key={i}
+                  title={isDone && score !== undefined ? `Q${i + 1}: ${score.toFixed(1)}/10` : `Question ${i + 1}`}
+                  className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition-all ${circleClass}`}
+                >
+                  {isDone ? "✓" : i + 1}
+                </div>
+              );
+            })}
+            <span className="ml-auto text-xs text-slate-400">{currentIndex}/{questionCount}</span>
           </div>
           <div className="mt-4 space-y-3">
             {openingMessage && currentIndex === 0 && <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">{openingMessage}</div>}
@@ -420,21 +574,56 @@ export default function DashboardAiInterviewPage() {
             <p className="text-base font-semibold leading-snug text-slate-900">{currentQuestion.question}</p>
           </div>
           {!currentEvaluation ? (
-            <InterviewAnswerComposer
-              answerMode={answerMode}
-              onAnswerModeChange={setAnswerMode}
-              answerValue={currentAnswer}
-              onAnswerChange={setCurrentAnswer}
-              language={setup.language}
-              questionKey={`${sessionId ?? "session"}:${currentIndex}:${currentQuestion.index}`}
-              isSubmitting={pageState === "evaluating"}
-              error={answerError}
-              onSubmit={() => void handleSubmitAnswer()}
-            />
+            <>
+              <InterviewAnswerComposer
+                answerMode={answerMode}
+                onAnswerModeChange={setAnswerMode}
+                answerValue={currentAnswer}
+                onAnswerChange={setCurrentAnswer}
+                language={setup.language}
+                questionKey={`${sessionId ?? "session"}:${currentIndex}:${currentQuestion.index}`}
+                isSubmitting={pageState === "evaluating"}
+                error={answerError}
+                onSubmit={() => void handleSubmitAnswer()}
+              />
+              {pageState === "evaluating" && (
+                <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  {streamingReply ? (
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{t("evaluation.interviewerTyping")}</p>
+                      <p className="mt-2 text-sm leading-relaxed text-slate-700">
+                        {streamingReply}
+                        <span className="animate-pulse text-slate-400">▌</span>
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="flex gap-1">
+                        {[0, 150, 300].map((delay) => (
+                          <span key={delay} className="inline-block h-1.5 w-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: `${delay}ms` }} />
+                        ))}
+                      </span>
+                      <span className="text-sm text-slate-500">{t("evaluation.evaluatingAnswer")}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
           ) : (
             <div className="mt-5 space-y-4 rounded-2xl border border-slate-100 bg-slate-50 p-5">
               <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700"><p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{t("evaluation.interviewerReply")}</p><p className="mt-2">{currentEvaluation.interviewer_reply}</p></div>
-              <div className={`rounded-xl border px-4 py-3 ${currentEvaluation.score >= 7.5 ? "border-teal-light bg-teal-light/20" : currentEvaluation.score >= 5 ? "border-amber-200 bg-amber-50" : "border-rose-200 bg-rose-50"}`}><p className="text-xs font-semibold uppercase tracking-widest text-slate-500">{t("evaluation.answerScore")}</p><p className="mt-2 text-2xl font-bold">{currentEvaluation.score.toFixed(1)}<span className="text-sm font-normal text-slate-400">/10</span></p></div>
+              <div className="flex gap-3">
+                <div className={`flex-1 rounded-xl border px-4 py-3 ${currentEvaluation.score >= 7.5 ? "border-teal-light bg-teal-light/20" : currentEvaluation.score >= 5 ? "border-amber-200 bg-amber-50" : "border-rose-200 bg-rose-50"}`}>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">{t("evaluation.answerScore")}</p>
+                  <p className="mt-2 text-2xl font-bold">{currentEvaluation.score.toFixed(1)}<span className="text-sm font-normal text-slate-400">/10</span></p>
+                </div>
+                {currentEvaluation.star_score != null && (
+                  <div className="min-w-[90px] rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-center">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">{t("evaluation.starScore")}</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-700">{currentEvaluation.star_score.toFixed(1)}<span className="text-sm font-normal text-slate-400">/10</span></p>
+                  </div>
+                )}
+              </div>
               {currentEvaluation.communication_tip && <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700"><p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{t("evaluation.coachingTip")}</p><p className="mt-2">{currentEvaluation.communication_tip}</p></div>}
               {currentEvaluation.strengths.length > 0 && <div><p className="mb-2 text-xs font-semibold uppercase tracking-widest text-teal">{t("evaluation.strengths")}</p><ul className="space-y-1.5 text-sm text-slate-700">{currentEvaluation.strengths.map((item) => <li key={item}>+ {item}</li>)}</ul></div>}
               {currentEvaluation.weaknesses.length > 0 && <div><p className="mb-2 text-xs font-semibold uppercase tracking-widest text-amber-700">{t("evaluation.improvements")}</p><ul className="space-y-1.5 text-sm text-slate-700">{currentEvaluation.weaknesses.map((item) => <li key={item}>-&gt; {item}</li>)}</ul></div>}
@@ -466,6 +655,29 @@ export default function DashboardAiInterviewPage() {
               <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4"><p className="text-xs font-semibold uppercase tracking-widest text-sky-700">{t("finalReport.recommendedDrills")}</p><ul className="mt-3 space-y-2 text-sm text-sky-900">{(completedSession.final_report?.recommended_drills ?? []).map((item: string) => <li key={item}>• {item}</li>)}</ul></div>
             </div>
             <button type="button" onClick={handleRetry} className="mt-6 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700">{t("finalReport.practiceAgain")}</button>
+
+            {completedSessions.length > 1 && (
+              <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{t("finalReport.progressTrend")}</p>
+                <div className="mt-4 flex items-end gap-4">
+                  {completedSessions.slice(0, 4).filter((s) => s.overall_score != null).reverse().map((s, i, arr) => {
+                    const sc = s.overall_score!;
+                    return (
+                      <div key={s.id} className="flex flex-col items-center gap-1">
+                        <span className="text-[11px] font-semibold text-slate-600">{sc.toFixed(1)}</span>
+                        <div
+                          className={`w-10 rounded-t-md transition-all ${sc >= 7.5 ? "bg-teal" : sc >= 5 ? "bg-amber-400" : "bg-rose-400"}`}
+                          style={{ height: `${Math.max(12, Math.round((sc / 10) * 64))}px` }}
+                        />
+                        <span className="text-[9px] text-slate-400">
+                          {i === arr.length - 1 ? t("finalReport.progressTrendLatest") : t("finalReport.progressTrendPrevious", { n: arr.length - 1 - i })}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </Panel>
         </div>
       )}

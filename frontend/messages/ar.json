@@ -1421,6 +1421,16 @@
       "step3Desc": "استخدم التقرير النهائي لتحسين نقاط الضعف قبل جولة المقابلة التالية."
     },
     "unfinishedSession": "لديك جلسة غير مكتملة",
+    "brief": {
+      "eyebrow": "ملخص مقابلتك",
+      "format": "النوع",
+      "questionsCount": "{count} أسئلة",
+      "duration": "الوقت المقدّر",
+      "estimatedDuration": "~{minutes} دقيقة",
+      "style": "أسلوب المحاور",
+      "focusAreas": "محاور التركيز",
+      "beginInterview": "ابدأ المقابلة ←"
+    },
     "configure": "إعداد",
     "setupSimulation": "إعداد محاكاة مقابلة حقيقية",
     "form": {
@@ -1463,11 +1473,25 @@
       "interviewerStyle": "محاور {style}",
       "resumeChip": "السيرة: {title}",
       "companyChip": "الشركة: {name}",
-      "jdLoadedChip": "تم تحميل وصف الوظيفة"
+      "jdLoadedChip": "تم تحميل وصف الوظيفة",
+      "ttsOn": "🔊 تشغيل الصوت",
+      "ttsOff": "🔇 إيقاف الصوت",
+      "timerLabel": "الوقت",
+      "timerExpired": "انتهى الوقت"
+    },
+    "timer": {
+      "none": "بدون توقيت",
+      "60": "١ دقيقة",
+      "120": "٢ دقيقة",
+      "180": "٣ دقائق",
+      "label": "الحد الزمني للإجابة"
     },
     "evaluation": {
       "interviewerReply": "رد المحاور",
+      "interviewerTyping": "المحاور يرد...",
+      "evaluatingAnswer": "جارٍ تقييم إجابتك...",
       "answerScore": "درجة الإجابة",
+      "starScore": "هيكل STAR",
       "coachingTip": "نصيحة تدريبية",
       "strengths": "نقاط القوة",
       "improvements": "نقاط التحسين",
@@ -1486,6 +1510,9 @@
       "recommendedDrills": "تمارين موصى بها",
       "practiceAgain": "تدرّب مجدداً",
       "questions": "{count} سؤال",
+      "progressTrend": "مسار التقدم",
+      "progressTrendLatest": "الأخيرة",
+      "progressTrendPrevious": "قبل {n}",
       "breakdown": {
         "relevance": "الصلة",
         "clarity": "الوضوح",

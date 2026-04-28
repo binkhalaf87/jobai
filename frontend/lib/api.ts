@@ -155,6 +155,29 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 }
 
 
+export async function fetchStream(path: string, options: ApiRequestOptions = {}): Promise<Response> {
+  const { body, auth = false, headers, ...rest } = options;
+  const baseUrl = getApiBaseUrl();
+  let response: Response;
+
+  try {
+    response = await fetch(`${baseUrl}${path}`, {
+      ...rest,
+      headers: buildHeaders(body, auth, headers),
+      body: normalizeBody(body),
+    });
+  } catch {
+    throw createApiConnectionError(baseUrl);
+  }
+
+  if (!response.ok) {
+    throw new ApiError(response.status, await parseError(response));
+  }
+
+  return response;
+}
+
+
 export function uploadRequest<T>(path: string, formData: FormData, options: UploadRequestOptions = {}): Promise<T> {
   const { auth = false, onProgress } = options;
   const baseUrl = getApiBaseUrl();

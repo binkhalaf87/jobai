@@ -1421,6 +1421,16 @@
       "step3Desc": "Use the final report to improve weak spots before the next interview round."
     },
     "unfinishedSession": "You have an unfinished session",
+    "brief": {
+      "eyebrow": "Your Interview Brief",
+      "format": "Format",
+      "questionsCount": "{count} questions",
+      "duration": "Estimated Time",
+      "estimatedDuration": "~{minutes} min",
+      "style": "Interviewer Style",
+      "focusAreas": "Focus Areas",
+      "beginInterview": "Begin Interview →"
+    },
     "configure": "Configure",
     "setupSimulation": "Set up a real interview simulation",
     "form": {
@@ -1463,11 +1473,25 @@
       "interviewerStyle": "{style} interviewer",
       "resumeChip": "Resume: {title}",
       "companyChip": "Company: {name}",
-      "jdLoadedChip": "JD loaded"
+      "jdLoadedChip": "JD loaded",
+      "ttsOn": "🔊 Voice On",
+      "ttsOff": "🔇 Voice Off",
+      "timerLabel": "Time",
+      "timerExpired": "Time's up"
+    },
+    "timer": {
+      "none": "No timer",
+      "60": "1 min",
+      "120": "2 min",
+      "180": "3 min",
+      "label": "Answer Time Limit"
     },
     "evaluation": {
       "interviewerReply": "Interviewer Reply",
+      "interviewerTyping": "Interviewer is responding...",
+      "evaluatingAnswer": "Evaluating your answer...",
       "answerScore": "Answer Score",
+      "starScore": "STAR Structure",
       "coachingTip": "Coaching Tip",
       "strengths": "Strengths",
       "improvements": "Improvements",
@@ -1486,6 +1510,9 @@
       "recommendedDrills": "Recommended Drills",
       "practiceAgain": "Practice Again",
       "questions": "{count} questions",
+      "progressTrend": "Progress Trend",
+      "progressTrendLatest": "Latest",
+      "progressTrendPrevious": "{n} before",
       "breakdown": {
         "relevance": "Relevance",
         "clarity": "Clarity",

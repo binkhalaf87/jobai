@@ -199,6 +199,7 @@ export type InterviewQuestion = {
 
 export type AnswerEvaluation = {
   score: number;
+  star_score?: number | null;
   strengths: string[];
   weaknesses: string[];
   improved_answer: string;

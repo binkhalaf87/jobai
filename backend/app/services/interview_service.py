@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any
+from typing import Any, Generator
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -305,11 +305,12 @@ def _build_eval_prompt(
         "If the answer is solid, move to another competency that has not been covered yet.\n\n"
         "Return ONLY valid JSON with this exact shape:\n"
         "{\n"
+        '  "interviewer_reply": "string",\n'
         '  "score": 7.4,\n'
+        '  "star_score": 6.5,\n'
         '  "strengths": ["string"],\n'
         '  "weaknesses": ["string"],\n'
         '  "improved_answer": "string",\n'
-        '  "interviewer_reply": "string",\n'
         '  "communication_tip": "string",\n'
         '  "next_question": {\n'
         '    "question": "string",\n'
@@ -320,9 +321,12 @@ def _build_eval_prompt(
         "}\n\n"
         "Rules:\n"
         "- score must be a float from 0 to 10 with one decimal place.\n"
+        "- star_score: a float 0–10 rating how well the answer follows the STAR method "
+        "(Situation, Task, Action, Result). Set to null if the question is purely technical "
+        "(e.g. coding, architecture) with no behavioral component.\n"
         "- strengths: 2-3 specific positives.\n"
         "- weaknesses: 1-3 specific gaps. Use [] only when the answer is genuinely strong.\n"
-        "- improved_answer: keep the same facts, improve structure and specificity. Use STAR where useful.\n"
+        "- improved_answer: keep the same facts, improve structure and specificity. Apply STAR format where applicable.\n"
         "- interviewer_reply: 1-2 short sentences that sound like a real interviewer responding live.\n"
         "- communication_tip: one focused coaching note.\n"
         f"- There are {remaining_questions} remaining interview slots after this answer.\n"
@@ -552,8 +556,11 @@ def evaluate_answer(
     payload = _extract_json(raw)
 
     score = float(payload.get("score", 0))
+    raw_star = payload.get("star_score")
+    star_score = round(max(0.0, min(10.0, float(raw_star))), 1) if raw_star is not None else None
     evaluation = {
         "score": round(max(0.0, min(10.0, score)), 1),
+        "star_score": star_score,
         "strengths": [str(item).strip() for item in payload.get("strengths", []) if str(item).strip()],
         "weaknesses": [str(item).strip() for item in payload.get("weaknesses", []) if str(item).strip()],
         "improved_answer": str(payload.get("improved_answer", "")).strip(),
@@ -701,3 +708,110 @@ def list_sessions(db: Session, user_id: str) -> list[InterviewSession]:
             .order_by(InterviewSession.created_at.desc())
         )
     )
+
+
+def stream_evaluate_answer(
+    db: Session,
+    session: InterviewSession,
+    question_index: int,
+    question: str,
+    answer: str,
+) -> Generator[str, None, None]:
+    """Stream evaluation tokens as SSE, then persist and emit a done event."""
+    current_answers = _get_answer_items(session)
+    current_questions = _get_question_items(session)
+    existing_answer_count = len([item for item in current_answers if item.get("index") != question_index])
+    remaining_questions = max(session.question_count - (existing_answer_count + 1), 0)
+
+    system_prompt, user_prompt = _build_eval_prompt(
+        session=session,
+        question=question,
+        answer=answer,
+        remaining_questions=remaining_questions,
+    )
+
+    client = get_openai_client()
+    full_text = ""
+    try:
+        stream = client.chat.completions.create(
+            model=get_rewrite_model_name(),
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            temperature=EVAL_TEMPERATURE,
+            response_format={"type": "json_object"},
+            stream=True,
+        )
+        for chunk in stream:
+            token = chunk.choices[0].delta.content or ""
+            if token:
+                full_text += token
+                yield f"data: {json.dumps({'type': 'chunk', 'text': token})}\n\n"
+    except Exception as exc:
+        logger.error("Streaming eval error: %s", exc)
+        yield f"data: {json.dumps({'type': 'error', 'detail': 'Evaluation failed. Please try again.'})}\n\n"
+        return
+
+    try:
+        payload = _extract_json(full_text)
+    except Exception:
+        yield f"data: {json.dumps({'type': 'error', 'detail': 'Could not parse evaluation response.'})}\n\n"
+        return
+
+    score = float(payload.get("score", 0))
+    raw_star = payload.get("star_score")
+    star_score = round(max(0.0, min(10.0, float(raw_star))), 1) if raw_star is not None else None
+    evaluation = {
+        "score": round(max(0.0, min(10.0, score)), 1),
+        "star_score": star_score,
+        "strengths": [str(item).strip() for item in payload.get("strengths", []) if str(item).strip()],
+        "weaknesses": [str(item).strip() for item in payload.get("weaknesses", []) if str(item).strip()],
+        "improved_answer": str(payload.get("improved_answer", "")).strip(),
+        "interviewer_reply": str(payload.get("interviewer_reply", "")).strip(),
+        "communication_tip": str(payload.get("communication_tip", "")).strip() or None,
+    }
+
+    answer_record: dict[str, Any] = {
+        "index": question_index,
+        "question": question,
+        "answer": answer,
+        "evaluation": evaluation,
+    }
+
+    next_question: dict[str, Any] | None = None
+    if remaining_questions > 0:
+        next_question = _normalize_question(
+            payload.get("next_question"),
+            index=len(current_questions),
+            fallback_type="technical" if session.interview_type == "technical" else "hr",
+            fallback_source="planned",
+        )
+        if not next_question["question"]:
+            next_question = _normalize_question(
+                _build_fallback_next_question(session, len(current_questions)),
+                index=len(current_questions),
+                fallback_type="technical" if session.interview_type == "technical" else "hr",
+                fallback_source="planned",
+            )
+
+    updated_answers = [item for item in current_answers if item.get("index") != question_index]
+    updated_answers.append(answer_record)
+    updated_answers.sort(key=lambda item: int(item.get("index", 0)))
+    session.answers = {"items": updated_answers}
+
+    if next_question and len(current_questions) <= next_question["index"]:
+        current_questions.append(next_question)
+
+    _save_question_payload(session, items=current_questions)
+    db.add(session)
+    db.commit()
+    db.refresh(session)
+
+    result: dict[str, Any] = {
+        "question_index": question_index,
+        "evaluation": evaluation,
+        "questions": _get_question_items(session),
+        "next_question": next_question,
+    }
+    yield f"data: {json.dumps({'type': 'done', 'payload': result})}\n\n"

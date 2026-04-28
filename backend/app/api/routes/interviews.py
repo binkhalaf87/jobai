@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.api.deps.auth import get_current_user
@@ -20,6 +21,7 @@ from app.services.interview_service import (
     evaluate_answer,
     get_session,
     list_sessions,
+    stream_evaluate_answer,
 )
 
 router = APIRouter(prefix="/interviews", tags=["interviews"])
@@ -157,6 +159,40 @@ def submit_answer(
             if evaluation_result.get("next_question")
             else None
         ),
+    )
+
+
+@router.post(
+    "/sessions/{session_id}/answer/stream",
+    status_code=status.HTTP_200_OK,
+)
+def submit_answer_stream(
+    session_id: str,
+    payload: AnswerSubmitRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> StreamingResponse:
+    """Stream the answer evaluation as Server-Sent Events."""
+    session = get_session(db, current_user.id, session_id)
+    if not session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interview session not found.")
+
+    if session.status == "completed":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This session is already completed.",
+        )
+
+    return StreamingResponse(
+        stream_evaluate_answer(
+            db=db,
+            session=session,
+            question_index=payload.question_index,
+            question=payload.question,
+            answer=payload.answer,
+        ),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 
 
