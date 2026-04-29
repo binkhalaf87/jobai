@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 revision = "0016"
 down_revision = "0015"
@@ -15,8 +16,8 @@ def upgrade() -> None:
     # ── gmail_connections ──────────────────────────────────────────────────────
     op.create_table(
         "gmail_connections",
-        sa.Column("id", sa.String(length=36), nullable=False),
-        sa.Column("user_id", sa.String(length=36), nullable=False),
+        sa.Column("id", postgresql.UUID(as_uuid=False), nullable=False),
+        sa.Column("user_id", postgresql.UUID(as_uuid=False), nullable=False),
         sa.Column("gmail_address", sa.String(length=320), nullable=False),
         sa.Column("encrypted_refresh_token", sa.Text, nullable=False),
         sa.Column("token_expiry", sa.DateTime(timezone=True), nullable=True),
@@ -33,9 +34,9 @@ def upgrade() -> None:
     # ── send_history ───────────────────────────────────────────────────────────
     op.create_table(
         "send_history",
-        sa.Column("id", sa.String(length=36), nullable=False),
-        sa.Column("user_id", sa.String(length=36), nullable=False),
-        sa.Column("resume_id", sa.String(length=36), nullable=True),
+        sa.Column("id", postgresql.UUID(as_uuid=False), nullable=False),
+        sa.Column("user_id", postgresql.UUID(as_uuid=False), nullable=False),
+        sa.Column("resume_id", postgresql.UUID(as_uuid=False), nullable=True),
         sa.Column("job_title", sa.String(length=255), nullable=False),
         sa.Column("company_name", sa.String(length=255), nullable=True),
         sa.Column("subject", sa.String(length=500), nullable=False),
