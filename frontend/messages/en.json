@@ -1854,6 +1854,41 @@
       "disconnect": "Disconnect Gmail",
       "disconnecting": "Disconnecting…",
       "disconnectFailed": "Failed to disconnect Gmail"
+    },
+    "campaigns": {
+      "tab": "Campaigns",
+      "title": "Campaigns",
+      "description": "Track your outreach campaigns and daily sending progress.",
+      "empty": "No campaigns yet. Compose a letter and launch one.",
+      "loading": "Loading…",
+      "settings": {
+        "title": "Campaign Settings",
+        "listLabel": "Distribution List",
+        "noLists": "No lists available. Ask your admin to create a distribution list.",
+        "selectList": "— Select a list —",
+        "contacts": "{count} contacts",
+        "dailyLimitLabel": "Daily Email Limit",
+        "dailyLimitHint": "Gmail recommends max 100/day to avoid spam flags.",
+        "estimatedDays": "~{days} day to complete",
+        "estimatedDaysPlural": "~{days} days to complete",
+        "launching": "Launching…",
+        "launch": "Launch Campaign",
+        "launched": "Campaign launched! Check the Campaigns tab to track progress.",
+        "launchFailed": "Failed to launch campaign. Please try again."
+      },
+      "sentOf": "{sent} / {total} sent",
+      "failedCount": "· {count} failed",
+      "remaining": "~{days}d remaining · {limit}/day",
+      "pause": "Pause",
+      "resume": "Resume",
+      "status": {
+        "sent": "Sent",
+        "failed": "Failed",
+        "active": "Active",
+        "paused": "Paused",
+        "completed": "Completed",
+        "unknown": "Pending"
+      }
     }
   }
 }

@@ -31,16 +31,19 @@ type Step = "connect" | "compose" | "campaigns" | "history";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, string> = {
+  const t = useTranslations("smartSendPage");
+  const colorMap: Record<string, string> = {
     sent:      "bg-teal-light/30 text-teal border border-teal-light",
     failed:    "bg-rose-50 text-rose-700 border border-rose-200",
     active:    "bg-emerald-100 text-emerald-700 border border-emerald-200",
     paused:    "bg-amber-100 text-amber-700 border border-amber-200",
     completed: "bg-slate-100 text-slate-600 border border-slate-200",
   };
+  const validKeys = ["sent", "failed", "active", "paused", "completed"];
+  const key = validKeys.includes(status) ? status : "unknown";
   return (
-    <span className={`px-2 py-0.5 rounded text-xs font-medium ${map[status] ?? "bg-slate-100 text-slate-500"}`}>
-      {status}
+    <span className={`px-2 py-0.5 rounded text-xs font-medium ${colorMap[status] ?? "bg-slate-100 text-slate-500"}`}>
+      {t(`campaigns.status.${key}`)}
     </span>
   );
 }
@@ -209,12 +212,12 @@ function ComposePanel({
         resume_id: form.resume_id || undefined,
         daily_limit: dailyLimit,
       });
-      setSuccessMsg("Campaign launched! Check the Campaigns tab to track progress.");
+      setSuccessMsg(t("campaigns.settings.launched"));
       setLetter(null);
       setSelectedListId("");
       onLaunched();
-    } catch (err: unknown) {
-      setLaunchError(err instanceof Error ? err.message : "Failed to launch campaign.");
+    } catch {
+      setLaunchError(t("campaigns.settings.launchFailed"));
     } finally {
       setLaunching(false);
     }
@@ -284,34 +287,38 @@ function ComposePanel({
 
           {/* Campaign settings */}
           <div className="rounded-xl border border-brand-100 bg-brand-50 p-4 space-y-3">
-            <p className="text-sm font-semibold text-brand-800">Campaign Settings</p>
+            <p className="text-sm font-semibold text-brand-800">{t("campaigns.settings.title")}</p>
 
             <div>
-              <label className="block text-xs font-medium text-brand-700 mb-1">Distribution List</label>
+              <label className="block text-xs font-medium text-brand-700 mb-1">{t("campaigns.settings.listLabel")}</label>
               {lists.length === 0 ? (
                 <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                  No lists available. Ask your admin to create a distribution list.
+                  {t("campaigns.settings.noLists")}
                 </p>
               ) : (
                 <select className="w-full border border-brand-200 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" value={selectedListId} onChange={(e) => setSelectedListId(e.target.value)}>
-                  <option value="">— Select a list —</option>
+                  <option value="">{t("campaigns.settings.selectList")}</option>
                   {lists.map((l) => (
-                    <option key={l.id} value={l.id}>{l.name} ({l.total_count} contacts)</option>
+                    <option key={l.id} value={l.id}>{l.name} ({t("campaigns.settings.contacts", { count: l.total_count })})</option>
                   ))}
                 </select>
               )}
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-brand-700 mb-1">Daily Email Limit</label>
+              <label className="block text-xs font-medium text-brand-700 mb-1">{t("campaigns.settings.dailyLimitLabel")}</label>
               <input type="number" min={10} max={500} className="w-full border border-brand-200 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" value={dailyLimit} onChange={(e) => setDailyLimit(Math.max(10, Math.min(500, parseInt(e.target.value) || 100)))} />
-              <p className="text-xs text-brand-600 mt-1">Gmail recommends max 100/day to avoid spam flags.</p>
+              <p className="text-xs text-brand-600 mt-1">{t("campaigns.settings.dailyLimitHint")}</p>
             </div>
 
             {selectedList && estimatedDays !== null && (
               <div className="rounded-lg bg-white border border-brand-100 px-3 py-2 text-xs text-brand-700 flex items-center justify-between">
-                <span>{selectedList.total_count} contacts</span>
-                <span className="font-semibold">~{estimatedDays} day{estimatedDays !== 1 ? "s" : ""} to complete</span>
+                <span>{t("campaigns.settings.contacts", { count: selectedList.total_count })}</span>
+                <span className="font-semibold">
+                  {estimatedDays === 1
+                    ? t("campaigns.settings.estimatedDays", { days: estimatedDays })
+                    : t("campaigns.settings.estimatedDaysPlural", { days: estimatedDays })}
+                </span>
               </div>
             )}
           </div>
@@ -320,7 +327,7 @@ function ComposePanel({
           {successMsg && <p className="text-teal text-sm font-medium">{successMsg}</p>}
 
           <button onClick={() => void handleLaunch()} disabled={launching || !selectedListId} className="w-full bg-teal text-white rounded-lg py-2.5 text-sm font-medium hover:bg-teal/90 disabled:opacity-50 flex items-center justify-center gap-2">
-            {launching ? (<><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>Launching…</>) : "🚀 Launch Campaign"}
+            {launching ? (<><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>{t("campaigns.settings.launching")}</>) : t("campaigns.settings.launch")}
           </button>
         </div>
       )}
@@ -331,6 +338,7 @@ function ComposePanel({
 // ─── Campaigns Panel ───────────────────────────────────────────────────────────
 
 function CampaignsPanel({ refreshKey }: { refreshKey: number }) {
+  const t = useTranslations("smartSendPage");
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -356,17 +364,17 @@ function CampaignsPanel({ refreshKey }: { refreshKey: number }) {
     } catch { /* ignore */ } finally { setActionLoading(null); }
   }
 
-  if (loading) return <p className="text-sm text-gray-400">Loading…</p>;
+  if (loading) return <p className="text-sm text-gray-400">{t("campaigns.loading")}</p>;
 
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold mb-1">Campaigns</h2>
-        <p className="text-sm text-gray-500">Track your outreach campaigns and daily sending progress.</p>
+        <h2 className="text-lg font-semibold mb-1">{t("campaigns.title")}</h2>
+        <p className="text-sm text-gray-500">{t("campaigns.description")}</p>
       </div>
 
       {campaigns.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-8">No campaigns yet. Compose a letter and launch one.</p>
+        <p className="text-sm text-gray-400 text-center py-8">{t("campaigns.empty")}</p>
       ) : (
         <div className="space-y-3">
           {campaigns.map((c) => (
@@ -382,9 +390,12 @@ function CampaignsPanel({ refreshKey }: { refreshKey: number }) {
               <ProgressBar value={c.total_sent} max={c.total_contacts} />
 
               <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>{c.total_sent} / {c.total_contacts} sent{c.total_failed > 0 ? ` · ${c.total_failed} failed` : ""}</span>
+                <span>
+                  {t("campaigns.sentOf", { sent: c.total_sent, total: c.total_contacts })}
+                  {c.total_failed > 0 ? ` ${t("campaigns.failedCount", { count: c.total_failed })}` : ""}
+                </span>
                 {c.status === "active" && c.estimated_days_remaining > 0 && (
-                  <span>~{c.estimated_days_remaining}d remaining · {c.daily_limit}/day</span>
+                  <span>{t("campaigns.remaining", { days: c.estimated_days_remaining, limit: c.daily_limit })}</span>
                 )}
               </div>
 
@@ -392,11 +403,11 @@ function CampaignsPanel({ refreshKey }: { refreshKey: number }) {
                 <div className="flex gap-2">
                   {c.status === "active" ? (
                     <button onClick={() => void handlePause(c.id)} disabled={actionLoading === c.id} className="flex-1 border border-amber-200 text-amber-700 rounded-lg py-1.5 text-xs font-semibold hover:bg-amber-50 disabled:opacity-50">
-                      {actionLoading === c.id ? "…" : "⏸ Pause"}
+                      {actionLoading === c.id ? "…" : `⏸ ${t("campaigns.pause")}`}
                     </button>
                   ) : (
                     <button onClick={() => void handleResume(c.id)} disabled={actionLoading === c.id} className="flex-1 border border-emerald-200 text-emerald-700 rounded-lg py-1.5 text-xs font-semibold hover:bg-emerald-50 disabled:opacity-50">
-                      {actionLoading === c.id ? "…" : "▶ Resume"}
+                      {actionLoading === c.id ? "…" : `▶ ${t("campaigns.resume")}`}
                     </button>
                   )}
                 </div>
@@ -477,8 +488,8 @@ export default function SmartSendPage() {
 
   const tabs: { id: Step; label: string; disabled?: boolean }[] = [
     { id: "connect",   label: gmailStatus.is_connected ? t("tabs.gmailVerified") : t("tabs.gmail") },
-    { id: "compose",   label: t("tabs.compose"),   disabled: !gmailStatus.is_connected },
-    { id: "campaigns", label: "Campaigns",          disabled: !gmailStatus.is_connected },
+    { id: "compose",   label: t("tabs.compose"),             disabled: !gmailStatus.is_connected },
+    { id: "campaigns", label: t("campaigns.tab"),            disabled: !gmailStatus.is_connected },
     { id: "history",   label: t("tabs.history") },
   ];
 

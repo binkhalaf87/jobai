@@ -1854,6 +1854,41 @@
       "disconnect": "فصل حساب Gmail",
       "disconnecting": "جارٍ الفصل…",
       "disconnectFailed": "تعذّر فصل حساب Gmail"
+    },
+    "campaigns": {
+      "tab": "الحملات",
+      "title": "الحملات",
+      "description": "تتبع حملات التواصل وتقدم الإرسال اليومي.",
+      "empty": "لا توجد حملات بعد. أنشئ رسالة وأطلق حملة.",
+      "loading": "جارٍ التحميل…",
+      "settings": {
+        "title": "إعدادات الحملة",
+        "listLabel": "قائمة التوزيع",
+        "noLists": "لا توجد قوائم متاحة. اطلب من المسؤول إنشاء قائمة توزيع.",
+        "selectList": "— اختر قائمة —",
+        "contacts": "{count} جهة اتصال",
+        "dailyLimitLabel": "الحد اليومي للإرسال",
+        "dailyLimitHint": "توصي Gmail بحد أقصى 100 رسالة يومياً لتجنب تصنيفها كبريد مزعج.",
+        "estimatedDays": "~{days} يوم للإكمال",
+        "estimatedDaysPlural": "~{days} أيام للإكمال",
+        "launching": "جارٍ الإطلاق…",
+        "launch": "إطلاق الحملة",
+        "launched": "تم إطلاق الحملة! تحقق من تبويب الحملات لمتابعة التقدم.",
+        "launchFailed": "فشل إطلاق الحملة. يرجى المحاولة مجدداً."
+      },
+      "sentOf": "{sent} / {total} مُرسل",
+      "failedCount": "· {count} فشل",
+      "remaining": "~{days}ي متبقية · {limit}/يوم",
+      "pause": "إيقاف مؤقت",
+      "resume": "استئناف",
+      "status": {
+        "sent": "مُرسل",
+        "failed": "فشل",
+        "active": "نشطة",
+        "paused": "موقوفة",
+        "completed": "مكتملة",
+        "unknown": "قيد الانتظار"
+      }
     }
   }
 }
