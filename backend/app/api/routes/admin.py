@@ -217,7 +217,7 @@ def create_admin_list(
     return AdminListItem.model_validate(rl)
 
 
-@router.delete("/lists/{list_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/lists/{list_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 def delete_admin_list(
     list_id: str,
     admin: User = Depends(get_current_admin),
@@ -294,7 +294,7 @@ def bulk_add_contacts(
     return {"added": added}
 
 
-@router.delete("/lists/{list_id}/contacts/{contact_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/lists/{list_id}/contacts/{contact_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 def delete_contact(
     list_id: str,
     contact_id: str,

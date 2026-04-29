@@ -92,7 +92,7 @@ def gmail_status(
     return GmailStatusResponse(is_connected=True, gmail_address=conn.gmail_address)
 
 
-@router.delete("/gmail/disconnect", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/gmail/disconnect", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 def gmail_disconnect(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
