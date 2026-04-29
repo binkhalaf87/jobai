@@ -12,7 +12,7 @@ from app.models.enums import PaymentOrderType
 from app.models.payment_order import PaymentOrder
 from app.models.plan import Plan
 
-PAYMOB_BASE_URL = "https://accept.paymob.com"
+PAYMOB_BASE_URL = "https://ksa.paymob.com"
 PAYMOB_INTENTION_PATH = "/v1/intention/"
 PAYMOB_TIMEOUT = 15.0
 
@@ -151,7 +151,7 @@ def get_paymob_hmac_secret() -> str:
 
 def _paymob_headers() -> dict[str, str]:
     return {
-        "Authorization": f"Token {_require_paymob_api_key()}",
+        "Authorization": f"Bearer {_require_paymob_api_key()}",
         "Content-Type": "application/json",
     }
 
@@ -225,6 +225,8 @@ def build_order_payload(
     items: Sequence[PaymobLineItem] | None = None,
     payment_methods: Sequence[int] | None = None,
     extras: Mapping[str, Any] | None = None,
+    redirection_url: str | None = None,
+    notification_url: str | None = None,
 ) -> dict[str, Any]:
     """Build the request body used to create a Paymob payment intention."""
     mapped_order = map_internal_order_to_paymob_order(payment_order, plan=plan, items=items)
@@ -248,7 +250,13 @@ def build_order_payload(
         if value is not None
     }
 
-    return {
+    settings = get_settings()
+    resolved_redirection_url = redirection_url or f"{settings.frontend_url}/dashboard/billing"
+    resolved_notification_url = notification_url or (
+        f"{settings.backend_url.rstrip('/')}{settings.api_prefix}/billing/paymob/webhook"
+    )
+
+    payload: dict[str, Any] = {
         "amount": mapped_order.amount_minor,
         "currency": mapped_order.currency,
         "payment_methods": configured_payment_methods,
@@ -256,8 +264,11 @@ def build_order_payload(
         "billing_data": billing_data.as_payload(),
         "special_reference": mapped_order.special_reference,
         "merchant_order_id": mapped_order.merchant_order_id,
+        "redirection_url": resolved_redirection_url,
+        "notification_url": resolved_notification_url,
         "extras": extras_payload,
     }
+    return payload
 
 
 def _extract_paymob_error(response: httpx.Response) -> str:

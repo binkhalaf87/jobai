@@ -152,6 +152,7 @@ class Settings:
     google_client_secret: str | None
     google_redirect_uri: str
     frontend_url: str
+    backend_url: str
 
     def allowed_origins(self) -> list[str]:
         """Build an explicit allowlist for frontend origins."""
@@ -208,6 +209,7 @@ def build_settings() -> Settings:
         google_client_secret=get_optional_env("GOOGLE_CLIENT_SECRET", "").strip() or None,
         google_redirect_uri=get_optional_env("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/v1/smart-send/gmail/callback"),
         frontend_url=get_optional_env("FRONTEND_URL", "http://localhost:3000"),
+        backend_url=get_optional_env("BACKEND_URL", "http://localhost:8000"),
     )
 
 
