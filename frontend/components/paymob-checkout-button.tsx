@@ -18,7 +18,7 @@ type PaymobCheckoutButtonProps = {
 };
 
 const PAYMOB_SCRIPT_ID = "paymob-js-sdk";
-const PAYMOB_SCRIPT_SRC = "https://ksa.paymob.com/v1/pay.js";
+const PAYMOB_SCRIPT_SRC = "https://accept.paymob.com/v1/pay.js";
 
 function loadPaymobScript(): Promise<void> {
   return new Promise((resolve, reject) => {
