@@ -64,6 +64,7 @@ class UserRole(str, Enum):
 
     JOBSEEKER = "jobseeker"
     RECRUITER = "recruiter"
+    ADMIN = "admin"
 
 
 class CandidateStage(str, Enum):

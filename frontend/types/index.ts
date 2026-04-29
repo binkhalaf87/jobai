@@ -11,7 +11,7 @@ export type AuthUser = {
   email: string;
   full_name: string | null;
   is_active: boolean;
-  role: "jobseeker" | "recruiter";
+  role: "jobseeker" | "recruiter" | "admin";
   created_at: string;
   updated_at: string;
   last_login_at: string | null;

@@ -47,3 +47,13 @@ def get_current_recruiter(user: User = Depends(get_current_user)) -> User:
             detail="Recruiter access required.",
         )
     return user
+
+
+def get_current_admin(user: User = Depends(get_current_user)) -> User:
+    """Restrict access to authenticated users with the admin role."""
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required.",
+        )
+    return user

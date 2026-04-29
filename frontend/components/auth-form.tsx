@@ -42,12 +42,12 @@ export function AuthForm({ mode }: AuthFormProps) {
         });
         const registeredRole = response.user.role;
         setUserRole(registeredRole);
-        router.push(registeredRole === "recruiter" ? "/recruiter" : "/dashboard");
+        router.push(registeredRole === "recruiter" ? "/recruiter" : registeredRole === "admin" ? "/admin" : "/dashboard");
       } else {
         const response = await login({ email, password });
         const loggedInRole = response.user.role;
         setUserRole(loggedInRole);
-        router.push(loggedInRole === "recruiter" ? "/recruiter" : "/dashboard");
+        router.push(loggedInRole === "recruiter" ? "/recruiter" : loggedInRole === "admin" ? "/admin" : "/dashboard");
       }
 
       router.refresh();
