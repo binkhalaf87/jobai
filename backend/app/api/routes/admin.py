@@ -17,8 +17,14 @@ from app.models.resume import Resume
 from app.models.send_history import SendHistory
 from app.models.user import User
 from app.models.user_wallet import UserWallet
+from app.models.mailing_list import Recipient, RecipientList
 from app.models.wallet_transaction import WalletTransaction
 from app.schemas.admin import (
+    AdminContactCreate,
+    AdminContactItem,
+    AdminContactsBulk,
+    AdminListCreate,
+    AdminListItem,
     AdminStatsResponse,
     AdminUserItem,
     AdminUserPatch,
@@ -176,3 +182,130 @@ def adjust_wallet(
 
     db.commit()
     return {"balance_points": balance_after}
+
+
+# ── Recipient Lists ────────────────────────────────────────────────────────────
+
+@router.get("/lists", response_model=list[AdminListItem])
+def list_admin_lists(
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> list[AdminListItem]:
+    rows = db.scalars(
+        select(RecipientList).where(RecipientList.user_id == admin.id).order_by(RecipientList.created_at.desc())
+    ).all()
+    return [AdminListItem.model_validate(r) for r in rows]
+
+
+@router.post("/lists", response_model=AdminListItem, status_code=status.HTTP_201_CREATED)
+def create_admin_list(
+    body: AdminListCreate,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> AdminListItem:
+    rl = RecipientList(
+        id=str(uuid.uuid4()),
+        user_id=admin.id,
+        name=body.name,
+        description=body.description,
+        source="manual",
+        total_count=0,
+    )
+    db.add(rl)
+    db.commit()
+    db.refresh(rl)
+    return AdminListItem.model_validate(rl)
+
+
+@router.delete("/lists/{list_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_admin_list(
+    list_id: str,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> None:
+    rl = db.scalar(select(RecipientList).where(RecipientList.id == list_id, RecipientList.user_id == admin.id))
+    if not rl:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="List not found.")
+    db.delete(rl)
+    db.commit()
+
+
+@router.get("/lists/{list_id}/contacts", response_model=list[AdminContactItem])
+def get_list_contacts(
+    list_id: str,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> list[AdminContactItem]:
+    rl = db.scalar(select(RecipientList).where(RecipientList.id == list_id, RecipientList.user_id == admin.id))
+    if not rl:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="List not found.")
+    contacts = db.scalars(select(Recipient).where(Recipient.list_id == list_id).order_by(Recipient.created_at)).all()
+    return [AdminContactItem.model_validate(c) for c in contacts]
+
+
+@router.post("/lists/{list_id}/contacts", response_model=AdminContactItem, status_code=status.HTTP_201_CREATED)
+def add_contact(
+    list_id: str,
+    body: AdminContactCreate,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> AdminContactItem:
+    rl = db.scalar(select(RecipientList).where(RecipientList.id == list_id, RecipientList.user_id == admin.id))
+    if not rl:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="List not found.")
+    contact = Recipient(
+        id=str(uuid.uuid4()),
+        list_id=list_id,
+        user_id=admin.id,
+        email=body.email.lower().strip(),
+        full_name=body.full_name,
+        company_name=body.company_name,
+        job_title=body.job_title,
+    )
+    db.add(contact)
+    rl.total_count += 1
+    db.commit()
+    db.refresh(contact)
+    return AdminContactItem.model_validate(contact)
+
+
+@router.post("/lists/{list_id}/contacts/bulk", response_model=dict)
+def bulk_add_contacts(
+    list_id: str,
+    body: AdminContactsBulk,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> dict:
+    rl = db.scalar(select(RecipientList).where(RecipientList.id == list_id, RecipientList.user_id == admin.id))
+    if not rl:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="List not found.")
+    added = 0
+    for email in body.emails:
+        email = email.lower().strip()
+        if not email:
+            continue
+        existing = db.scalar(select(Recipient).where(Recipient.list_id == list_id, Recipient.email == email))
+        if existing:
+            continue
+        db.add(Recipient(id=str(uuid.uuid4()), list_id=list_id, user_id=admin.id, email=email))
+        added += 1
+    rl.total_count += added
+    db.commit()
+    return {"added": added}
+
+
+@router.delete("/lists/{list_id}/contacts/{contact_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_contact(
+    list_id: str,
+    contact_id: str,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> None:
+    contact = db.scalar(select(Recipient).where(Recipient.id == contact_id, Recipient.list_id == list_id))
+    if not contact:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found.")
+    rl = db.get(RecipientList, list_id)
+    db.delete(contact)
+    if rl and rl.total_count > 0:
+        rl.total_count -= 1
+    db.commit()

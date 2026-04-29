@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, field_validator
 
@@ -69,3 +70,38 @@ class SendHistoryItem(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# ── Recipient Lists ────────────────────────────────────────────────────────────
+
+class RecipientListItem(BaseModel):
+    id: str
+    name: str
+    description: str | None
+    total_count: int
+    contacts: list[dict[str, Any]] = []
+
+
+# ── Campaigns ──────────────────────────────────────────────────────────────────
+
+class CampaignCreate(BaseModel):
+    list_id: str
+    subject: str
+    body: str
+    resume_id: str | None = None
+    daily_limit: int = 100
+
+
+class CampaignResponse(BaseModel):
+    id: str
+    list_name: str | None
+    subject: str
+    status: str
+    daily_limit: int
+    total_contacts: int
+    total_sent: int
+    total_failed: int
+    estimated_days_remaining: int
+    started_at: datetime | None
+    completed_at: datetime | None
+    created_at: datetime

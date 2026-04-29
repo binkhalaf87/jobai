@@ -90,3 +90,57 @@ export async function getHistory(): Promise<SendHistoryItem[]> {
   if (!res.ok) throw new Error("Failed to load history");
   return res.json();
 }
+
+// ── Recipient Lists ───────────────────────────────────────────────────────────
+
+export async function getRecipientLists(): Promise<import("@/types").RecipientList[]> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/recipient-lists`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to load lists");
+  return res.json();
+}
+
+// ── Campaigns ─────────────────────────────────────────────────────────────────
+
+export async function createCampaign(data: {
+  list_id: string;
+  subject: string;
+  body: string;
+  resume_id?: string;
+  daily_limit?: number;
+}): Promise<import("@/types").Campaign> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/campaigns`, {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to create campaign"));
+  return res.json();
+}
+
+export async function getCampaigns(): Promise<import("@/types").Campaign[]> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/campaigns`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to load campaigns");
+  return res.json();
+}
+
+export async function pauseCampaign(id: string): Promise<import("@/types").Campaign> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/campaigns/${id}/pause`, {
+    method: "PATCH",
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to pause campaign"));
+  return res.json();
+}
+
+export async function resumeCampaign(id: string): Promise<import("@/types").Campaign> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/campaigns/${id}/resume`, {
+    method: "PATCH",
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to resume campaign"));
+  return res.json();
+}

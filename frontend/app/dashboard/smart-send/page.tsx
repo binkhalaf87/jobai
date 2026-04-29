@@ -6,29 +6,51 @@ import { useTranslations } from "next-intl";
 
 import { Panel } from "@/components/panel";
 import {
+  createCampaign,
   disconnectGmail,
   generateLetter,
+  getCampaigns,
   getGmailStatus,
   getHistory,
-  sendEmail,
+  getRecipientLists,
+  pauseCampaign,
+  resumeCampaign,
 } from "@/lib/smart-send";
-import type { GenerateLetterResponse, GmailStatus, SendHistoryItem } from "@/types";
+import type {
+  Campaign,
+  GenerateLetterResponse,
+  GmailStatus,
+  RecipientList,
+  SendHistoryItem,
+} from "@/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Step = "connect" | "compose" | "history";
+type Step = "connect" | "compose" | "campaigns" | "history";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    sent: "bg-teal-light/30 text-teal border border-teal-light",
-    failed: "bg-rose-50 text-rose-700 border border-rose-200",
+    sent:      "bg-teal-light/30 text-teal border border-teal-light",
+    failed:    "bg-rose-50 text-rose-700 border border-rose-200",
+    active:    "bg-emerald-100 text-emerald-700 border border-emerald-200",
+    paused:    "bg-amber-100 text-amber-700 border border-amber-200",
+    completed: "bg-slate-100 text-slate-600 border border-slate-200",
   };
   return (
     <span className={`px-2 py-0.5 rounded text-xs font-medium ${map[status] ?? "bg-slate-100 text-slate-500"}`}>
       {status}
     </span>
+  );
+}
+
+function ProgressBar({ value, max }: { value: number; max: number }) {
+  const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
+  return (
+    <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+      <div className="h-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
+    </div>
   );
 }
 
@@ -81,29 +103,17 @@ function GmailConnectPanel({
       {status.is_connected ? (
         <div className="space-y-4">
           <div className="bg-teal-light/20 border border-teal-light rounded-xl p-4 flex items-center gap-3">
-            <div className="w-8 h-8 bg-teal rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-              ✓
-            </div>
+            <div className="w-8 h-8 bg-teal rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">✓</div>
             <div>
               <p className="text-sm font-medium text-teal">{t("gmail.connected")}</p>
               <p className="text-xs text-gray-500">{status.gmail_address}</p>
             </div>
           </div>
-
-          <button
-            onClick={onConnected}
-            className="w-full bg-brand-800 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-brand-700"
-          >
+          <button onClick={onConnected} className="w-full bg-brand-800 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-brand-700">
             {t("gmail.composeBtn")}
           </button>
-
           {error && <p className="text-red-600 text-sm">{error}</p>}
-
-          <button
-            onClick={handleDisconnect}
-            disabled={disconnecting}
-            className="w-full border border-slate-200 text-slate-600 rounded-lg py-2 text-sm hover:bg-slate-50 disabled:opacity-50"
-          >
+          <button onClick={() => void handleDisconnect()} disabled={disconnecting} className="w-full border border-slate-200 text-slate-600 rounded-lg py-2 text-sm hover:bg-slate-50 disabled:opacity-50">
             {disconnecting ? t("gmail.disconnecting") : t("gmail.disconnect")}
           </button>
         </div>
@@ -117,13 +127,8 @@ function GmailConnectPanel({
               <li>{t("gmail.step3")}</li>
             </ol>
           </div>
-
           {error && <p className="text-red-600 text-sm">{error}</p>}
-
-          <button
-            onClick={handleConnect}
-            className="w-full bg-brand-800 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-brand-700 flex items-center justify-center gap-2"
-          >
+          <button onClick={() => void handleConnect()} className="w-full bg-brand-800 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-brand-700 flex items-center justify-center gap-2">
             <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
               <path d="M20.283 10.356h-8.327v3.451h4.792c-.446 2.193-2.313 3.453-4.792 3.453a5.27 5.27 0 0 1-5.279-5.28 5.27 5.27 0 0 1 5.279-5.279c1.259 0 2.397.447 3.29 1.178l2.6-2.599c-1.584-1.381-3.615-2.233-5.89-2.233a8.908 8.908 0 0 0-8.934 8.934 8.908 8.908 0 0 0 8.934 8.934c4.467 0 8.529-3.249 8.529-8.934 0-.528-.081-1.097-.202-1.625z" />
             </svg>
@@ -139,58 +144,45 @@ function GmailConnectPanel({
 
 function ComposePanel({
   gmailAddress,
-  onSent,
+  onLaunched,
 }: {
   gmailAddress: string;
-  onSent: () => void;
+  onLaunched: () => void;
 }) {
   const t = useTranslations("smartSendPage");
-  const [form, setForm] = useState({
-    job_title: "",
-    company_name: "",
-    job_description: "",
-    resume_id: "",
-  });
+  const [form, setForm] = useState({ job_title: "", company_name: "", job_description: "", resume_id: "" });
   const [letter, setLetter] = useState<GenerateLetterResponse | null>(null);
   const [resumes, setResumes] = useState<import("@/types").ResumeListItem[]>([]);
+  const [lists, setLists] = useState<RecipientList[]>([]);
+  const [selectedListId, setSelectedListId] = useState("");
+  const [dailyLimit, setDailyLimit] = useState(100);
   const [generating, setGenerating] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [recipientEmail, setRecipientEmail] = useState("");
-  const [recipientName, setRecipientName] = useState("");
+  const [launching, setLaunching] = useState(false);
   const [genError, setGenError] = useState("");
-  const [sendError, setSendError] = useState("");
+  const [launchError, setLaunchError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
   useEffect(() => {
-    import("@/lib/resumes").then(({ listResumes }) =>
-      listResumes().then(setResumes).catch(() => {})
-    );
+    void import("@/lib/resumes").then(({ listResumes }) => listResumes().then(setResumes).catch(() => {}));
+    getRecipientLists().then(setLists).catch(() => {});
   }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const jobTitle = sessionStorage.getItem("jobai_smartsend_job_title");
-    const companyName = sessionStorage.getItem("jobai_smartsend_company_name");
-    const jobDescription = sessionStorage.getItem("jobai_smartsend_job_description");
-    if (jobTitle || companyName || jobDescription) {
-      setForm((prev) => ({
-        ...prev,
-        job_title: jobTitle ?? prev.job_title,
-        company_name: companyName ?? prev.company_name,
-        job_description: jobDescription ?? prev.job_description,
-      }));
+    const jt = sessionStorage.getItem("jobai_smartsend_job_title");
+    const cn = sessionStorage.getItem("jobai_smartsend_company_name");
+    const jd = sessionStorage.getItem("jobai_smartsend_job_description");
+    if (jt || cn || jd) {
+      setForm((p) => ({ ...p, job_title: jt ?? p.job_title, company_name: cn ?? p.company_name, job_description: jd ?? p.job_description }));
+      sessionStorage.removeItem("jobai_smartsend_job_title");
+      sessionStorage.removeItem("jobai_smartsend_company_name");
+      sessionStorage.removeItem("jobai_smartsend_job_description");
     }
-    sessionStorage.removeItem("jobai_smartsend_job_title");
-    sessionStorage.removeItem("jobai_smartsend_company_name");
-    sessionStorage.removeItem("jobai_smartsend_job_description");
   }, []);
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
-    setGenError("");
-    setSuccessMsg("");
-    setLetter(null);
-    setGenerating(true);
+    setGenError(""); setSuccessMsg(""); setLetter(null); setGenerating(true);
     try {
       const result = await generateLetter({
         job_title: form.job_title,
@@ -206,35 +198,32 @@ function ComposePanel({
     }
   }
 
-  async function handleSend() {
-    if (!letter) return;
-    if (!recipientEmail.includes("@")) {
-      setSendError(t("compose.invalidEmail"));
-      return;
-    }
-    setSendError("");
-    setSuccessMsg("");
-    setSending(true);
+  async function handleLaunch() {
+    if (!letter || !selectedListId) return;
+    setLaunchError(""); setSuccessMsg(""); setLaunching(true);
     try {
-      await sendEmail({
-        job_title: form.job_title,
-        company_name: form.company_name || undefined,
+      await createCampaign({
+        list_id: selectedListId,
         subject: letter.subject,
         body: letter.body,
-        recipient_email: recipientEmail,
-        recipient_name: recipientName || undefined,
         resume_id: form.resume_id || undefined,
+        daily_limit: dailyLimit,
       });
-      setSuccessMsg(t("compose.sentSuccess", { email: recipientEmail }));
-      setRecipientEmail("");
-      setRecipientName("");
-      onSent();
+      setSuccessMsg("Campaign launched! Check the Campaigns tab to track progress.");
+      setLetter(null);
+      setSelectedListId("");
+      onLaunched();
     } catch (err: unknown) {
-      setSendError(err instanceof Error ? err.message : t("compose.sendFailed"));
+      setLaunchError(err instanceof Error ? err.message : "Failed to launch campaign.");
     } finally {
-      setSending(false);
+      setLaunching(false);
     }
   }
+
+  const selectedList = lists.find((l) => l.id === selectedListId);
+  const estimatedDays = selectedList && dailyLimit > 0
+    ? Math.ceil(selectedList.total_count / dailyLimit)
+    : null;
 
   return (
     <div className="space-y-6">
@@ -243,82 +232,40 @@ function ComposePanel({
           <h2 className="text-lg font-semibold mb-1">{t("compose.title")}</h2>
           <p className="text-sm text-gray-500">{t("compose.description")}</p>
         </div>
-        <span className="text-xs text-teal bg-teal-light/20 border border-teal-light px-2 py-1 rounded-full flex-shrink-0">
-          {gmailAddress}
-        </span>
+        <span className="text-xs text-teal bg-teal-light/20 border border-teal-light px-2 py-1 rounded-full flex-shrink-0">{gmailAddress}</span>
       </div>
 
-      <form onSubmit={handleGenerate} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">{t("compose.jobTitle")}</label>
-          <input
-            type="text"
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-            placeholder={t("compose.jobTitlePlaceholder")}
-            value={form.job_title}
-            onChange={(e) => setForm({ ...form, job_title: e.target.value })}
-            required
-          />
+      <form onSubmit={(e) => void handleGenerate(e)} className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium mb-1">{t("compose.jobTitle")}</label>
+            <input type="text" className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder={t("compose.jobTitlePlaceholder")} value={form.job_title} onChange={(e) => setForm({ ...form, job_title: e.target.value })} required />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">{t("compose.companyName")}</label>
+            <input type="text" className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder={t("compose.companyOptional")} value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">{t("compose.companyName")}</label>
-          <input
-            type="text"
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-            placeholder={t("compose.companyOptional")}
-            value={form.company_name}
-            onChange={(e) => setForm({ ...form, company_name: e.target.value })}
-          />
-        </div>
+
         {resumes.length > 0 && (
           <div>
-            <label className="block text-sm font-medium mb-1">
-              {t("compose.resumeLabel")}{" "}
-              <span className="text-gray-400 font-normal">{t("compose.resumeOptional")}</span>
-            </label>
-            <select
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-              value={form.resume_id}
-              onChange={(e) => setForm({ ...form, resume_id: e.target.value })}
-            >
+            <label className="block text-sm font-medium mb-1">{t("compose.resumeLabel")} <span className="text-gray-400 font-normal">{t("compose.resumeOptional")}</span></label>
+            <select className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" value={form.resume_id} onChange={(e) => setForm({ ...form, resume_id: e.target.value })}>
               <option value="">{t("compose.noResume")}</option>
-              {resumes.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.source_filename ?? r.title}
-                </option>
-              ))}
+              {resumes.map((r) => <option key={r.id} value={r.id}>{r.source_filename ?? r.title}</option>)}
             </select>
           </div>
         )}
+
         <div>
           <label className="block text-sm font-medium mb-1">{t("compose.jobDescription")}</label>
-          <textarea
-            rows={4}
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
-            placeholder={t("compose.jdPlaceholder")}
-            value={form.job_description}
-            onChange={(e) => setForm({ ...form, job_description: e.target.value })}
-          />
+          <textarea rows={3} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none" placeholder={t("compose.jdPlaceholder")} value={form.job_description} onChange={(e) => setForm({ ...form, job_description: e.target.value })} />
         </div>
 
         {genError && <p className="text-red-600 text-sm">{genError}</p>}
 
-        <button
-          type="submit"
-          disabled={generating || !form.job_title.trim()}
-          className="w-full bg-brand-800 text-white rounded-lg py-2 text-sm font-medium hover:bg-brand-700 disabled:opacity-50 flex items-center justify-center gap-2"
-        >
-          {generating ? (
-            <>
-              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-              </svg>
-              {t("compose.generating")}
-            </>
-          ) : (
-            t("compose.generateBtn")
-          )}
+        <button type="submit" disabled={generating || !form.job_title.trim()} className="w-full bg-brand-800 text-white rounded-lg py-2 text-sm font-medium hover:bg-brand-700 disabled:opacity-50 flex items-center justify-center gap-2">
+          {generating ? (<><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>{t("compose.generating")}</>) : t("compose.generateBtn")}
         </button>
       </form>
 
@@ -328,70 +275,134 @@ function ComposePanel({
 
           <div>
             <label className="block text-sm font-medium mb-1">{t("compose.subjectLabel")}</label>
-            <input
-              type="text"
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-              value={letter.subject}
-              onChange={(e) => setLetter({ ...letter, subject: e.target.value })}
-            />
+            <input type="text" className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" value={letter.subject} onChange={(e) => setLetter({ ...letter, subject: e.target.value })} />
           </div>
-
           <div>
             <label className="block text-sm font-medium mb-1">{t("compose.bodyLabel")}</label>
-            <textarea
-              rows={10}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none font-mono"
-              value={letter.body}
-              onChange={(e) => setLetter({ ...letter, body: e.target.value })}
-            />
+            <textarea rows={10} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none font-mono" value={letter.body} onChange={(e) => setLetter({ ...letter, body: e.target.value })} />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          {/* Campaign settings */}
+          <div className="rounded-xl border border-brand-100 bg-brand-50 p-4 space-y-3">
+            <p className="text-sm font-semibold text-brand-800">Campaign Settings</p>
+
             <div>
-              <label className="block text-sm font-medium mb-1">{t("compose.recipientEmail")}</label>
-              <input
-                type="email"
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-                placeholder="hr@company.com"
-                value={recipientEmail}
-                onChange={(e) => setRecipientEmail(e.target.value)}
-              />
+              <label className="block text-xs font-medium text-brand-700 mb-1">Distribution List</label>
+              {lists.length === 0 ? (
+                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  No lists available. Ask your admin to create a distribution list.
+                </p>
+              ) : (
+                <select className="w-full border border-brand-200 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" value={selectedListId} onChange={(e) => setSelectedListId(e.target.value)}>
+                  <option value="">— Select a list —</option>
+                  {lists.map((l) => (
+                    <option key={l.id} value={l.id}>{l.name} ({l.total_count} contacts)</option>
+                  ))}
+                </select>
+              )}
             </div>
+
             <div>
-              <label className="block text-sm font-medium mb-1">
-                {t("compose.recipientName")}{" "}
-                <span className="text-gray-400 font-normal">{t("compose.optional")}</span>
-              </label>
-              <input
-                type="text"
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-                placeholder={t("compose.recipientNamePlaceholder")}
-                value={recipientName}
-                onChange={(e) => setRecipientName(e.target.value)}
-              />
+              <label className="block text-xs font-medium text-brand-700 mb-1">Daily Email Limit</label>
+              <input type="number" min={10} max={500} className="w-full border border-brand-200 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" value={dailyLimit} onChange={(e) => setDailyLimit(Math.max(10, Math.min(500, parseInt(e.target.value) || 100)))} />
+              <p className="text-xs text-brand-600 mt-1">Gmail recommends max 100/day to avoid spam flags.</p>
             </div>
+
+            {selectedList && estimatedDays !== null && (
+              <div className="rounded-lg bg-white border border-brand-100 px-3 py-2 text-xs text-brand-700 flex items-center justify-between">
+                <span>{selectedList.total_count} contacts</span>
+                <span className="font-semibold">~{estimatedDays} day{estimatedDays !== 1 ? "s" : ""} to complete</span>
+              </div>
+            )}
           </div>
 
-          {sendError && <p className="text-red-600 text-sm">{sendError}</p>}
+          {launchError && <p className="text-red-600 text-sm">{launchError}</p>}
           {successMsg && <p className="text-teal text-sm font-medium">{successMsg}</p>}
 
-          <button
-            onClick={handleSend}
-            disabled={sending || !recipientEmail}
-            className="w-full bg-teal text-white rounded-lg py-2.5 text-sm font-medium hover:bg-teal/90 disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {sending ? (
-              <>
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                </svg>
-                {t("compose.sending")}
-              </>
-            ) : (
-              t("compose.sendBtn")
-            )}
+          <button onClick={() => void handleLaunch()} disabled={launching || !selectedListId} className="w-full bg-teal text-white rounded-lg py-2.5 text-sm font-medium hover:bg-teal/90 disabled:opacity-50 flex items-center justify-center gap-2">
+            {launching ? (<><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>Launching…</>) : "🚀 Launch Campaign"}
           </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Campaigns Panel ───────────────────────────────────────────────────────────
+
+function CampaignsPanel({ refreshKey }: { refreshKey: number }) {
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    getCampaigns().then(setCampaigns).catch(() => {}).finally(() => setLoading(false));
+  }, [refreshKey]);
+
+  async function handlePause(id: string) {
+    setActionLoading(id);
+    try {
+      const updated = await pauseCampaign(id);
+      setCampaigns((prev) => prev.map((c) => c.id === updated.id ? updated : c));
+    } catch { /* ignore */ } finally { setActionLoading(null); }
+  }
+
+  async function handleResume(id: string) {
+    setActionLoading(id);
+    try {
+      const updated = await resumeCampaign(id);
+      setCampaigns((prev) => prev.map((c) => c.id === updated.id ? updated : c));
+    } catch { /* ignore */ } finally { setActionLoading(null); }
+  }
+
+  if (loading) return <p className="text-sm text-gray-400">Loading…</p>;
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-lg font-semibold mb-1">Campaigns</h2>
+        <p className="text-sm text-gray-500">Track your outreach campaigns and daily sending progress.</p>
+      </div>
+
+      {campaigns.length === 0 ? (
+        <p className="text-sm text-gray-400 text-center py-8">No campaigns yet. Compose a letter and launch one.</p>
+      ) : (
+        <div className="space-y-3">
+          {campaigns.map((c) => (
+            <div key={c.id} className="border rounded-xl p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate">{c.subject}</p>
+                  {c.list_name && <p className="text-xs text-gray-500">{c.list_name}</p>}
+                </div>
+                <StatusBadge status={c.status} />
+              </div>
+
+              <ProgressBar value={c.total_sent} max={c.total_contacts} />
+
+              <div className="flex items-center justify-between text-xs text-gray-500">
+                <span>{c.total_sent} / {c.total_contacts} sent{c.total_failed > 0 ? ` · ${c.total_failed} failed` : ""}</span>
+                {c.status === "active" && c.estimated_days_remaining > 0 && (
+                  <span>~{c.estimated_days_remaining}d remaining · {c.daily_limit}/day</span>
+                )}
+              </div>
+
+              {(c.status === "active" || c.status === "paused") && (
+                <div className="flex gap-2">
+                  {c.status === "active" ? (
+                    <button onClick={() => void handlePause(c.id)} disabled={actionLoading === c.id} className="flex-1 border border-amber-200 text-amber-700 rounded-lg py-1.5 text-xs font-semibold hover:bg-amber-50 disabled:opacity-50">
+                      {actionLoading === c.id ? "…" : "⏸ Pause"}
+                    </button>
+                  ) : (
+                    <button onClick={() => void handleResume(c.id)} disabled={actionLoading === c.id} className="flex-1 border border-emerald-200 text-emerald-700 rounded-lg py-1.5 text-xs font-semibold hover:bg-emerald-50 disabled:opacity-50">
+                      {actionLoading === c.id ? "…" : "▶ Resume"}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -406,15 +417,10 @@ function HistoryPanel() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getHistory()
-      .then(setItems)
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    getHistory().then(setItems).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  if (loading) {
-    return <p className="text-sm text-gray-400">{t("loading")}</p>;
-  }
+  if (loading) return <p className="text-sm text-gray-400">{t("loading")}</p>;
 
   return (
     <div className="space-y-4">
@@ -422,7 +428,6 @@ function HistoryPanel() {
         <h2 className="text-lg font-semibold mb-1">{t("history.title")}</h2>
         <p className="text-sm text-gray-500">{t("history.description")}</p>
       </div>
-
       {items.length === 0 ? (
         <p className="text-sm text-gray-400 text-center py-8">{t("history.empty")}</p>
       ) : (
@@ -431,23 +436,14 @@ function HistoryPanel() {
             <div key={item.id} className="border rounded-xl p-4 space-y-1">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {item.job_title}
-                    {item.company_name && (
-                      <span className="text-gray-400 font-normal"> — {item.company_name}</span>
-                    )}
-                  </p>
+                  <p className="text-sm font-medium truncate">{item.job_title}{item.company_name && <span className="text-gray-400 font-normal"> — {item.company_name}</span>}</p>
                   <p className="text-xs text-gray-500 truncate">{item.recipient_email}</p>
                 </div>
                 <StatusBadge status={item.status} />
               </div>
               <p className="text-xs text-gray-400 truncate">{item.subject}</p>
-              {item.error_message && (
-                <p className="text-xs text-rose-600 truncate">{item.error_message}</p>
-              )}
-              <p className="text-xs text-gray-300">
-                {new Date(item.created_at).toLocaleString()}
-              </p>
+              {item.error_message && <p className="text-xs text-rose-600 truncate">{item.error_message}</p>}
+              <p className="text-xs text-gray-300">{new Date(item.created_at).toLocaleString()}</p>
             </div>
           ))}
         </div>
@@ -464,30 +460,26 @@ export default function SmartSendPage() {
   const [gmailStatus, setGmailStatus] = useState<GmailStatus>({ is_connected: false, gmail_address: null });
   const [step, setStep] = useState<Step>("connect");
   const [loadingStatus, setLoadingStatus] = useState(true);
-  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
+  const [campaignRefreshKey, setCampaignRefreshKey] = useState(0);
 
   useEffect(() => {
-    // Handle OAuth callback query params
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       if (params.has("gmail_connected") || params.has("gmail_error")) {
         window.history.replaceState({}, "", window.location.pathname);
       }
     }
-
     getGmailStatus()
-      .then((s) => {
-        setGmailStatus(s);
-        if (s.is_connected) setStep("compose");
-      })
+      .then((s) => { setGmailStatus(s); if (s.is_connected) setStep("compose"); })
       .catch(() => {})
       .finally(() => setLoadingStatus(false));
   }, []);
 
-  const tabs: { id: Step; label: string }[] = [
-    { id: "connect", label: gmailStatus.is_connected ? t("tabs.gmailVerified") : t("tabs.gmail") },
-    { id: "compose", label: t("tabs.compose") },
-    { id: "history", label: t("tabs.history") },
+  const tabs: { id: Step; label: string; disabled?: boolean }[] = [
+    { id: "connect",   label: gmailStatus.is_connected ? t("tabs.gmailVerified") : t("tabs.gmail") },
+    { id: "compose",   label: t("tabs.compose"),   disabled: !gmailStatus.is_connected },
+    { id: "campaigns", label: "Campaigns",          disabled: !gmailStatus.is_connected },
+    { id: "history",   label: t("tabs.history") },
   ];
 
   if (loadingStatus) {
@@ -501,25 +493,20 @@ export default function SmartSendPage() {
   return (
     <main className="max-w-2xl mx-auto px-4 py-8">
       <div className="mb-6">
-        <p className="text-xs font-semibold uppercase tracking-widest text-brand-700 mb-1">
-          {t("eyebrow")}
-        </p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-brand-700 mb-1">{t("eyebrow")}</p>
         <h1 className="text-2xl font-bold">{t("title")}</h1>
         <p className="text-sm text-gray-500 mt-1">{t("description")}</p>
       </div>
 
       <Panel>
-        {/* Tabs */}
         <div className="flex border-b mb-6">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setStep(tab.id)}
-              disabled={tab.id === "compose" && !gmailStatus.is_connected}
+              disabled={tab.disabled}
               className={`flex-1 py-2.5 text-sm font-medium border-b-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-                step === tab.id
-                  ? "border-brand-700 text-brand-700"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+                step === tab.id ? "border-brand-700 text-brand-700" : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
               {tab.label}
@@ -531,21 +518,22 @@ export default function SmartSendPage() {
           <GmailConnectPanel
             status={gmailStatus}
             onConnected={() => setStep("compose")}
-            onDisconnected={() => {
-              setGmailStatus({ is_connected: false, gmail_address: null });
-              setStep("connect");
-            }}
+            onDisconnected={() => { setGmailStatus({ is_connected: false, gmail_address: null }); setStep("connect"); }}
           />
         )}
 
         {step === "compose" && gmailStatus.is_connected && (
           <ComposePanel
             gmailAddress={gmailStatus.gmail_address!}
-            onSent={() => setHistoryRefreshKey((k) => k + 1)}
+            onLaunched={() => { setCampaignRefreshKey((k) => k + 1); setStep("campaigns"); }}
           />
         )}
 
-        {step === "history" && <HistoryPanel key={historyRefreshKey} />}
+        {step === "campaigns" && (
+          <CampaignsPanel refreshKey={campaignRefreshKey} />
+        )}
+
+        {step === "history" && <HistoryPanel />}
       </Panel>
     </main>
   );

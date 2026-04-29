@@ -36,4 +36,5 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     gmail_connection = relationship("GmailConnection", back_populates="user", uselist=False, cascade="all, delete-orphan")
     send_campaigns = relationship("SendCampaign", back_populates="user", cascade="all, delete-orphan")
     send_history = relationship("SendHistory", back_populates="user", cascade="all, delete-orphan")
+    email_campaigns = relationship("EmailCampaign", back_populates="user", cascade="all, delete-orphan")
     recipient_lists = relationship("RecipientList", back_populates="user", cascade="all, delete-orphan")

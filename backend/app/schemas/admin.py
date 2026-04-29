@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
 from app.models.enums import UserRole
 
@@ -44,3 +44,41 @@ class AdminStatsResponse(BaseModel):
     total_resumes: int
     total_interviews: int
     total_sends: int
+
+
+# ── Recipient Lists ────────────────────────────────────────────────────────────
+
+class AdminContactItem(BaseModel):
+    id: str
+    email: str
+    full_name: str | None
+    company_name: str | None
+    job_title: str | None
+
+    model_config = {"from_attributes": True}
+
+
+class AdminListItem(BaseModel):
+    id: str
+    name: str
+    description: str | None
+    total_count: int
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class AdminListCreate(BaseModel):
+    name: str
+    description: str | None = None
+
+
+class AdminContactCreate(BaseModel):
+    email: str
+    full_name: str | None = None
+    company_name: str | None = None
+    job_title: str | None = None
+
+
+class AdminContactsBulk(BaseModel):
+    emails: list[str]

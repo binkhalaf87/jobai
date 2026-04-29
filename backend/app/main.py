@@ -7,6 +7,7 @@ from starlette.types import ASGIApp
 from app.api.router import api_router
 from app.core.application import wrap_with_cors
 from app.core.config import get_settings
+from app.scheduler import start_scheduler, stop_scheduler
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,14 @@ def create_application() -> ASGIApp:
     )
 
     app.include_router(api_router, prefix=settings.api_prefix)
+
+    @app.on_event("startup")
+    async def on_startup() -> None:
+        start_scheduler()
+
+    @app.on_event("shutdown")
+    async def on_shutdown() -> None:
+        stop_scheduler()
 
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:

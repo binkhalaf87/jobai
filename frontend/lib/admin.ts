@@ -94,3 +94,73 @@ export async function adjustWallet(
   if (!res.ok) throw new Error(await parseDetail(res, "Failed to adjust wallet"));
   return res.json();
 }
+
+// ── Recipient Lists ────────────────────────────────────────────────────────────
+
+export type AdminListItem = {
+  id: string;
+  name: string;
+  description: string | null;
+  total_count: number;
+  created_at: string;
+};
+
+export type AdminContactItem = {
+  id: string;
+  email: string;
+  full_name: string | null;
+  company_name: string | null;
+  job_title: string | null;
+};
+
+export async function getLists(): Promise<AdminListItem[]> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/lists`, { headers: authHeaders() });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to load lists"));
+  return res.json();
+}
+
+export async function createList(data: { name: string; description?: string }): Promise<AdminListItem> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/lists`, {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to create list"));
+  return res.json();
+}
+
+export async function deleteList(id: string): Promise<void> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/lists/${id}`, { method: "DELETE", headers: authHeaders() });
+  if (!res.ok && res.status !== 204) throw new Error("Failed to delete list");
+}
+
+export async function getListContacts(id: string): Promise<AdminContactItem[]> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/lists/${id}/contacts`, { headers: authHeaders() });
+  if (!res.ok) throw new Error("Failed to load contacts");
+  return res.json();
+}
+
+export async function addContact(listId: string, data: { email: string; full_name?: string; company_name?: string; job_title?: string }): Promise<AdminContactItem> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/lists/${listId}/contacts`, {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to add contact"));
+  return res.json();
+}
+
+export async function bulkAddContacts(listId: string, emails: string[]): Promise<{ added: number }> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/lists/${listId}/contacts/bulk`, {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ emails }),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to bulk add"));
+  return res.json();
+}
+
+export async function deleteContact(listId: string, contactId: string): Promise<void> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/lists/${listId}/contacts/${contactId}`, { method: "DELETE", headers: authHeaders() });
+  if (!res.ok && res.status !== 204) throw new Error("Failed to delete contact");
+}

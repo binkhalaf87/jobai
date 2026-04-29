@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
-import { LayoutDashboard, Users, LogOut, Shield } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, Shield, ListChecks } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
 
 const NAV_ITEMS = [
-  { label: "Overview",  href: "/admin",       icon: LayoutDashboard },
+  { label: "Overview",  href: "/admin",        icon: LayoutDashboard },
   { label: "Users",     href: "/admin/users",  icon: Users },
+  { label: "Lists",     href: "/admin/lists",  icon: ListChecks },
 ] as const;
 
 function isActive(pathname: string, href: string): boolean {

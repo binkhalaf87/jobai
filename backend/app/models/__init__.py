@@ -1,4 +1,6 @@
 from app.models.ai_report import AIAnalysisReport
+from app.models.email_campaign import EmailCampaign
+from app.models.email_campaign_contact import EmailCampaignContact
 from app.models.analysis import Analysis
 from app.models.gmail_connection import GmailConnection
 from app.models.interview import InterviewSession
@@ -22,6 +24,8 @@ from app.models.wallet_transaction import WalletTransaction
 
 __all__ = [
     "AIAnalysisReport",
+    "EmailCampaign",
+    "EmailCampaignContact",
     "Analysis",
     "GmailConnection",
     "InterviewSession",

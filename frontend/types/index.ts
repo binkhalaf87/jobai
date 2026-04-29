@@ -355,6 +355,36 @@ export type SendHistoryItem = {
   created_at: string;
 };
 
+export type RecipientListContact = {
+  id: string;
+  email: string;
+  full_name: string | null;
+  company_name: string | null;
+};
+
+export type RecipientList = {
+  id: string;
+  name: string;
+  description: string | null;
+  total_count: number;
+  contacts: RecipientListContact[];
+};
+
+export type Campaign = {
+  id: string;
+  list_name: string | null;
+  subject: string;
+  status: "active" | "paused" | "completed" | "failed";
+  daily_limit: number;
+  total_contacts: number;
+  total_sent: number;
+  total_failed: number;
+  estimated_days_remaining: number;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+};
+
 
 export type BillingRole = "jobseeker" | "recruiter";
 export type BillingPlanKind = "subscription" | "points_pack";

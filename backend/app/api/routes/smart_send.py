@@ -1,18 +1,29 @@
-"""Smart Send API routes — Gmail OAuth + AI letter generation + send."""
+"""Smart Send API routes — Gmail OAuth + AI letter generation + send + campaigns."""
 
 from __future__ import annotations
 
+import uuid
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import RedirectResponse
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
 from app.core.config import get_settings
+from app.models.email_campaign import EmailCampaign
+from app.models.email_campaign_contact import EmailCampaignContact
+from app.models.enums import UserRole
+from app.models.mailing_list import Recipient, RecipientList
 from app.models.user import User
 from app.schemas.smart_send import (
+    CampaignCreate,
+    CampaignResponse,
     GenerateLetterRequest,
     GenerateLetterResponse,
     GmailStatusResponse,
+    RecipientListItem,
     SendHistoryItem,
     SendRequest,
     SendResponse,
@@ -180,3 +191,153 @@ def get_history(
     current_user: User = Depends(get_current_user),
 ):
     return gmail_oauth_service.list_history(db, current_user.id)
+
+
+# ── Recipient Lists (shared, owned by admin) ───────────────────────────────────
+
+@router.get("/recipient-lists", response_model=list[RecipientListItem])
+def get_recipient_lists(
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+) -> list[RecipientListItem]:
+    rows = db.scalars(
+        select(RecipientList)
+        .join(User, RecipientList.user_id == User.id)
+        .where(User.role == UserRole.ADMIN)
+        .order_by(RecipientList.name)
+    ).all()
+    result = []
+    for rl in rows:
+        contacts = db.scalars(
+            select(Recipient).where(Recipient.list_id == rl.id, Recipient.is_active.is_(True))
+        ).all()
+        result.append(RecipientListItem(
+            id=rl.id,
+            name=rl.name,
+            description=rl.description,
+            total_count=rl.total_count,
+            contacts=[{"id": c.id, "email": c.email, "full_name": c.full_name, "company_name": c.company_name} for c in contacts],
+        ))
+    return result
+
+
+# ── Campaigns ──────────────────────────────────────────────────────────────────
+
+@router.post("/campaigns", response_model=CampaignResponse, status_code=status.HTTP_201_CREATED)
+def create_campaign(
+    body: CampaignCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> CampaignResponse:
+    conn = gmail_oauth_service.get_connection(db, current_user.id)
+    if not conn or not conn.is_connected:
+        raise HTTPException(status_code=400, detail="Gmail account not connected.")
+
+    rl = db.get(RecipientList, body.list_id)
+    if not rl:
+        raise HTTPException(status_code=404, detail="Recipient list not found.")
+
+    contacts = db.scalars(
+        select(Recipient).where(Recipient.list_id == body.list_id, Recipient.is_active.is_(True))
+    ).all()
+    if not contacts:
+        raise HTTPException(status_code=400, detail="The selected list has no active contacts.")
+
+    campaign = EmailCampaign(
+        id=str(uuid.uuid4()),
+        user_id=current_user.id,
+        list_id=body.list_id,
+        list_name=rl.name,
+        resume_id=body.resume_id,
+        subject=body.subject,
+        body=body.body,
+        status="active",
+        daily_limit=body.daily_limit,
+        total_contacts=len(contacts),
+        started_at=datetime.now(timezone.utc),
+    )
+    db.add(campaign)
+    db.flush()
+
+    for c in contacts:
+        db.add(EmailCampaignContact(
+            id=str(uuid.uuid4()),
+            campaign_id=campaign.id,
+            recipient_email=c.email,
+            recipient_name=c.full_name,
+            company_name=c.company_name,
+            status="pending",
+        ))
+
+    db.commit()
+    db.refresh(campaign)
+    return _campaign_response(campaign)
+
+
+@router.get("/campaigns", response_model=list[CampaignResponse])
+def list_campaigns(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[CampaignResponse]:
+    campaigns = db.scalars(
+        select(EmailCampaign).where(EmailCampaign.user_id == current_user.id).order_by(EmailCampaign.created_at.desc())
+    ).all()
+    return [_campaign_response(c) for c in campaigns]
+
+
+@router.patch("/campaigns/{campaign_id}/pause", response_model=CampaignResponse)
+def pause_campaign(
+    campaign_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> CampaignResponse:
+    campaign = _get_user_campaign(db, campaign_id, current_user.id)
+    if campaign.status != "active":
+        raise HTTPException(status_code=400, detail="Only active campaigns can be paused.")
+    campaign.status = "paused"
+    db.commit()
+    db.refresh(campaign)
+    return _campaign_response(campaign)
+
+
+@router.patch("/campaigns/{campaign_id}/resume", response_model=CampaignResponse)
+def resume_campaign(
+    campaign_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> CampaignResponse:
+    campaign = _get_user_campaign(db, campaign_id, current_user.id)
+    if campaign.status != "paused":
+        raise HTTPException(status_code=400, detail="Only paused campaigns can be resumed.")
+    campaign.status = "active"
+    db.commit()
+    db.refresh(campaign)
+    return _campaign_response(campaign)
+
+
+# ── Helpers ────────────────────────────────────────────────────────────────────
+
+def _get_user_campaign(db: Session, campaign_id: str, user_id: str) -> EmailCampaign:
+    c = db.scalar(select(EmailCampaign).where(EmailCampaign.id == campaign_id, EmailCampaign.user_id == user_id))
+    if not c:
+        raise HTTPException(status_code=404, detail="Campaign not found.")
+    return c
+
+
+def _campaign_response(c: EmailCampaign) -> CampaignResponse:
+    remaining = c.total_contacts - c.total_sent - c.total_failed
+    estimated_days = max(0, -(-remaining // c.daily_limit)) if c.daily_limit > 0 else 0
+    return CampaignResponse(
+        id=c.id,
+        list_name=c.list_name,
+        subject=c.subject,
+        status=c.status,
+        daily_limit=c.daily_limit,
+        total_contacts=c.total_contacts,
+        total_sent=c.total_sent,
+        total_failed=c.total_failed,
+        estimated_days_remaining=estimated_days,
+        started_at=c.started_at,
+        completed_at=c.completed_at,
+        created_at=c.created_at,
+    )
