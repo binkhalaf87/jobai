@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Panel } from "@/components/panel";
 import { useAuth } from "@/hooks/use-auth";
@@ -44,27 +45,44 @@ function formatDate(value: string | null | undefined): string {
   });
 }
 
-function buildPaymobCheckoutUrl(publicKey: string, clientSecret: string): string {
+function buildCheckoutUrl(publicKey: string, clientSecret: string): string {
   return `https://ksa.paymob.com/unifiedcheckout/?publicKey=${encodeURIComponent(publicKey)}&clientSecret=${encodeURIComponent(clientSecret)}`;
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const normalized = status.toLowerCase();
+const STATUS_KEY_MAP: Record<string, string> = {
+  active: "active",
+  canceled: "canceled",
+  cancelled: "canceled",
+  expired: "expired",
+  pending: "pending",
+  paid: "paid",
+  failed: "failed",
+  payment_key_issued: "payment_key_issued",
+};
+
+function resolveStatusKey(status: string): string {
+  return STATUS_KEY_MAP[status.toLowerCase().replace(/\s+/g, "_")] ?? "unknown";
+}
+
+function StatusBadge({ status, t }: { status: string; t: (key: string) => string }) {
+  const key = resolveStatusKey(status);
   const colorClass =
-    normalized === "active"
+    key === "active" || key === "paid"
       ? "bg-teal-light/30 text-teal"
-      : normalized === "pending" || normalized === "payment key issued"
+      : key === "pending" || key === "payment_key_issued" || key === "unknown"
         ? "bg-amber-100 text-amber-700"
-        : "bg-slate-100 text-slate-600";
+        : "bg-rose-50 text-rose-600";
   return (
     <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${colorClass}`}>
-      {status.replace(/_/g, " ")}
+      {t(`status.${key}`)}
     </span>
   );
 }
 
 export function BillingDashboard({ audience }: { audience: "jobseeker" | "recruiter" }) {
   const { user } = useAuth();
+  const t = useTranslations("billing");
+
   const [snapshot, setSnapshot] = useState<BillingMeResponse | null>(null);
   const [plans, setPlans] = useState<BillingPlan[]>([]);
   const [transactions, setTransactions] = useState<BillingWalletTransaction[]>([]);
@@ -124,8 +142,8 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
       } else {
         setTransactions([]);
       }
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Failed to load billing data.");
+    } catch {
+      setError(t("loadError"));
     } finally {
       setIsLoading(false);
     }
@@ -165,12 +183,12 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
         },
       };
       const response = await createBillingCheckoutIntention(payload);
-      window.location.href = buildPaymobCheckoutUrl(
+      window.location.href = buildCheckoutUrl(
         response.checkout.public_key,
         response.checkout.client_secret,
       );
-    } catch (err) {
-      setCheckoutError(err instanceof Error ? err.message : "Unable to start checkout. Please try again.");
+    } catch {
+      setCheckoutError(t("payError"));
       setCheckoutLoading(false);
     }
   }
@@ -178,8 +196,10 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
   if (isLoading) {
     return (
       <Panel className="p-8 md:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Billing</p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">Loading billing…</h1>
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">
+          {audience === "recruiter" ? t("eyebrowRecruiter") : t("eyebrow")}
+        </p>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">{t("loading")}</h1>
       </Panel>
     );
   }
@@ -187,14 +207,16 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
   if (error || !snapshot) {
     return (
       <Panel className="p-8 md:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Billing</p>
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{error ?? "Unable to load billing."}</h1>
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">
+          {audience === "recruiter" ? t("eyebrowRecruiter") : t("eyebrow")}
+        </p>
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{error ?? t("loadError")}</h1>
         <button
           type="button"
           onClick={() => void loadBillingState()}
           className="mt-6 rounded-full bg-brand-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700"
         >
-          Retry
+          {t("retry")}
         </button>
       </Panel>
     );
@@ -209,11 +231,11 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
       {/* Return banner */}
       {returnBanner === "success" ? (
         <div className="rounded-2xl bg-teal-light/30 px-6 py-4 text-sm font-semibold text-teal">
-          Payment successful! Your account will be updated in a few seconds…
+          {t("paymentSuccess")}
         </div>
       ) : returnBanner === "failed" ? (
         <div className="rounded-2xl bg-rose-50 px-6 py-4 text-sm font-semibold text-rose-600">
-          Payment was not completed. Please try again.
+          {t("paymentFailed")}
         </div>
       ) : null}
 
@@ -222,24 +244,24 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">
-              {audience === "recruiter" ? "Recruiter Billing" : "Billing"}
+              {audience === "recruiter" ? t("eyebrowRecruiter") : t("eyebrow")}
             </p>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
-              {sub?.plan_name ?? "No active plan"}
+              {sub?.plan_name ?? t("noActivePlan")}
             </h1>
             {sub ? (
               <div className="mt-3 flex flex-wrap items-center gap-3">
-                <StatusBadge status={sub.status} />
+                <StatusBadge status={sub.status} t={t} />
                 <span className="text-sm text-slate-500">
                   {formatDate(sub.current_period_start)} – {formatDate(sub.current_period_end)}
                 </span>
               </div>
             ) : (
-              <p className="mt-3 text-sm text-slate-500">Choose a plan below to get started.</p>
+              <p className="mt-3 text-sm text-slate-500">{t("choosePlanHint")}</p>
             )}
             {audience === "jobseeker" && wallet ? (
               <p className="mt-4 text-sm text-slate-600">
-                Points balance: <span className="font-semibold text-slate-950">{wallet.balance_points}</span>
+                {t("pointsBalanceLabel")} <span className="font-semibold text-slate-950">{wallet.balance_points}</span>
               </p>
             ) : null}
           </div>
@@ -248,16 +270,16 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
             onClick={() => void loadBillingState()}
             className="self-start rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
           >
-            Refresh
+            {t("refresh")}
           </button>
         </div>
       </Panel>
 
       {/* Section 2 — Plan selection */}
       <Panel className="p-6 md:p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Choose a plan</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{t("choosePlan")}</p>
         <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-          {audience === "recruiter" ? "Recruiter plans" : "Plans and top-ups"}
+          {audience === "recruiter" ? t("plansRecruiterTitle") : t("plansTitle")}
         </h2>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -282,19 +304,21 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                   <h3 className="text-lg font-semibold tracking-tight text-slate-950">{plan.name}</h3>
                   {isCurrent ? (
                     <span className="inline-flex rounded-full bg-teal-light/30 px-2.5 py-0.5 text-xs font-semibold text-teal">
-                      Current
+                      {t("currentBadge")}
                     </span>
                   ) : null}
                 </div>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  {plan.description ?? "Monthly subscription plan."}
+                  {plan.description ?? t("billedMonthly")}
                 </p>
                 <p className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">
                   {formatMoney(plan.price_amount_minor, plan.currency)}
-                  <span className="ml-1 text-sm font-normal text-slate-500">/mo</span>
+                  <span className="ml-1 text-sm font-normal text-slate-500">{t("perMonth")}</span>
                 </p>
                 {plan.points_grant > 0 ? (
-                  <p className="mt-2 text-xs text-slate-500">Includes {plan.points_grant} points</p>
+                  <p className="mt-2 text-xs text-slate-500">
+                    {t("includesPoints", { count: plan.points_grant })}
+                  </p>
                 ) : null}
               </button>
             );
@@ -303,7 +327,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
 
         {audience === "jobseeker" && pointsPlans.length > 0 ? (
           <div className="mt-8">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Points packs</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{t("pointsPacks")}</p>
             <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {pointsPlans.map((plan) => {
                 const isSelected = selectedPlan?.id === plan.id;
@@ -323,12 +347,14 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                   >
                     <h3 className="text-lg font-semibold tracking-tight text-slate-950">{plan.name}</h3>
                     <p className="mt-2 text-sm leading-6 text-slate-600">
-                      {plan.description ?? `${plan.points_grant} extra points, one-time purchase.`}
+                      {plan.description ?? t("oneTimePurchaseDesc", { count: plan.points_grant })}
                     </p>
                     <p className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">
                       {formatMoney(plan.price_amount_minor, plan.currency)}
                     </p>
-                    <p className="mt-1 text-xs text-slate-500">{plan.points_grant} points</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {t("includesPoints", { count: plan.points_grant })}
+                    </p>
                   </button>
                 );
               })}
@@ -337,41 +363,47 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
         ) : null}
       </Panel>
 
-      {/* Section 3 — Checkout panel (only when plan selected) */}
+      {/* Section 3 — Checkout (only when plan selected) */}
       {selectedPlan ? (
         <Panel className="p-6 md:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Checkout</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Complete your payment</h2>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{t("checkoutEyebrow")}</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{t("checkoutTitle")}</h2>
 
           {/* Plan summary */}
           <div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
             <div>
               <p className="font-semibold text-slate-950">{selectedPlan.name}</p>
-              <p className="mt-1 text-sm text-slate-500">{selectedPlan.kind === "points_pack" ? "One-time" : "Monthly subscription"}</p>
+              <p className="mt-1 text-sm text-slate-500">
+                {selectedPlan.kind === "points_pack" ? t("planSummaryOneTime") : t("planSummaryMonthly")}
+              </p>
             </div>
-            <p className="text-xl font-semibold text-slate-950">{formatMoney(selectedPlan.price_amount_minor, selectedPlan.currency)}</p>
+            <p className="text-xl font-semibold text-slate-950">
+              {formatMoney(selectedPlan.price_amount_minor, selectedPlan.currency)}
+            </p>
             <button
               type="button"
               onClick={() => setSelectedPlan(null)}
               className="text-sm text-slate-500 underline underline-offset-2 hover:text-slate-700"
             >
-              Change
+              {t("changePlan")}
             </button>
           </div>
 
           {/* Contact form */}
           <div className="mt-6 grid gap-4 md:grid-cols-2">
-            {[
-              { label: "Email", key: "email", placeholder: "email@example.com", required: false },
-              { label: "Phone number *", key: "phone_number", placeholder: "+9665xxxxxxxx", required: true },
-              { label: "First name", key: "first_name", placeholder: "Majid", required: false },
-              { label: "Last name", key: "last_name", placeholder: "Alharbi", required: false },
-              { label: "City", key: "city", placeholder: "Riyadh", required: false },
-              { label: "Country", key: "country", placeholder: "SA", required: false },
-            ].map((field) => (
+            {(
+              [
+                { key: "email", labelKey: "form.email", placeholder: "email@example.com" },
+                { key: "phone_number", labelKey: "form.phone", placeholder: "+9665xxxxxxxx" },
+                { key: "first_name", labelKey: "form.firstName", placeholder: "" },
+                { key: "last_name", labelKey: "form.lastName", placeholder: "" },
+                { key: "city", labelKey: "form.city", placeholder: "Riyadh" },
+                { key: "country", labelKey: "form.country", placeholder: "SA" },
+              ] as const
+            ).map((field) => (
               <label key={field.key} className="block">
                 <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  {field.label}
+                  {t(field.labelKey)}
                 </span>
                 <input
                   value={contact[field.key as keyof typeof contact]}
@@ -395,33 +427,33 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
             onClick={() => void handlePay()}
             className="mt-6 rounded-full bg-brand-800 px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-slate-300"
           >
-            {checkoutLoading ? "Redirecting to Paymob…" : "Pay with Paymob →"}
+            {checkoutLoading ? t("payBtnLoading") : t("payBtn")}
           </button>
           {!contact.phone_number.trim() ? (
-            <p className="mt-2 text-xs text-slate-500">Phone number is required to continue.</p>
+            <p className="mt-2 text-xs text-slate-500">{t("phoneRequired")}</p>
           ) : null}
         </Panel>
       ) : null}
 
       {/* Recent orders */}
       <Panel className="p-6 md:p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Recent payment orders</p>
-        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Billing history</h2>
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{t("historyEyebrow")}</p>
+        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{t("historyTitle")}</h2>
         <div className="mt-6 overflow-hidden rounded-[1.75rem] border border-slate-200">
           {snapshot.recent_orders.length === 0 ? (
-            <div className="bg-slate-50 p-6 text-sm text-slate-600">No payment orders yet.</div>
+            <div className="bg-slate-50 p-6 text-sm text-slate-600">{t("noOrders")}</div>
           ) : (
             <div className="divide-y divide-slate-200">
               {snapshot.recent_orders.map((order) => (
                 <div key={order.id} className="grid gap-3 bg-white p-5 md:grid-cols-[1.5fr_0.8fr_0.8fr_0.8fr] md:items-center">
                   <div>
                     <p className="font-semibold text-slate-950">{order.plan_name || order.plan_code}</p>
-                    <p className="mt-1 text-xs text-slate-500">Created {formatDate(order.created_at)}</p>
+                    <p className="mt-1 text-xs text-slate-500">{formatDate(order.created_at)}</p>
                   </div>
                   <p className="text-sm text-slate-600">{formatMoney(order.amount_minor, order.currency)}</p>
-                  <StatusBadge status={order.status} />
+                  <StatusBadge status={order.status} t={t} />
                   <p className="text-sm text-slate-600">
-                    {order.paid_at ? `Paid ${formatDate(order.paid_at)}` : order.failure_reason ?? "Awaiting payment"}
+                    {order.paid_at ? formatDate(order.paid_at) : t("awaitingPayment")}
                   </p>
                 </div>
               ))}
@@ -433,11 +465,11 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
       {/* Wallet ledger (jobseekers only) */}
       {audience === "jobseeker" ? (
         <Panel className="p-6 md:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Wallet ledger</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Point transactions</h2>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{t("walletEyebrow")}</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{t("walletTitle")}</h2>
           <div className="mt-6 overflow-hidden rounded-[1.75rem] border border-slate-200">
             {transactions.length === 0 ? (
-              <div className="bg-slate-50 p-6 text-sm text-slate-600">No wallet transactions yet.</div>
+              <div className="bg-slate-50 p-6 text-sm text-slate-600">{t("noTransactions")}</div>
             ) : (
               <div className="divide-y divide-slate-200">
                 {transactions.map((tx) => (
@@ -449,7 +481,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                     <p className={`text-sm font-semibold ${tx.direction === "credit" ? "text-teal" : "text-rose-600"}`}>
                       {tx.direction === "credit" ? "+" : "-"}{tx.points} pts
                     </p>
-                    <p className="text-sm text-slate-600">Balance: {tx.balance_after}</p>
+                    <p className="text-sm text-slate-600">{t("balanceLabel")} {tx.balance_after}</p>
                   </div>
                 ))}
               </div>
