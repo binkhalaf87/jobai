@@ -15,7 +15,6 @@ from app.core.config import get_settings
 
 settings = get_settings()
 from app.models.smtp_connection import SmtpConnection
-from app.schemas.smart_send import SmtpConnectionCreate
 
 _GMAIL_HOST = "smtp.gmail.com"
 _GMAIL_PORT = 465  # SSL
@@ -42,31 +41,6 @@ def decrypt_password(ciphertext: str) -> str:
 def get_smtp_connection(db: Session, user_id: str) -> SmtpConnection | None:
     return db.query(SmtpConnection).filter(SmtpConnection.user_id == user_id).first()
 
-
-def upsert_smtp_connection(db: Session, user_id: str, data: SmtpConnectionCreate) -> SmtpConnection:
-    conn = get_smtp_connection(db, user_id)
-    encrypted = encrypt_password(data.app_password)
-
-    if conn:
-        conn.gmail_address = data.gmail_address
-        conn.display_name = data.display_name
-        conn.encrypted_app_password = encrypted
-        conn.is_verified = False
-    else:
-        import uuid
-        conn = SmtpConnection(
-            id=str(uuid.uuid4()),
-            user_id=user_id,
-            gmail_address=data.gmail_address,
-            display_name=data.display_name,
-            encrypted_app_password=encrypted,
-            is_verified=False,
-        )
-        db.add(conn)
-
-    db.commit()
-    db.refresh(conn)
-    return conn
 
 
 def verify_smtp_connection(db: Session, user_id: str) -> tuple[bool, str]:
