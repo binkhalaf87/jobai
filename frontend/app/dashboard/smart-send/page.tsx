@@ -1,47 +1,28 @@
 "use client";
-// Smart Send — Gmail SMTP + AI cover letters + live send stream
-import { useEffect, useRef, useState } from "react";
+
+import { useEffect, useState } from "react";
 
 import { useTranslations } from "next-intl";
 
 import { Panel } from "@/components/panel";
 import {
-  confirmCampaign,
-  generateLetters,
-  getSmtpConnection,
-  listCampaigns,
-  saveSmtpConnection,
-  streamCampaignSend,
-  verifySmtpConnection,
+  disconnectGmail,
+  generateLetter,
+  getGmailStatus,
+  getHistory,
+  sendEmail,
 } from "@/lib/smart-send";
-import type {
-  Campaign,
-  GeneratedLetters,
-  LetterVariant,
-  RecipientIn,
-  SmtpConnection,
-} from "@/types";
+import type { GenerateLetterResponse, GmailStatus, SendHistoryItem } from "@/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Step = "smtp" | "compose" | "preview" | "sending" | "history";
-type Variant = "formal" | "creative" | "concise";
-
-type SendProgress = {
-  index: number;
-  total: number;
-  email: string;
-  status: "sent" | "failed";
-  error?: string;
-};
+type Step = "connect" | "compose" | "history";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    draft: "bg-slate-100 text-slate-600 border border-slate-200",
-    sending: "bg-brand-50 text-brand-700 border border-brand-200",
-    completed: "bg-teal-light/30 text-teal border border-teal-light",
+    sent: "bg-teal-light/30 text-teal border border-teal-light",
     failed: "bg-rose-50 text-rose-700 border border-rose-200",
   };
   return (
@@ -51,146 +32,103 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-// ─── SMTP Setup Panel ─────────────────────────────────────────────────────────
+// ─── Gmail Connect Panel ───────────────────────────────────────────────────────
 
-function SmtpSetup({
-  conn,
-  onSaved,
+function GmailConnectPanel({
+  status,
+  onConnected,
+  onDisconnected,
 }: {
-  conn: SmtpConnection | null;
-  onSaved: (c: SmtpConnection) => void;
+  status: GmailStatus;
+  onConnected: () => void;
+  onDisconnected: () => void;
 }) {
   const t = useTranslations("smartSendPage");
-  const [form, setForm] = useState({
-    gmail_address: conn?.gmail_address ?? "",
-    display_name: conn?.display_name ?? "",
-    app_password: "",
-  });
-  const [saving, setSaving] = useState(false);
-  const [verifying, setVerifying] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
   const [error, setError] = useState("");
-  const [ok, setOk] = useState("");
 
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleConnect() {
     setError("");
-    setOk("");
-    setSaving(true);
     try {
-      const saved = await saveSmtpConnection(form);
-      onSaved(saved);
-      setOk(t("smtpSetup.saved"));
+      const { getGmailAuthUrl } = await import("@/lib/smart-send");
+      const authUrl = await getGmailAuthUrl();
+      window.location.href = authUrl;
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t("smtpSetup.failedToSave"));
-    } finally {
-      setSaving(false);
+      setError(err instanceof Error ? err.message : t("gmail.connectFailed"));
     }
   }
 
-  async function handleVerify() {
+  async function handleDisconnect() {
+    setDisconnecting(true);
     setError("");
-    setOk("");
-    setVerifying(true);
     try {
-      await verifySmtpConnection();
-      setOk(t("smtpSetup.connectionVerified"));
+      await disconnectGmail();
+      onDisconnected();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t("smtpSetup.verificationFailed"));
+      setError(err instanceof Error ? err.message : t("gmail.disconnectFailed"));
     } finally {
-      setVerifying(false);
+      setDisconnecting(false);
     }
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold mb-1">{t("smtpSetup.title")}</h2>
-        <p className="text-sm text-gray-500">
-          {t("smtpSetup.description")}
-        </p>
+        <h2 className="text-lg font-semibold mb-1">{t("gmail.title")}</h2>
+        <p className="text-sm text-gray-500">{t("gmail.description")}</p>
       </div>
 
-      <div className="bg-brand-50 border border-brand-200 rounded-xl p-4 text-sm text-brand-800 space-y-1">
-        <p className="font-medium">{t("smtpSetup.instructionsTitle")}</p>
-        <ol className="list-decimal list-inside space-y-0.5 text-brand-700">
-          <li>{t("smtpSetup.step1")}</li>
-          <li>{t("smtpSetup.step2")}</li>
-          <li>{t("smtpSetup.step3")}</li>
-          <li>{t("smtpSetup.step4")}</li>
-        </ol>
-      </div>
+      {status.is_connected ? (
+        <div className="space-y-4">
+          <div className="bg-teal-light/20 border border-teal-light rounded-xl p-4 flex items-center gap-3">
+            <div className="w-8 h-8 bg-teal rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+              ✓
+            </div>
+            <div>
+              <p className="text-sm font-medium text-teal">{t("gmail.connected")}</p>
+              <p className="text-xs text-gray-500">{status.gmail_address}</p>
+            </div>
+          </div>
 
-      <form onSubmit={handleSave} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">{t("smtpSetup.gmailAddress")}</label>
-          <input
-            type="email"
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-            placeholder={t("smtpSetup.gmailPlaceholder")}
-            value={form.gmail_address}
-            onChange={(e) => setForm({ ...form, gmail_address: e.target.value })}
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">{t("smtpSetup.displayName")}</label>
-          <input
-            type="text"
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-            placeholder={t("smtpSetup.displayNamePlaceholder")}
-            value={form.display_name}
-            onChange={(e) => setForm({ ...form, display_name: e.target.value })}
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            {t("smtpSetup.appPassword")}{" "}
-            <span className="text-gray-400 font-normal">{t("smtpSetup.appPasswordHint")}</span>
-          </label>
-          <input
-            type="password"
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-            placeholder={t("smtpSetup.appPasswordPlaceholder")}
-            value={form.app_password}
-            onChange={(e) => setForm({ ...form, app_password: e.target.value })}
-            required
-          />
-        </div>
-
-        {error && <p className="text-red-600 text-sm">{error}</p>}
-        {ok && <p className="text-teal text-sm">{ok}</p>}
-
-        <div className="flex gap-3">
           <button
-            type="submit"
-            disabled={saving}
-            className="flex-1 bg-brand-800 text-white rounded-lg py-2 text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
+            onClick={onConnected}
+            className="w-full bg-brand-800 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-brand-700"
           >
-            {saving ? t("smtpSetup.saving") : conn ? t("smtpSetup.update") : t("smtpSetup.save")}
+            {t("gmail.composeBtn")}
           </button>
-          {conn && (
-            <button
-              type="button"
-              onClick={handleVerify}
-              disabled={verifying}
-              className="flex-1 border border-brand-300 text-brand-700 rounded-lg py-2 text-sm font-medium hover:bg-brand-50 disabled:opacity-50"
-            >
-              {verifying ? t("smtpSetup.verifying") : t("smtpSetup.test")}
-            </button>
-          )}
-        </div>
-      </form>
 
-      {conn && (
-        <div className="border-t pt-4">
-          <p className="text-sm text-gray-500">
-            {t("smtpSetup.current")}{" "}
-            <span className="font-medium text-gray-700">{conn.gmail_address}</span>
-            {conn.is_verified && (
-              <span className="ml-2 text-teal text-xs font-medium">{t("smtpSetup.verified")}</span>
-            )}
-          </p>
+          {error && <p className="text-red-600 text-sm">{error}</p>}
+
+          <button
+            onClick={handleDisconnect}
+            disabled={disconnecting}
+            className="w-full border border-slate-200 text-slate-600 rounded-lg py-2 text-sm hover:bg-slate-50 disabled:opacity-50"
+          >
+            {disconnecting ? t("gmail.disconnecting") : t("gmail.disconnect")}
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="bg-brand-50 border border-brand-200 rounded-xl p-4 text-sm text-brand-800 space-y-1">
+            <p className="font-medium">{t("gmail.howItWorks")}</p>
+            <ol className="list-decimal list-inside space-y-0.5 text-brand-700">
+              <li>{t("gmail.step1")}</li>
+              <li>{t("gmail.step2")}</li>
+              <li>{t("gmail.step3")}</li>
+            </ol>
+          </div>
+
+          {error && <p className="text-red-600 text-sm">{error}</p>}
+
+          <button
+            onClick={handleConnect}
+            className="w-full bg-brand-800 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-brand-700 flex items-center justify-center gap-2"
+          >
+            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
+              <path d="M20.283 10.356h-8.327v3.451h4.792c-.446 2.193-2.313 3.453-4.792 3.453a5.27 5.27 0 0 1-5.279-5.28 5.27 5.27 0 0 1 5.279-5.279c1.259 0 2.397.447 3.29 1.178l2.6-2.599c-1.584-1.381-3.615-2.233-5.89-2.233a8.908 8.908 0 0 0-8.934 8.934 8.908 8.908 0 0 0 8.934 8.934c4.467 0 8.529-3.249 8.529-8.934 0-.528-.081-1.097-.202-1.625z" />
+            </svg>
+            {t("gmail.connectBtn")}
+          </button>
         </div>
       )}
     </div>
@@ -200,9 +138,11 @@ function SmtpSetup({
 // ─── Compose Panel ─────────────────────────────────────────────────────────────
 
 function ComposePanel({
-  onGenerated,
+  gmailAddress,
+  onSent,
 }: {
-  onGenerated: (campaignId: string, letters: GeneratedLetters) => void;
+  gmailAddress: string;
+  onSent: () => void;
 }) {
   const t = useTranslations("smartSendPage");
   const [form, setForm] = useState({
@@ -211,9 +151,15 @@ function ComposePanel({
     job_description: "",
     resume_id: "",
   });
+  const [letter, setLetter] = useState<GenerateLetterResponse | null>(null);
   const [resumes, setResumes] = useState<import("@/types").ResumeListItem[]>([]);
   const [generating, setGenerating] = useState(false);
-  const [error, setError] = useState("");
+  const [sending, setSending] = useState(false);
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [recipientName, setRecipientName] = useState("");
+  const [genError, setGenError] = useState("");
+  const [sendError, setSendError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
   useEffect(() => {
     import("@/lib/resumes").then(({ listResumes }) =>
@@ -223,11 +169,9 @@ function ComposePanel({
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-
     const jobTitle = sessionStorage.getItem("jobai_smartsend_job_title");
     const companyName = sessionStorage.getItem("jobai_smartsend_company_name");
     const jobDescription = sessionStorage.getItem("jobai_smartsend_job_description");
-
     if (jobTitle || companyName || jobDescription) {
       setForm((prev) => ({
         ...prev,
@@ -236,7 +180,6 @@ function ComposePanel({
         job_description: jobDescription ?? prev.job_description,
       }));
     }
-
     sessionStorage.removeItem("jobai_smartsend_job_title");
     sessionStorage.removeItem("jobai_smartsend_company_name");
     sessionStorage.removeItem("jobai_smartsend_job_description");
@@ -244,30 +187,65 @@ function ComposePanel({
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
+    setGenError("");
+    setSuccessMsg("");
+    setLetter(null);
     setGenerating(true);
     try {
-      const res = await generateLetters({
+      const result = await generateLetter({
         job_title: form.job_title,
         company_name: form.company_name || undefined,
         job_description: form.job_description || undefined,
         resume_id: form.resume_id || undefined,
       });
-      onGenerated(res.campaign_id, res.letters);
+      setLetter(result);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t("compose.generationFailed"));
+      setGenError(err instanceof Error ? err.message : t("compose.generationFailed"));
     } finally {
       setGenerating(false);
     }
   }
 
+  async function handleSend() {
+    if (!letter) return;
+    if (!recipientEmail.includes("@")) {
+      setSendError(t("compose.invalidEmail"));
+      return;
+    }
+    setSendError("");
+    setSuccessMsg("");
+    setSending(true);
+    try {
+      await sendEmail({
+        job_title: form.job_title,
+        company_name: form.company_name || undefined,
+        subject: letter.subject,
+        body: letter.body,
+        recipient_email: recipientEmail,
+        recipient_name: recipientName || undefined,
+        resume_id: form.resume_id || undefined,
+      });
+      setSuccessMsg(t("compose.sentSuccess", { email: recipientEmail }));
+      setRecipientEmail("");
+      setRecipientName("");
+      onSent();
+    } catch (err: unknown) {
+      setSendError(err instanceof Error ? err.message : t("compose.sendFailed"));
+    } finally {
+      setSending(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold mb-1">{t("compose.title")}</h2>
-        <p className="text-sm text-gray-500">
-          {t("compose.description")}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold mb-1">{t("compose.title")}</h2>
+          <p className="text-sm text-gray-500">{t("compose.description")}</p>
+        </div>
+        <span className="text-xs text-teal bg-teal-light/20 border border-teal-light px-2 py-1 rounded-full flex-shrink-0">
+          {gmailAddress}
+        </span>
       </div>
 
       <form onSubmit={handleGenerate} className="space-y-4">
@@ -295,7 +273,8 @@ function ComposePanel({
         {resumes.length > 0 && (
           <div>
             <label className="block text-sm font-medium mb-1">
-              {t("compose.resumeLabel")} <span className="text-gray-400 font-normal">{t("compose.resumeOptional")}</span>
+              {t("compose.resumeLabel")}{" "}
+              <span className="text-gray-400 font-normal">{t("compose.resumeOptional")}</span>
             </label>
             <select
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -322,7 +301,7 @@ function ComposePanel({
           />
         </div>
 
-        {error && <p className="text-red-600 text-sm">{error}</p>}
+        {genError && <p className="text-red-600 text-sm">{genError}</p>}
 
         <button
           type="submit"
@@ -342,289 +321,76 @@ function ComposePanel({
           )}
         </button>
       </form>
-    </div>
-  );
-}
 
-// ─── Preview & Send Panel ──────────────────────────────────────────────────────
+      {letter && (
+        <div className="border-t pt-6 space-y-4">
+          <h3 className="text-sm font-semibold text-gray-700">{t("compose.letterTitle")}</h3>
 
-function PreviewPanel({
-  campaignId,
-  letters,
-  onSent,
-}: {
-  campaignId: string;
-  letters: GeneratedLetters;
-  onSent: () => void;
-}) {
-  const t = useTranslations("smartSendPage");
-  const [selectedVariant, setSelectedVariant] = useState<Variant>("formal");
-  const [editedSubject, setEditedSubject] = useState(letters.formal.subject);
-  const [editedBody, setEditedBody] = useState(letters.formal.body);
-  const [recipientInput, setRecipientInput] = useState("");
-  const [recipients, setRecipients] = useState<RecipientIn[]>([]);
-  const [recipientError, setRecipientError] = useState("");
-  const [confirming, setConfirming] = useState(false);
-  const [error, setError] = useState("");
-
-  const variantData: Record<Variant, LetterVariant> = {
-    formal: letters.formal,
-    creative: letters.creative,
-    concise: letters.concise,
-  };
-
-  function selectVariant(v: Variant) {
-    setSelectedVariant(v);
-    setEditedSubject(variantData[v].subject);
-    setEditedBody(variantData[v].body);
-  }
-
-  function addRecipient() {
-    setRecipientError("");
-    const parts = recipientInput.trim().split(/\s+/);
-    const email = parts[0];
-    const name = parts.slice(1).join(" ") || undefined;
-    if (!email.includes("@")) {
-      setRecipientError(t("preview.invalidEmail"));
-      return;
-    }
-    if (recipients.some((r) => r.email.toLowerCase() === email.toLowerCase())) {
-      setRecipientError(t("preview.alreadyAdded"));
-      return;
-    }
-    setRecipients([...recipients, { email: email.toLowerCase(), name }]);
-    setRecipientInput("");
-  }
-
-  function removeRecipient(email: string) {
-    setRecipients(recipients.filter((r) => r.email !== email));
-  }
-
-  async function handleConfirm() {
-    if (recipients.length === 0) {
-      setError(t("preview.atLeastOne"));
-      return;
-    }
-    setError("");
-    setConfirming(true);
-    try {
-      await confirmCampaign(campaignId, {
-        selected_variant: selectedVariant,
-        subject: editedSubject,
-        body: editedBody,
-        recipients,
-      });
-      onSent();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t("preview.failedToConfirm"));
-    } finally {
-      setConfirming(false);
-    }
-  }
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold mb-1">{t("preview.title")}</h2>
-        <p className="text-sm text-gray-500">{t("preview.description")}</p>
-      </div>
-
-      <div className="flex gap-2">
-        {(["formal", "creative", "concise"] as Variant[]).map((v) => (
-          <button
-            key={v}
-            onClick={() => selectVariant(v)}
-            className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
-              selectedVariant === v
-                ? "bg-brand-800 text-white border-brand-800"
-                : "bg-white text-gray-600 border-slate-200 hover:border-brand-400"
-            }`}
-          >
-            {v.charAt(0).toUpperCase() + v.slice(1)}
-          </button>
-        ))}
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("preview.subject")}</label>
-        <input
-          type="text"
-          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-          value={editedSubject}
-          onChange={(e) => setEditedSubject(e.target.value)}
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("preview.body")}</label>
-        <textarea
-          rows={10}
-          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none font-mono"
-          value={editedBody}
-          onChange={(e) => setEditedBody(e.target.value)}
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("preview.recipients")}</label>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-            placeholder={t("preview.recipientPlaceholder")}
-            value={recipientInput}
-            onChange={(e) => setRecipientInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addRecipient())}
-          />
-          <button
-            type="button"
-            onClick={addRecipient}
-            className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-sm hover:bg-slate-200"
-          >
-            {t("preview.addBtn")}
-          </button>
-        </div>
-        {recipientError && <p className="text-red-500 text-xs mt-1">{recipientError}</p>}
-        <p className="text-xs text-gray-400 mt-1">
-          {t("preview.recipientHint")}
-        </p>
-        {recipients.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {recipients.map((r) => (
-              <span
-                key={r.email}
-                className="flex items-center gap-1 bg-brand-50 text-brand-700 text-xs px-2 py-1 rounded-full"
-              >
-                {r.name ? `${r.name} <${r.email}>` : r.email}
-                <button
-                  type="button"
-                  onClick={() => removeRecipient(r.email)}
-                  className="text-brand-300 hover:text-brand-700 ml-1"
-                >
-                  ×
-                </button>
-              </span>
-            ))}
+          <div>
+            <label className="block text-sm font-medium mb-1">{t("compose.subjectLabel")}</label>
+            <input
+              type="text"
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              value={letter.subject}
+              onChange={(e) => setLetter({ ...letter, subject: e.target.value })}
+            />
           </div>
-        )}
-      </div>
 
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+          <div>
+            <label className="block text-sm font-medium mb-1">{t("compose.bodyLabel")}</label>
+            <textarea
+              rows={10}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none font-mono"
+              value={letter.body}
+              onChange={(e) => setLetter({ ...letter, body: e.target.value })}
+            />
+          </div>
 
-      <button
-        onClick={handleConfirm}
-        disabled={confirming || recipients.length === 0}
-        className="w-full bg-teal text-white rounded-lg py-2 text-sm font-medium hover:bg-teal/90 disabled:opacity-50"
-      >
-        {confirming
-          ? t("preview.confirming")
-          : t("preview.sendTo", { count: recipients.length })}
-      </button>
-    </div>
-  );
-}
-
-// ─── Sending Panel ────────────────────────────────────────────────────────────
-
-function SendingPanel({
-  campaignId,
-  onDone,
-}: {
-  campaignId: string;
-  onDone: () => void;
-}) {
-  const t = useTranslations("smartSendPage");
-  const [logs, setLogs] = useState<SendProgress[]>([]);
-  const [total, setTotal] = useState(0);
-  const [done, setDone] = useState(false);
-  const [summary, setSummary] = useState<{ sent: number; failed: number } | null>(null);
-  const [error, setError] = useState("");
-  const started = useRef(false);
-
-  useEffect(() => {
-    if (started.current) return;
-    started.current = true;
-
-    streamCampaignSend(campaignId, (event) => {
-      if (event.type === "start") {
-        setTotal(event.total);
-      } else if (event.type === "progress") {
-        setLogs((prev) => [
-          ...prev,
-          { index: event.index, total: event.total, email: event.email, status: event.status, error: event.error },
-        ]);
-      } else if (event.type === "done") {
-        setSummary({ sent: event.sent, failed: event.failed });
-        setDone(true);
-      } else if (event.type === "error") {
-        setError(event.message);
-        setDone(true);
-      }
-    }).catch((err: unknown) => {
-      setError(err instanceof Error ? err.message : t("sending.sendFailed"));
-      setDone(true);
-    });
-  }, [campaignId, t]);
-
-  const sent = logs.filter((l) => l.status === "sent").length;
-  const failed = logs.filter((l) => l.status === "failed").length;
-  const progress = total > 0 ? Math.round((logs.length / total) * 100) : 0;
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold mb-1">{t("sending.title")}</h2>
-        {!done && (
-          <p className="text-sm text-gray-500">{t("sending.doNotClose")}</p>
-        )}
-      </div>
-
-      <div>
-        <div className="flex justify-between text-xs text-gray-500 mb-1">
-          <span>{logs.length} / {total || "?"}</span>
-          <span>{progress}%</span>
-        </div>
-        <div className="w-full bg-slate-100 rounded-full h-2">
-          <div className="bg-brand-700 h-2 rounded-full transition-all" style={{ width: `${progress}%` }} />
-        </div>
-      </div>
-
-      <div className="flex gap-4 text-sm">
-        <span className="text-teal font-medium">{t("sending.sent", { count: sent })}</span>
-        {failed > 0 && <span className="text-red-600 font-medium">{t("sending.failed", { count: failed })}</span>}
-      </div>
-
-      <div className="max-h-60 overflow-y-auto space-y-2">
-        {logs.map((log, i) => (
-          <div key={i} className="flex flex-col gap-0.5 text-xs">
-            <div className="flex items-center gap-2">
-              <span className={log.status === "sent" ? "text-teal" : "text-red-500"}>
-                {log.status === "sent" ? "✓" : "✗"}
-              </span>
-              <span className="text-gray-700">{log.email}</span>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1">{t("compose.recipientEmail")}</label>
+              <input
+                type="email"
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                placeholder="hr@company.com"
+                value={recipientEmail}
+                onChange={(e) => setRecipientEmail(e.target.value)}
+              />
             </div>
-            {log.status === "failed" && (
-              <p className="text-red-400 ml-4 break-all">{log.error || t("sending.noErrorMessage")}</p>
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                {t("compose.recipientName")}{" "}
+                <span className="text-gray-400 font-normal">{t("compose.optional")}</span>
+              </label>
+              <input
+                type="text"
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                placeholder={t("compose.recipientNamePlaceholder")}
+                value={recipientName}
+                onChange={(e) => setRecipientName(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {sendError && <p className="text-red-600 text-sm">{sendError}</p>}
+          {successMsg && <p className="text-teal text-sm font-medium">{successMsg}</p>}
+
+          <button
+            onClick={handleSend}
+            disabled={sending || !recipientEmail}
+            className="w-full bg-teal text-white rounded-lg py-2.5 text-sm font-medium hover:bg-teal/90 disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {sending ? (
+              <>
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+                {t("compose.sending")}
+              </>
+            ) : (
+              t("compose.sendBtn")
             )}
-          </div>
-        ))}
-      </div>
-
-      {error && <p className="text-red-600 text-sm">{error}</p>}
-
-      {done && (
-        <div className="space-y-3">
-          {summary && (
-            <div className="bg-teal-light/20 border border-teal-light rounded-xl p-4 text-sm text-teal">
-              {t("sending.campaignComplete", { sent: summary.sent })}
-              {summary.failed > 0 && t("sending.campaignWithFailed", { failed: summary.failed })}
-            </div>
-          )}
-          <button
-            onClick={onDone}
-            className="w-full bg-brand-800 text-white rounded-lg py-2 text-sm font-medium hover:bg-brand-700"
-          >
-            {t("sending.viewHistory")}
           </button>
         </div>
       )}
@@ -632,277 +398,155 @@ function SendingPanel({
   );
 }
 
-// ─── History Panel ────────────────────────────────────────────────────────────
+// ─── History Panel ─────────────────────────────────────────────────────────────
 
 function HistoryPanel() {
   const t = useTranslations("smartSendPage");
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [items, setItems] = useState<SendHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
-    listCampaigns()
-      .then(setCampaigns)
+    getHistory()
+      .then(setItems)
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <p className="text-sm text-gray-400">{t("history.loading")}</p>;
-
-  if (campaigns.length === 0) {
-    return (
-      <div className="text-center text-gray-400 py-12">
-        <p className="text-sm">{t("history.noCampaigns")}</p>
-      </div>
-    );
+  if (loading) {
+    return <p className="text-sm text-gray-400">{t("loading")}</p>;
   }
 
   return (
-    <div className="space-y-3">
-      <h2 className="text-lg font-semibold">{t("history.title")}</h2>
-      {campaigns.map((c) => (
-        <div key={c.id} className="border rounded-lg overflow-hidden">
-          <button
-            className="w-full text-left px-4 py-3 flex items-center justify-between hover:bg-slate-50"
-            onClick={() => setExpanded(expanded === c.id ? null : c.id)}
-          >
-            <div className="flex items-center gap-3">
-              <StatusBadge status={c.status} />
-              <div>
-                <p className="text-sm font-medium">{c.job_title}</p>
-                {c.company_name && <p className="text-xs text-gray-400">{c.company_name}</p>}
-              </div>
-            </div>
-            <div className="text-right text-xs text-gray-400">
-              <p>{c.sent_count}/{c.total_recipients} sent</p>
-              <p>{new Date(c.created_at).toLocaleDateString()}</p>
-            </div>
-          </button>
-          {expanded === c.id && (
-            <div className="border-t px-4 py-3 bg-slate-50 space-y-3">
-              <div className="flex gap-6 text-xs text-gray-500 flex-wrap">
-                <span>{t("history.variant")} <strong>{c.selected_variant ?? "—"}</strong></span>
-                <span>{t("history.total")} <strong>{c.total_recipients}</strong></span>
-                <span className="text-teal">{t("history.sent")} <strong>{c.sent_count}</strong></span>
-                {c.failed_count > 0 && (
-                  <span className="text-red-600">{t("history.failed")} <strong>{c.failed_count}</strong></span>
-                )}
-              </div>
-              {c.subject && (
-                <p className="text-xs text-gray-600">
-                  <strong>{t("history.subject")}</strong> {c.subject}
-                </p>
-              )}
-              {c.logs.length > 0 && (
-                <div className="max-h-40 overflow-y-auto space-y-0.5">
-                  {c.logs.map((log) => (
-                    <div key={log.id} className="flex items-center gap-2 text-xs">
-                      <span className={log.status === "sent" ? "text-teal" : "text-red-500"}>
-                        {log.status === "sent" ? "✓" : "✗"}
-                      </span>
-                      <span className="text-gray-600 truncate">
-                        {log.recipient_name
-                          ? `${log.recipient_name} <${log.recipient_email}>`
-                          : log.recipient_email}
-                      </span>
-                      {log.error_message && (
-                        <span className="text-red-400 truncate">— {log.error_message}</span>
-                      )}
-                    </div>
-                  ))}
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-lg font-semibold mb-1">{t("history.title")}</h2>
+        <p className="text-sm text-gray-500">{t("history.description")}</p>
+      </div>
+
+      {items.length === 0 ? (
+        <p className="text-sm text-gray-400 text-center py-8">{t("history.empty")}</p>
+      ) : (
+        <div className="space-y-2">
+          {items.map((item) => (
+            <div key={item.id} className="border rounded-xl p-4 space-y-1">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {item.job_title}
+                    {item.company_name && (
+                      <span className="text-gray-400 font-normal"> — {item.company_name}</span>
+                    )}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">{item.recipient_email}</p>
                 </div>
+                <StatusBadge status={item.status} />
+              </div>
+              <p className="text-xs text-gray-400 truncate">{item.subject}</p>
+              {item.error_message && (
+                <p className="text-xs text-rose-600 truncate">{item.error_message}</p>
               )}
+              <p className="text-xs text-gray-300">
+                {new Date(item.created_at).toLocaleString()}
+              </p>
             </div>
-          )}
+          ))}
         </div>
-      ))}
+      )}
     </div>
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function SmartSendPage() {
   const t = useTranslations("smartSendPage");
-  const [step, setStep] = useState<Step>("compose");
-  const [smtpConn, setSmtpConn] = useState<SmtpConnection | null>(null);
-  const [smtpLoading, setSmtpLoading] = useState(true);
-  const [smtpLoadError, setSmtpLoadError] = useState("");
-  const [campaignId, setCampaignId] = useState<string | null>(null);
-  const [letters, setLetters] = useState<GeneratedLetters | null>(null);
+
+  const [gmailStatus, setGmailStatus] = useState<GmailStatus>({ is_connected: false, gmail_address: null });
+  const [step, setStep] = useState<Step>("connect");
+  const [loadingStatus, setLoadingStatus] = useState(true);
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
 
   useEffect(() => {
-    getSmtpConnection()
-      .then((connection) => {
-        setSmtpConn(connection);
-        setSmtpLoadError("");
-      })
-      .catch((err: unknown) => {
-        setSmtpLoadError(err instanceof Error ? err.message : t("history.unableToLoad", { error: "" }));
-      })
-      .finally(() => setSmtpLoading(false));
-  }, [t]);
-
-  function handleGenerated(id: string, l: GeneratedLetters) {
-    if (!smtpConn) {
-      setCampaignId(id);
-      setLetters(l);
-      setStep("smtp");
-      return;
+    // Handle OAuth callback query params
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has("gmail_connected") || params.has("gmail_error")) {
+        window.history.replaceState({}, "", window.location.pathname);
+      }
     }
-    setCampaignId(id);
-    setLetters(l);
-    setStep("preview");
-  }
 
-  function handleSmtpSaved(c: SmtpConnection) {
-    setSmtpConn(c);
-    if (campaignId && letters) setStep("preview");
-  }
+    getGmailStatus()
+      .then((s) => {
+        setGmailStatus(s);
+        if (s.is_connected) setStep("compose");
+      })
+      .catch(() => {})
+      .finally(() => setLoadingStatus(false));
+  }, []);
 
-  if (smtpLoading) {
+  const tabs: { id: Step; label: string }[] = [
+    { id: "connect", label: gmailStatus.is_connected ? t("tabs.gmailVerified") : t("tabs.gmail") },
+    { id: "compose", label: t("tabs.compose") },
+    { id: "history", label: t("tabs.history") },
+  ];
+
+  if (loadingStatus) {
     return (
-      <div className="flex items-center justify-center h-40">
+      <main className="max-w-2xl mx-auto px-4 py-8">
         <p className="text-sm text-gray-400">{t("loading")}</p>
-      </div>
+      </main>
     );
   }
 
-  const tabs: { id: Step; label: string }[] = [
-    { id: "compose", label: t("tabs.compose") },
-    { id: "history", label: t("tabs.history") },
-    {
-      id: "smtp",
-      label: smtpConn
-        ? smtpConn.is_verified
-          ? t("tabs.gmailVerified")
-          : t("tabs.gmail")
-        : t("tabs.gmailSetup"),
-    },
-  ];
-
-  const connectionLabel = !smtpConn
-    ? t("connection.setupNeeded")
-    : smtpConn.is_verified
-      ? t("connection.verified")
-      : t("connection.savedVerifyNext");
-
-  const connectionDescription = !smtpConn
-    ? t("connection.addGmailBeforeSending")
-    : smtpConn.is_verified
-      ? t("connection.readyToSend", { email: smtpConn.gmail_address })
-      : t("connection.verifyBeforeSending");
-
-  const campaignStateLabel =
-    step === "preview" || step === "sending"
-      ? t("campaign.inProgress")
-      : campaignId && letters
-        ? t("campaign.draftReady")
-        : t("campaign.noDraft");
-
-  const campaignStateDescription =
-    step === "preview" || step === "sending"
-      ? t("campaign.inProgressDesc")
-      : campaignId && letters
-        ? t("campaign.draftReadyDesc")
-        : t("campaign.noDraftDesc");
-
   return (
-    <div className="space-y-6">
-      <Panel className="overflow-hidden p-0">
-        <div className="grid gap-0 lg:grid-cols-[1.35fr_0.65fr]">
-          <div className="bg-gradient-to-br from-brand-800/8 via-white to-teal/5 px-6 py-6 md:px-8 md:py-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{t("eyebrow")}</p>
-            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-950">{t("title")}</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-              {t("description")}
-            </p>
+    <main className="max-w-2xl mx-auto px-4 py-8">
+      <div className="mb-6">
+        <p className="text-xs font-semibold uppercase tracking-widest text-brand-700 mb-1">
+          {t("eyebrow")}
+        </p>
+        <h1 className="text-2xl font-bold">{t("title")}</h1>
+        <p className="text-sm text-gray-500 mt-1">{t("description")}</p>
+      </div>
 
-            <div className="mt-6 grid gap-3 md:grid-cols-3">
-              <div className="rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{t("connection.label")}</p>
-                <p className="mt-3 text-lg font-semibold tracking-tight text-slate-950">{connectionLabel}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">{connectionDescription}</p>
-              </div>
-              <div className="rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{t("campaign.label")}</p>
-                <p className="mt-3 text-lg font-semibold tracking-tight text-slate-950">{campaignStateLabel}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">{campaignStateDescription}</p>
-              </div>
-              <div className="rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{t("currentStep")}</p>
-                <p className="mt-3 text-lg font-semibold tracking-tight capitalize text-slate-950">{step}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  {t("currentStepDesc")}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-slate-200 bg-brand-900 px-6 py-6 text-white lg:border-l lg:border-t-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{t("flow.label")}</p>
-            <div className="mt-4 space-y-3">
-              <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
-                <p className="text-sm font-semibold">{t("flow.step1Title")}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">{t("flow.step1Desc")}</p>
-              </div>
-              <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
-                <p className="text-sm font-semibold">{t("flow.step2Title")}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">{t("flow.step2Desc")}</p>
-              </div>
-              <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
-                <p className="text-sm font-semibold">{t("flow.step3Title")}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">{t("flow.step3Desc")}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Panel>
-
-      {smtpLoadError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {t("history.unableToLoad", { error: smtpLoadError })}
-        </div>
-      )}
-
-      {step !== "preview" && step !== "sending" && (
-        <div className="flex flex-wrap gap-2">
+      <Panel>
+        {/* Tabs */}
+        <div className="flex border-b mb-6">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setStep(tab.id)}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+              disabled={tab.id === "compose" && !gmailStatus.is_connected}
+              className={`flex-1 py-2.5 text-sm font-medium border-b-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                 step === tab.id
-                  ? "bg-brand-800 text-white shadow-sm"
-                  : "bg-white text-gray-500 ring-1 ring-slate-200 hover:text-gray-700"
+                  ? "border-brand-700 text-brand-700"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
               {tab.label}
             </button>
           ))}
         </div>
-      )}
 
-      {(step === "preview" || step === "sending") && (
-        <button
-          onClick={() => setStep(step === "preview" ? "compose" : "history")}
-          className="inline-flex rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
-        >
-          {step === "preview" ? t("backToCompose") : t("backToHistory")}
-        </button>
-      )}
+        {step === "connect" && (
+          <GmailConnectPanel
+            status={gmailStatus}
+            onConnected={() => setStep("compose")}
+            onDisconnected={() => {
+              setGmailStatus({ is_connected: false, gmail_address: null });
+              setStep("connect");
+            }}
+          />
+        )}
 
-      <Panel>
-        {step === "compose" && <ComposePanel onGenerated={handleGenerated} />}
-        {step === "smtp" && <SmtpSetup conn={smtpConn} onSaved={handleSmtpSaved} />}
-        {step === "preview" && campaignId && letters && (
-          <PreviewPanel campaignId={campaignId} letters={letters} onSent={() => setStep("sending")} />
+        {step === "compose" && gmailStatus.is_connected && (
+          <ComposePanel
+            gmailAddress={gmailStatus.gmail_address!}
+            onSent={() => setHistoryRefreshKey((k) => k + 1)}
+          />
         )}
-        {step === "sending" && campaignId && (
-          <SendingPanel campaignId={campaignId} onDone={() => setStep("history")} />
-        )}
-        {step === "history" && <HistoryPanel />}
+
+        {step === "history" && <HistoryPanel key={historyRefreshKey} />}
       </Panel>
-    </div>
+    </main>
   );
 }

@@ -332,58 +332,27 @@ export type InterviewListItem = {
 
 // ─── Smart Send ───────────────────────────────────────────────────────────────
 
-export type SmtpConnection = {
-  id: string;
-  gmail_address: string;
-  display_name: string;
-  is_verified: boolean;
-  created_at: string;
+export type GmailStatus = {
+  is_connected: boolean;
+  gmail_address: string | null;
 };
 
-export type LetterVariant = {
+export type GenerateLetterResponse = {
   subject: string;
   body: string;
 };
 
-export type GeneratedLetters = {
-  formal: LetterVariant;
-  creative: LetterVariant;
-  concise: LetterVariant;
-};
-
-export type GenerateLettersResponse = {
-  campaign_id: string;
-  letters: GeneratedLetters;
-};
-
-export type RecipientIn = {
-  email: string;
-  name?: string;
-};
-
-export type SendLogItem = {
+export type SendHistoryItem = {
   id: string;
+  job_title: string;
+  company_name: string | null;
+  subject: string;
   recipient_email: string;
   recipient_name: string | null;
   status: "sent" | "failed";
   error_message: string | null;
   sent_at: string | null;
-};
-
-export type Campaign = {
-  id: string;
-  job_title: string;
-  company_name: string | null;
-  status: "draft" | "sending" | "completed" | "failed";
-  total_recipients: number;
-  sent_count: number;
-  failed_count: number;
-  selected_variant: string | null;
-  subject: string | null;
-  started_at: string | null;
-  completed_at: string | null;
   created_at: string;
-  logs: SendLogItem[];
 };
 
 

@@ -1024,10 +1024,10 @@
         "statusSavedNotVerified": "تم الحفظ لكن لم يُتحقق — انقر على تحقق للاختبار",
         "statusNotConfigured": "لم يتم إعداد اتصال Gmail",
         "noConnectionDesc": "مطلوب لإرسال دعوات المقابلة بالذكاء الاصطناعي للمرشحين.",
-        "howToTitle": "كيفية إنشاء كلمة مرور تطبيق Gmail:",
-        "step1": "فعّل التحقق بخطوتين في حسابك على Google",
-        "step2": "انتقل إلى حساب Google ← الأمان ← كلمات مرور التطبيقات",
-        "step3": "اختر التطبيق: Mail، الجهاز: Other ← اكتب \"JobAI\"",
+        "howToTitle": "طريقة ربط Gmail:",
+        "step1": "اضغط الزر أدناه لتسجيل الدخول بـ Google",
+        "step2": "امنح الإذن لإرسال الرسائل نيابة عنك",
+        "step3": "ستُرسل رسائلك مباشرة من صندوق Gmail الخاص بك",
         "step4": "انسخ كلمة المرور المكونة من 16 حرفًا والصقها أدناه",
         "gmailAddress": "عنوان Gmail",
         "displayName": "الاسم المعروض",
@@ -1051,7 +1051,9 @@
         "removed": "تم حذف الاتصال.",
         "failedToSave": "فشل الحفظ.",
         "verificationFailed": "فشل التحقق. تحقق من كلمة مرور التطبيق.",
-        "failedToRemove": "فشل حذف الاتصال."
+        "failedToRemove": "فشل حذف الاتصال.",
+        "connectGmail": "ربط Gmail",
+        "connectFailed": "تعذّر الحصول على رابط التفويض"
       }
     },
     "aiInterviewPage": {
@@ -1504,10 +1506,10 @@
       "strong": "إجابة قوية"
     },
     "timer": {
-      "none": "بدون توقيت",
       "60": "١ دقيقة",
       "120": "٢ دقيقة",
       "180": "٣ دقائق",
+      "none": "بدون توقيت",
       "label": "الحد الزمني للإجابة"
     },
     "evaluation": {
@@ -1733,7 +1735,7 @@
     },
     "compose": {
       "title": "إنشاء بريد التواصل",
-      "description": "الذكاء الاصطناعي يولّد 3 متغيرات: رسمي، إبداعي، ومختصر. عدّل قبل الإرسال.",
+      "description": "يولّد الذكاء الاصطناعي رسالة تقديم مخصّصة. عدّلها وأرسلها مباشرة.",
       "jobTitle": "المسمى الوظيفي *",
       "jobTitlePlaceholder": "مثال: مهندس برمجيات",
       "companyName": "اسم الشركة",
@@ -1743,9 +1745,21 @@
       "noResume": "بدون سيرة ذاتية",
       "jobDescription": "وصف الوظيفة",
       "jdPlaceholder": "الصق وصف الوظيفة لتخصيص البريد (اختياري)",
-      "generating": "جارٍ توليد 3 متغيرات…",
-      "generateBtn": "توليد الرسائل",
-      "generationFailed": "فشل التوليد"
+      "generating": "جارٍ التوليد…",
+      "generateBtn": "توليد الخطاب",
+      "generationFailed": "فشل التوليد",
+      "letterTitle": "الخطاب المولَّد",
+      "subjectLabel": "الموضوع",
+      "bodyLabel": "نص الرسالة",
+      "recipientEmail": "بريد المستلم",
+      "recipientName": "اسم المستلم",
+      "recipientNamePlaceholder": "مدير التوظيف",
+      "optional": "(اختياري)",
+      "sendBtn": "إرسال الآن",
+      "sending": "جارٍ الإرسال…",
+      "sendFailed": "فشل إرسال البريد الإلكتروني",
+      "invalidEmail": "أدخل عنوان بريد إلكتروني صحيح",
+      "sentSuccess": "تم إرسال البريد إلى {email}!"
     },
     "preview": {
       "title": "مراجعة وإرسال",
@@ -1777,15 +1791,24 @@
       "sendFailed": "فشل الإرسال"
     },
     "history": {
-      "title": "سجل الحملات",
-      "loading": "جارٍ تحميل السجل…",
-      "noCampaigns": "لا توجد حملات بعد.",
-      "variant": "المتغير:",
-      "total": "الإجمالي:",
-      "sent": "المُرسل:",
-      "failed": "الفاشل:",
-      "subject": "الموضوع:",
-      "unableToLoad": "تعذّر تحميل إعداد Gmail: {error}"
+      "title": "سجل الإرسال",
+      "description": "جميع الرسائل المُرسَلة عبر Smart Send.",
+      "empty": "لم تُرسل أي رسائل بعد."
+    },
+    "gmail": {
+      "title": "ربط حساب Gmail",
+      "description": "سجّل الدخول بحساب Gmail لإرسال رسائل التقديم مباشرة من صندوق بريدك.",
+      "howItWorks": "كيف يعمل:",
+      "step1": "اضغط الزر أدناه لتسجيل الدخول بـ Google",
+      "step2": "امنح الإذن لإرسال الرسائل نيابة عنك",
+      "step3": "تُرسَل رسائلك مباشرة من صندوق Gmail الخاص بك",
+      "connectBtn": "تسجيل الدخول بـ Google",
+      "connectFailed": "تعذّر الحصول على رابط التفويض",
+      "connected": "Gmail متصل",
+      "composeBtn": "إنشاء وإرسال",
+      "disconnect": "فصل حساب Gmail",
+      "disconnecting": "جارٍ الفصل…",
+      "disconnectFailed": "تعذّر فصل حساب Gmail"
     }
   }
 }

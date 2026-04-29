@@ -1024,10 +1024,10 @@
         "statusSavedNotVerified": "Saved but not verified — click Verify to test",
         "statusNotConfigured": "No Gmail connection set up",
         "noConnectionDesc": "Required for sending AI interview invites to candidates.",
-        "howToTitle": "How to create a Gmail App Password:",
-        "step1": "Enable 2-Step Verification on your Google account",
-        "step2": "Go to Google Account → Security → App Passwords",
-        "step3": "Select app: Mail, device: Other → type \"JobAI\"",
+        "howToTitle": "How to connect Gmail:",
+        "step1": "Click the button below to sign in with Google",
+        "step2": "Grant permission to send emails on your behalf",
+        "step3": "Your emails will be sent directly from your Gmail inbox",
         "step4": "Copy the 16-character password and paste it below",
         "gmailAddress": "Gmail Address",
         "displayName": "Display Name",
@@ -1051,7 +1051,9 @@
         "removed": "Connection removed.",
         "failedToSave": "Failed to save.",
         "verificationFailed": "Verification failed. Check your App Password.",
-        "failedToRemove": "Failed to remove connection."
+        "failedToRemove": "Failed to remove connection.",
+        "connectGmail": "Connect Gmail",
+        "connectFailed": "Failed to get authorization URL"
       }
     },
     "aiInterviewPage": {
@@ -1504,10 +1506,10 @@
       "strong": "Solid answer"
     },
     "timer": {
-      "none": "No timer",
       "60": "1 min",
       "120": "2 min",
       "180": "3 min",
+      "none": "No timer",
       "label": "Answer Time Limit"
     },
     "evaluation": {
@@ -1733,7 +1735,7 @@
     },
     "compose": {
       "title": "Compose Outreach Email",
-      "description": "AI generates 3 variants: Formal, Creative, and Concise. Edit before sending.",
+      "description": "AI generates a tailored outreach email. Edit and send directly.",
       "jobTitle": "Job Title *",
       "jobTitlePlaceholder": "e.g. Software Engineer",
       "companyName": "Company Name",
@@ -1743,9 +1745,21 @@
       "noResume": "No resume",
       "jobDescription": "Job Description",
       "jdPlaceholder": "Paste the job description to tailor the email (optional)",
-      "generating": "Generating 3 variants…",
-      "generateBtn": "Generate Letters",
-      "generationFailed": "Generation failed"
+      "generating": "Generating…",
+      "generateBtn": "Generate Letter",
+      "generationFailed": "Generation failed",
+      "letterTitle": "Generated Letter",
+      "subjectLabel": "Subject",
+      "bodyLabel": "Body",
+      "recipientEmail": "Recipient Email",
+      "recipientName": "Recipient Name",
+      "recipientNamePlaceholder": "Hiring Manager",
+      "optional": "(optional)",
+      "sendBtn": "Send Now",
+      "sending": "Sending…",
+      "sendFailed": "Failed to send email",
+      "invalidEmail": "Enter a valid email address",
+      "sentSuccess": "Email sent to {email}!"
     },
     "preview": {
       "title": "Review & Send",
@@ -1777,15 +1791,24 @@
       "sendFailed": "Send failed"
     },
     "history": {
-      "title": "Campaign History",
-      "loading": "Loading history…",
-      "noCampaigns": "No campaigns yet.",
-      "variant": "Variant:",
-      "total": "Total:",
-      "sent": "Sent:",
-      "failed": "Failed:",
-      "subject": "Subject:",
-      "unableToLoad": "Unable to load Gmail setup right now: {error}"
+      "title": "Send History",
+      "description": "All emails sent via Smart Send.",
+      "empty": "No emails sent yet."
+    },
+    "gmail": {
+      "title": "Connect Gmail",
+      "description": "Sign in with your Gmail account to send outreach emails directly from your inbox.",
+      "howItWorks": "How it works:",
+      "step1": "Click the button below to sign in with Google",
+      "step2": "Grant permission to send emails on your behalf",
+      "step3": "Your emails are sent directly from your Gmail inbox",
+      "connectBtn": "Sign in with Google",
+      "connectFailed": "Failed to get authorization URL",
+      "connected": "Gmail connected",
+      "composeBtn": "Compose & Send",
+      "disconnect": "Disconnect Gmail",
+      "disconnecting": "Disconnecting…",
+      "disconnectFailed": "Failed to disconnect Gmail"
     }
   }
 }

@@ -1,4 +1,4 @@
-"""Generate 3 cover letter / outreach email variants via OpenAI JSON mode."""
+"""Generate a single cover letter / outreach email via OpenAI JSON mode."""
 
 from __future__ import annotations
 
@@ -15,44 +15,35 @@ logger = logging.getLogger(__name__)
 
 _SYSTEM_PROMPT = """\
 You are an expert career coach who writes concise, compelling outreach emails for job seekers.
-Generate exactly 3 email variants (formal, creative, concise) given the job details.
+Generate one email given the job details.
 
 Rules:
-- Each email must be self-contained and ready to send.
-- Keep formal under 220 words, creative under 200 words, concise under 100 words.
-- Do not use placeholder text like [Your Name] — the emails should read as genuine outreach.
-- Subject lines must be specific and under 60 characters.
+- The email must be self-contained and ready to send (no placeholder text like [Your Name]).
+- Keep it under 200 words.
+- Subject line must be specific and under 60 characters.
 - Address the recruiter/hiring manager professionally if no name is known (e.g., "Dear Hiring Manager").
 - Optimise for the Saudi / GCC job market when relevant.
 
 Respond ONLY with valid JSON matching this exact schema:
-{
-  "formal":   {"subject": "...", "body": "..."},
-  "creative": {"subject": "...", "body": "..."},
-  "concise":  {"subject": "...", "body": "..."}
-}
+{"subject": "...", "body": "..."}
 """
 
 
 def get_openai_client() -> AsyncOpenAI:
-    """Create the async OpenAI client only when Smart Send generation is used."""
     settings = get_settings()
-
     if not settings.openai_api_key:
-        raise ValueError("OPENAI_API_KEY is not configured for Smart Send cover letter generation.")
-
+        raise ValueError("OPENAI_API_KEY is not configured for cover letter generation.")
     return AsyncOpenAI(api_key=settings.openai_api_key)
 
 
-def get_resume_context_text(resume: Resume | None) -> str:
-    """Prefer normalized text and fall back to raw text for older resume rows."""
+def _get_resume_text(db: Session, user_id: str, resume_id: str) -> str:
+    resume = db.query(Resume).filter(Resume.id == resume_id, Resume.user_id == user_id).first()
     if not resume:
         return ""
-
     return (resume.normalized_text or resume.raw_text or "").strip()
 
 
-async def generate_cover_letters(
+async def generate_cover_letter(
     db: Session,
     user_id: str,
     job_title: str,
@@ -60,24 +51,18 @@ async def generate_cover_letters(
     job_description: str | None,
     resume_id: str | None,
 ) -> dict:
-    """
-    Returns a dict with keys formal, creative, concise each having subject + body.
-    """
-    # Optionally pull resume text for context
+    """Returns {"subject": str, "body": str}."""
     resume_text = ""
     if resume_id:
-        resume = db.query(Resume).filter(Resume.id == resume_id, Resume.user_id == user_id).first()
-        resume_text = get_resume_context_text(resume)[:3000]
+        resume_text = _get_resume_text(db, user_id, resume_id)[:3000]
 
-    user_prompt_parts = [f"Job Title: {job_title}"]
+    parts = [f"Job Title: {job_title}"]
     if company_name:
-        user_prompt_parts.append(f"Company: {company_name}")
+        parts.append(f"Company: {company_name}")
     if job_description:
-        user_prompt_parts.append(f"\nJob Description:\n{job_description[:2000]}")
+        parts.append(f"\nJob Description:\n{job_description[:2000]}")
     if resume_text:
-        user_prompt_parts.append(f"\nApplicant Resume (for context):\n{resume_text}")
-
-    user_prompt = "\n".join(user_prompt_parts)
+        parts.append(f"\nApplicant Resume (for context):\n{resume_text}")
 
     client = get_openai_client()
     response = await client.chat.completions.create(
@@ -86,22 +71,18 @@ async def generate_cover_letters(
         response_format={"type": "json_object"},
         messages=[
             {"role": "system", "content": _SYSTEM_PROMPT},
-            {"role": "user", "content": user_prompt},
+            {"role": "user", "content": "\n".join(parts)},
         ],
     )
 
     raw = response.choices[0].message.content or "{}"
     try:
-        letters = json.loads(raw)
+        letter = json.loads(raw)
     except json.JSONDecodeError:
         logger.error("Cover letter JSON parse error: %s", raw[:200])
         raise ValueError("AI returned malformed JSON")
 
-    # Validate structure
-    for variant in ("formal", "creative", "concise"):
-        if variant not in letters:
-            raise ValueError(f"AI response missing '{variant}' variant")
-        if "subject" not in letters[variant] or "body" not in letters[variant]:
-            raise ValueError(f"AI response missing subject/body for '{variant}'")
+    if "subject" not in letter or "body" not in letter:
+        raise ValueError("AI response missing subject or body")
 
-    return letters
+    return {"subject": letter["subject"], "body": letter["body"]}

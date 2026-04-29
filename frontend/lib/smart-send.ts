@@ -1,12 +1,7 @@
 import { getApiBaseUrl } from "@/lib/api";
-import type {
-  Campaign,
-  GenerateLettersResponse,
-  RecipientIn,
-  SmtpConnection,
-} from "@/types";
+import type { GenerateLetterResponse, GmailStatus, SendHistoryItem } from "@/types";
 
-const BASE_PATH = "/smart-send";
+const BASE = "/smart-send";
 
 function getToken(): string {
   if (typeof window === "undefined") return "";
@@ -17,170 +12,81 @@ function authHeaders(extra?: Record<string, string>): Record<string, string> {
   return { Authorization: `Bearer ${getToken()}`, ...extra };
 }
 
-async function parseDetail(response: Response, fallback: string): Promise<string> {
-  const payload = await response.json().catch(() => ({})) as { detail?: string };
+async function parseDetail(res: Response, fallback: string): Promise<string> {
+  const payload = await res.json().catch(() => ({})) as { detail?: string };
   return payload.detail || fallback;
 }
 
-// ── SMTP ──────────────────────────────────────────────────────────────────────
+// ── Gmail OAuth ───────────────────────────────────────────────────────────────
 
-export async function getSmtpConnection(): Promise<SmtpConnection | null> {
-  const res = await fetch(`${getApiBaseUrl()}${BASE_PATH}/smtp`, {
+export async function getGmailAuthUrl(): Promise<string> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/gmail/auth`, {
     headers: authHeaders(),
   });
-  if (res.status === 404) return null;
-  if (!res.ok) {
-    throw new Error(await parseDetail(res, "Failed to load SMTP connection"));
-  }
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to get auth URL"));
+  const data = await res.json() as { auth_url: string };
+  return data.auth_url;
+}
+
+export async function getGmailStatus(): Promise<GmailStatus> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/gmail/status`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to load Gmail status"));
   return res.json();
 }
 
-export async function saveSmtpConnection(data: {
-  gmail_address: string;
-  display_name: string;
-  app_password: string;
-}): Promise<SmtpConnection> {
-  const res = await fetch(`${getApiBaseUrl()}${BASE_PATH}/smtp`, {
-    method: "POST",
-    headers: authHeaders({ "Content-Type": "application/json" }),
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) {
-    throw new Error(await parseDetail(res, "Failed to save SMTP connection"));
-  }
-  return res.json();
-}
-
-export async function verifySmtpConnection(): Promise<void> {
-  const res = await fetch(`${getApiBaseUrl()}${BASE_PATH}/smtp/verify`, {
-    method: "POST",
-    headers: authHeaders(),
-  });
-  if (!res.ok) {
-    throw new Error(await parseDetail(res, "Verification failed"));
-  }
-}
-
-export async function deleteSmtpConnection(): Promise<void> {
-  const res = await fetch(`${getApiBaseUrl()}${BASE_PATH}/smtp`, {
+export async function disconnectGmail(): Promise<void> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/gmail/disconnect`, {
     method: "DELETE",
     headers: authHeaders(),
   });
-  if (!res.ok) throw new Error("Failed to remove connection");
+  if (!res.ok && res.status !== 204) throw new Error("Failed to disconnect Gmail");
 }
 
-// ── Generate Letters ──────────────────────────────────────────────────────────
+// ── Generate Letter ───────────────────────────────────────────────────────────
 
-export async function generateLetters(data: {
+export async function generateLetter(data: {
   job_title: string;
   company_name?: string;
   job_description?: string;
   resume_id?: string;
-}): Promise<GenerateLettersResponse> {
-  const res = await fetch(`${getApiBaseUrl()}${BASE_PATH}/generate`, {
+}): Promise<GenerateLetterResponse> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/generate`, {
     method: "POST",
     headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(data),
   });
-  if (!res.ok) {
-    throw new Error(await parseDetail(res, "Failed to generate letters"));
-  }
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to generate letter"));
   return res.json();
 }
 
-// ── Confirm campaign ──────────────────────────────────────────────────────────
+// ── Send ──────────────────────────────────────────────────────────────────────
 
-export async function confirmCampaign(
-  campaign_id: string,
-  data: {
-    selected_variant: string;
-    subject: string;
-    body: string;
-    recipients: RecipientIn[];
-  }
-): Promise<Campaign> {
-  const res = await fetch(
-    `${getApiBaseUrl()}${BASE_PATH}/campaigns/${campaign_id}/confirm`,
-    {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ campaign_id, ...data }),
-    }
-  );
-  if (!res.ok) {
-    throw new Error(await parseDetail(res, "Failed to confirm campaign"));
-  }
+export async function sendEmail(data: {
+  job_title: string;
+  company_name?: string;
+  subject: string;
+  body: string;
+  recipient_email: string;
+  recipient_name?: string;
+  resume_id?: string;
+}): Promise<{ id: string; status: string; recipient_email: string; sent_at: string | null }> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/send`, {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to send email"));
   return res.json();
 }
 
-// ── Campaign list / detail ────────────────────────────────────────────────────
+// ── History ───────────────────────────────────────────────────────────────────
 
-export async function listCampaigns(): Promise<Campaign[]> {
-  const res = await fetch(`${getApiBaseUrl()}${BASE_PATH}/campaigns`, {
+export async function getHistory(): Promise<SendHistoryItem[]> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/history`, {
     headers: authHeaders(),
   });
-  if (!res.ok) throw new Error("Failed to load campaigns");
+  if (!res.ok) throw new Error("Failed to load history");
   return res.json();
-}
-
-export async function getCampaign(id: string): Promise<Campaign> {
-  const res = await fetch(`${getApiBaseUrl()}${BASE_PATH}/campaigns/${id}`, {
-    headers: authHeaders(),
-  });
-  if (!res.ok) throw new Error("Campaign not found");
-  return res.json();
-}
-
-// ── SSE send stream ───────────────────────────────────────────────────────────
-
-export type SendProgressEvent =
-  | { type: "start"; total: number; campaign_id: string }
-  | { type: "progress"; index: number; total: number; email: string; status: "sent" | "failed"; error?: string }
-  | { type: "done"; campaign_id: string; sent: number; failed: number; total: number }
-  | { type: "error"; message: string };
-
-export async function streamCampaignSend(
-  campaign_id: string,
-  onEvent: (event: SendProgressEvent) => void
-): Promise<void> {
-  const res = await fetch(
-    `${getApiBaseUrl()}${BASE_PATH}/campaigns/${campaign_id}/send-stream`,
-    { method: "POST", headers: authHeaders() }
-  );
-
-  if (!res.ok) {
-    throw new Error(await parseDetail(res, "Failed to start send"));
-  }
-
-  const reader = res.body?.getReader();
-  if (!reader) throw new Error("Streaming not supported");
-
-  const decoder = new TextDecoder();
-  let buffer = "";
-  let currentEvent = "";
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() ?? "";
-
-    for (const line of lines) {
-      if (line.startsWith("event: ")) {
-        currentEvent = line.slice(7).trim();
-      } else if (line.startsWith("data: ")) {
-        try {
-          const payload = JSON.parse(line.slice(6));
-          const event = { type: currentEvent, ...payload } as SendProgressEvent;
-          onEvent(event);
-          if (currentEvent === "done" || currentEvent === "error") return;
-        } catch {
-          // ignore malformed line
-        }
-        currentEvent = "";
-      }
-    }
-  }
 }

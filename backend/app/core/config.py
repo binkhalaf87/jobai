@@ -148,6 +148,10 @@ class Settings:
     s3_access_key_id: str | None
     s3_secret_access_key: str | None
     smtp_encryption_key: str | None
+    google_client_id: str | None
+    google_client_secret: str | None
+    google_redirect_uri: str
+    frontend_url: str
 
     def allowed_origins(self) -> list[str]:
         """Build an explicit allowlist for frontend origins."""
@@ -200,6 +204,10 @@ def build_settings() -> Settings:
         s3_access_key_id=get_optional_env("S3_ACCESS_KEY_ID", "").strip() or None,
         s3_secret_access_key=get_optional_env("S3_SECRET_ACCESS_KEY", "").strip() or None,
         smtp_encryption_key=get_optional_env("SMTP_ENCRYPTION_KEY", "").strip() or None,
+        google_client_id=get_optional_env("GOOGLE_CLIENT_ID", "").strip() or None,
+        google_client_secret=get_optional_env("GOOGLE_CLIENT_SECRET", "").strip() or None,
+        google_redirect_uri=get_optional_env("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/v1/smart-send/gmail/callback"),
+        frontend_url=get_optional_env("FRONTEND_URL", "http://localhost:3000"),
     )
 
 

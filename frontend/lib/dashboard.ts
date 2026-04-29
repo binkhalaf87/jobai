@@ -2,9 +2,9 @@ import { listAIReports } from "@/lib/ai-reports";
 import { listInterviews } from "@/lib/interviews";
 import { getSavedJobs } from "@/lib/jobs";
 import { listResumes } from "@/lib/resumes";
-import { listCampaigns } from "@/lib/smart-send";
+import { getHistory } from "@/lib/smart-send";
 import { extractAtsScore } from "@/lib/product-insights";
-import type { AIReportFull, AIReportListItem, Campaign, InterviewListItem, ResumeListItem, SavedJob } from "@/types";
+import type { AIReportFull, AIReportListItem, InterviewListItem, ResumeListItem, SavedJob, SendHistoryItem } from "@/types";
 
 type DashboardCollection<T> = {
   label: string;
@@ -52,7 +52,7 @@ export type DashboardOverviewData = {
   analysisReports: DashboardCollection<AIReportListItem>;
   enhancementReports: DashboardCollection<AIReportListItem>;
   interviews: DashboardCollection<InterviewListItem>;
-  campaigns: DashboardCollection<Campaign>;
+  campaigns: DashboardCollection<SendHistoryItem>;
   recentActivity: DashboardActivityItem[];
   latestAnalysisReport: AIReportFull | null;
   metrics: DashboardMetrics;
@@ -147,9 +147,9 @@ function createActivityFeed(data: DashboardOverviewData): DashboardActivityItem[
     kind: "campaign" as const,
     title: campaign.company_name ? `${campaign.job_title} at ${campaign.company_name}` : campaign.job_title,
     description:
-      campaign.status === "completed"
-        ? `Campaign completed with ${campaign.sent_count} sent and ${campaign.failed_count} failed.`
-        : `Campaign is ${campaign.status}.`,
+      campaign.status === "sent"
+        ? `Email sent to ${campaign.recipient_email}.`
+        : `Failed to send to ${campaign.recipient_email}.`,
     createdAt: campaign.created_at,
     href: "/dashboard/smart-send",
     status: campaign.status,
@@ -205,7 +205,7 @@ function buildDashboardMetrics(overview: Omit<DashboardOverviewData, "metrics" |
   const atsScore = extractAtsScore(latestCompletedAnalysisText);
 
   const hasImprovementReport = (overview.enhancementReports.data ?? []).some((report) => report.status === "completed");
-  const applicationsSent = campaigns.reduce((total, campaign) => total + campaign.sent_count, 0);
+  const applicationsSent = campaigns.filter((c) => c.status === "sent").length;
 
   const completedJourneySteps = [
     parsedResumes.length > 0,
@@ -231,7 +231,7 @@ function buildNextStep(overview: Omit<DashboardOverviewData, "metrics" | "nextSt
   const hasAnalysis = (overview.analysisReports.data ?? []).some((report) => report.status === "completed");
   const hasEnhancement = (overview.enhancementReports.data ?? []).some((report) => report.status === "completed");
   const hasSavedJobs = (overview.savedJobs.data?.length ?? 0) > 0;
-  const sentApplications = (overview.campaigns.data ?? []).reduce((total, campaign) => total + campaign.sent_count, 0);
+  const sentApplications = (overview.campaigns.data ?? []).filter((c) => c.status === "sent").length;
   const hasInterview = (overview.interviews.data ?? []).some((item) => item.status === "completed");
 
   if (parsedResumes.length === 0) {
@@ -303,7 +303,7 @@ export async function loadDashboardOverview(): Promise<DashboardOverviewData> {
     loadCollection("Analysis reports", () => listAIReports("analysis")),
     loadCollection("Enhancement reports", () => listAIReports("enhancement")),
     loadCollection("Interviews", listInterviews),
-    loadCollection("Campaigns", listCampaigns),
+    loadCollection("Campaigns", getHistory),
   ]);
 
   const latestAnalysisReport = await loadLatestCompletedAnalysisReport(analysisReports.data);

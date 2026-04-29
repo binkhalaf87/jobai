@@ -33,5 +33,7 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     interview_sessions = relationship("InterviewSession", back_populates="user", cascade="all, delete-orphan")
     saved_jobs = relationship("SavedJob", back_populates="user", cascade="all, delete-orphan")
     smtp_connection = relationship("SmtpConnection", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    gmail_connection = relationship("GmailConnection", back_populates="user", uselist=False, cascade="all, delete-orphan")
     send_campaigns = relationship("SendCampaign", back_populates="user", cascade="all, delete-orphan")
+    send_history = relationship("SendHistory", back_populates="user", cascade="all, delete-orphan")
     recipient_lists = relationship("RecipientList", back_populates="user", cascade="all, delete-orphan")
