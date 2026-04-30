@@ -1046,6 +1046,9 @@
       "locationMatchLabel": "Match",
       "locationMismatchLabel": "Mismatch",
       "years": "~{years} years",
+      "exportPdf": "Export PDF",
+      "exportPptx": "Export PowerPoint",
+      "exporting": "Exporting…",
       "pending": {
         "title": "Generating Report…",
         "comparing": "Comparing {candidate} with {job}",

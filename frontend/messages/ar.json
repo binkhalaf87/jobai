@@ -1046,6 +1046,9 @@
       "locationMatchLabel": "متطابق",
       "locationMismatchLabel": "غير متطابق",
       "years": "~{years} سنة",
+      "exportPdf": "تصدير PDF",
+      "exportPptx": "تصدير PowerPoint",
+      "exporting": "جارٍ التصدير…",
       "pending": {
         "title": "جارٍ إنشاء التقرير…",
         "comparing": "مقارنة {candidate} مع {job}",
