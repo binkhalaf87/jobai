@@ -16,7 +16,7 @@ const NAV_ITEMS = [
   { label: "Dashboard",    href: "/recruiter",              icon: "home" },
   { label: "Candidates",   href: "/recruiter/candidates",   icon: "users" },
   { label: "Jobs",         href: "/recruiter/jobs",         icon: "briefcase" },
-  { label: "Talent Fit",   href: "/recruiter/ai-screening", icon: "layers" },
+  { label: "AI Analysis",  href: "/recruiter/ai-screening", icon: "layers" },
   { label: "Reports",      href: "/recruiter/reports",      icon: "file-text" },
   { label: "AI Interview", href: "/recruiter/ai-interview", icon: "mic" },
   { label: "Billing",      href: "/recruiter/billing",      icon: "credit-card" },

@@ -275,6 +275,7 @@ export default function RecruiterCandidatesPage() {
   const processQueue = useCallback(async (queue: FileUploadItem[]) => {
     if (uploadingRef.current) return;
     uploadingRef.current = true;
+    let anyUploaded = false;
     for (const item of queue) {
       if (item.status !== "pending") continue;
       updateItem(item.uid, { status: "uploading", progress: 0 });
@@ -285,13 +286,20 @@ export default function RecruiterCandidatesPage() {
           auth: true, onProgress: (p) => updateItem(item.uid, { progress: p }),
         });
         updateItem(item.uid, { status: "done", progress: 100 });
+        anyUploaded = true;
       } catch (err) {
         updateItem(item.uid, { status: "error", error: err instanceof Error ? err.message : "Upload failed." });
       }
     }
     uploadingRef.current = false;
     setLoading(true);
-    void loadCandidates();
+    await loadCandidates();
+    // Auto-trigger analysis for all unanalyzed candidates after upload
+    if (anyUploaded) {
+      try {
+        await api.post("/recruiter/candidates/screen-all", undefined, { auth: true });
+      } catch { /* best-effort */ }
+    }
   }, []);
 
   function handleFilesAdded(files: File[]) {

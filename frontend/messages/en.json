@@ -769,7 +769,7 @@
         "dashboard": "Dashboard",
         "candidates": "Candidates",
         "jobs": "Job Listings",
-        "aiScreening": "AI Screening",
+        "aiScreening": "AI Analysis",
         "aiInterview": "AI Interview",
         "billing": "Billing"
       }
@@ -865,8 +865,8 @@
     "candidatesPage": {
       "count_one": "{count} candidate",
       "count_other": "{count} candidates",
-      "screeningAll": "Screening…",
-      "screenAll": "✦ Screen All",
+      "screeningAll": "Analyzing…",
+      "screenAll": "✦ Analyze All",
       "uploadZone": {
         "dropResumes": "Drop resumes or",
         "browse": "browse",
@@ -883,17 +883,17 @@
         "deleteConfirm_other": "Delete {count} candidates?",
         "confirmDelete": "Confirm Delete",
         "deleting": "Deleting… {progress}%",
-        "screenBtn": "✦ Screen",
-        "screening": "Screening… {progress}%",
+        "screenBtn": "✦ Analyze",
+        "screening": "Analyzing… {progress}%",
         "delete": "Delete",
         "clear": "Clear",
         "cancel": "Cancel",
         "deleted_one": "{count} candidate deleted.",
         "deleted_other": "{count} candidates deleted.",
-        "screened_one": "✦ Screening {count} candidate in background…",
-        "screened_other": "✦ Screening {count} candidates in background…",
-        "allScreened": "All candidates already screened.",
-        "screenFailed": "Screening failed. Please try again.",
+        "screened_one": "✦ Analyzing {count} candidate in background…",
+        "screened_other": "✦ Analyzing {count} candidates in background…",
+        "allScreened": "All candidates already analyzed.",
+        "screenFailed": "Analysis failed. Please try again.",
         "deleteFailed": "Delete failed. Please try again."
       },
       "table": {
@@ -939,7 +939,12 @@
         "titlePlaceholder": "e.g. Senior Software Engineer",
         "companyPlaceholder": "Optional",
         "locationPlaceholder": "e.g. Riyadh, Saudi Arabia",
-        "jdPlaceholder": "Enter job requirements, required skills, and responsibilities…",
+        "jdPlaceholder": "Enter job responsibilities and detailed requirements…",
+        "requiredSkills": "Required Skills",
+        "requiredSkillsPlaceholder": "Python, SQL, React, …",
+        "requiredSkillsHint": "Comma-separated — used to improve AI matching accuracy",
+        "yearsExperience": "Min. Years of Experience",
+        "yearsExperiencePlaceholder": "e.g. 3",
         "selectType": "— Select —",
         "validationError": "Job title and description are required.",
         "saving": "Saving…",
@@ -956,8 +961,9 @@
         "temporary": "Temporary"
       },
       "card": {
-        "candidatesScreened_one": "{count} candidate screened",
-        "candidatesScreened_other": "{count} candidates screened",
+        "candidatesScreened_one": "{count} candidate analyzed",
+        "candidatesScreened_other": "{count} candidates analyzed",
+        "years": "yrs exp",
         "edit": "Edit",
         "delete": "Delete",
         "deleteConfirm": "Delete this job?",
@@ -967,7 +973,7 @@
       "error": "Failed to load jobs.",
       "empty": {
         "title": "No jobs yet",
-        "desc": "Add your first job to start screening candidates against it."
+        "desc": "Add your first job to start analyzing candidates against it."
       }
     },
     "aiScreeningPage": {
@@ -1144,7 +1150,9 @@
         "viewResponses": "View Responses",
         "sending": "Sending…",
         "resendInvite": "Resend Invite",
-        "sendToCandidate": "Send to Candidate"
+        "sendToCandidate": "Send via Email",
+        "sendWhatsApp": "Send via WhatsApp",
+        "generatingLink": "Generating…"
       },
       "smtpError": {
         "title": "Gmail connection not set up",
@@ -1233,14 +1241,15 @@
         "days_other": "{days} days ago"
       },
       "tabs": {
-        "screening": "✦ Screening",
+        "screening": "✦ Analysis",
+        "interview": "AI Interview",
         "jobMatches": "Job Matches",
         "jobMatchesWithCount": "Job Matches ({count})",
         "resume": "Resume",
         "notes": "Notes"
       },
       "screening": {
-        "eyebrow": "Screening Decision",
+        "eyebrow": "Analysis Decision",
         "finalScore": "Final Score",
         "outOf10": "out of 10",
         "executiveSummary": "Executive Summary",
@@ -1259,10 +1268,10 @@
         "quickFlags": "Quick Flags",
         "generateReport": "Generate Report",
         "starting": "Starting…",
-        "timedOut": "Screening report is taking longer than expected.",
-        "pending": "Generating Screening Report…",
+        "timedOut": "Analysis report is taking longer than expected.",
+        "pending": "Generating Analysis Report…",
         "pendingDesc": "Runs automatically after upload — usually 10–20 seconds.",
-        "failed": "Screening report failed.",
+        "failed": "Analysis report failed.",
         "retry": "Retry",
         "retrying": "Retrying…",
         "regenerate": "↺ Regenerate Report",

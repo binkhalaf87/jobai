@@ -24,6 +24,8 @@ type JobListItem = {
   created_at: string;
   candidate_count: number;
   description: string | null;
+  required_skills: string[] | null;
+  years_experience_min: number | null;
 };
 
 type JobForm = {
@@ -32,12 +34,15 @@ type JobForm = {
   description: string;
   location: string;
   employment_type: EmploymentType | "";
+  required_skills: string;
+  years_experience_min: string;
 };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const EMPTY_FORM: JobForm = {
   title: "", company_name: "", description: "", location: "", employment_type: "",
+  required_skills: "", years_experience_min: "",
 };
 
 const EMPLOYMENT_TYPE_VALUES: EmploymentType[] = ["full_time", "part_time", "contract", "internship", "temporary"];
@@ -63,6 +68,8 @@ function jobToForm(job: JobListItem): JobForm {
     description: job.description ?? "",
     location: job.location ?? "",
     employment_type: job.employment_type ?? "",
+    required_skills: (job.required_skills ?? []).join(", "),
+    years_experience_min: job.years_experience_min != null ? String(job.years_experience_min) : "",
   };
 }
 
@@ -144,6 +151,21 @@ function JobFormPanel({
           className={`resize-y ${inputCls}`} />
       </div>
 
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-slate-700">{t("form.requiredSkills")}</label>
+          <input value={form.required_skills} onChange={(e) => set("required_skills", e.target.value)}
+            placeholder={t("form.requiredSkillsPlaceholder")} className={inputCls} />
+          <p className="text-[11px] text-slate-400">{t("form.requiredSkillsHint")}</p>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-slate-700">{t("form.yearsExperience")}</label>
+          <input type="number" min="0" max="30" value={form.years_experience_min}
+            onChange={(e) => set("years_experience_min", e.target.value)}
+            placeholder={t("form.yearsExperiencePlaceholder")} className={inputCls} />
+        </div>
+      </div>
+
       {error && (
         <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
       )}
@@ -179,12 +201,16 @@ function JobCard({
   const [deleting, setDeleting] = useState(false);
 
   async function handleSave(form: JobForm) {
+    const skills = form.required_skills.split(",").map((s) => s.trim()).filter(Boolean);
+    const yearsMin = parseInt(form.years_experience_min, 10);
     const updated = await api.patch<JobListItem>(`/recruiter/jobs/${job.id}`, {
       title: form.title.trim(),
       description: form.description.trim(),
       company_name: form.company_name.trim() || null,
       location: form.location.trim() || null,
       employment_type: form.employment_type || null,
+      required_skills: skills.length ? skills : null,
+      years_experience_min: !isNaN(yearsMin) ? yearsMin : null,
     }, { auth: true });
     onUpdate(updated);
     setMode("view");
@@ -283,6 +309,22 @@ function JobCard({
             </div>
           </div>
 
+          {/* Required skills tags */}
+          {job.required_skills && job.required_skills.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {job.required_skills.map((skill) => (
+                <span key={skill} className="rounded-full border border-violet-200 bg-violet-50 px-2.5 py-0.5 text-[11px] font-semibold text-violet-700">
+                  {skill}
+                </span>
+              ))}
+              {job.years_experience_min != null && (
+                <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-[11px] font-semibold text-sky-700">
+                  {job.years_experience_min}+ {t("card.years")}
+                </span>
+              )}
+            </div>
+          )}
+
           {/* Description preview */}
           {descPreview && (
             <p className="mt-3 text-xs leading-5 text-slate-500 line-clamp-3">{descPreview}</p>
@@ -312,12 +354,16 @@ export default function RecruiterJobsPage() {
   }, [t]);
 
   async function handleAdd(form: JobForm) {
+    const skills = form.required_skills.split(",").map((s) => s.trim()).filter(Boolean);
+    const yearsMin = parseInt(form.years_experience_min, 10);
     const created = await api.post<JobListItem>("/recruiter/jobs/", {
       title: form.title.trim(),
       description: form.description.trim(),
       company_name: form.company_name.trim() || undefined,
       location: form.location.trim() || undefined,
       employment_type: form.employment_type || undefined,
+      required_skills: skills.length ? skills : undefined,
+      years_experience_min: !isNaN(yearsMin) ? yearsMin : undefined,
     }, { auth: true });
     setJobs((prev) => [created, ...prev]);
     setShowAdd(false);

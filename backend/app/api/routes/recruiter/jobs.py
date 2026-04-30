@@ -27,6 +27,8 @@ class RecruiterJobCreate(BaseModel):
     description: str
     location: str | None = None
     employment_type: EmploymentType | None = None
+    required_skills: list[str] | None = None
+    years_experience_min: int | None = None
 
 
 class RecruiterJobUpdate(BaseModel):
@@ -35,6 +37,8 @@ class RecruiterJobUpdate(BaseModel):
     company_name: str | None = None
     location: str | None = None
     employment_type: EmploymentType | None = None
+    required_skills: list[str] | None = None
+    years_experience_min: int | None = None
 
 
 class RecruiterJobListItem(BaseModel):
@@ -46,6 +50,8 @@ class RecruiterJobListItem(BaseModel):
     created_at: datetime
     candidate_count: int
     description: str | None
+    required_skills: list[str] | None = None
+    years_experience_min: int | None = None
 
     model_config = {"from_attributes": True}
 
@@ -123,13 +129,27 @@ def create_job(
     current_user: User = Depends(get_current_recruiter),
 ) -> RecruiterJobListItem:
     """Create a new job posting owned by the current recruiter."""
+    # Build enriched description for AI matching
+    enriched = payload.description
+    if payload.required_skills:
+        enriched += f"\n\nRequired Skills: {', '.join(payload.required_skills)}"
+    if payload.years_experience_min is not None:
+        enriched += f"\nMinimum Years of Experience: {payload.years_experience_min}"
+
+    kw_data: dict = {}
+    if payload.required_skills:
+        kw_data["required_skills"] = payload.required_skills
+    if payload.years_experience_min is not None:
+        kw_data["years_experience_min"] = payload.years_experience_min
+
     job = JobDescription(
         user_id=current_user.id,
         title=payload.title,
         company_name=payload.company_name,
-        source_text=payload.description,
+        source_text=enriched,
         location_text=payload.location,
         employment_type=payload.employment_type,
+        keyword_data=kw_data or None,
     )
     db.add(job)
     db.commit()
@@ -143,7 +163,9 @@ def create_job(
         employment_type=job.employment_type,
         created_at=job.created_at,
         candidate_count=0,
-        description=job.source_text,
+        description=payload.description,
+        required_skills=payload.required_skills,
+        years_experience_min=payload.years_experience_min,
     )
 
 
@@ -167,8 +189,14 @@ def list_jobs(
         .order_by(JobDescription.created_at.desc())
     ).all()
 
-    return [
-        RecruiterJobListItem(
+    result = []
+    for job, count in rows:
+        kd = job.keyword_data or {}
+        # Strip appended skills/experience lines from displayed description
+        desc = job.source_text or ""
+        if "\n\nRequired Skills:" in desc:
+            desc = desc.split("\n\nRequired Skills:")[0]
+        result.append(RecruiterJobListItem(
             id=job.id,
             title=job.title,
             company_name=job.company_name,
@@ -176,10 +204,11 @@ def list_jobs(
             employment_type=job.employment_type,
             created_at=job.created_at,
             candidate_count=int(count),
-            description=job.source_text,
-        )
-        for job, count in rows
-    ]
+            description=desc,
+            required_skills=kd.get("required_skills"),
+            years_experience_min=kd.get("years_experience_min"),
+        ))
+    return result
 
 
 @router.get("/{job_id}", response_model=RecruiterJobDetail)
@@ -244,10 +273,25 @@ def update_job(
     """Update an existing job posting."""
     job = _get_owned_job(db, job_id, current_user.id)
     job.title = payload.title.strip()
-    job.source_text = payload.description.strip()
     job.company_name = payload.company_name.strip() if payload.company_name else None
     job.location_text = payload.location.strip() if payload.location else None
     job.employment_type = payload.employment_type
+
+    # Rebuild enriched source_text for AI matching
+    enriched = payload.description.strip()
+    if payload.required_skills:
+        enriched += f"\n\nRequired Skills: {', '.join(payload.required_skills)}"
+    if payload.years_experience_min is not None:
+        enriched += f"\nMinimum Years of Experience: {payload.years_experience_min}"
+    job.source_text = enriched
+
+    kw_data: dict = dict(job.keyword_data or {})
+    if payload.required_skills is not None:
+        kw_data["required_skills"] = payload.required_skills
+    if payload.years_experience_min is not None:
+        kw_data["years_experience_min"] = payload.years_experience_min
+    job.keyword_data = kw_data or None
+
     db.commit()
     db.refresh(job)
 
@@ -256,6 +300,7 @@ def update_job(
         .where(Analysis.job_description_id == job_id, Analysis.status == AnalysisStatus.COMPLETED)
     ) or 0
 
+    kd = job.keyword_data or {}
     return RecruiterJobListItem(
         id=job.id,
         title=job.title,
@@ -264,7 +309,9 @@ def update_job(
         employment_type=job.employment_type,
         created_at=job.created_at,
         candidate_count=int(count),
-        description=job.source_text,
+        description=payload.description.strip(),
+        required_skills=kd.get("required_skills"),
+        years_experience_min=kd.get("years_experience_min"),
     )
 
 

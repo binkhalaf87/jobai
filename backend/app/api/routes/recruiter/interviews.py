@@ -292,6 +292,52 @@ def delete_interview(
     db.commit()
 
 
+@router.post("/{interview_id}/link", status_code=status.HTTP_200_OK)
+def generate_interview_link(
+    interview_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_recruiter),
+) -> dict:
+    """Generate (or reuse) an invite token and return the interview link — no email sent."""
+    interview = _get_owned_interview(db, interview_id, current_user.id)
+
+    if interview.status != "ready":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Interview questions must be ready before generating a link.",
+        )
+
+    token = interview.invite_token or secrets.token_urlsafe(32)
+    now = datetime.now(timezone.utc)
+    expires = now + timedelta(days=7)
+
+    settings = get_settings()
+    origins = settings.allowed_origins()
+    frontend_url = origins[0].rstrip("/") if origins else "https://jobai-alpha.vercel.app"
+    interview_link = f"{frontend_url}/interview/{token}"
+
+    if not interview.invite_token:
+        interview.invite_token = token
+        interview.invite_expires_at = expires
+        if interview.response_status == "pending":
+            interview.response_status = "sent"
+        db.commit()
+
+    resume = db.get(Resume, interview.resume_id)
+    job = db.get(JobDescription, interview.job_id)
+    candidate_name = _candidate_name(resume) if resume else "Candidate"
+    job_title = job.title if job else "the position"
+    language = interview.language or "en"
+
+    return {
+        "link": interview_link,
+        "candidate_name": candidate_name,
+        "job_title": job_title,
+        "language": language,
+        "expires_at": expires.isoformat(),
+    }
+
+
 @router.post("/{interview_id}/send-invite", status_code=status.HTTP_200_OK)
 def send_invite(
     interview_id: str,

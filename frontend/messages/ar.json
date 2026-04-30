@@ -769,7 +769,7 @@
         "dashboard": "لوحة التحكم",
         "candidates": "المرشحون",
         "jobs": "الوظائف المنشورة",
-        "aiScreening": "الفرز الذكي",
+        "aiScreening": "التحليل الذكي",
         "aiInterview": "المقابلة الذكية",
         "billing": "الاشتراك والفوترة"
       }
@@ -865,8 +865,8 @@
     "candidatesPage": {
       "count_one": "مرشح واحد",
       "count_other": "{count} مرشح",
-      "screeningAll": "جارٍ الفرز…",
-      "screenAll": "✦ فرز الجميع",
+      "screeningAll": "جارٍ التحليل…",
+      "screenAll": "✦ تحليل الجميع",
       "uploadZone": {
         "dropResumes": "اسحب السير الذاتية أو",
         "browse": "تصفح",
@@ -883,17 +883,17 @@
         "deleteConfirm_other": "هل تريد حذف {count} مرشحين؟",
         "confirmDelete": "تأكيد الحذف",
         "deleting": "جارٍ الحذف… {progress}%",
-        "screenBtn": "✦ فرز",
-        "screening": "جارٍ الفرز… {progress}%",
+        "screenBtn": "✦ تحليل",
+        "screening": "جارٍ التحليل… {progress}%",
         "delete": "حذف",
         "clear": "مسح",
         "cancel": "إلغاء",
         "deleted_one": "تم حذف {count} مرشح.",
         "deleted_other": "تم حذف {count} مرشحين.",
-        "screened_one": "✦ جارٍ فرز {count} مرشح في الخلفية…",
-        "screened_other": "✦ جارٍ فرز {count} مرشحين في الخلفية…",
-        "allScreened": "جميع المرشحين تم فرزهم بالفعل.",
-        "screenFailed": "فشل الفرز. يرجى المحاولة مجدداً.",
+        "screened_one": "✦ جارٍ تحليل {count} مرشح في الخلفية…",
+        "screened_other": "✦ جارٍ تحليل {count} مرشحين في الخلفية…",
+        "allScreened": "جميع المرشحين تم تحليلهم بالفعل.",
+        "screenFailed": "فشل التحليل. يرجى المحاولة مجدداً.",
         "deleteFailed": "فشل الحذف. يرجى المحاولة مجدداً."
       },
       "table": {
@@ -939,7 +939,12 @@
         "titlePlaceholder": "مثال: مهندس برمجيات أول",
         "companyPlaceholder": "اختياري",
         "locationPlaceholder": "مثال: الرياض، المملكة العربية السعودية",
-        "jdPlaceholder": "أدخل متطلبات الوظيفة والمهارات المطلوبة والمسؤوليات…",
+        "jdPlaceholder": "أدخل المسؤوليات والمتطلبات التفصيلية للوظيفة…",
+        "requiredSkills": "المهارات المطلوبة",
+        "requiredSkillsPlaceholder": "Python، SQL، React، …",
+        "requiredSkillsHint": "مفصولة بفاصلة — تُستخدم لتحسين دقة تحليل المرشحين",
+        "yearsExperience": "الحد الأدنى لسنوات الخبرة",
+        "yearsExperiencePlaceholder": "مثال: 3",
         "selectType": "— اختر —",
         "validationError": "المسمى الوظيفي والوصف مطلوبان.",
         "saving": "جارٍ الحفظ…",
@@ -956,8 +961,9 @@
         "temporary": "مؤقت"
       },
       "card": {
-        "candidatesScreened_one": "مرشح واحد تم فرزه",
-        "candidatesScreened_other": "{count} مرشح تم فرزهم",
+        "candidatesScreened_one": "مرشح واحد تم تحليله",
+        "candidatesScreened_other": "{count} مرشح تم تحليلهم",
+        "years": "سنة خبرة",
         "edit": "تعديل",
         "delete": "حذف",
         "deleteConfirm": "هل تريد حذف هذه الوظيفة؟",
@@ -967,7 +973,7 @@
       "error": "تعذّر تحميل الوظائف.",
       "empty": {
         "title": "لا توجد وظائف بعد",
-        "desc": "أضف وظيفتك الأولى لبدء فرز المرشحين ضدها."
+        "desc": "أضف وظيفتك الأولى لبدء تحليل المرشحين ضدها."
       }
     },
     "aiScreeningPage": {
@@ -1144,7 +1150,9 @@
         "viewResponses": "عرض الإجابات",
         "sending": "جارٍ الإرسال…",
         "resendInvite": "إعادة إرسال الدعوة",
-        "sendToCandidate": "إرسال للمرشح"
+        "sendToCandidate": "إرسال عبر البريد",
+        "sendWhatsApp": "إرسال عبر واتساب",
+        "generatingLink": "جارٍ التوليد…"
       },
       "smtpError": {
         "title": "اتصال Gmail غير مُعدّ",
@@ -1233,14 +1241,15 @@
         "days_other": "منذ {days} أيام"
       },
       "tabs": {
-        "screening": "✦ الفرز",
+        "screening": "✦ التحليل",
+        "interview": "المقابلة الذكية",
         "jobMatches": "تطابقات الوظائف",
         "jobMatchesWithCount": "تطابقات الوظائف ({count})",
         "resume": "السيرة الذاتية",
         "notes": "الملاحظات"
       },
       "screening": {
-        "eyebrow": "قرار الفرز",
+        "eyebrow": "قرار التحليل",
         "finalScore": "الدرجة النهائية",
         "outOf10": "من 10",
         "executiveSummary": "الملخص التنفيذي",
@@ -1259,10 +1268,10 @@
         "quickFlags": "تنبيهات سريعة",
         "generateReport": "توليد التقرير",
         "starting": "جارٍ البدء…",
-        "timedOut": "استغرق تقرير الفرز وقتًا أطول من المتوقع.",
-        "pending": "جارٍ إنشاء تقرير الفرز…",
+        "timedOut": "استغرق تقرير التحليل وقتًا أطول من المتوقع.",
+        "pending": "جارٍ إنشاء تقرير التحليل…",
         "pendingDesc": "يعمل تلقائيًا بعد الرفع — يستغرق عادةً 10–20 ثانية.",
-        "failed": "فشل تقرير الفرز.",
+        "failed": "فشل تقرير التحليل.",
         "retry": "إعادة المحاولة",
         "retrying": "جارٍ المحاولة…",
         "regenerate": "↺ إعادة توليد التقرير",
