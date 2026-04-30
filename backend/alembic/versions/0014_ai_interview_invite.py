@@ -1,4 +1,4 @@
-"""Add invite token and interview responses to recruiter interviews."""
+"""Create recruiter_interviews table and add invite/response columns."""
 
 from __future__ import annotations
 
@@ -13,39 +13,110 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # Add invite / response tracking columns to recruiter_interviews
-    op.add_column("recruiter_interviews", sa.Column("invite_token", sa.String(64), nullable=True, unique=True))
-    op.add_column("recruiter_interviews", sa.Column("invite_sent_at", sa.DateTime(timezone=True), nullable=True))
-    op.add_column("recruiter_interviews", sa.Column("invite_expires_at", sa.DateTime(timezone=True), nullable=True))
-    op.add_column(
-        "recruiter_interviews",
-        sa.Column("response_status", sa.String(20), nullable=False, server_default="pending"),
+    # Create the base recruiter_interviews table if it does not already exist.
+    # This guards against deployments where the table was never created by a prior migration.
+    op.execute(
+        """
+        CREATE TABLE IF NOT EXISTS recruiter_interviews (
+            id          UUID         NOT NULL,
+            recruiter_id UUID        NOT NULL,
+            resume_id    UUID        NOT NULL,
+            job_id       UUID        NOT NULL,
+            interview_type VARCHAR(20) NOT NULL DEFAULT 'mixed',
+            language     VARCHAR(10) NOT NULL DEFAULT 'en',
+            generated_questions JSONB,
+            status       VARCHAR(20) NOT NULL DEFAULT 'ready',
+            created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            CONSTRAINT pk_recruiter_interviews PRIMARY KEY (id),
+            CONSTRAINT fk_recruiter_interviews_recruiter_id_users
+                FOREIGN KEY (recruiter_id) REFERENCES users(id) ON DELETE CASCADE,
+            CONSTRAINT fk_recruiter_interviews_resume_id_resumes
+                FOREIGN KEY (resume_id) REFERENCES resumes(id) ON DELETE CASCADE,
+            CONSTRAINT fk_recruiter_interviews_job_id_job_descriptions
+                FOREIGN KEY (job_id) REFERENCES job_descriptions(id) ON DELETE CASCADE
+        )
+        """
     )
-    op.create_index("ix_recruiter_interviews_invite_token", "recruiter_interviews", ["invite_token"], unique=True)
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_recruiter_interviews_recruiter_id "
+        "ON recruiter_interviews (recruiter_id)"
+    )
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_recruiter_interviews_resume_id "
+        "ON recruiter_interviews (resume_id)"
+    )
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_recruiter_interviews_job_id "
+        "ON recruiter_interviews (job_id)"
+    )
 
-    # New table for candidate video/text responses
-    op.create_table(
-        "interview_responses",
-        sa.Column("id", postgresql.UUID(as_uuid=False), primary_key=True),
-        sa.Column(
-            "interview_id",
-            postgresql.UUID(as_uuid=False),
-            sa.ForeignKey("recruiter_interviews.id", ondelete="CASCADE"),
-            nullable=False,
-            index=True,
-        ),
-        sa.Column("question_index", sa.Integer(), nullable=False),
-        sa.Column("question_text", sa.Text(), nullable=False),
-        sa.Column("video_data", sa.Text(), nullable=True),   # base64-encoded WebM
-        sa.Column("text_answer", sa.Text(), nullable=True),
-        sa.Column("submitted_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+    # Add invite / response-tracking columns (idempotent via ADD COLUMN IF NOT EXISTS)
+    op.execute(
+        "ALTER TABLE recruiter_interviews "
+        "ADD COLUMN IF NOT EXISTS invite_token VARCHAR(64)"
+    )
+    op.execute(
+        "ALTER TABLE recruiter_interviews "
+        "ADD COLUMN IF NOT EXISTS invite_sent_at TIMESTAMPTZ"
+    )
+    op.execute(
+        "ALTER TABLE recruiter_interviews "
+        "ADD COLUMN IF NOT EXISTS invite_expires_at TIMESTAMPTZ"
+    )
+    op.execute(
+        "ALTER TABLE recruiter_interviews "
+        "ADD COLUMN IF NOT EXISTS response_status VARCHAR(20) NOT NULL DEFAULT 'pending'"
+    )
+    op.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS ix_recruiter_interviews_invite_token "
+        "ON recruiter_interviews (invite_token)"
+    )
+
+    # interview_responses table
+    op.execute(
+        """
+        CREATE TABLE IF NOT EXISTS interview_responses (
+            id              UUID         NOT NULL,
+            interview_id    UUID         NOT NULL,
+            question_index  INTEGER      NOT NULL,
+            question_text   TEXT         NOT NULL,
+            video_data      TEXT,
+            text_answer     TEXT,
+            submitted_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+            CONSTRAINT pk_interview_responses PRIMARY KEY (id),
+            CONSTRAINT fk_interview_responses_interview_id_recruiter_interviews
+                FOREIGN KEY (interview_id)
+                REFERENCES recruiter_interviews(id) ON DELETE CASCADE
+        )
+        """
+    )
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_interview_responses_interview_id "
+        "ON interview_responses (interview_id)"
     )
 
 
 def downgrade() -> None:
-    op.drop_table("interview_responses")
-    op.drop_index("ix_recruiter_interviews_invite_token", table_name="recruiter_interviews")
-    op.drop_column("recruiter_interviews", "response_status")
-    op.drop_column("recruiter_interviews", "invite_expires_at")
-    op.drop_column("recruiter_interviews", "invite_sent_at")
-    op.drop_column("recruiter_interviews", "invite_token")
+    op.execute("DROP TABLE IF EXISTS interview_responses")
+    op.execute("DROP INDEX IF EXISTS ix_recruiter_interviews_invite_token")
+    op.execute(
+        "ALTER TABLE IF EXISTS recruiter_interviews "
+        "DROP COLUMN IF EXISTS response_status"
+    )
+    op.execute(
+        "ALTER TABLE IF EXISTS recruiter_interviews "
+        "DROP COLUMN IF EXISTS invite_expires_at"
+    )
+    op.execute(
+        "ALTER TABLE IF EXISTS recruiter_interviews "
+        "DROP COLUMN IF EXISTS invite_sent_at"
+    )
+    op.execute(
+        "ALTER TABLE IF EXISTS recruiter_interviews "
+        "DROP COLUMN IF EXISTS invite_token"
+    )
+    op.execute("DROP INDEX IF EXISTS ix_recruiter_interviews_recruiter_id")
+    op.execute("DROP INDEX IF EXISTS ix_recruiter_interviews_resume_id")
+    op.execute("DROP INDEX IF EXISTS ix_recruiter_interviews_job_id")
+    op.execute("DROP TABLE IF EXISTS recruiter_interviews")

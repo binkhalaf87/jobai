@@ -6,6 +6,7 @@ from app.models.job_description import JobDescription
 from app.models.payment_order import PaymentOrder
 from app.models.payment_webhook_event import PaymentWebhookEvent
 from app.models.plan import Plan
+from app.models.recruiter_interview import RecruiterInterview
 from app.models.resume import Resume
 from app.models.rewrite_suggestion import RewriteSuggestion
 from app.models.subscription import Subscription
@@ -25,6 +26,7 @@ __all__ = [
     "PaymentOrder",
     "PaymentWebhookEvent",
     "Plan",
+    "RecruiterInterview",
     "Resume",
     "RewriteSuggestion",
     "Subscription",

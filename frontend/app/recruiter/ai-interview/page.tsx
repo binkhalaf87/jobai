@@ -155,12 +155,10 @@ export default function AIInterviewPage() {
           api.get<InterviewListItem[]>("/recruiter/interviews/", { auth: true }),
         ]);
         setJobs(jobsData);
-        // Filter to interview-stage candidates only
-        const interviewCandidates = allCandidates.filter((c) => c.stage === "interview");
-        setCandidates(interviewCandidates);
+        setCandidates(allCandidates);
         setHistory(historyData);
         if (jobsData.length > 0) setSelectedJobId(jobsData[0].id);
-        if (interviewCandidates.length > 0) setSelectedCandidateId(interviewCandidates[0].id);
+        if (allCandidates.length > 0) setSelectedCandidateId(allCandidates[0].id);
       } catch {
         setError(t("error.failedToLoad"));
       } finally {
@@ -296,7 +294,7 @@ export default function AIInterviewPage() {
     );
   }
 
-  const noInterviewCandidates = candidates.length === 0;
+  const noCandidates = candidates.length === 0;
   const noJobs = jobs.length === 0;
 
   return (
@@ -311,7 +309,7 @@ export default function AIInterviewPage() {
           {t("desc")}
         </p>
 
-        {noJobs || noInterviewCandidates ? (
+        {noJobs || noCandidates ? (
           <div className="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-6">
             <p className="text-base font-semibold text-slate-900">
               {noJobs ? t("noJobs.title") : t("noCandidates.title")}
