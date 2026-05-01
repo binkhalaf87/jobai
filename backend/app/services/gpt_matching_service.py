@@ -21,6 +21,7 @@ from pathlib import Path
 import fitz  # PyMuPDF — already a project dependency
 
 from app.core.openai_client import get_openai_client
+from app.core.sanitize import UNTRUSTED_DATA_NOTICE, sanitize_user_input
 
 GPT_MATCH_MODEL = "gpt-4o-mini"
 GPT_MATCH_MODEL_NAME = "gpt-match-v3"
@@ -122,7 +123,7 @@ GOAL:
 Act like a real hiring manager + recruiter + ATS system combined.
 
 Make the output directly usable for a hiring dashboard UI.\
-"""
+""" + UNTRUSTED_DATA_NOTICE
 
 # Legacy single-job prompt (kept for gpt_match_resume_to_job)
 _LEGACY_SYSTEM_PROMPT = """\
@@ -151,7 +152,7 @@ Score guidelines:
 - 60-79: Good fit - worth interviewing, minor gaps
 - 40-59: Partial fit - significant gaps but some potential
 - 0-39: Poor fit - major mismatches
-"""
+""" + UNTRUSTED_DATA_NOTICE
 
 
 # ── PDF helpers ───────────────────────────────────────────────────────────────
@@ -297,7 +298,7 @@ def gpt_screen_resume_against_jobs(
     if not used_vision:
         if not resume_text.strip():
             raise ValueError("No PDF file and no resume text available.")
-        content = [{"type": "text", "text": f"Resume:\n\n{resume_text.strip()}\n\n---\n\n{jobs_text}"}]
+        content = [{"type": "text", "text": f"Resume:\n\n{sanitize_user_input(resume_text.strip())}\n\n---\n\n{sanitize_user_input(jobs_text)}"}]
 
     response = client.chat.completions.create(
         model=GPT_MATCH_MODEL,
@@ -372,8 +373,8 @@ def gpt_match_resume_to_job(
         if not resume_text.strip():
             raise ValueError("No PDF file and no resume text available.")
         content = [{"type": "text", "text": (
-            f"Resume:\n\n{resume_text.strip()}"
-            f"\n\n---\n\nJob Description:\n\n{job_text.strip()}"
+            f"Resume:\n\n{sanitize_user_input(resume_text.strip())}"
+            f"\n\n---\n\nJob Description:\n\n{sanitize_user_input(job_text.strip())}"
         )}]
 
     response = client.chat.completions.create(

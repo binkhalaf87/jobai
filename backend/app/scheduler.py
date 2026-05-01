@@ -3,15 +3,16 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from app.db.session import SessionLocal
 from app.models.email_campaign import EmailCampaign
 from app.models.email_campaign_contact import EmailCampaignContact
 from app.models.gmail_connection import GmailConnection
+from app.models.refresh_token import RefreshToken
 
 logger = logging.getLogger(__name__)
 
@@ -111,8 +112,29 @@ async def _process_campaigns() -> None:
         db.close()
 
 
+async def _cleanup_refresh_tokens() -> None:
+    """Delete expired or revoked refresh tokens older than 37 days."""
+    cutoff = datetime.now(timezone.utc) - timedelta(days=37)
+    db = SessionLocal()
+    try:
+        result = db.execute(
+            delete(RefreshToken).where(
+                (RefreshToken.expires_at < datetime.now(timezone.utc)) | RefreshToken.revoked.is_(True),
+                RefreshToken.created_at < cutoff,
+            )
+        )
+        db.commit()
+        if result.rowcount:
+            logger.info("Cleaned up %d stale refresh tokens.", result.rowcount)
+    except Exception as exc:
+        logger.exception("Refresh token cleanup error: %s", exc)
+    finally:
+        db.close()
+
+
 def start_scheduler() -> None:
     _scheduler.add_job(_process_campaigns, "cron", minute="0")  # every hour on the hour
+    _scheduler.add_job(_cleanup_refresh_tokens, "cron", hour="3", minute="0")  # daily at 03:00 UTC
     _scheduler.start()
     logger.info("Campaign scheduler started.")
 

@@ -9,6 +9,7 @@ from openai import AsyncOpenAI
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.core.sanitize import UNTRUSTED_DATA_NOTICE, sanitize_user_input
 from app.models.resume import Resume
 
 logger = logging.getLogger(__name__)
@@ -26,7 +27,7 @@ Rules:
 
 Respond ONLY with valid JSON matching this exact schema:
 {"subject": "...", "body": "..."}
-"""
+""" + UNTRUSTED_DATA_NOTICE
 
 
 def get_openai_client() -> AsyncOpenAI:
@@ -56,13 +57,13 @@ async def generate_cover_letter(
     if resume_id:
         resume_text = _get_resume_text(db, user_id, resume_id)[:3000]
 
-    parts = [f"Job Title: {job_title}"]
+    parts = [f"Job Title: {sanitize_user_input(job_title)}"]
     if company_name:
-        parts.append(f"Company: {company_name}")
+        parts.append(f"Company: {sanitize_user_input(company_name)}")
     if job_description:
-        parts.append(f"\nJob Description:\n{job_description[:2000]}")
+        parts.append(f"\nJob Description:\n{sanitize_user_input(job_description, max_length=2000)}")
     if resume_text:
-        parts.append(f"\nApplicant Resume (for context):\n{resume_text}")
+        parts.append(f"\nApplicant Resume (for context):\n{sanitize_user_input(resume_text, max_length=3000)}")
 
     client = get_openai_client()
     response = await client.chat.completions.create(

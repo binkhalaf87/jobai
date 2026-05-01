@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.openai_client import get_openai_client
+from app.core.sanitize import UNTRUSTED_DATA_NOTICE, sanitize_user_input
 from app.models.ai_report import AIAnalysisReport
 from app.models.resume import Resume
 from app.services.gpt_matching_service import GPT_MATCH_MODEL
@@ -63,7 +64,7 @@ Rules:
 - Focus purely on hiring decision quality
 - Do NOT fabricate experience not present in the resume
 - Return ONLY valid JSON\
-"""
+""" + UNTRUSTED_DATA_NOTICE
 
 
 def run_screening_report_task(resume_id: str, user_id: str, force: bool = False) -> None:
@@ -146,7 +147,7 @@ def run_screening_report_task(resume_id: str, user_id: str, force: bool = False)
             model=GPT_MATCH_MODEL,
             messages=[
                 {"role": "system", "content": _SYSTEM_PROMPT},
-                {"role": "user", "content": f"Resume:\n\n{resume_text}"},
+                {"role": "user", "content": f"Resume:\n\n{sanitize_user_input(resume_text)}"},
             ],
             temperature=0.2,
             max_tokens=1500,

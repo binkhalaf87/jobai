@@ -7,6 +7,7 @@ import logging
 from dataclasses import asdict, dataclass
 
 from app.core.openai_client import get_openai_client
+from app.core.sanitize import UNTRUSTED_DATA_NOTICE, sanitize_user_input
 from app.services.rewrite_engine import get_rewrite_model_name
 
 logger = logging.getLogger(__name__)
@@ -33,7 +34,7 @@ Rules:
 - All arrays may be empty if no relevant items are found.
 - Deduplicate entries; preserve original casing.
 - Return JSON only — no markdown, no extra text.
-"""
+""" + UNTRUSTED_DATA_NOTICE
 
 
 @dataclass(frozen=True)
@@ -53,7 +54,7 @@ class JobDescriptionKeywordData:
 
 def extract_job_description_keywords(title: str, normalized_text: str) -> JobDescriptionKeywordData:
     """Extract structured keyword data from a job description via GPT."""
-    combined = f"Job Title: {title.strip()}\n\n{normalized_text.strip()}"
+    combined = f"Job Title: {sanitize_user_input(title.strip())}\n\n{sanitize_user_input(normalized_text.strip())}"
 
     try:
         client = get_openai_client()

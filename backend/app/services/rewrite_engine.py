@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.openai_client import get_openai_client
+from app.core.sanitize import UNTRUSTED_DATA_NOTICE, sanitize_user_input
 from app.models.analysis import Analysis
 from app.models.enums import SuggestionSection
 from app.models.rewrite_suggestion import RewriteSuggestion
@@ -15,6 +16,11 @@ REWRITE_SUGGESTION_COUNT = 3
 MAX_MISSING_KEYWORDS = 8
 DEFAULT_REWRITE_MODEL = "gpt-4o-mini"
 JSON_BLOCK_PATTERN = re.compile(r"```json\s*(\{.*?\})\s*```", re.DOTALL)
+
+_REWRITE_SYSTEM_PROMPT = (
+    "You are an expert resume writer. Your task is to rewrite resume bullets naturally and concisely."
+    + UNTRUSTED_DATA_NOTICE
+)
 
 
 @dataclass(frozen=True)
@@ -133,11 +139,17 @@ def generate_rewrite_suggestions(source_text: str, missing_keywords: list[str]) 
     if not normalized_keywords:
         raise ValueError("At least one missing keyword is required to generate rewrites.")
 
+    sanitized_source = sanitize_user_input(cleaned_source_text)
+    sanitized_keywords = [sanitize_user_input(kw) for kw in normalized_keywords]
+
     client = get_openai_client()
     try:
         response = client.chat.completions.create(
             model=get_rewrite_model_name(),
-            messages=[{"role": "user", "content": build_rewrite_prompt(cleaned_source_text, normalized_keywords)}],
+            messages=[
+                {"role": "system", "content": _REWRITE_SYSTEM_PROMPT},
+                {"role": "user", "content": build_rewrite_prompt(sanitized_source, sanitized_keywords)},
+            ],
         )
     except Exception as exc:
         raise RuntimeError("OpenAI request failed while generating rewrite suggestions.") from exc

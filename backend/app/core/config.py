@@ -153,6 +153,8 @@ class Settings:
     google_redirect_uri: str
     frontend_url: str
     backend_url: str
+    ai_per_user_daily_cap: int
+    ai_monthly_token_budget: int
 
     def allowed_origins(self) -> list[str]:
         """Build an explicit allowlist for frontend origins."""
@@ -210,6 +212,8 @@ def build_settings() -> Settings:
         google_redirect_uri=get_optional_env("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/v1/smart-send/gmail/callback"),
         frontend_url=get_optional_env("FRONTEND_URL", "http://localhost:3000"),
         backend_url=get_optional_env("BACKEND_URL", "http://localhost:8000"),
+        ai_per_user_daily_cap=int(get_optional_env("AI_PER_USER_DAILY_CAP", "50000")),
+        ai_monthly_token_budget=int(get_optional_env("AI_MONTHLY_TOKEN_BUDGET", "5000000")),
     )
 
 

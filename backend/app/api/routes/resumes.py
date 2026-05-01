@@ -5,8 +5,10 @@ from sqlalchemy.orm import Session
 from app.api.deps.auth import get_current_user
 from app.api.deps.db import get_db
 from app.core.rate_limit import limiter
+from app.models.enums import UsageEventType
 from app.models.user import User
 from app.schemas.resume import ResumeListItem, ResumeTextPreviewResponse, ResumeUploadResponse
+from app.services.audit_log import emit as audit_emit
 from app.services.resume_preview import build_text_preview, get_user_resume, list_user_resumes
 from app.services.resume_upload import process_resume_text_task, store_resume
 from app.services.storage import get_storage
@@ -130,3 +132,4 @@ def delete_resume(
     db.delete(resume)
     db.commit()
     get_storage().delete(storage_key or "")
+    audit_emit(db, user_id=current_user.id, event_type=UsageEventType.FILE_DELETED, detail=resume_id)

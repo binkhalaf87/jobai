@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.openai_client import get_openai_client
+from app.core.sanitize import UNTRUSTED_DATA_NOTICE, sanitize_user_input
 from app.models.interview import InterviewSession
 from app.models.resume import Resume
 from app.services.resume_preview import get_user_resume
@@ -235,10 +236,11 @@ def _build_question_gen_prompt(
         "- If a resume is present, the first question should preferably connect to a likely claim, project, or achievement from it.\n"
         "- first_question.type must be either 'hr' or 'technical'.\n"
         "- first_question.source must be 'opening'."
+        + UNTRUSTED_DATA_NOTICE
     )
 
     user = (
-        f"Generate a realistic interview kickoff for {job_title}.\n"
+        f"Generate a realistic interview kickoff for {sanitize_user_input(job_title)}.\n"
         f"{company_line}"
         f"{resume_line}"
         f"{jd_line}"
@@ -350,6 +352,7 @@ def _build_eval_prompt(
         "- next_question.type must be 'hr' or 'technical'.\n"
         "- next_question.source must be 'follow_up' or 'planned'.\n"
         "- Avoid repeating previous questions."
+        + UNTRUSTED_DATA_NOTICE
     )
 
     user = (
@@ -359,7 +362,7 @@ def _build_eval_prompt(
         f"Focus areas still important: {', '.join(focus_areas) if focus_areas else 'General role fit'}\n\n"
         f"Recent transcript:\n{transcript}\n\n"
         f"Current question:\n{question}\n\n"
-        f"Candidate answer:\n{answer}"
+        f"Candidate answer:\n{sanitize_user_input(answer)}"
     )
     return system, user
 

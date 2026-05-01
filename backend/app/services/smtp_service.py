@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import base64
+import logging
 import smtplib
 import ssl
+import warnings
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -16,12 +18,20 @@ from app.core.config import get_settings
 settings = get_settings()
 from app.models.smtp_connection import SmtpConnection
 
+logger = logging.getLogger(__name__)
+
 _GMAIL_HOST = "smtp.gmail.com"
 _GMAIL_PORT = 465  # SSL
 
 
 def _get_fernet() -> Fernet:
     """Derive a Fernet key from SMTP_ENCRYPTION_KEY (preferred) or JWT_SECRET."""
+    if not settings.smtp_encryption_key:
+        warnings.warn(
+            "SMTP_ENCRYPTION_KEY is not set; falling back to JWT_SECRET for SMTP password encryption. "
+            "Set a dedicated SMTP_ENCRYPTION_KEY in production.",
+            stacklevel=2,
+        )
     secret = settings.smtp_encryption_key or settings.jwt_secret
     raw = secret.encode()[:32].ljust(32, b"0")
     key = base64.urlsafe_b64encode(raw)
@@ -60,6 +70,9 @@ def verify_smtp_connection(db: Session, user_id: str) -> tuple[bool, str]:
 
         conn.is_verified = True
         db.commit()
+        from app.models.enums import UsageEventType
+        from app.services.audit_log import emit
+        emit(db, user_id=user_id, event_type=UsageEventType.SMTP_CONNECTED)
         return True, "Connection verified"
     except smtplib.SMTPAuthenticationError:
         return False, "Authentication failed — check your Gmail address and app password"
@@ -75,6 +88,9 @@ def delete_smtp_connection(db: Session, user_id: str) -> bool:
         return False
     db.delete(conn)
     db.commit()
+    from app.models.enums import UsageEventType
+    from app.services.audit_log import emit
+    emit(db, user_id=user_id, event_type=UsageEventType.SMTP_DELETED)
     return True
 
 

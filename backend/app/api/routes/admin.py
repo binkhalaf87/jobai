@@ -11,7 +11,8 @@ from sqlalchemy.orm import Session
 
 from app.api.deps.auth import get_current_admin
 from app.api.deps.db import get_db
-from app.models.enums import UserRole, WalletTransactionDirection, WalletTransactionStatus, WalletTransactionType
+from app.models.enums import UserRole, UsageEventType, WalletTransactionDirection, WalletTransactionStatus, WalletTransactionType
+from app.services.audit_log import emit as audit_emit
 from app.models.interview import InterviewSession
 from app.models.resume import Resume
 from app.models.send_history import SendHistory
@@ -114,12 +115,22 @@ def patch_user(
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+    changes: dict = {}
     if body.role is not None:
+        changes["role"] = {"from": user.role, "to": body.role}
         user.role = body.role
     if body.is_active is not None:
+        changes["is_active"] = {"from": user.is_active, "to": body.is_active}
         user.is_active = body.is_active
     db.commit()
     db.refresh(user)
+    audit_emit(
+        db,
+        user_id=admin.id,
+        event_type=UsageEventType.ADMIN_USER_UPDATED,
+        detail=f"target_user={user_id}",
+        event_payload={"changes": changes},
+    )
     balance = user.user_wallet.balance_points if user.user_wallet else None
     return AdminUserItem(
         id=user.id,
@@ -139,7 +150,7 @@ def patch_user(
 def adjust_wallet(
     user_id: str,
     body: AdminWalletAdjust,
-    _: User = Depends(get_current_admin),
+    admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> dict:
     user = db.get(User, user_id)
@@ -181,6 +192,13 @@ def adjust_wallet(
         wallet.lifetime_spent_points += abs(body.points)
 
     db.commit()
+    audit_emit(
+        db,
+        user_id=admin.id,
+        event_type=UsageEventType.ADMIN_WALLET_ADJUSTED,
+        detail=f"target_user={user_id} points={body.points}",
+        event_payload={"balance_before": balance_before, "balance_after": balance_after, "reason": body.reason},
+    )
     return {"balance_points": balance_after}
 
 

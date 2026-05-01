@@ -57,6 +57,14 @@ class UsageEventType(str, Enum):
     ANALYSIS_COMPLETED = "analysis_completed"
     REWRITE_GENERATED = "rewrite_generated"
     AUTH_LOGIN = "auth_login"
+    AUTH_REGISTER = "auth_register"
+    AUTH_LOGOUT = "auth_logout"
+    AUTH_TOKEN_REFRESH = "auth_token_refresh"
+    SMTP_CONNECTED = "smtp_connected"
+    SMTP_DELETED = "smtp_deleted"
+    FILE_DELETED = "file_deleted"
+    ADMIN_USER_UPDATED = "admin_user_updated"
+    ADMIN_WALLET_ADJUSTED = "admin_wallet_adjusted"
 
 
 class UserRole(str, Enum):

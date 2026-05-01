@@ -38,3 +38,4 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     send_history = relationship("SendHistory", back_populates="user", cascade="all, delete-orphan")
     email_campaigns = relationship("EmailCampaign", back_populates="user", cascade="all, delete-orphan")
     recipient_lists = relationship("RecipientList", back_populates="user", cascade="all, delete-orphan")
+    refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")

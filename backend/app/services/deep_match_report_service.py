@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.openai_client import get_openai_client
+from app.core.sanitize import UNTRUSTED_DATA_NOTICE, sanitize_user_input
 from app.models.ai_report import AIAnalysisReport
 from app.models.job_description import JobDescription
 from app.models.resume import Resume
@@ -79,7 +80,7 @@ Rules:
 - For location: if job says remote/hybrid, score generously on location
 - Do NOT fabricate data not present in the resume or job description
 - Return ONLY valid JSON\
-"""
+""" + UNTRUSTED_DATA_NOTICE
 
 
 def run_deep_match_report_task(report_id: str) -> None:
@@ -125,7 +126,7 @@ def run_deep_match_report_task(report_id: str) -> None:
                 {"role": "system", "content": _SYSTEM_PROMPT},
                 {
                     "role": "user",
-                    "content": f"Resume:\n\n{resume_text}\n\n---\n\n{job_context}",
+                    "content": f"Resume:\n\n{sanitize_user_input(resume_text)}\n\n---\n\n{sanitize_user_input(job_context)}",
                 },
             ],
             temperature=0.2,

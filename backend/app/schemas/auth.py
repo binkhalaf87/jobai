@@ -9,6 +9,10 @@ class LoginRequest(ORMBaseSchema):
 
 class AuthResponse(ORMBaseSchema):
     access_token: str
+    refresh_token: str
     token_type: str
     user: UserRead
 
+
+class RefreshRequest(ORMBaseSchema):
+    refresh_token: str
