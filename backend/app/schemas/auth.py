@@ -16,3 +16,8 @@ class AuthResponse(ORMBaseSchema):
 
 class RefreshRequest(ORMBaseSchema):
     refresh_token: str
+
+
+class LogoutRequest(ORMBaseSchema):
+    refresh_token: str
+    access_token: str | None = None

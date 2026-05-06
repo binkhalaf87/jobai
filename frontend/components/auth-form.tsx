@@ -6,7 +6,6 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { login, register } from "@/lib/auth";
-import { setUserRole } from "@/lib/api";
 
 type AuthFormProps = {
   mode: "login" | "register";
@@ -41,12 +40,10 @@ export function AuthForm({ mode }: AuthFormProps) {
           role,
         });
         const registeredRole = response.user.role;
-        setUserRole(registeredRole);
         router.push(registeredRole === "recruiter" ? "/recruiter" : registeredRole === "admin" ? "/admin" : "/dashboard");
       } else {
         const response = await login({ email, password });
         const loggedInRole = response.user.role;
-        setUserRole(loggedInRole);
         router.push(loggedInRole === "recruiter" ? "/recruiter" : loggedInRole === "admin" ? "/admin" : "/dashboard");
       }
 

@@ -43,4 +43,22 @@ def build_application():
 
 if __name__ == "__main__":
     logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO").upper())
-    uvicorn.run(build_application(), host="0.0.0.0", port=int(os.getenv("PORT", "8000")))
+
+    # proxy_headers=True  — tells uvicorn to rewrite request.client from
+    #                        X-Forwarded-For before the ASGI app sees the request.
+    # forwarded_allow_ips — controls which upstream IPs are trusted to set those
+    #                        headers.  "*" is correct for Railway / Vercel because
+    #                        their infrastructure always sits between the internet
+    #                        and your container.  Set FORWARDED_ALLOW_IPS to a
+    #                        specific CIDR (e.g. "10.0.0.0/8") in environments
+    #                        where you control the proxy layer.
+    # IMPORTANT: without these two flags, rate limiting will treat every user as
+    #            the same IP (the load-balancer) and will either never trigger or
+    #            block everyone at once.
+    uvicorn.run(
+        build_application(),
+        host="0.0.0.0",
+        port=int(os.getenv("PORT", "8000")),
+        proxy_headers=True,
+        forwarded_allow_ips=os.getenv("FORWARDED_ALLOW_IPS", "*"),
+    )

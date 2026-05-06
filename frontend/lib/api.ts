@@ -1,7 +1,6 @@
 import { getRequiredPublicApiUrl } from "@/lib/config";
 
 const AUTH_TOKEN_KEY = "jobai_access_token";
-const USER_ROLE_KEY = "jobai_user_role";
 
 export class ApiError extends Error {
   status: number;
@@ -26,7 +25,7 @@ type UploadRequestOptions = {
 };
 
 
-function getStoredToken(): string | null {
+export function getStoredToken(): string | null {
   if (typeof window === "undefined") {
     return null;
   }
@@ -48,25 +47,6 @@ export function clearApiToken(): void {
   }
 }
 
-
-export function setUserRole(role: string): void {
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(USER_ROLE_KEY, role);
-  }
-}
-
-
-export function getUserRole(): string | null {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem(USER_ROLE_KEY);
-}
-
-
-export function clearUserRole(): void {
-  if (typeof window !== "undefined") {
-    window.localStorage.removeItem(USER_ROLE_KEY);
-  }
-}
 
 
 export function hasApiToken(): boolean {

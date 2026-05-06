@@ -1,4 +1,4 @@
-import { api, ApiError, clearApiToken, clearUserRole, hasApiToken, setApiToken } from "@/lib/api";
+import { api, ApiError, clearApiToken, getStoredToken, hasApiToken, setApiToken } from "@/lib/api";
 import type { AuthResponse, AuthUser, LoginPayload, RegisterPayload } from "@/types";
 
 export function storeAccessToken(token: string): void {
@@ -50,6 +50,10 @@ export function hasStoredSession(): boolean {
 
 
 export function signOut(): void {
+  const accessToken = getStoredToken();
   clearAccessToken();
-  clearUserRole();
+  // fire-and-forget: blacklist the access token on the server
+  void api
+    .post("/auth/logout", { refresh_token: "", access_token: accessToken })
+    .catch(() => undefined);
 }

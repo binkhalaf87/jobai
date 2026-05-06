@@ -1,10 +1,10 @@
 import json
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, Request, Response, UploadFile, status
 from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps.auth import get_current_recruiter
@@ -313,29 +313,20 @@ def _email_from_structured(structured: dict | None) -> str | None:
     return structured.get("email")
 
 
-def _build_list_item(db: Session, resume: Resume) -> CandidateListItem:
+def _build_list_item_from_data(
+    resume: Resume,
+    best_analysis: "Analysis | None",
+    job_title: "str | None",
+) -> CandidateListItem:
+    """Build a CandidateListItem from pre-fetched data — zero DB calls."""
     structured = resume.structured_data if isinstance(resume.structured_data, dict) else {}
 
-    best_analysis = db.scalar(
-        select(Analysis)
-        .where(
-            Analysis.resume_id == resume.id,
-            Analysis.status == AnalysisStatus.COMPLETED,
-            Analysis.overall_score.is_not(None),
-        )
-        .order_by(Analysis.overall_score.desc())
-        .limit(1)
-    )
-
-    best_job_title: str | None = None
     best_score: float | None = None
     best_match_keywords: list[str] = []
     best_missing_keywords: list[str] = []
     analysis_completed_at: datetime | None = None
 
     if best_analysis:
-        job = db.get(JobDescription, best_analysis.job_description_id)
-        best_job_title = job.title if job else None
         best_score = float(best_analysis.overall_score)
         payload = best_analysis.result_payload or {}
         best_match_keywords = _keywords_from_payload(payload, "matching_keywords")[:5]
@@ -350,12 +341,31 @@ def _build_list_item(db: Session, resume: Resume) -> CandidateListItem:
         created_at=resume.created_at,
         stage=resume.recruiter_stage,
         status=resume.processing_status,
-        best_match_job=best_job_title,
+        best_match_job=job_title,
         best_match_score=best_score,
         best_match_keywords=best_match_keywords,
         best_missing_keywords=best_missing_keywords,
         analysis_completed_at=analysis_completed_at,
     )
+
+
+# KEPT for any internal callers that may still reference it — delegates to the new helper
+def _build_list_item(db: Session, resume: Resume) -> CandidateListItem:
+    best_analysis = db.scalar(
+        select(Analysis)
+        .where(
+            Analysis.resume_id == resume.id,
+            Analysis.status == AnalysisStatus.COMPLETED,
+            Analysis.overall_score.is_not(None),
+        )
+        .order_by(Analysis.overall_score.desc())
+        .limit(1)
+    )
+    job_title: str | None = None
+    if best_analysis:
+        job = db.get(JobDescription, best_analysis.job_description_id)
+        job_title = job.title if job else None
+    return _build_list_item_from_data(resume, best_analysis, job_title)
 
 
 # ---------------------------------------------------------------------------
@@ -408,17 +418,108 @@ async def upload_candidates(
 
 @router.get("/", response_model=list[CandidateListItem])
 def list_candidates(
+    response: Response,
+    page: int = Query(default=1, ge=1, description="Page number (1-based)"),
+    page_size: int = Query(default=50, ge=1, le=200, description="Items per page (max 200)"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_recruiter),
 ) -> list[CandidateListItem]:
-    resumes = list(
+    """List all candidates for the current recruiter.
+
+    Uses exactly 2 DB queries regardless of result count:
+      1. COUNT + paginated Resume fetch.
+      2. One subquery-based fetch of the best Analysis per resume_id (with JobDescription JOIN).
+
+    Pagination headers: ``X-Total-Count`` contains the total number of candidates.
+    """
+    # ------------------------------------------------------------------
+    # Query 1: total count + paginated Resume rows
+    # ------------------------------------------------------------------
+    base_where = Resume.user_id == current_user.id
+
+    total_count: int = db.scalar(
+        select(func.count()).select_from(Resume).where(base_where)
+    ) or 0
+
+    response.headers["X-Total-Count"] = str(total_count)
+
+    offset = (page - 1) * page_size
+    resumes: list[Resume] = list(
         db.scalars(
             select(Resume)
-            .where(Resume.user_id == current_user.id)
+            .where(base_where)
             .order_by(Resume.created_at.desc())
+            .offset(offset)
+            .limit(page_size)
         )
     )
-    return [_build_list_item(db, resume) for resume in resumes]
+
+    if not resumes:
+        return []
+
+    resume_ids = [r.id for r in resumes]
+
+    # ------------------------------------------------------------------
+    # Query 2: best Analysis per resume_id (highest overall_score)
+    #          with a single JOIN to JobDescription for the title.
+    #
+    # Subquery selects the MAX overall_score per resume_id, then we join
+    # back to Analysis to get the full row (handles ties by taking the
+    # latest completed_at) and JOIN JobDescription for title.
+    # ------------------------------------------------------------------
+    best_score_subq = (
+        select(
+            Analysis.resume_id,
+            func.max(Analysis.overall_score).label("max_score"),
+        )
+        .where(
+            Analysis.resume_id.in_(resume_ids),
+            Analysis.status == AnalysisStatus.COMPLETED,
+            Analysis.overall_score.is_not(None),
+        )
+        .group_by(Analysis.resume_id)
+        .subquery()
+    )
+
+    best_analysis_subq = (
+        select(
+            Analysis.resume_id,
+            func.max(Analysis.id).label("analysis_id"),  # deterministic tie-break
+        )
+        .join(
+            best_score_subq,
+            (Analysis.resume_id == best_score_subq.c.resume_id)
+            & (Analysis.overall_score == best_score_subq.c.max_score),
+        )
+        .where(
+            Analysis.status == AnalysisStatus.COMPLETED,
+            Analysis.overall_score.is_not(None),
+        )
+        .group_by(Analysis.resume_id)
+        .subquery()
+    )
+
+    rows = db.execute(
+        select(Analysis, JobDescription.title.label("job_title"))
+        .join(best_analysis_subq, Analysis.id == best_analysis_subq.c.analysis_id)
+        .outerjoin(JobDescription, Analysis.job_description_id == JobDescription.id)
+    ).all()
+
+    # Build lookup: resume_id → (Analysis, job_title)
+    best_by_resume: dict[str, tuple[Analysis, str | None]] = {
+        row.Analysis.resume_id: (row.Analysis, row.job_title) for row in rows
+    }
+
+    # ------------------------------------------------------------------
+    # Assemble response — pure Python, zero extra DB calls
+    # ------------------------------------------------------------------
+    result: list[CandidateListItem] = []
+    for resume in resumes:
+        entry = best_by_resume.get(resume.id)
+        best_analysis, job_title = entry if entry else (None, None)
+        result.append(_build_list_item_from_data(resume, best_analysis, job_title))
+
+    return result
 
 
 @router.post("/analyze-all", response_model=AnalyzeAllResponse)

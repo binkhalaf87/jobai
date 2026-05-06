@@ -9,7 +9,7 @@ from app.core.rate_limit import limiter
 from app.models.enums import UsageEventType
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
-from app.schemas.auth import AuthResponse, LoginRequest, RefreshRequest
+from app.schemas.auth import AuthResponse, LoginRequest, LogoutRequest, RefreshRequest
 from app.schemas.user import UserCreate, UserRead
 from app.services.audit_log import emit as audit_emit
 from app.services.auth import (
@@ -77,9 +77,24 @@ def refresh(request: Request, payload: RefreshRequest, db: Session = Depends(get
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-def logout(payload: RefreshRequest, db: Session = Depends(get_db)) -> None:
-    """Revoke a refresh token, ending the session."""
+def logout(payload: LogoutRequest, db: Session = Depends(get_db)) -> None:
+    """Revoke a refresh token and immediately blacklist the access token."""
+    from datetime import timezone
+
     from sqlalchemy import select
+
+    from app.core.security import blacklist_token, decode_access_token
+
+    if payload.access_token:
+        try:
+            token_payload = decode_access_token(payload.access_token)
+            jti = token_payload.get("jti")
+            exp_ts = token_payload.get("exp")
+            if jti and exp_ts:
+                from datetime import datetime
+                blacklist_token(jti, datetime.fromtimestamp(exp_ts, tz=timezone.utc))
+        except Exception:
+            pass  # invalid or already expired token — nothing to blacklist
 
     token_hash = hash_refresh_token(payload.refresh_token)
     record = db.scalar(select(RefreshToken).where(RefreshToken.token_hash == token_hash))
