@@ -26,10 +26,7 @@ _CSP = (
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: StarletteRequest, call_next):  # type: ignore[override]
-        try:
-            response = await call_next(request)
-        except Exception as exc:
-            return JSONResponse({"detail": f"middleware-caught {type(exc).__name__}: {exc}"}, status_code=500)
+        response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"

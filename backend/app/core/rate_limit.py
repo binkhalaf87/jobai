@@ -49,6 +49,6 @@ def get_real_ip(request: Request) -> str:
 _redis_url = os.getenv("REDIS_URL", "").strip() or None
 
 if _redis_url:
-    limiter = Limiter(key_func=get_real_ip, headers_enabled=True, storage_uri=_redis_url)
+    limiter = Limiter(key_func=get_real_ip, headers_enabled=False, storage_uri=_redis_url)
 else:
-    limiter = Limiter(key_func=get_real_ip, headers_enabled=True)
+    limiter = Limiter(key_func=get_real_ip, headers_enabled=False)

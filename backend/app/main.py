@@ -78,13 +78,12 @@ def create_application() -> ASGIApp:
                 content={"detail": "AI analysis is not configured on this server."},
             )
         logger.exception("Unhandled RuntimeError during %s %s", request.method, request.url.path)
-        return JSONResponse(status_code=500, content={"detail": f"RuntimeError: {exc}"})
+        return JSONResponse(status_code=500, content={"detail": "Internal server error."})
 
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
         logger.exception("Unhandled backend error during %s %s", request.method, request.url.path)
-        detail = f"{type(exc).__name__}: {exc}" if not is_dev else f"{type(exc).__name__}: {exc}"
-        return JSONResponse(status_code=500, content={"detail": detail})
+        return JSONResponse(status_code=500, content={"detail": "Internal server error."})
 
     @app.get("/health", tags=["system"])
     def health_check() -> dict[str, str]:
