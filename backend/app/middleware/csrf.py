@@ -28,6 +28,15 @@ _SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS", "TRACE"})
 _EXEMPT_PREFIXES = (
     "/api/v1/billing/paymob/webhook",
     "/health",
+    # Auth endpoints have no authenticated state to protect and are often the
+    # first POST a user makes — exempting them avoids the CSRF bootstrap problem
+    # where no cookie exists yet on the first visit.
+    "/api/v1/auth/login",
+    "/api/v1/auth/register",
+    "/api/v1/auth/forgot-password",
+    "/api/v1/auth/reset-password",
+    "/api/v1/auth/verify-email",
+    "/api/v1/auth/resend-verification",
 )
 
 
