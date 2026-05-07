@@ -1,4 +1,4 @@
-import { api, ApiError } from "@/lib/api";
+﻿import { api, ApiError } from "@/lib/api";
 import type {
   AnalysisFullResponse,
   AnalysisRequestPayload,
@@ -10,7 +10,6 @@ import type {
 export async function runFullAnalysis(payload: AnalysisRequestPayload): Promise<AnalysisFullResponse> {
   try {
     return await api.post<AnalysisFullResponse>("/analysis/analyze", payload, {
-      auth: true
     });
   } catch (error) {
     if (error instanceof ApiError) {
@@ -27,7 +26,6 @@ export async function generateRewriteSuggestions(
 ): Promise<RewriteSuggestionResponse> {
   try {
     return await api.post<RewriteSuggestionResponse>("/analysis/rewrite", payload, {
-      auth: true
     });
   } catch (error) {
     if (error instanceof ApiError) {

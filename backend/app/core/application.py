@@ -44,7 +44,7 @@ def wrap_with_cors(application: ASGIApp) -> CORSMiddleware:
         allow_origin_regex=origin_regex,
         allow_credentials=True,
         allow_methods=ALLOWED_CORS_METHODS,
-        allow_headers=["Authorization", "Content-Type", "Accept", "X-Request-ID"],
+        allow_headers=["Authorization", "Content-Type", "Accept", "X-Request-ID", "X-CSRF-Token"],
     )
 
 

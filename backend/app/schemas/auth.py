@@ -14,10 +14,31 @@ class AuthResponse(ORMBaseSchema):
     user: UserRead
 
 
+class RegisterResponse(ORMBaseSchema):
+    message: str
+
+
 class RefreshRequest(ORMBaseSchema):
-    refresh_token: str
+    refresh_token: str | None = None
 
 
 class LogoutRequest(ORMBaseSchema):
-    refresh_token: str
+    refresh_token: str | None = None
     access_token: str | None = None
+
+
+class VerifyEmailRequest(ORMBaseSchema):
+    token: str
+
+
+class ResendVerificationRequest(ORMBaseSchema):
+    email: str
+
+
+class ForgotPasswordRequest(ORMBaseSchema):
+    email: str
+
+
+class ResetPasswordRequest(ORMBaseSchema):
+    token: str
+    new_password: str

@@ -65,6 +65,14 @@ class UsageEventType(str, Enum):
     FILE_DELETED = "file_deleted"
     ADMIN_USER_UPDATED = "admin_user_updated"
     ADMIN_WALLET_ADJUSTED = "admin_wallet_adjusted"
+    AUTH_EMAIL_VERIFIED = "auth_email_verified"
+    AUTH_EMAIL_VERIFICATION_RESENT = "auth_email_verification_resent"
+    AUTH_PASSWORD_RESET_REQUESTED = "auth_password_reset_requested"
+    AUTH_PASSWORD_RESET_COMPLETED = "auth_password_reset_completed"
+    RESUME_UPLOADED = "resume_uploaded"
+    RESUME_DELETED = "resume_deleted"
+    BILLING_CHECKOUT_INITIATED = "billing_checkout_initiated"
+    BILLING_PAYMENT_CONFIRMED = "billing_payment_confirmed"
 
 
 class UserRole(str, Enum):

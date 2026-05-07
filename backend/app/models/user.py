@@ -19,6 +19,11 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     role: Mapped[UserRole] = mapped_column(String(20), nullable=False, default=UserRole.JOBSEEKER, server_default="jobseeker")
+    is_email_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    email_verification_token: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    email_verification_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    password_reset_token: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    password_reset_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     resumes = relationship("Resume", back_populates="user", cascade="all, delete-orphan")
     job_descriptions = relationship("JobDescription", back_populates="user", cascade="all, delete-orphan")

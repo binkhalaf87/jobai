@@ -1,4 +1,7 @@
-"""Rate limiting via slowapi (in-memory store, no Redis required).
+"""Rate limiting via slowapi.
+
+Uses Redis when REDIS_URL is set (required for multi-instance deployments),
+falls back to in-memory storage for local development.
 
 slowapi >= 0.1.9 dropped the pkg_resources dependency that caused
 Python 3.12-slim incompatibility.
@@ -15,6 +18,8 @@ Uvicorn must be started with ``proxy_headers=True`` and
 Starlette populates the headers before slowapi reads them.
 """
 from __future__ import annotations
+
+import os
 
 from fastapi import Request
 from slowapi import Limiter
@@ -41,4 +46,9 @@ def get_real_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-limiter = Limiter(key_func=get_real_ip, headers_enabled=True)
+_redis_url = os.getenv("REDIS_URL", "").strip() or None
+
+if _redis_url:
+    limiter = Limiter(key_func=get_real_ip, headers_enabled=True, storage_uri=_redis_url)
+else:
+    limiter = Limiter(key_func=get_real_ip, headers_enabled=True)

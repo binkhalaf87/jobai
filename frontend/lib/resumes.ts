@@ -1,4 +1,4 @@
-import { api, ApiError, getApiBaseUrl } from "@/lib/api";
+﻿import { api, ApiError, getApiBaseUrl } from "@/lib/api";
 import type { ResumeListItem, ResumeUploadResponse } from "@/types";
 
 
@@ -8,7 +8,6 @@ export async function uploadResume(file: File, onProgress?: (progress: number) =
 
   try {
     return await api.upload<ResumeUploadResponse>("/resume/upload", formData, {
-      auth: true,
       onProgress
     });
   } catch (error) {
@@ -23,7 +22,7 @@ export async function uploadResume(file: File, onProgress?: (progress: number) =
 
 export async function listResumes(): Promise<ResumeListItem[]> {
   try {
-    return await api.get<ResumeListItem[]>("/resume/", { auth: true });
+    return await api.get<ResumeListItem[]>("/resume/");
   } catch (error) {
     if (error instanceof ApiError) throw new Error(error.detail);
     throw new Error("Unable to load resumes.");
@@ -60,7 +59,7 @@ export async function getResumeFile(resumeId: string, fallbackFilename: string):
 
 export async function deleteResume(resumeId: string): Promise<void> {
   try {
-    await api.delete<void>(`/resume/${resumeId}`, undefined, { auth: true });
+    await api.delete<void>(`/resume/${resumeId}`, undefined);
   } catch (error) {
     if (error instanceof ApiError) throw new Error(error.detail);
     throw new Error("Unable to delete resume.");

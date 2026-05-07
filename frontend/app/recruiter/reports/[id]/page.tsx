@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -457,7 +457,7 @@ export default function ReportDetailPage() {
 
   async function loadReport() {
     try {
-      const data = await api.get<FullReport>(`/recruiter/reports/${id}`, { auth: true });
+      const data = await api.get<FullReport>(`/recruiter/reports/${id}`);
       setReport(data);
       if (data.status === "pending") schedulePoll();
     } catch {
@@ -472,7 +472,7 @@ export default function ReportDetailPage() {
     pollCountRef.current += 1;
     pollRef.current = setTimeout(async () => {
       try {
-        const data = await api.get<FullReport>(`/recruiter/reports/${id}`, { auth: true });
+        const data = await api.get<FullReport>(`/recruiter/reports/${id}`);
         setReport(data);
         if (data.status === "pending") schedulePoll();
       } catch { /* ignore */ }

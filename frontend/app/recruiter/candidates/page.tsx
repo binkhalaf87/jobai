@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -170,7 +170,7 @@ export default function RecruiterCandidatesPage() {
 
   async function loadCandidates() {
     try {
-      const data = await api.get<CandidateListItem[]>("/recruiter/candidates/", { auth: true });
+      const data = await api.get<CandidateListItem[]>("/recruiter/candidates/");
       setCandidates(data);
     } catch {
       setError(t("error.failedToLoad"));
@@ -225,8 +225,7 @@ export default function RecruiterCandidatesPage() {
     try {
       const res = await api.post<{ deleted: number }>(
         "/recruiter/candidates/bulk-delete",
-        { ids: Array.from(selected) },
-        { auth: true }
+        { ids: Array.from(selected) }
       );
       finishProgress(() => {
         setBulkResult({ type: "success", text: res.deleted === 1 ? t("bulk.deleted_one", { count: 1 }) : t("bulk.deleted_other", { count: res.deleted }) });
@@ -250,8 +249,7 @@ export default function RecruiterCandidatesPage() {
     try {
       const res = await api.post<{ queued: number }>(
         "/recruiter/candidates/bulk-screen",
-        { ids: Array.from(selected) },
-        { auth: true }
+        { ids: Array.from(selected) }
       );
       finishProgress(() => {
         setBulkResult({
@@ -283,7 +281,7 @@ export default function RecruiterCandidatesPage() {
       fd.append("files", item.file);
       try {
         await uploadRequest<{ resume_ids: string[] }>("/recruiter/candidates/upload", fd, {
-          auth: true, onProgress: (p) => updateItem(item.uid, { progress: p }),
+          onProgress: (p) => updateItem(item.uid, { progress: p }),
         });
         updateItem(item.uid, { status: "done", progress: 100 });
         anyUploaded = true;
@@ -297,7 +295,7 @@ export default function RecruiterCandidatesPage() {
     // Auto-trigger analysis for all unanalyzed candidates after upload
     if (anyUploaded) {
       try {
-        await api.post("/recruiter/candidates/screen-all", undefined, { auth: true });
+        await api.post("/recruiter/candidates/screen-all", undefined);
       } catch { /* best-effort */ }
     }
   }, []);
@@ -313,7 +311,7 @@ export default function RecruiterCandidatesPage() {
     setScreenResult(null);
     try {
       const res = await api.post<{ queued: number }>(
-        "/recruiter/candidates/screen-all", undefined, { auth: true }
+        "/recruiter/candidates/screen-all", undefined
       );
       setScreenResult(
         res.queued > 0

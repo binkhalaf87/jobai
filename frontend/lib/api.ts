@@ -1,7 +1,5 @@
 import { getRequiredPublicApiUrl } from "@/lib/config";
 
-const AUTH_TOKEN_KEY = "jobai_access_token";
-
 export class ApiError extends Error {
   status: number;
   detail: string;
@@ -16,43 +14,11 @@ export class ApiError extends Error {
 
 type ApiRequestOptions = Omit<RequestInit, "body"> & {
   body?: BodyInit | object | null;
-  auth?: boolean;
 };
 
 type UploadRequestOptions = {
-  auth?: boolean;
   onProgress?: (progress: number) => void;
 };
-
-
-export function getStoredToken(): string | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  return window.localStorage.getItem(AUTH_TOKEN_KEY);
-}
-
-
-export function setApiToken(token: string): void {
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(AUTH_TOKEN_KEY, token);
-  }
-}
-
-
-export function clearApiToken(): void {
-  if (typeof window !== "undefined") {
-    window.localStorage.removeItem(AUTH_TOKEN_KEY);
-  }
-}
-
-
-
-export function hasApiToken(): boolean {
-  return Boolean(getStoredToken());
-}
-
 
 export function getApiBaseUrl(): string {
   return getRequiredPublicApiUrl();
@@ -62,7 +28,6 @@ function createApiConnectionError(baseUrl: string): Error {
   return new Error(`Unable to reach the API at ${baseUrl}. Check that the backend is running and reachable.`);
 }
 
-
 async function parseError(response: Response): Promise<string> {
   try {
     const payload = (await response.json()) as { detail?: string };
@@ -71,7 +36,6 @@ async function parseError(response: Response): Promise<string> {
     return "Request failed.";
   }
 }
-
 
 function normalizeBody(body: ApiRequestOptions["body"]): BodyInit | null | undefined {
   if (body == null) {
@@ -91,17 +55,30 @@ function normalizeBody(body: ApiRequestOptions["body"]): BodyInit | null | undef
   return JSON.stringify(body);
 }
 
+function getCsrfToken(): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
 
-function buildHeaders(body: ApiRequestOptions["body"], auth: boolean, headers?: HeadersInit): Headers {
+const CSRF_SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
+
+function buildHeaders(
+  body: ApiRequestOptions["body"],
+  method: string | undefined,
+  headers?: HeadersInit
+): Headers {
   const requestHeaders = new Headers(headers);
-  const token = getStoredToken();
 
   if (body != null && !(body instanceof FormData) && !requestHeaders.has("Content-Type")) {
     requestHeaders.set("Content-Type", "application/json");
   }
 
-  if (auth && token && !requestHeaders.has("Authorization")) {
-    requestHeaders.set("Authorization", `Bearer ${token}`);
+  if (!CSRF_SAFE_METHODS.has((method ?? "GET").toUpperCase())) {
+    const csrf = getCsrfToken();
+    if (csrf) {
+      requestHeaders.set("X-CSRF-Token", csrf);
+    }
   }
 
   return requestHeaders;
@@ -109,15 +86,17 @@ function buildHeaders(body: ApiRequestOptions["body"], auth: boolean, headers?: 
 
 
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
-  const { body, auth = false, headers, ...rest } = options;
+  const { body, headers, method, ...rest } = options;
   const baseUrl = getApiBaseUrl();
   let response: Response;
 
   try {
     response = await fetch(`${baseUrl}${path}`, {
       ...rest,
-      headers: buildHeaders(body, auth, headers),
-      body: normalizeBody(body)
+      method,
+      credentials: "include",
+      headers: buildHeaders(body, method, headers),
+      body: normalizeBody(body),
     });
   } catch {
     throw createApiConnectionError(baseUrl);
@@ -136,14 +115,16 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 
 
 export async function fetchStream(path: string, options: ApiRequestOptions = {}): Promise<Response> {
-  const { body, auth = false, headers, ...rest } = options;
+  const { body, headers, method, ...rest } = options;
   const baseUrl = getApiBaseUrl();
   let response: Response;
 
   try {
     response = await fetch(`${baseUrl}${path}`, {
       ...rest,
-      headers: buildHeaders(body, auth, headers),
+      method,
+      credentials: "include",
+      headers: buildHeaders(body, method, headers),
       body: normalizeBody(body),
     });
   } catch {
@@ -159,17 +140,18 @@ export async function fetchStream(path: string, options: ApiRequestOptions = {})
 
 
 export function uploadRequest<T>(path: string, formData: FormData, options: UploadRequestOptions = {}): Promise<T> {
-  const { auth = false, onProgress } = options;
+  const { onProgress } = options;
   const baseUrl = getApiBaseUrl();
 
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest();
     request.open("POST", `${baseUrl}${path}`);
     request.responseType = "json";
+    request.withCredentials = true;
 
-    const token = getStoredToken();
-    if (auth && token) {
-      request.setRequestHeader("Authorization", `Bearer ${token}`);
+    const csrf = getCsrfToken();
+    if (csrf) {
+      request.setRequestHeader("X-CSRF-Token", csrf);
     }
 
     request.upload.addEventListener("progress", (event) => {
@@ -228,5 +210,5 @@ export const api = {
   },
   upload<T>(path: string, formData: FormData, options: UploadRequestOptions = {}) {
     return uploadRequest<T>(path, formData, options);
-  }
+  },
 };

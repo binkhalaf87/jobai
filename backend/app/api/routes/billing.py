@@ -225,12 +225,14 @@ async def handle_paymob_webhook(
     if not isinstance(payload, dict):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Webhook payload must be a JSON object.")
 
-    provided_hmac = (
-        request.query_params.get("hmac")
-        or hmac_header
-        or x_hmac_header
-        or payload.get("hmac")
-    )
+    # Accept HMAC from the official Paymob header only.
+    # Query-param and payload-embedded HMACs are rejected to prevent forgery.
+    provided_hmac = hmac_header or x_hmac_header
+    if not provided_hmac:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing HMAC signature header.",
+        )
 
     try:
         result = process_paymob_webhook(

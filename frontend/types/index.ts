@@ -11,6 +11,7 @@ export type AuthUser = {
   email: string;
   full_name: string | null;
   is_active: boolean;
+  is_email_verified: boolean;
   role: "jobseeker" | "recruiter" | "admin";
   created_at: string;
   updated_at: string;
@@ -19,8 +20,13 @@ export type AuthUser = {
 
 export type AuthResponse = {
   access_token: string;
+  refresh_token: string;
   token_type: string;
   user: AuthUser;
+};
+
+export type RegisterResponse = {
+  message: string;
 };
 
 export type LoginPayload = {
@@ -32,6 +38,10 @@ export type RegisterPayload = LoginPayload & {
   full_name?: string;
   role?: "jobseeker" | "recruiter";
 };
+
+export type ForgotPasswordPayload = { email: string };
+export type ResetPasswordPayload = { token: string; new_password: string };
+export type VerifyEmailPayload = { token: string };
 
 export type ResumeUploadResponse = {
   resume_id: string;

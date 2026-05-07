@@ -1,4 +1,4 @@
-import { api } from "@/lib/api";
+﻿import { api } from "@/lib/api";
 import type { JobResult, JobSearchResponse, SavedJob } from "@/types";
 
 export type JobSearchParams = {
@@ -19,19 +19,19 @@ export async function searchJobs(params: JobSearchParams): Promise<JobSearchResp
   if (params.employment_type) qs.set("employment_type", params.employment_type);
   if (params.resume_id)       qs.set("resume_id", params.resume_id);
 
-  return api.get<JobSearchResponse>(`/jobs/search?${qs.toString()}`, { auth: true });
+  return api.get<JobSearchResponse>(`/jobs/search?${qs.toString()}`);
 }
 
 export async function saveJob(job: JobResult): Promise<SavedJob> {
-  return api.post<SavedJob>("/jobs/saved", job, { auth: true });
+  return api.post<SavedJob>("/jobs/saved", job);
 }
 
 export async function unsaveJobByExternalId(jobId: string): Promise<void> {
-  return api.delete<void>(`/jobs/saved/by-job-id/${encodeURIComponent(jobId)}`, undefined, { auth: true });
+  return api.delete<void>(`/jobs/saved/by-job-id/${encodeURIComponent(jobId)}`, undefined);
 }
 
 export async function getSavedJobs(): Promise<SavedJob[]> {
-  return api.get<SavedJob[]>("/jobs/saved", { auth: true });
+  return api.get<SavedJob[]>("/jobs/saved");
 }
 
 /** Store a job description in sessionStorage so the Analysis page can pre-fill it. */

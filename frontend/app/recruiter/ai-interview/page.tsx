@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -150,9 +150,9 @@ export default function AIInterviewPage() {
     async function loadSetup() {
       try {
         const [jobsData, allCandidates, historyData] = await Promise.all([
-          api.get<Job[]>("/recruiter/jobs/", { auth: true }),
-          api.get<Candidate[]>("/recruiter/candidates/", { auth: true }),
-          api.get<InterviewListItem[]>("/recruiter/interviews/", { auth: true }),
+          api.get<Job[]>("/recruiter/jobs/"),
+          api.get<Candidate[]>("/recruiter/candidates/"),
+          api.get<InterviewListItem[]>("/recruiter/interviews/"),
         ]);
         setJobs(jobsData);
         setCandidates(allCandidates);
@@ -185,11 +185,10 @@ export default function AIInterviewPage() {
           interview_type: interviewType,
           language,
           question_count: questionCount,
-        },
-        { auth: true }
+        }
       );
       setActiveInterview(data);
-      const updated = await api.get<InterviewListItem[]>("/recruiter/interviews/", { auth: true });
+      const updated = await api.get<InterviewListItem[]>("/recruiter/interviews/");
       setHistory(updated);
     } catch {
       setError(t("error.failedToGenerate"));
@@ -204,7 +203,7 @@ export default function AIInterviewPage() {
     setSendError(null);
     setResponses(null);
     try {
-      const data = await api.get<GeneratedInterview>(`/recruiter/interviews/${id}`, { auth: true });
+      const data = await api.get<GeneratedInterview>(`/recruiter/interviews/${id}`);
       setActiveInterview(data);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch {
@@ -218,7 +217,7 @@ export default function AIInterviewPage() {
     try {
       const res = await api.post<{
         link: string; candidate_name: string; job_title: string; language: string;
-      }>(`/recruiter/interviews/${interviewId}/link`, {}, { auth: true });
+      }>(`/recruiter/interviews/${interviewId}/link`, {});
 
       const isAr = res.language === "ar";
       const msg = isAr
@@ -228,8 +227,8 @@ export default function AIInterviewPage() {
       window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
 
       const [updated, refreshed] = await Promise.all([
-        api.get<InterviewListItem[]>("/recruiter/interviews/", { auth: true }),
-        api.get<GeneratedInterview>(`/recruiter/interviews/${interviewId}`, { auth: true }),
+        api.get<InterviewListItem[]>("/recruiter/interviews/"),
+        api.get<GeneratedInterview>(`/recruiter/interviews/${interviewId}`),
       ]);
       setHistory(updated);
       setActiveInterview(refreshed);
@@ -247,14 +246,13 @@ export default function AIInterviewPage() {
     try {
       const res = await api.post<{ message: string; candidate_email: string }>(
         `/recruiter/interviews/${interviewId}/send-invite`,
-        {},
-        { auth: true }
+        {}
       );
       setSendSuccess(t("inviteSent", { email: res.candidate_email }));
       // Refresh history and active interview
       const [updated, refreshed] = await Promise.all([
-        api.get<InterviewListItem[]>("/recruiter/interviews/", { auth: true }),
-        api.get<GeneratedInterview>(`/recruiter/interviews/${interviewId}`, { auth: true }),
+        api.get<InterviewListItem[]>("/recruiter/interviews/"),
+        api.get<GeneratedInterview>(`/recruiter/interviews/${interviewId}`),
       ]);
       setHistory(updated);
       setActiveInterview(refreshed);
@@ -270,8 +268,7 @@ export default function AIInterviewPage() {
     setResponses(null);
     try {
       const data = await api.get<ResponsesResult>(
-        `/recruiter/interviews/${interviewId}/responses`,
-        { auth: true }
+        `/recruiter/interviews/${interviewId}/responses`
       );
       setResponses(data);
       window.scrollTo({ top: 0, behavior: "smooth" });

@@ -1,4 +1,4 @@
-import { api, fetchStream } from "@/lib/api";
+﻿import { api, fetchStream } from "@/lib/api";
 import type {
   AnswerEvaluation,
   ExperienceLevel,
@@ -32,7 +32,7 @@ export type AnswerEvaluationResponse = {
 };
 
 export async function startInterview(payload: StartInterviewPayload): Promise<InterviewSessionResponse> {
-  return api.post<InterviewSessionResponse>("/interviews/sessions", payload, { auth: true });
+  return api.post<InterviewSessionResponse>("/interviews/sessions", payload);
 }
 
 export async function submitAnswer(
@@ -44,7 +44,6 @@ export async function submitAnswer(
   return api.post<AnswerEvaluationResponse>(
     `/interviews/sessions/${sessionId}/answer`,
     { question_index: questionIndex, question, answer },
-    { auth: true },
   );
 }
 
@@ -52,7 +51,6 @@ export async function completeInterview(sessionId: string): Promise<InterviewCom
   return api.post<InterviewCompleteResponse>(
     `/interviews/sessions/${sessionId}/complete`,
     undefined,
-    { auth: true },
   );
 }
 
@@ -81,7 +79,6 @@ export async function* submitAnswerStream(
 ): AsyncGenerator<StreamEvalEvent, void, unknown> {
   const response = await fetchStream(`/interviews/sessions/${sessionId}/answer/stream`, {
     method: "POST",
-    auth: true,
     body: { question_index: questionIndex, question, answer },
   });
 
@@ -120,9 +117,9 @@ export async function* submitAnswerStream(
 }
 
 export async function listInterviews(): Promise<InterviewListItem[]> {
-  return api.get<InterviewListItem[]>("/interviews/sessions", { auth: true });
+  return api.get<InterviewListItem[]>("/interviews/sessions");
 }
 
 export async function getInterview(sessionId: string): Promise<InterviewCompleteResponse> {
-  return api.get<InterviewCompleteResponse>(`/interviews/sessions/${sessionId}`, { auth: true });
+  return api.get<InterviewCompleteResponse>(`/interviews/sessions/${sessionId}`);
 }

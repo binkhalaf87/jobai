@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -39,9 +39,9 @@ export default function CandidateProfilePage() {
     async function load() {
       try {
         const [data, jobs, screen] = await Promise.all([
-          api.get<CandidateDetail>(`/recruiter/candidates/${id}`, { auth: true }),
-          api.get<{ id: string }[]>("/recruiter/jobs/", { auth: true }),
-          api.get<ScreeningReport | null>(`/recruiter/candidates/${id}/screening`, { auth: true }).catch(() => null),
+          api.get<CandidateDetail>(`/recruiter/candidates/${id}`),
+          api.get<{ id: string }[]>("/recruiter/jobs/"),
+          api.get<ScreeningReport | null>(`/recruiter/candidates/${id}/screening`).catch(() => null),
         ]);
         setDetail(data);
         setHasJobs(jobs.length > 0);
@@ -66,7 +66,7 @@ export default function CandidateProfilePage() {
     pollCountRef.current += 1;
     pollRef.current = setTimeout(async () => {
       try {
-        const screen = await api.get<ScreeningReport | null>(`/recruiter/candidates/${id}/screening`, { auth: true });
+        const screen = await api.get<ScreeningReport | null>(`/recruiter/candidates/${id}/screening`);
         setScreening(screen);
         if (!screen || screen.status === "pending") schedulePoll();
       } catch { /* ignore */ }
@@ -79,7 +79,7 @@ export default function CandidateProfilePage() {
     pollCountRef.current = 0;
     setScreeningTimedOut(false);
     try {
-      const screen = await api.post<ScreeningReport>(`/recruiter/candidates/${id}/screening`, undefined, { auth: true });
+      const screen = await api.post<ScreeningReport>(`/recruiter/candidates/${id}/screening`, undefined);
       setScreening(screen);
       schedulePoll();
     } catch { /* ignore */ } finally {
@@ -99,7 +99,6 @@ export default function CandidateProfilePage() {
       }>(
         `/recruiter/candidates/${id}/analyze`,
         forceRefresh ? { force_refresh: true } : undefined,
-        { auth: true },
       );
 
       if (!result.has_resume_text) {
@@ -108,7 +107,7 @@ export default function CandidateProfilePage() {
         setAnalyzeError(result.warning);
       }
 
-      const data = await api.get<CandidateDetail>(`/recruiter/candidates/${id}`, { auth: true });
+      const data = await api.get<CandidateDetail>(`/recruiter/candidates/${id}`);
       setDetail(data);
     } catch (err) {
       setAnalyzeError(err instanceof Error ? err.message : t("error.analysisFailed"));
@@ -123,7 +122,7 @@ export default function CandidateProfilePage() {
     const prev = detail.stage;
     setDetail({ ...detail, stage });
     try {
-      await api.patch(`/recruiter/candidates/${id}/stage`, { stage }, { auth: true });
+      await api.patch(`/recruiter/candidates/${id}/stage`, { stage });
     } catch {
       setDetail({ ...detail, stage: prev });
     } finally {

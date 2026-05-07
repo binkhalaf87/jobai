@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -17,7 +17,7 @@ export function CandidateInterviewPanel({ candidateId }: Props) {
   const [waLink, setWaLink] = useState<string | null>(null);
 
   useEffect(() => {
-    api.get<CandidateInterview[]>("/recruiter/interviews/", { auth: true })
+    api.get<CandidateInterview[]>("/recruiter/interviews/")
       .then((all) => {
         const mine = all.filter((iv) => iv.resume_id === candidateId);
         setInterviews(mine);
@@ -30,11 +30,11 @@ export function CandidateInterviewPanel({ candidateId }: Props) {
 
   async function loadDetail(id: string) {
     try {
-      const iv = await api.get<InterviewDetail>(`/recruiter/interviews/${id}`, { auth: true });
+      const iv = await api.get<InterviewDetail>(`/recruiter/interviews/${id}`);
       setSelected(iv);
       setResponses(null);
       if (iv.response_status === "completed") {
-        const r = await api.get<InterviewResponses>(`/recruiter/interviews/${id}/responses`, { auth: true });
+        const r = await api.get<InterviewResponses>(`/recruiter/interviews/${id}/responses`);
         setResponses(r);
       }
     } catch { /* ignore */ }
@@ -44,7 +44,7 @@ export function CandidateInterviewPanel({ candidateId }: Props) {
     setGeneratingLink(true);
     try {
       const res = await api.post<{ link: string; candidate_name: string; job_title: string; language: string }>(
-        `/recruiter/interviews/${interviewId}/link`, {}, { auth: true }
+        `/recruiter/interviews/${interviewId}/link`, {}
       );
       const isAr = res.language === "ar";
       const msg = isAr

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -53,7 +53,7 @@ export default function ReportsPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
-    api.get<ReportListItem[]>("/recruiter/reports/", { auth: true })
+    api.get<ReportListItem[]>("/recruiter/reports/")
       .then(setReports)
       .catch(() => setError(t("error")))
       .finally(() => setLoading(false));
@@ -62,7 +62,7 @@ export default function ReportsPage() {
   async function handleDelete(id: string) {
     setDeleting(id);
     try {
-      await api.delete(`/recruiter/reports/${id}`, undefined, { auth: true });
+      await api.delete(`/recruiter/reports/${id}`, undefined);
       setReports((prev) => prev.filter((r) => r.id !== id));
     } catch { /* ignore */ } finally {
       setDeleting(null);

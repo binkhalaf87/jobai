@@ -1,43 +1,27 @@
-import { getApiBaseUrl, hasApiToken } from "@/lib/api";
+import { api, fetchStream, getApiBaseUrl } from "@/lib/api";
 import type { AIReportFull, AIReportListItem } from "@/types";
 
-function getToken(): string {
-  if (typeof window === "undefined") return "";
-  return window.localStorage.getItem("jobai_access_token") ?? "";
+function getCsrfToken(): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
 }
 
-
 export async function listAIReports(reportType?: string): Promise<AIReportListItem[]> {
-  const url = reportType
-    ? `${getApiBaseUrl()}/analysis/ai-reports?report_type=${encodeURIComponent(reportType)}`
-    : `${getApiBaseUrl()}/analysis/ai-reports`;
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  if (!res.ok) throw new Error("Failed to load reports.");
-  return res.json() as Promise<AIReportListItem[]>;
+  const path = reportType
+    ? `/analysis/ai-reports?report_type=${encodeURIComponent(reportType)}`
+    : "/analysis/ai-reports";
+  return api.get<AIReportListItem[]>(path);
 }
 
 
 export async function getAIReport(reportId: string): Promise<AIReportFull> {
-  const res = await fetch(`${getApiBaseUrl()}/analysis/ai-report/${reportId}`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  if (!res.ok) throw new Error("Failed to load report.");
-  return res.json() as Promise<AIReportFull>;
+  return api.get<AIReportFull>(`/analysis/ai-report/${reportId}`);
 }
 
 
 export async function updateAIReport(reportId: string, reportText: string): Promise<void> {
-  const res = await fetch(`${getApiBaseUrl()}/analysis/ai-report/${reportId}`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${getToken()}`,
-    },
-    body: JSON.stringify({ report_text: reportText }),
-  });
-  if (!res.ok) throw new Error("Failed to save report.");
+  await api.patch(`/analysis/ai-report/${reportId}`, { report_text: reportText });
 }
 
 
@@ -58,12 +42,14 @@ export async function streamAIReport(
   reportType: "analysis" | "enhancement" = "analysis",
   language: string = "English",
 ): Promise<void> {
+  const csrf = getCsrfToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (csrf) headers["X-CSRF-Token"] = csrf;
+
   const res = await fetch(`${getApiBaseUrl()}/analysis/ai-report`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${getToken()}`,
-    },
+    credentials: "include",
+    headers,
     body: JSON.stringify({ resume_id: resumeId, job_description: jobDescription || null, report_type: reportType, language }),
   });
 

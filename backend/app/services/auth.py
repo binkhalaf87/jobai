@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import secrets
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
@@ -18,6 +19,9 @@ from app.models.user import User
 from app.schemas.auth import LoginRequest
 from app.schemas.user import UserCreate
 
+EMAIL_VERIFY_EXPIRE_HOURS = 24
+PASSWORD_RESET_EXPIRE_HOURS = 1
+
 
 def get_user_by_email(db: Session, email: str) -> User | None:
     """Look up a user account by email address."""
@@ -25,21 +29,90 @@ def get_user_by_email(db: Session, email: str) -> User | None:
 
 
 def create_user(db: Session, payload: UserCreate) -> User:
-    """Create a new user account with a hashed password."""
+    """Create a new user account with a hashed password. Sends a verification email."""
     from app.models.enums import UsageEventType
     from app.services.audit_log import emit
+    from app.services.email_service import send_verification_email
 
     user = User(
         email=payload.email.lower().strip(),
         full_name=payload.full_name,
         password_hash=hash_password(payload.password),
         is_active=True,
+        is_email_verified=False,
         role=payload.role,
     )
     db.add(user)
     db.commit()
     db.refresh(user)
     emit(db, user_id=user.id, event_type=UsageEventType.AUTH_REGISTER)
+
+    token = generate_email_verification_token(db, user)
+    send_verification_email(user.email, token, user.full_name)
+    return user
+
+
+def generate_email_verification_token(db: Session, user: User) -> str:
+    """Generate a time-limited email verification token and persist it."""
+    token = secrets.token_urlsafe(48)
+    user.email_verification_token = token
+    user.email_verification_expires_at = datetime.now(timezone.utc) + timedelta(hours=EMAIL_VERIFY_EXPIRE_HOURS)
+    db.commit()
+    return token
+
+
+def verify_email_token(db: Session, token: str) -> User | None:
+    """Consume a verification token and mark the user's email as verified."""
+    user = db.scalar(select(User).where(User.email_verification_token == token))
+    if not user:
+        return None
+    if not user.email_verification_expires_at:
+        return None
+    if user.email_verification_expires_at < datetime.now(timezone.utc):
+        return None
+    user.is_email_verified = True
+    user.email_verification_token = None
+    user.email_verification_expires_at = None
+    db.commit()
+    return user
+
+
+def can_resend_verification(db: Session, user: User) -> bool:
+    """Return True only if the last token was issued more than 1 hour ago."""
+    if not user.email_verification_expires_at:
+        return True
+    issued_at = user.email_verification_expires_at - timedelta(hours=EMAIL_VERIFY_EXPIRE_HOURS)
+    age = datetime.now(timezone.utc) - issued_at
+    return age.total_seconds() > 3600
+
+
+def generate_password_reset_token(db: Session, user: User) -> str:
+    """Generate a time-limited password reset token and persist it."""
+    token = secrets.token_urlsafe(48)
+    user.password_reset_token = token
+    user.password_reset_expires_at = datetime.now(timezone.utc) + timedelta(hours=PASSWORD_RESET_EXPIRE_HOURS)
+    db.commit()
+    return token
+
+
+def consume_password_reset_token(db: Session, token: str, new_password: str) -> User | None:
+    """Validate reset token, update password, and revoke all refresh tokens."""
+    user = db.scalar(select(User).where(User.password_reset_token == token))
+    if not user:
+        return None
+    if not user.password_reset_expires_at:
+        return None
+    if user.password_reset_expires_at < datetime.now(timezone.utc):
+        return None
+    user.password_hash = hash_password(new_password)
+    user.password_reset_token = None
+    user.password_reset_expires_at = None
+    # Invalidate all active refresh tokens so stolen sessions are terminated
+    db.query(RefreshToken).filter(
+        RefreshToken.user_id == user.id,
+        RefreshToken.revoked.is_(False),
+    ).update({"revoked": True})
+    db.commit()
     return user
 
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { getCurrentUser, hasStoredSession, signOut as clearSession } from "@/lib/auth";
+import { getCurrentUser, signOut as clearSession } from "@/lib/auth";
 import type { AuthUser } from "@/types";
 
 type UseAuthResult = {
@@ -10,7 +10,7 @@ type UseAuthResult = {
   isLoading: boolean;
   hasSession: boolean;
   refreshUser: () => Promise<void>;
-  signOut: () => void;
+  signOut: () => Promise<void>;
 };
 
 
@@ -20,18 +20,11 @@ export function useAuth(): UseAuthResult {
   const [hasSession, setHasSession] = useState(false);
 
   async function refreshUser(): Promise<void> {
-    const sessionExists = hasStoredSession();
-    setHasSession(sessionExists);
-
-    if (!sessionExists) {
-      setUser(null);
-      setIsLoading(false);
-      return;
-    }
-
+    setIsLoading(true);
     try {
       const currentUser = await getCurrentUser();
       setUser(currentUser);
+      setHasSession(currentUser !== null);
     } catch {
       setUser(null);
       setHasSession(false);
@@ -40,8 +33,8 @@ export function useAuth(): UseAuthResult {
     }
   }
 
-  function signOut(): void {
-    clearSession();
+  async function signOut(): Promise<void> {
+    await clearSession();
     setUser(null);
     setHasSession(false);
   }
@@ -55,6 +48,6 @@ export function useAuth(): UseAuthResult {
     isLoading,
     hasSession,
     refreshUser,
-    signOut
+    signOut,
   };
 }

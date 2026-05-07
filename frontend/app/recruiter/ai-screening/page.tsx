@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -99,7 +99,7 @@ export default function TalentFitPage() {
   const [requesting, setRequesting] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    api.get<JobOption[]>("/recruiter/talent-fit/jobs", { auth: true })
+    api.get<JobOption[]>("/recruiter/talent-fit/jobs")
       .then(setJobs)
       .catch(() => {});
   }, []);
@@ -110,7 +110,7 @@ export default function TalentFitPage() {
     const params = new URLSearchParams();
     if (selectedJob) params.set("job_id", selectedJob);
     if (minScore > 0) params.set("min_score", String(minScore));
-    api.get<TalentFitResponse>(`/recruiter/talent-fit/?${params.toString()}`, { auth: true })
+    api.get<TalentFitResponse>(`/recruiter/talent-fit/?${params.toString()}`)
       .then(setData)
       .catch(() => setError(t("error")))
       .finally(() => setLoading(false));
@@ -123,8 +123,7 @@ export default function TalentFitPage() {
     try {
       const result = await api.post<{ id: string }>(
         "/recruiter/reports/",
-        { resume_id: row.resume_id, job_id: row.job_id },
-        { auth: true }
+        { resume_id: row.resume_id, job_id: row.job_id }
       );
       router.push(`/recruiter/reports/${result.id}`);
     } catch {

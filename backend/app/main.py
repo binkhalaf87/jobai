@@ -20,6 +20,7 @@ from app.api.router import api_router
 from app.core.application import SecurityHeadersMiddleware, wrap_with_cors
 from app.core.config import get_settings
 from app.core.rate_limit import limiter
+from app.middleware.csrf import CSRFMiddleware
 from app.scheduler import start_scheduler, stop_scheduler
 
 logger = logging.getLogger(__name__)
@@ -43,6 +44,7 @@ def create_application() -> ASGIApp:
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
     app.add_middleware(SlowAPIMiddleware)
+    app.add_middleware(CSRFMiddleware)
     app.add_middleware(SecurityHeadersMiddleware)
 
     # ProxyHeadersMiddleware must wrap every other middleware so that

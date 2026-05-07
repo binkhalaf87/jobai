@@ -1,5 +1,7 @@
+from typing import Optional
+
 from jwt import InvalidTokenError
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
@@ -8,22 +10,37 @@ from app.core.security import decode_access_token
 from app.models.enums import UserRole
 from app.models.user import User
 
-bearer_scheme = HTTPBearer()
+# auto_error=False so a missing header does not immediately 401;
+# we fall back to the httpOnly access_token cookie instead.
+bearer_scheme = HTTPBearer(auto_error=False)
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
     db: Session = Depends(get_db),
 ) -> User:
-    """Resolve the current authenticated user from a bearer token."""
+    """Resolve the current authenticated user from a bearer token or httpOnly cookie."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate authentication credentials.",
         headers={"WWW-Authenticate": "Bearer"},
     )
 
+    # 1. Authorization header (API clients, mobile apps)
+    token: str | None = None
+    if credentials and credentials.credentials:
+        token = credentials.credentials
+
+    # 2. httpOnly cookie (browser clients)
+    if not token:
+        token = request.cookies.get("access_token")
+
+    if not token:
+        raise credentials_exception
+
     try:
-        payload = decode_access_token(credentials.credentials)
+        payload = decode_access_token(token)
         user_id = payload.get("sub")
     except InvalidTokenError as exc:
         raise credentials_exception from exc

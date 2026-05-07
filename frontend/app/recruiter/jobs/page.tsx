@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
@@ -211,7 +211,7 @@ function JobCard({
       employment_type: form.employment_type || null,
       required_skills: skills.length ? skills : null,
       years_experience_min: !isNaN(yearsMin) ? yearsMin : null,
-    }, { auth: true });
+    });
     onUpdate(updated);
     setMode("view");
   }
@@ -219,7 +219,7 @@ function JobCard({
   async function handleDelete() {
     setDeleting(true);
     try {
-      await api.delete(`/recruiter/jobs/${job.id}`, undefined, { auth: true });
+      await api.delete(`/recruiter/jobs/${job.id}`, undefined);
       onDelete(job.id);
     } catch { /* ignore */ } finally {
       setDeleting(false);
@@ -346,7 +346,7 @@ export default function RecruiterJobsPage() {
 
   useEffect(() => {
     let cancelled = false;
-    api.get<JobListItem[]>("/recruiter/jobs/", { auth: true })
+    api.get<JobListItem[]>("/recruiter/jobs/")
       .then((data) => { if (!cancelled) setJobs(data); })
       .catch(() => { if (!cancelled) setError(t("error")); })
       .finally(() => { if (!cancelled) setLoading(false); });
@@ -364,7 +364,7 @@ export default function RecruiterJobsPage() {
       employment_type: form.employment_type || undefined,
       required_skills: skills.length ? skills : undefined,
       years_experience_min: !isNaN(yearsMin) ? yearsMin : undefined,
-    }, { auth: true });
+    });
     setJobs((prev) => [created, ...prev]);
     setShowAdd(false);
   }

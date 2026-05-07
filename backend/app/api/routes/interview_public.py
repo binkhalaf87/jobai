@@ -4,12 +4,13 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps.db import get_db
+from app.core.rate_limit import limiter
 from app.models.interview_response import InterviewResponse
 from app.models.job_description import JobDescription
 from app.models.recruiter_interview import RecruiterInterview
@@ -88,7 +89,8 @@ def _candidate_name(resume: Resume) -> str:
 
 
 @router.get("/token/{token}", response_model=PublicInterviewInfo)
-def get_interview_by_token(token: str, db: Session = Depends(get_db)) -> PublicInterviewInfo:
+@limiter.limit("30/minute")
+def get_interview_by_token(request: Request, token: str, db: Session = Depends(get_db)) -> PublicInterviewInfo:
     """Return interview questions for the candidate — no auth required."""
     interview = _resolve_token(db, token)
 
@@ -122,7 +124,8 @@ def get_interview_by_token(token: str, db: Session = Depends(get_db)) -> PublicI
 
 
 @router.get("/token/{token}/status")
-def get_interview_status(token: str, db: Session = Depends(get_db)) -> dict:
+@limiter.limit("30/minute")
+def get_interview_status(request: Request, token: str, db: Session = Depends(get_db)) -> dict:
     """Check whether this token is still valid and how many answers were submitted."""
     interview = _resolve_token(db, token)
 
@@ -138,7 +141,9 @@ def get_interview_status(token: str, db: Session = Depends(get_db)) -> dict:
 
 
 @router.post("/token/{token}/answer", response_model=AnswerResult)
+@limiter.limit("10/minute")
 def submit_answer(
+    request: Request,
     token: str,
     payload: AnswerSubmission,
     db: Session = Depends(get_db),

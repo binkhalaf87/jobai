@@ -1,4 +1,4 @@
-import { api } from "@/lib/api";
+﻿import { api } from "@/lib/api";
 import type {
   BillingCheckoutPayload,
   BillingCheckoutResponse,
@@ -8,17 +8,17 @@ import type {
 } from "@/types";
 
 export async function getBillingPlans(): Promise<BillingPlansResponse> {
-  return api.get<BillingPlansResponse>("/billing/plans", { auth: true });
+  return api.get<BillingPlansResponse>("/billing/plans");
 }
 
 export async function getBillingSnapshot(): Promise<BillingMeResponse> {
-  return api.get<BillingMeResponse>("/billing/me", { auth: true });
+  return api.get<BillingMeResponse>("/billing/me");
 }
 
 export async function createBillingCheckoutIntention(payload: BillingCheckoutPayload): Promise<BillingCheckoutResponse> {
-  return api.post<BillingCheckoutResponse>("/billing/checkout/intention", payload, { auth: true });
+  return api.post<BillingCheckoutResponse>("/billing/checkout/intention", payload);
 }
 
 export async function getWalletTransactions(limit = 20): Promise<BillingWalletTransactionsResponse> {
-  return api.get<BillingWalletTransactionsResponse>(`/billing/wallet/transactions?limit=${limit}`, { auth: true });
+  return api.get<BillingWalletTransactionsResponse>(`/billing/wallet/transactions?limit=${limit}`);
 }

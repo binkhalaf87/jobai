@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -119,7 +119,7 @@ export default function RecruiterDashboardPage() {
 
     async function load() {
       try {
-        const data = await api.get<DashboardStats>("/recruiter/dashboard/stats", { auth: true });
+        const data = await api.get<DashboardStats>("/recruiter/dashboard/stats");
         if (!cancelled) setStats(data);
       } catch {
         if (!cancelled) setError(t("failedToLoad"));

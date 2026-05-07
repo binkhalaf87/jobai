@@ -155,6 +155,12 @@ class Settings:
     backend_url: str
     ai_per_user_daily_cap: int
     ai_monthly_token_budget: int
+    # System SMTP for transactional auth emails (verification, password reset)
+    system_smtp_host: str | None
+    system_smtp_port: int
+    system_smtp_user: str | None
+    system_smtp_password: str | None
+    system_email_from: str
 
     def allowed_origins(self) -> list[str]:
         """Build an explicit allowlist for frontend origins."""
@@ -181,11 +187,19 @@ def build_settings() -> Settings:
             f"{missing_list}. Add them to backend/.env or your deployment provider settings."
         )
 
+    _environment = get_optional_env("ENVIRONMENT", "development")
+    _s3_bucket = get_optional_env("S3_BUCKET_NAME", "").strip()
+    if _environment.lower() == "production" and not _s3_bucket:
+        raise MissingEnvironmentVariablesError(
+            "S3_BUCKET_NAME is required when ENVIRONMENT=production. "
+            "Local filesystem storage is not permitted in production."
+        )
+
     return Settings(
         app_name=get_optional_env("APP_NAME", "JobAI Backend"),
         app_version=get_optional_env("APP_VERSION", "0.1.0"),
         api_prefix=get_optional_env("API_PREFIX", "/api/v1"),
-        environment=get_optional_env("ENVIRONMENT", "development"),
+        environment=_environment,
         debug=get_bool_env("DEBUG", False),
         database_url=get_required_env("DATABASE_URL"),
         openai_api_key=get_optional_env("OPENAI_API_KEY", "").strip() or None,
@@ -201,7 +215,7 @@ def build_settings() -> Settings:
         paymob_iframe_id=get_optional_env("PAYMOB_IFRAME_ID", "").strip() or None,
         rapidapi_key=get_optional_env("RAPIDAPI_KEY", "").strip() or None,
         resume_storage_dir=get_optional_env("RESUME_STORAGE_DIR", get_default_resume_storage_dir()),
-        s3_bucket_name=get_optional_env("S3_BUCKET_NAME", "").strip() or None,
+        s3_bucket_name=_s3_bucket or None,
         s3_endpoint_url=get_optional_env("S3_ENDPOINT_URL", "").strip() or None,
         s3_region=get_optional_env("S3_REGION", "us-east-1"),
         s3_access_key_id=get_optional_env("S3_ACCESS_KEY_ID", "").strip() or None,
@@ -214,6 +228,11 @@ def build_settings() -> Settings:
         backend_url=get_optional_env("BACKEND_URL", "http://localhost:8000"),
         ai_per_user_daily_cap=int(get_optional_env("AI_PER_USER_DAILY_CAP", "50000")),
         ai_monthly_token_budget=int(get_optional_env("AI_MONTHLY_TOKEN_BUDGET", "5000000")),
+        system_smtp_host=get_optional_env("SYSTEM_SMTP_HOST", "").strip() or None,
+        system_smtp_port=int(get_optional_env("SYSTEM_SMTP_PORT", "465")),
+        system_smtp_user=get_optional_env("SYSTEM_SMTP_USER", "").strip() or None,
+        system_smtp_password=get_optional_env("SYSTEM_SMTP_PASSWORD", "").strip() or None,
+        system_email_from=get_optional_env("SYSTEM_EMAIL_FROM", "noreply@jobai.app"),
     )
 
 
