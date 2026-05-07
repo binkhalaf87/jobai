@@ -78,7 +78,7 @@ def create_application() -> ASGIApp:
                 content={"detail": "AI analysis is not configured on this server."},
             )
         logger.exception("Unhandled RuntimeError during %s %s", request.method, request.url.path)
-        return JSONResponse(status_code=500, content={"detail": "Internal server error."})
+        return JSONResponse(status_code=500, content={"detail": f"RuntimeError: {exc}"})
 
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
