@@ -212,6 +212,13 @@ def resend_verification(request: Request, payload: ResendVerificationRequest, db
     from app.services.email_service import send_verification_email
 
     user = get_user_by_email(db, payload.email)
+    logger.error(
+        "RESEND_DEBUG: email=%r user_found=%s verified=%s can_resend=%s",
+        payload.email,
+        user is not None,
+        user.is_email_verified if user else "N/A",
+        can_resend_verification(db, user) if user else "N/A",
+    )
     if user and not user.is_email_verified and can_resend_verification(db, user):
         token = generate_email_verification_token(db, user)
         send_verification_email(user.email, token, user.full_name)
