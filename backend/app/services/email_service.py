@@ -91,12 +91,21 @@ def _send(to_email: str, subject: str, html_body: str) -> None:
 
     context = ssl.create_default_context()
     try:
-        with smtplib.SMTP_SSL(
-            settings.system_smtp_host,
-            settings.system_smtp_port,
-            context=context,
-            timeout=10,
-        ) as server:
+        if settings.system_smtp_port == 465:
+            conn = smtplib.SMTP_SSL(
+                settings.system_smtp_host,
+                settings.system_smtp_port,
+                context=context,
+                timeout=10,
+            )
+        else:
+            conn = smtplib.SMTP(
+                settings.system_smtp_host,
+                settings.system_smtp_port,
+                timeout=10,
+            )
+            conn.starttls(context=context)
+        with conn as server:
             if settings.system_smtp_user and settings.system_smtp_password:
                 server.login(settings.system_smtp_user, settings.system_smtp_password)
             server.sendmail(settings.system_email_from, to_email, msg.as_string())
