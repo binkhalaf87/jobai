@@ -78,12 +78,12 @@ def verify_email_token(db: Session, token: str) -> User | None:
 
 
 def can_resend_verification(db: Session, user: User) -> bool:
-    """Return True only if the last token was issued more than 1 hour ago."""
+    """Return True only if the last token was issued more than 5 minutes ago."""
     if not user.email_verification_expires_at:
         return True
     issued_at = user.email_verification_expires_at - timedelta(hours=EMAIL_VERIFY_EXPIRE_HOURS)
     age = datetime.now(timezone.utc) - issued_at
-    return age.total_seconds() > 3600
+    return age.total_seconds() > 300
 
 
 def generate_password_reset_token(db: Session, user: User) -> str:
