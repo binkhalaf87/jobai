@@ -237,7 +237,7 @@ def resend_verification(request: Request, payload: ResendVerificationRequest, db
             )
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Verification email could not be sent. Check BREVO_API_KEY and SYSTEM_EMAIL_FROM.",
+                detail=f"Verification email could not be sent. Provider error: {result.error}",
             )
         audit_emit(db, user_id=user.id, event_type=UsageEventType.AUTH_EMAIL_VERIFICATION_RESENT)
         return {"message": "Verification email sent. Check your inbox.", "sent": True}
