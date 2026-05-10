@@ -155,11 +155,8 @@ class Settings:
     backend_url: str
     ai_per_user_daily_cap: int
     ai_monthly_token_budget: int
-    # System SMTP for transactional auth emails (verification, password reset)
-    system_smtp_host: str | None
-    system_smtp_port: int
-    system_smtp_user: str | None
-    system_smtp_password: str | None
+    # Brevo API key for transactional auth emails (verification, password reset)
+    brevo_api_key: str | None
     system_email_from: str
 
     def allowed_origins(self) -> list[str]:
@@ -228,10 +225,7 @@ def build_settings() -> Settings:
         backend_url=get_optional_env("BACKEND_URL", "http://localhost:8000"),
         ai_per_user_daily_cap=int(get_optional_env("AI_PER_USER_DAILY_CAP", "50000")),
         ai_monthly_token_budget=int(get_optional_env("AI_MONTHLY_TOKEN_BUDGET", "5000000")),
-        system_smtp_host=get_optional_env("SYSTEM_SMTP_HOST", "").strip() or None,
-        system_smtp_port=int(get_optional_env("SYSTEM_SMTP_PORT", "465")),
-        system_smtp_user=get_optional_env("SYSTEM_SMTP_USER", "").strip() or None,
-        system_smtp_password=get_optional_env("SYSTEM_SMTP_PASSWORD", "").strip() or None,
+        brevo_api_key=get_optional_env("BREVO_API_KEY", "").strip() or None,
         system_email_from=get_optional_env("SYSTEM_EMAIL_FROM", "noreply@jobai.app"),
     )
 

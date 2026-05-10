@@ -1,25 +1,26 @@
 """System transactional email service.
 
-Sends auth emails (verification, password reset) via a dedicated SMTP account
-configured through SYSTEM_SMTP_* environment variables. This is separate from
-the per-user SMTP connections managed by smtp_service.py.
+Sends auth emails (verification, password reset) via the Brevo REST API
+(https://api.brevo.com/v3/smtp/email) configured through BREVO_API_KEY.
 
-If SYSTEM_SMTP_HOST is not configured the functions log a warning and return
-silently so the application keeps working in environments where email is not yet
-set up (local dev, early staging).
+Using the HTTP API instead of SMTP avoids Railway's outbound port 465/587
+restrictions — all traffic goes over HTTPS (port 443).
+
+If BREVO_API_KEY is not set the functions log a warning and return silently
+so the application keeps working in local dev / early staging.
 """
 
 from __future__ import annotations
 
 import logging
-import smtplib
-import ssl
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+
+import httpx
 
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
+
+_BREVO_SEND_URL = "https://api.brevo.com/v3/smtp/email"
 
 
 # ---------------------------------------------------------------------------
@@ -75,49 +76,30 @@ def _password_reset_html(reset_url: str, name: str) -> str:
 def _send(to_email: str, subject: str, html_body: str) -> None:
     settings = get_settings()
 
-    if not settings.system_smtp_host:
+    if not settings.brevo_api_key:
         logger.error(
-            "SMTP_SKIP: SYSTEM_SMTP_HOST not configured — skipping email to %s (subject: %s)",
+            "EMAIL_SKIP: BREVO_API_KEY not configured — skipping email to %s (subject: %s)",
             to_email,
             subject,
         )
         return
 
-    logger.error(
-        "SMTP_ATTEMPT: host=%s port=%s user=%s to=%s",
-        settings.system_smtp_host,
-        settings.system_smtp_port,
-        settings.system_smtp_user,
-        to_email,
-    )
+    payload = {
+        "sender": {"name": "JobAI", "email": settings.system_email_from},
+        "to": [{"email": to_email}],
+        "subject": subject,
+        "htmlContent": html_body,
+    }
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = settings.system_email_from
-    msg["To"] = to_email
-    msg.attach(MIMEText(html_body, "html", "utf-8"))
-
-    context = ssl.create_default_context()
     try:
-        if settings.system_smtp_port == 465:
-            conn = smtplib.SMTP_SSL(
-                settings.system_smtp_host,
-                settings.system_smtp_port,
-                context=context,
-                timeout=10,
-            )
-        else:
-            conn = smtplib.SMTP(
-                settings.system_smtp_host,
-                settings.system_smtp_port,
-                timeout=10,
-            )
-            conn.starttls(context=context)
-        with conn as server:
-            if settings.system_smtp_user and settings.system_smtp_password:
-                server.login(settings.system_smtp_user, settings.system_smtp_password)
-            server.sendmail(settings.system_email_from, to_email, msg.as_string())
-        logger.info("Email sent to %s (subject: %s)", to_email, subject)
+        response = httpx.post(
+            _BREVO_SEND_URL,
+            json=payload,
+            headers={"api-key": settings.brevo_api_key},
+            timeout=15,
+        )
+        response.raise_for_status()
+        logger.info("Email sent to %s via Brevo API (subject: %s)", to_email, subject)
     except Exception:
         logger.exception("Failed to send email to %s (subject: %s)", to_email, subject)
 
