@@ -95,6 +95,7 @@ def _send(to_email: str, subject: str, html_body: str) -> None:
             settings.system_smtp_host,
             settings.system_smtp_port,
             context=context,
+            timeout=10,
         ) as server:
             if settings.system_smtp_user and settings.system_smtp_password:
                 server.login(settings.system_smtp_user, settings.system_smtp_password)

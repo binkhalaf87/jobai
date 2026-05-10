@@ -30,7 +30,10 @@ function createApiConnectionError(baseUrl: string): Error {
 
 async function parseError(response: Response): Promise<string> {
   try {
-    const payload = (await response.json()) as { detail?: string };
+    const payload = (await response.json()) as { detail?: string | Array<{ msg: string }> };
+    if (Array.isArray(payload.detail)) {
+      return payload.detail.map((e) => e.msg).join(" ") || "Request failed.";
+    }
     return payload.detail ?? "Request failed.";
   } catch {
     return "Request failed.";
