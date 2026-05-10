@@ -13,6 +13,7 @@ so the application keeps working in local dev / early staging.
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 
 import httpx
 
@@ -21,6 +22,13 @@ from app.core.config import get_settings
 logger = logging.getLogger(__name__)
 
 _BREVO_SEND_URL = "https://api.brevo.com/v3/smtp/email"
+
+
+@dataclass(frozen=True)
+class EmailSendResult:
+    sent: bool
+    provider: str = "brevo"
+    error: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -73,18 +81,18 @@ def _password_reset_html(reset_url: str, name: str) -> str:
 # ---------------------------------------------------------------------------
 
 
-def _send(to_email: str, subject: str, html_body: str) -> None:
+def _send(to_email: str, subject: str, html_body: str) -> EmailSendResult:
     settings = get_settings()
 
     if not settings.brevo_api_key:
+        error = "BREVO_API_KEY not configured"
         logger.error(
-            "EMAIL_SKIP: BREVO_API_KEY not configured — skipping email to %s (subject: %s)",
+            "EMAIL_SKIP: %s — skipping email to %s (subject: %s)",
+            error,
             to_email,
             subject,
         )
-        return
-
-    logger.error("EMAIL_KEY_PREFIX: %s...", settings.brevo_api_key[:12])
+        return EmailSendResult(sent=False, error=error)
 
     payload = {
         "sender": {"name": "JobAI", "email": settings.system_email_from},
@@ -100,10 +108,20 @@ def _send(to_email: str, subject: str, html_body: str) -> None:
             headers={"api-key": settings.brevo_api_key},
             timeout=15,
         )
-        response.raise_for_status()
+        if response.status_code >= 400:
+            error = response.text[:500]
+            logger.error(
+                "EMAIL_SEND_FAILED: provider=brevo status=%s to=%s body=%s",
+                response.status_code,
+                to_email,
+                error,
+            )
+            return EmailSendResult(sent=False, error=error)
         logger.info("Email sent to %s via Brevo API (subject: %s)", to_email, subject)
-    except Exception:
+        return EmailSendResult(sent=True)
+    except Exception as exc:
         logger.exception("Failed to send email to %s (subject: %s)", to_email, subject)
+        return EmailSendResult(sent=False, error=str(exc))
 
 
 # ---------------------------------------------------------------------------
@@ -111,15 +129,15 @@ def _send(to_email: str, subject: str, html_body: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-def send_verification_email(to_email: str, token: str, name: str | None = None) -> None:
+def send_verification_email(to_email: str, token: str, name: str | None = None) -> EmailSendResult:
     settings = get_settings()
     display_name = name or "there"
     url = f"{settings.frontend_url}/verify-email?token={token}"
-    _send(to_email, "Verify your JobAI email address", _verification_html(url, display_name))
+    return _send(to_email, "Verify your JobAI email address", _verification_html(url, display_name))
 
 
-def send_password_reset_email(to_email: str, token: str, name: str | None = None) -> None:
+def send_password_reset_email(to_email: str, token: str, name: str | None = None) -> EmailSendResult:
     settings = get_settings()
     display_name = name or "there"
     url = f"{settings.frontend_url}/reset-password?token={token}"
-    _send(to_email, "Reset your JobAI password", _password_reset_html(url, display_name))
+    return _send(to_email, "Reset your JobAI password", _password_reset_html(reset_url=url, name=display_name))

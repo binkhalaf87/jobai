@@ -2,6 +2,12 @@ import { api, ApiError } from "@/lib/api";
 import type { AuthResponse, AuthUser, LoginPayload, RegisterPayload } from "@/types";
 
 export type RegisterResponse = { message: string };
+export type ResendVerificationResponse = {
+  message: string;
+  sent: boolean;
+  reason?: string | null;
+  retry_after_seconds?: number | null;
+};
 
 export async function login(payload: LoginPayload): Promise<AuthResponse> {
   // Access + refresh tokens are set as httpOnly cookies by the backend response.
@@ -35,8 +41,8 @@ export async function signOut(): Promise<void> {
   await api.post("/auth/logout").catch(() => undefined);
 }
 
-export async function resendVerification(email: string): Promise<void> {
-  await api.post("/auth/resend-verification", { email });
+export async function resendVerification(email: string): Promise<ResendVerificationResponse> {
+  return api.post<ResendVerificationResponse>("/auth/resend-verification", { email });
 }
 
 export async function forgotPassword(email: string): Promise<void> {

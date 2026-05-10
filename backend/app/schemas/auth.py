@@ -35,6 +35,13 @@ class ResendVerificationRequest(ORMBaseSchema):
     email: str
 
 
+class ResendVerificationResponse(ORMBaseSchema):
+    message: str
+    sent: bool = False
+    reason: str | None = None
+    retry_after_seconds: int | None = None
+
+
 class ForgotPasswordRequest(ORMBaseSchema):
     email: str
 

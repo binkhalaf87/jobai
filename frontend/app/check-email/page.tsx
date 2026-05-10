@@ -14,8 +14,8 @@ function CheckEmailContent() {
     if (!email) return;
     setStatus("sending");
     try {
-      await resendVerification(email);
-      setStatus("sent");
+      const result = await resendVerification(email);
+      setStatus(result.sent ? "sent" : "idle");
     } catch {
       setStatus("error");
     }

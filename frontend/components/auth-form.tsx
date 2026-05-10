@@ -83,10 +83,18 @@ export function AuthForm({ mode }: AuthFormProps) {
   async function handleResend() {
     setResendStatus("Sending...");
     try {
-      await resendVerification(resendEmail);
-      setResendStatus("Verification email sent. Check your inbox.");
-    } catch {
-      setResendStatus("Failed to resend. Try again later.");
+      const result = await resendVerification(resendEmail);
+      if (result.sent) {
+        setResendStatus("Verification email sent. Check your inbox.");
+      } else if (result.reason === "cooldown" && result.retry_after_seconds) {
+        const minutes = Math.ceil(result.retry_after_seconds / 60);
+        setResendStatus(`Please wait ${minutes} minute${minutes === 1 ? "" : "s"} before requesting another email.`);
+      } else {
+        setResendStatus("No new email was sent. The account may already be verified.");
+      }
+    } catch (error) {
+      const detail = error instanceof ApiError ? error.detail : "";
+      setResendStatus(detail || "Failed to resend. Try again later.");
     }
   }
 

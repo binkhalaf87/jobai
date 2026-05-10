@@ -21,6 +21,7 @@ from app.schemas.auth import (
     RefreshRequest,
     RegisterResponse,
     ResendVerificationRequest,
+    ResendVerificationResponse,
     ResetPasswordRequest,
     VerifyEmailRequest,
 )
@@ -29,11 +30,11 @@ from app.services.audit_log import emit as audit_emit
 from app.services.auth import (
     authenticate_user,
     build_auth_response,
-    can_resend_verification,
     consume_password_reset_token,
     create_user,
     generate_email_verification_token,
     generate_password_reset_token,
+    get_verification_resend_retry_after_seconds,
     get_user_by_email,
     hash_refresh_token,
     revoke_refresh_token,
@@ -208,26 +209,52 @@ def verify_email(request: Request, payload: VerifyEmailRequest, db: Session = De
     return {"message": "Email verified successfully. You can now log in."}
 
 
-@router.post("/resend-verification")
+@router.post("/resend-verification", response_model=ResendVerificationResponse)
 @limiter.limit("3/minute")
 def resend_verification(request: Request, payload: ResendVerificationRequest, db: Session = Depends(get_db)) -> dict:
     """Resend the email verification link. Always returns 200 to prevent email enumeration."""
     from app.services.email_service import send_verification_email
 
     user = get_user_by_email(db, payload.email)
+    retry_after_seconds = get_verification_resend_retry_after_seconds(user) if user else None
     logger.error(
-        "RESEND_DEBUG: email=%r user_found=%s verified=%s can_resend=%s",
+        "RESEND_DEBUG: email=%r user_found=%s verified=%s retry_after_seconds=%s",
         payload.email,
         user is not None,
         user.is_email_verified if user else "N/A",
-        can_resend_verification(db, user) if user else "N/A",
+        retry_after_seconds if user else "N/A",
     )
-    if user and not user.is_email_verified and can_resend_verification(db, user):
-        token = generate_email_verification_token(db, user)
-        send_verification_email(user.email, token, user.full_name)
-        audit_emit(db, user_id=user.id, event_type=UsageEventType.AUTH_EMAIL_VERIFICATION_RESENT)
 
-    return {"message": "If that email exists and is unverified, a new link has been sent."}
+    if user and not user.is_email_verified and retry_after_seconds == 0:
+        token = generate_email_verification_token(db, user)
+        result = send_verification_email(user.email, token, user.full_name)
+        if not result.sent:
+            logger.error(
+                "VERIFICATION_EMAIL_SEND_FAILED: email=%s provider=%s error=%s",
+                user.email,
+                result.provider,
+                result.error,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Verification email could not be sent. Check BREVO_API_KEY and SYSTEM_EMAIL_FROM.",
+            )
+        audit_emit(db, user_id=user.id, event_type=UsageEventType.AUTH_EMAIL_VERIFICATION_RESENT)
+        return {"message": "Verification email sent. Check your inbox.", "sent": True}
+
+    if user and not user.is_email_verified and retry_after_seconds and retry_after_seconds > 0:
+        return {
+            "message": "Please wait before requesting another verification email.",
+            "sent": False,
+            "reason": "cooldown",
+            "retry_after_seconds": retry_after_seconds,
+        }
+
+    return {
+        "message": "If that email exists and is unverified, a new link has been sent.",
+        "sent": False,
+        "reason": "not_found_or_already_verified",
+    }
 
 
 # ---------------------------------------------------------------------------
