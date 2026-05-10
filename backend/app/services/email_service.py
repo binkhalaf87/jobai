@@ -76,12 +76,20 @@ def _send(to_email: str, subject: str, html_body: str) -> None:
     settings = get_settings()
 
     if not settings.system_smtp_host:
-        logger.warning(
-            "SYSTEM_SMTP_HOST not configured — skipping email to %s (subject: %s)",
+        logger.error(
+            "SMTP_SKIP: SYSTEM_SMTP_HOST not configured — skipping email to %s (subject: %s)",
             to_email,
             subject,
         )
         return
+
+    logger.info(
+        "SMTP_ATTEMPT: host=%s port=%s user=%s to=%s",
+        settings.system_smtp_host,
+        settings.system_smtp_port,
+        settings.system_smtp_user,
+        to_email,
+    )
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
