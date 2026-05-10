@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 
 from jwt import InvalidTokenError
@@ -9,6 +10,8 @@ from app.api.deps.db import get_db
 from app.core.security import decode_access_token
 from app.models.enums import UserRole
 from app.models.user import User
+
+logger = logging.getLogger(__name__)
 
 # auto_error=False so a missing header does not immediately 401;
 # we fall back to the httpOnly access_token cookie instead.

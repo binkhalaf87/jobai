@@ -23,9 +23,9 @@ export function getRequiredPublicApiUrl(): string {
     return getLocalDevelopmentApiUrl();
   }
 
-  throw new Error(
-    "Missing required frontend environment variable: NEXT_PUBLIC_API_URL. Add it to frontend/.env.local or your Vercel project settings."
-  );
+  // In production with the Next.js proxy rewrite, requests go to /api/v1
+  // on the same Vercel origin — no cross-origin cookie issues.
+  return "/api/v1";
 }
 
 function createPublicConfig(): PublicConfig {
