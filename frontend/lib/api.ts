@@ -32,11 +32,11 @@ async function parseError(response: Response): Promise<string> {
   try {
     const payload = (await response.json()) as { detail?: string | Array<{ msg: string }> };
     if (Array.isArray(payload.detail)) {
-      return payload.detail.map((e) => e.msg).join(" ") || "Request failed.";
+      return payload.detail.map((e) => e.msg).join(" ") || `Request failed (${response.status}).`;
     }
-    return payload.detail ?? "Request failed.";
+    return payload.detail ?? `Request failed (${response.status}).`;
   } catch {
-    return "Request failed.";
+    return `Request failed (${response.status}).`;
   }
 }
 
