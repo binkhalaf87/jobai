@@ -51,7 +51,7 @@ export function AuthForm({ mode }: AuthFormProps) {
     try {
       if (isRegister) {
         await register({ email, password, full_name: fullName || undefined, role });
-        router.push("/check-email");
+        router.push(`/check-email?email=${encodeURIComponent(email)}`);
       } else {
         const response = await login({ email, password });
         const loggedInRole = response.user.role;

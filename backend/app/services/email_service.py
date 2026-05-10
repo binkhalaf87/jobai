@@ -83,7 +83,7 @@ def _send(to_email: str, subject: str, html_body: str) -> None:
         )
         return
 
-    logger.info(
+    logger.error(
         "SMTP_ATTEMPT: host=%s port=%s user=%s to=%s",
         settings.system_smtp_host,
         settings.system_smtp_port,
