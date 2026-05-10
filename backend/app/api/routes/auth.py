@@ -53,11 +53,14 @@ def _is_production() -> bool:
 def _set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:
     """Write httpOnly auth cookies to the response."""
     secure = _is_production()
+    # Cross-origin deployment (Vercel → Railway) requires SameSite=None + Secure.
+    # SameSite=Lax blocks cookies on cross-site fetch requests.
+    samesite = "none" if secure else "lax"
     response.set_cookie(
         "access_token",
         access_token,
         httponly=True,
-        samesite="lax",
+        samesite=samesite,
         secure=secure,
         max_age=60 * 15,
         path="/",
@@ -66,7 +69,7 @@ def _set_auth_cookies(response: Response, access_token: str, refresh_token: str)
         "refresh_token",
         refresh_token,
         httponly=True,
-        samesite="lax",
+        samesite=samesite,
         secure=secure,
         max_age=60 * 60 * 24 * 30,
         path="/",

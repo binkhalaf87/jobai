@@ -84,6 +84,8 @@ def _send(to_email: str, subject: str, html_body: str) -> None:
         )
         return
 
+    logger.error("EMAIL_KEY_PREFIX: %s...", settings.brevo_api_key[:12])
+
     payload = {
         "sender": {"name": "JobAI", "email": settings.system_email_from},
         "to": [{"email": to_email}],
