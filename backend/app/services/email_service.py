@@ -1,12 +1,12 @@
 """System transactional email service.
 
-Sends auth emails (verification, password reset) via the Brevo REST API
-(https://api.brevo.com/v3/smtp/email) configured through BREVO_API_KEY.
+Sends auth emails (verification, password reset) via the Resend REST API
+(https://api.resend.com/emails) configured through RESEND_API_KEY.
 
 Using the HTTP API instead of SMTP avoids Railway's outbound port 465/587
 restrictions — all traffic goes over HTTPS (port 443).
 
-If BREVO_API_KEY is not set the functions log a warning and return silently
+If RESEND_API_KEY is not set the functions log a warning and return silently
 so the application keeps working in local dev / early staging.
 """
 
@@ -21,7 +21,7 @@ from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 
-_BREVO_SEND_URL = "https://api.brevo.com/v3/smtp/email"
+_RESEND_SEND_URL = "https://api.resend.com/emails"
 
 
 @dataclass(frozen=True)
@@ -84,44 +84,44 @@ def _password_reset_html(reset_url: str, name: str) -> str:
 def _send(to_email: str, subject: str, html_body: str) -> EmailSendResult:
     settings = get_settings()
 
-    if not settings.brevo_api_key:
-        error = "BREVO_API_KEY not configured"
+    if not settings.resend_api_key:
+        error = "RESEND_API_KEY not configured"
         logger.error(
             "EMAIL_SKIP: %s — skipping email to %s (subject: %s)",
             error,
             to_email,
             subject,
         )
-        return EmailSendResult(sent=False, error=error)
+        return EmailSendResult(sent=False, provider="resend", error=error)
 
     payload = {
-        "sender": {"name": "JobAI", "email": settings.system_email_from},
-        "to": [{"email": to_email}],
+        "from": f"JobAI <{settings.system_email_from}>",
+        "to": [to_email],
         "subject": subject,
-        "htmlContent": html_body,
+        "html": html_body,
     }
 
     try:
         response = httpx.post(
-            _BREVO_SEND_URL,
+            _RESEND_SEND_URL,
             json=payload,
-            headers={"api-key": settings.brevo_api_key},
+            headers={"Authorization": f"Bearer {settings.resend_api_key}"},
             timeout=15,
         )
         if response.status_code >= 400:
             error = response.text[:500]
             logger.error(
-                "EMAIL_SEND_FAILED: provider=brevo status=%s to=%s body=%s",
+                "EMAIL_SEND_FAILED: provider=resend status=%s to=%s body=%s",
                 response.status_code,
                 to_email,
                 error,
             )
-            return EmailSendResult(sent=False, error=error)
-        logger.info("Email sent to %s via Brevo API (subject: %s)", to_email, subject)
-        return EmailSendResult(sent=True)
+            return EmailSendResult(sent=False, provider="resend", error=error)
+        logger.info("Email sent to %s via Resend API (subject: %s)", to_email, subject)
+        return EmailSendResult(sent=True, provider="resend")
     except Exception as exc:
         logger.exception("Failed to send email to %s (subject: %s)", to_email, subject)
-        return EmailSendResult(sent=False, error=str(exc))
+        return EmailSendResult(sent=False, provider="resend", error=str(exc))
 
 
 # ---------------------------------------------------------------------------
