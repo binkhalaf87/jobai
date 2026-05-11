@@ -93,12 +93,8 @@ export function AuthForm({ mode }: AuthFormProps) {
         setResendStatus("No new email was sent. The account may already be verified.");
       }
     } catch (error) {
-      if (error instanceof ApiError && error.status === 503) {
-        setResendStatus("Verification email could not be sent. Check the backend email provider settings.");
-      } else {
-        const detail = error instanceof ApiError ? error.detail : "";
-        setResendStatus(detail || "Failed to resend. Try again later.");
-      }
+      const detail = error instanceof ApiError ? error.detail : (error instanceof Error ? error.message : "");
+      setResendStatus(detail || "Failed to resend. Try again later.");
     }
   }
 
