@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
-import { login, register, resendVerification } from "@/lib/auth";
+import { login, register } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
 
 type AuthFormProps = {
@@ -33,9 +33,6 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"jobseeker" | "recruiter">("jobseeker");
   const [errorMessage, setErrorMessage] = useState("");
-  const [showResendButton, setShowResendButton] = useState(false);
-  const [resendEmail, setResendEmail] = useState("");
-  const [resendStatus, setResendStatus] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isRegister = mode === "register";
@@ -45,7 +42,6 @@ export function AuthForm({ mode }: AuthFormProps) {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage("");
-    setShowResendButton(false);
     setIsSubmitting(true);
 
     try {
@@ -62,11 +58,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       }
     } catch (error) {
       if (error instanceof ApiError) {
-        if (error.detail === "email_not_verified") {
-          setErrorMessage("Please verify your email address before logging in.");
-          setShowResendButton(true);
-          setResendEmail(email);
-        } else if (error.detail?.includes("already exists")) {
+        if (error.detail?.includes("already exists")) {
           setErrorMessage(t("errors.emailTaken"));
         } else {
           setErrorMessage(error.detail || t("errors.authFailed"));
@@ -77,24 +69,6 @@ export function AuthForm({ mode }: AuthFormProps) {
       }
     } finally {
       setIsSubmitting(false);
-    }
-  }
-
-  async function handleResend() {
-    setResendStatus("Sending...");
-    try {
-      const result = await resendVerification(resendEmail);
-      if (result.sent) {
-        setResendStatus("Verification email sent. Check your inbox.");
-      } else if (result.reason === "cooldown" && result.retry_after_seconds) {
-        const minutes = Math.ceil(result.retry_after_seconds / 60);
-        setResendStatus(`Please wait ${minutes} minute${minutes === 1 ? "" : "s"} before requesting another email.`);
-      } else {
-        setResendStatus("No new email was sent. The account may already be verified.");
-      }
-    } catch (error) {
-      const detail = error instanceof ApiError ? error.detail : (error instanceof Error ? error.message : "");
-      setResendStatus(detail || "Failed to resend. Try again later.");
     }
   }
 
@@ -194,16 +168,6 @@ export function AuthForm({ mode }: AuthFormProps) {
         {errorMessage ? (
           <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
             <p>{errorMessage}</p>
-            {showResendButton ? (
-              <button
-                type="button"
-                onClick={handleResend}
-                className="mt-2 font-semibold underline"
-              >
-                Resend verification email
-              </button>
-            ) : null}
-            {resendStatus ? <p className="mt-1 text-rose-600">{resendStatus}</p> : null}
           </div>
         ) : null}
 

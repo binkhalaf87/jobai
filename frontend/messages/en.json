@@ -85,6 +85,13 @@
       "getStarted": "Get Started",
       "cta": "Try now"
     },
+    "emailVerificationBanner": {
+      "message": "Please verify your email address to unlock all features.",
+      "resend": "Resend verification email",
+      "resending": "Sending…",
+      "sent": "Verification email sent! Check your inbox.",
+      "error": "Failed to send. Please try again."
+    },
     "brandTagline": "Smart hiring platform",
     "descriptions": {
       "dashboard": "See your CV, jobs, outreach, and interview progress in one place.",

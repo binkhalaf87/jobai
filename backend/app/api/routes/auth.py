@@ -114,12 +114,6 @@ def login(
         )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.")
 
-    if not user.is_email_verified:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="email_not_verified",
-        )
-
     auth_data = build_auth_response(user, db)
     _set_auth_cookies(response, auth_data["access_token"], auth_data["refresh_token"])
     return auth_data
