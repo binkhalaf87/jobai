@@ -23,7 +23,16 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   try {
     return await api.get<AuthUser>("/auth/me");
   } catch (error) {
-    if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+    if (error instanceof ApiError && error.status === 401) {
+      // Access token may have expired — attempt a silent refresh then retry.
+      try {
+        await api.post("/auth/refresh");
+        return await api.get<AuthUser>("/auth/me");
+      } catch {
+        return null;
+      }
+    }
+    if (error instanceof ApiError && error.status === 403) {
       return null;
     }
     throw new Error("Unable to load the current user.");

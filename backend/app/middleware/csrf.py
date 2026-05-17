@@ -37,6 +37,11 @@ _EXEMPT_PREFIXES = (
     "/api/v1/auth/reset-password",
     "/api/v1/auth/verify-email",
     "/api/v1/auth/resend-verification",
+    # Refresh is authenticated via the httpOnly refresh token cookie, not a
+    # CSRF-protected session. Cross-origin deployments (Vercel → Railway) cannot
+    # send the SameSite=Lax csrf_token cookie on cross-origin fetch requests, so
+    # CSRF protection here would permanently block silent token refresh.
+    "/api/v1/auth/refresh",
 )
 
 
