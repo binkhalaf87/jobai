@@ -507,14 +507,7 @@ export default function DashboardAiInterviewPage() {
   }, [currentIndex, isAnsweringNow ? 1 : 0, setup.timerDuration]);
 
   const currentQuestion = questions[currentIndex];
-  const activeSessionCount = sessions.filter((session) => session.status === "active").length;
   const completedSessions = sessions.filter((session) => session.status === "completed");
-  const latestCompletedScore = completedSessions[0]?.overall_score ?? null;
-  const readinessLabel =
-    latestCompletedScore == null ? t("readiness.notScored")
-    : latestCompletedScore >= 8 ? t("readiness.strong")
-    : latestCompletedScore >= 6 ? t("readiness.improving")
-    : t("readiness.needsPractice");
   const experienceLevels = EXPERIENCE_LEVEL_VALUES.map((value) => ({ value, label: t(`levels.${value}`) }));
   const interviewTypes = INTERVIEW_TYPE_VALUES.map((value) => ({ value, label: t(`types.${value}`) }));
   const interviewerStyles = INTERVIEWER_STYLE_VALUES.map((value) => ({
@@ -525,57 +518,10 @@ export default function DashboardAiInterviewPage() {
 
   return (
     <div className="space-y-6">
-      <Panel className="overflow-hidden p-0">
-        <div className="grid gap-0 lg:grid-cols-[1.35fr_0.65fr]">
-          <div className="bg-gradient-to-br from-brand-800/8 via-white to-teal/5 px-6 py-6 md:px-8 md:py-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{t("eyebrow")}</p>
-            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-900">{t("title")}</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">{t("description")}</p>
-
-            <div className="mt-6 grid gap-3 md:grid-cols-3">
-              <div className="rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{t("readiness.label")}</p>
-                <p className="mt-3 text-lg font-semibold tracking-tight text-slate-950">{readinessLabel}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  {latestCompletedScore == null ? t("readiness.firstSession") : t("readiness.latestScore", { score: latestCompletedScore.toFixed(1) })}
-                </p>
-              </div>
-              <div className="rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{t("resumeContext.label")}</p>
-                <p className="mt-3 text-lg font-semibold tracking-tight text-slate-950">{resumes.length > 0 ? t("resumeContext.available") : t("resumeContext.optional")}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  {resumes.length > 0
-                    ? (resumes.length === 1 ? t("resumeContext.hasResumes_one", { count: 1 }) : t("resumeContext.hasResumes_other", { count: resumes.length }))
-                    : t("resumeContext.noResumes")}
-                </p>
-              </div>
-              <div className="rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-sm shadow-slate-200/50">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{t("openSessions.label")}</p>
-                <p className="mt-3 text-lg font-semibold tracking-tight text-slate-950">{activeSessionCount}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">{t("openSessions.hint")}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-slate-200 bg-brand-900 px-6 py-6 text-white lg:border-l lg:border-t-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{t("bestPractice.label")}</p>
-            <div className="mt-4 space-y-3">
-              <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
-                <p className="text-sm font-semibold">{t("bestPractice.step1Title")}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">{t("bestPractice.step1Desc")}</p>
-              </div>
-              <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
-                <p className="text-sm font-semibold">{t("bestPractice.step2Title")}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">{t("bestPractice.step2Desc")}</p>
-              </div>
-              <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
-                <p className="text-sm font-semibold">{t("bestPractice.step3Title")}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">{t("bestPractice.step3Desc")}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Panel>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{t("eyebrow")}</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">{t("title")}</h1>
+      </div>
 
       {pageState === "setup" && sessions.some((s) => s.status === "active") && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
@@ -74,24 +73,6 @@ function EmploymentBadge({ type }: { type: string | null }) {
     <span className="inline-flex rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
       {type}
     </span>
-  );
-}
-
-function ScoreHeader({
-  label,
-  value,
-  note,
-}: {
-  label: string;
-  value: string;
-  note: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{value}</p>
-      <p className="mt-2 text-xs leading-5 text-slate-500">{note}</p>
-    </div>
   );
 }
 
@@ -507,70 +488,13 @@ export default function DashboardJobSearchPage() {
 
   const canSearch = query.trim().length > 0 && pageState !== "searching";
   const hasMore = results.length > 0 && results.length < totalFound;
-  const matchedSavedCount = savedJobs.filter((job) => (job.fit_score ?? 0) >= 55).length;
-  const activeResume = resumes.find((resume) => resume.id === resumeId) ?? null;
-  const nextActionHref = savedJobs.length > 0 ? "/dashboard/smart-send" : "/dashboard/analysis";
-  const nextActionLabel = savedJobs.length > 0 ? t("nextStep.launchSmartSend") : t("nextStep.runCvAnalysis");
 
   return (
     <div className="space-y-6">
-      <Panel className="overflow-hidden">
-        <div className="border-b border-brand-100 bg-gradient-to-br from-brand-800/8 via-white to-teal/5 px-6 py-7 md:px-8 md:py-8">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{t("step")}</p>
-              <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 md:text-3xl">
-                {t("title")}
-              </h1>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                {t("description")}
-              </p>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">{t("focus.label")}</p>
-                <p className="mt-2 text-sm font-semibold text-slate-950">
-                  {savedJobs.length > 0 ? t("focus.turnToAction") : t("focus.buildShortlist")}
-                </p>
-                <p className="mt-1 text-xs leading-5 text-slate-500">
-                  {savedJobs.length > 0
-                    ? t("focus.promising", { count: matchedSavedCount })
-                    : t("focus.startBroad")}
-                </p>
-              </div>
-              <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white/90 px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">{t("nextStep.label")}</p>
-                <p className="text-sm font-semibold text-slate-950">{nextActionLabel}</p>
-                <Link
-                  href={nextActionHref}
-                  className="inline-flex items-center justify-center rounded-xl bg-brand-800 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-700"
-                >
-                  {t("nextStep.continueWorkflow")}
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-4 px-6 py-5 lg:grid-cols-3 md:px-8">
-          <ScoreHeader
-            label={t("headers.activeResume")}
-            value={activeResume?.source_filename ?? activeResume?.title ?? t("headers.noneSelected")}
-            note={resumeId ? t("headers.scoresUseCv") : t("headers.pickCv")}
-          />
-          <ScoreHeader
-            label={t("headers.savedRoles")}
-            value={savedJobs.length.toString()}
-            note={savedJobs.length > 0 ? t("headers.savedLookPromising", { count: matchedSavedCount }) : t("headers.saveStrongJobs")}
-          />
-          <ScoreHeader
-            label={t("headers.decisionMode")}
-            value={resumeId ? t("headers.personalizedMatching") : t("headers.manualScouting")}
-            note={resumeId ? t("headers.useFitSignals") : t("headers.resultsImproveAfterCv")}
-          />
-        </div>
-      </Panel>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{t("step")}</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">{t("title")}</h1>
+      </div>
 
       <Panel className="p-5 md:p-6">
         <div className="flex flex-col gap-3 sm:flex-row">
