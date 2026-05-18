@@ -8,6 +8,10 @@ function getBundledPublicApiUrl(): string {
   return process.env.NEXT_PUBLIC_API_URL?.trim() ?? "";
 }
 
+function shouldUseExternalProductionApiUrl(): boolean {
+  return process.env.NEXT_PUBLIC_USE_EXTERNAL_API_URL === "true";
+}
+
 function getLocalDevelopmentApiUrl(): string {
   return LOCAL_DEV_API_URL;
 }
@@ -15,7 +19,7 @@ function getLocalDevelopmentApiUrl(): string {
 export function getRequiredPublicApiUrl(): string {
   const value = getBundledPublicApiUrl();
 
-  if (value) {
+  if (value && (process.env.NODE_ENV !== "production" || shouldUseExternalProductionApiUrl())) {
     return value;
   }
 

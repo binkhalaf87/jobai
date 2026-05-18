@@ -32,7 +32,8 @@ Environment templates are provided for each deployable app.
 
 ### Frontend
 
-- `NEXT_PUBLIC_API_URL` - Public base URL for the FastAPI API, including the versioned prefix. Example: `https://api.example.com/api/v1`
+- `BACKEND_URL` - Server-side backend origin used by the Vercel rewrite. Example: `https://api.example.com`
+- `NEXT_PUBLIC_API_URL` - Optional public base URL for direct browser-to-backend calls. In production the frontend defaults to same-origin `/api/v1` unless `NEXT_PUBLIC_USE_EXTERNAL_API_URL=true`.
 
 ### Backend
 

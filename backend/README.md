@@ -70,9 +70,10 @@ This backend is prepared for container-based deployment.
 - Deploy the Next.js frontend on Vercel
 - Deploy the FastAPI backend on Railway
 - Set `ALLOWED_ORIGIN` on Railway to the Vercel frontend URL
-- Set `NEXT_PUBLIC_API_URL` on Vercel to the Railway backend API URL, for example `https://your-api.up.railway.app/api/v1`
+- Set `BACKEND_URL` on Vercel to the Railway backend origin, for example `https://your-api.up.railway.app`
+- Keep production browser requests on the same Vercel origin through `/api/v1`; only set `NEXT_PUBLIC_USE_EXTERNAL_API_URL=true` with `NEXT_PUBLIC_API_URL` if you intentionally want direct browser-to-Railway calls
 
-That keeps browser requests explicit: Vercel serves the frontend, and the browser calls Railway only from approved origins.
+That keeps cookies first-party on the Vercel domain while Vercel proxies API traffic to Railway server-side.
 
 ## Database and migrations
 
