@@ -22,7 +22,7 @@ export async function uploadResume(file: File, onProgress?: (progress: number) =
 
 export async function listResumes(): Promise<ResumeListItem[]> {
   try {
-    return await api.get<ResumeListItem[]>("/resume/");
+    return await api.get<ResumeListItem[]>("/resume");
   } catch (error) {
     if (error instanceof ApiError) throw new Error(error.detail);
     throw new Error("Unable to load resumes.");

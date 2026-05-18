@@ -39,6 +39,7 @@ def create_application() -> ASGIApp:
         docs_url="/docs" if is_dev else None,
         redoc_url="/redoc" if is_dev else None,
         debug=settings.debug,
+        redirect_slashes=False,
     )
 
     app.state.limiter = limiter

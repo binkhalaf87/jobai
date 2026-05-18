@@ -30,7 +30,7 @@ def resumes_status() -> dict[str, str]:
     return {"status": "resume routes ready"}
 
 
-@router.get("/", response_model=list[ResumeListItem])
+@router.get("", response_model=list[ResumeListItem])
 def list_resumes(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
