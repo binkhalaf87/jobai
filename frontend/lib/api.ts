@@ -65,6 +65,7 @@ function getCsrfToken(): string | null {
 }
 
 const CSRF_SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
+const AUTH_REFRESH_PATH = "/auth/refresh";
 
 function buildHeaders(
   body: ApiRequestOptions["body"],
@@ -87,10 +88,24 @@ function buildHeaders(
   return requestHeaders;
 }
 
+async function refreshSession(baseUrl: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${baseUrl}${AUTH_REFRESH_PATH}`, {
+      method: "POST",
+      credentials: "include",
+      headers: buildHeaders(null, "POST"),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
 
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
   const { body, headers, method, ...rest } = options;
   const baseUrl = getApiBaseUrl();
+  const requestBody = normalizeBody(body);
+  const requestHeaders = buildHeaders(body, method, headers);
   let response: Response;
 
   try {
@@ -98,11 +113,25 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
       ...rest,
       method,
       credentials: "include",
-      headers: buildHeaders(body, method, headers),
-      body: normalizeBody(body),
+      headers: requestHeaders,
+      body: requestBody,
     });
   } catch {
     throw createApiConnectionError(baseUrl);
+  }
+
+  if (response.status === 401 && path !== AUTH_REFRESH_PATH && (await refreshSession(baseUrl))) {
+    try {
+      response = await fetch(`${baseUrl}${path}`, {
+        ...rest,
+        method,
+        credentials: "include",
+        headers: requestHeaders,
+        body: requestBody,
+      });
+    } catch {
+      throw createApiConnectionError(baseUrl);
+    }
   }
 
   if (!response.ok) {
@@ -120,6 +149,8 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 export async function fetchStream(path: string, options: ApiRequestOptions = {}): Promise<Response> {
   const { body, headers, method, ...rest } = options;
   const baseUrl = getApiBaseUrl();
+  const requestBody = normalizeBody(body);
+  const requestHeaders = buildHeaders(body, method, headers);
   let response: Response;
 
   try {
@@ -127,11 +158,25 @@ export async function fetchStream(path: string, options: ApiRequestOptions = {})
       ...rest,
       method,
       credentials: "include",
-      headers: buildHeaders(body, method, headers),
-      body: normalizeBody(body),
+      headers: requestHeaders,
+      body: requestBody,
     });
   } catch {
     throw createApiConnectionError(baseUrl);
+  }
+
+  if (response.status === 401 && path !== AUTH_REFRESH_PATH && (await refreshSession(baseUrl))) {
+    try {
+      response = await fetch(`${baseUrl}${path}`, {
+        ...rest,
+        method,
+        credentials: "include",
+        headers: requestHeaders,
+        body: requestBody,
+      });
+    } catch {
+      throw createApiConnectionError(baseUrl);
+    }
   }
 
   if (!response.ok) {
@@ -147,42 +192,60 @@ export function uploadRequest<T>(path: string, formData: FormData, options: Uplo
   const baseUrl = getApiBaseUrl();
 
   return new Promise((resolve, reject) => {
-    const request = new XMLHttpRequest();
-    request.open("POST", `${baseUrl}${path}`);
-    request.responseType = "json";
-    request.withCredentials = true;
+    let retried = false;
 
-    const csrf = getCsrfToken();
-    if (csrf) {
-      request.setRequestHeader("X-CSRF-Token", csrf);
-    }
+    const send = () => {
+      const request = new XMLHttpRequest();
+      request.open("POST", `${baseUrl}${path}`);
+      request.responseType = "json";
+      request.withCredentials = true;
 
-    request.upload.addEventListener("progress", (event) => {
-      if (event.lengthComputable && onProgress) {
-        onProgress(Math.round((event.loaded / event.total) * 100));
-      }
-    });
-
-    request.addEventListener("load", () => {
-      const responseData = request.response as T | { detail?: string } | null;
-
-      if (request.status >= 200 && request.status < 300) {
-        resolve((responseData ?? {}) as T);
-        return;
+      const csrf = getCsrfToken();
+      if (csrf) {
+        request.setRequestHeader("X-CSRF-Token", csrf);
       }
 
-      const detail =
-        responseData && typeof responseData === "object" && "detail" in responseData
-          ? responseData.detail || "Request failed."
-          : "Request failed.";
-      reject(new ApiError(request.status, detail));
-    });
+      request.upload.addEventListener("progress", (event) => {
+        if (event.lengthComputable && onProgress) {
+          onProgress(Math.round((event.loaded / event.total) * 100));
+        }
+      });
 
-    request.addEventListener("error", () => {
-      reject(createApiConnectionError(baseUrl));
-    });
+      request.addEventListener("load", () => {
+        if (request.status === 401 && !retried) {
+          retried = true;
+          void refreshSession(baseUrl).then((refreshed) => {
+            if (refreshed) {
+              send();
+              return;
+            }
+            reject(new ApiError(request.status, "Could not validate authentication credentials."));
+          });
+          return;
+        }
 
-    request.send(formData);
+        const responseData = request.response as T | { detail?: string } | null;
+
+        if (request.status >= 200 && request.status < 300) {
+          resolve((responseData ?? {}) as T);
+          return;
+        }
+
+        const detail =
+          responseData && typeof responseData === "object" && "detail" in responseData
+            ? responseData.detail || "Request failed."
+            : "Request failed.";
+        reject(new ApiError(request.status, detail));
+      });
+
+      request.addEventListener("error", () => {
+        reject(createApiConnectionError(baseUrl));
+      });
+
+      request.send(formData);
+    };
+
+    send();
   });
 }
 
