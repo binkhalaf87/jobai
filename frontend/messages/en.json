@@ -158,6 +158,13 @@
         "noText": "No text extracted yet."
       },
       "deleteConfirm": "Delete \"{name}\"?\n\nThis will also remove all analyses linked to this CV.",
+      "pagesCount": "{count, plural, one {1 page} other {{count} pages}}",
+      "retry": "Retry",
+      "stats": {
+        "total": "Total",
+        "ready": "Ready",
+        "processing": "Processing"
+      },
       "errors": {
         "load": "Failed to load your CVs.",
         "delete": "Delete failed. Please try again.",

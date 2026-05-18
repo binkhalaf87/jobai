@@ -37,7 +37,7 @@ type FileState = { blobUrl: string; filename: string; fileType: string } | null;
 
 /* ─── page ── */
 export default function DashboardResumesPage() {
-  const t = useTranslations();
+  const t = useTranslations("resumes");
   const [resumes, setResumes]         = useState<ResumeListItem[]>([]);
   const [loading, setLoading]         = useState(true);
   const [fetchError, setFetchError]   = useState("");
