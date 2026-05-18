@@ -20,10 +20,13 @@ from app.models.user import User
 from app.models.user_wallet import UserWallet
 from app.models.mailing_list import Recipient, RecipientList
 from app.models.wallet_transaction import WalletTransaction
+from app.models.gmail_connection_request import GmailConnectionRequest
 from app.schemas.admin import (
     AdminContactCreate,
     AdminContactItem,
     AdminContactsBulk,
+    AdminGmailRequestItem,
+    AdminGmailRequestReject,
     AdminListCreate,
     AdminListItem,
     AdminStatsResponse,
@@ -327,3 +330,84 @@ def delete_contact(
     if rl and rl.total_count > 0:
         rl.total_count -= 1
     db.commit()
+
+
+# ── Gmail Connection Requests ──────────────────────────────────────────────────
+
+@router.get("/gmail-requests", response_model=list[AdminGmailRequestItem])
+def list_gmail_requests(
+    request_status: str | None = Query(None, alias="status"),
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> list[AdminGmailRequestItem]:
+    """List all Gmail connection requests, optionally filtered by status."""
+    q = select(GmailConnectionRequest, User).join(User, GmailConnectionRequest.user_id == User.id)
+    if request_status:
+        q = q.where(GmailConnectionRequest.status == request_status)
+    rows = db.execute(q.order_by(GmailConnectionRequest.created_at.desc())).all()
+    return [
+        AdminGmailRequestItem(
+            id=req.id,
+            user_id=req.user_id,
+            user_email=user.email,
+            user_name=user.full_name,
+            status=req.status,
+            rejection_reason=req.rejection_reason,
+            created_at=req.created_at,
+            reviewed_at=req.reviewed_at,
+        )
+        for req, user in rows
+    ]
+
+
+@router.post("/gmail-requests/{request_id}/approve", response_model=AdminGmailRequestItem)
+def approve_gmail_request(
+    request_id: str,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> AdminGmailRequestItem:
+    req = db.get(GmailConnectionRequest, request_id)
+    if not req:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found.")
+    if req.status != "pending":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Request is not pending.")
+    req.status = "approved"
+    req.reviewed_at = datetime.now(timezone.utc)
+    req.reviewed_by = admin.id
+    req.rejection_reason = None
+    db.commit()
+    db.refresh(req)
+    user = db.get(User, req.user_id)
+    return AdminGmailRequestItem(
+        id=req.id, user_id=req.user_id,
+        user_email=user.email if user else "", user_name=user.full_name if user else None,
+        status=req.status, rejection_reason=req.rejection_reason,
+        created_at=req.created_at, reviewed_at=req.reviewed_at,
+    )
+
+
+@router.post("/gmail-requests/{request_id}/reject", response_model=AdminGmailRequestItem)
+def reject_gmail_request(
+    request_id: str,
+    body: AdminGmailRequestReject,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> AdminGmailRequestItem:
+    req = db.get(GmailConnectionRequest, request_id)
+    if not req:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found.")
+    if req.status != "pending":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Request is not pending.")
+    req.status = "rejected"
+    req.reviewed_at = datetime.now(timezone.utc)
+    req.reviewed_by = admin.id
+    req.rejection_reason = body.reason
+    db.commit()
+    db.refresh(req)
+    user = db.get(User, req.user_id)
+    return AdminGmailRequestItem(
+        id=req.id, user_id=req.user_id,
+        user_email=user.email if user else "", user_name=user.full_name if user else None,
+        status=req.status, rejection_reason=req.rejection_reason,
+        created_at=req.created_at, reviewed_at=req.reviewed_at,
+    )

@@ -15,6 +15,16 @@ class GmailStatusResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class GmailConnectionRequestResponse(BaseModel):
+    id: str
+    status: str  # pending | approved | rejected
+    rejection_reason: str | None = None
+    created_at: datetime
+    reviewed_at: datetime | None = None
+
+    model_config = {"from_attributes": True}
+
+
 # ── Generate Cover Letter ──────────────────────────────────────────────────────
 
 class GenerateLetterRequest(BaseModel):

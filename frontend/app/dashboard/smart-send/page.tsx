@@ -10,15 +10,18 @@ import {
   disconnectGmail,
   generateLetter,
   getCampaigns,
+  getGmailRequestStatus,
   getGmailStatus,
   getHistory,
   getRecipientLists,
   pauseCampaign,
+  requestGmailAccess,
   resumeCampaign,
 } from "@/lib/smart-send";
 import type {
   Campaign,
   GenerateLetterResponse,
+  GmailConnectionRequest,
   GmailStatus,
   RecipientList,
   SendHistoryItem,
@@ -69,8 +72,32 @@ function GmailConnectPanel({
   onDisconnected: () => void;
 }) {
   const t = useTranslations("smartSendPage");
+  const [request, setRequest] = useState<GmailConnectionRequest | null>(null);
+  const [loadingRequest, setLoadingRequest] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!status.is_connected) {
+      getGmailRequestStatus().then(setRequest).finally(() => setLoadingRequest(false));
+    } else {
+      setLoadingRequest(false);
+    }
+  }, [status.is_connected]);
+
+  async function handleRequestAccess() {
+    setSubmitting(true);
+    setError("");
+    try {
+      const req = await requestGmailAccess();
+      setRequest(req);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t("gmail.requestFailed"));
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   async function handleConnect() {
     setError("");
@@ -96,46 +123,110 @@ function GmailConnectPanel({
     }
   }
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold mb-1">{t("gmail.title")}</h2>
-        <p className="text-sm text-gray-500">{t("gmail.description")}</p>
-      </div>
-
-      {status.is_connected ? (
+  if (status.is_connected) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-lg font-semibold mb-1">{t("gmail.title")}</h2>
+        </div>
         <div className="space-y-4">
           <div className="bg-teal-light/20 border border-teal-light rounded-xl p-4 flex items-center gap-3">
             <div className="w-8 h-8 bg-teal rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">✓</div>
             <div>
               <p className="text-sm font-medium text-teal">{t("gmail.connected")}</p>
-              <p className="text-xs text-gray-500">{status.gmail_address}</p>
+              <p className="text-xs text-slate-500">{status.gmail_address}</p>
             </div>
           </div>
           <button onClick={onConnected} className="w-full bg-brand-800 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-brand-700">
             {t("gmail.composeBtn")}
           </button>
-          {error && <p className="text-red-600 text-sm">{error}</p>}
+          {error && <p className="text-rose-600 text-sm">{error}</p>}
           <button onClick={() => void handleDisconnect()} disabled={disconnecting} className="w-full border border-slate-200 text-slate-600 rounded-lg py-2 text-sm hover:bg-slate-50 disabled:opacity-50">
             {disconnecting ? t("gmail.disconnecting") : t("gmail.disconnect")}
           </button>
         </div>
-      ) : (
+      </div>
+    );
+  }
+
+  if (loadingRequest) {
+    return <div className="h-24 animate-pulse rounded-2xl bg-slate-100" />;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold mb-1">{t("gmail.title")}</h2>
+        <p className="text-sm text-slate-500">{t("gmail.description")}</p>
+      </div>
+
+      {/* No request yet */}
+      {!request && (
         <div className="space-y-4">
-          <div className="bg-brand-50 border border-brand-200 rounded-xl p-4 text-sm text-brand-800 space-y-1">
-            <p className="font-medium">{t("gmail.howItWorks")}</p>
-            <ol className="list-decimal list-inside space-y-0.5 text-brand-700">
-              <li>{t("gmail.step1")}</li>
-              <li>{t("gmail.step2")}</li>
-              <li>{t("gmail.step3")}</li>
-            </ol>
+          <div className="rounded-2xl border border-brand-200 bg-brand-50 p-4 text-sm text-brand-800 space-y-2">
+            <p className="font-semibold">{t("gmail.requestTitle")}</p>
+            <p className="text-brand-700">{t("gmail.requestDesc")}</p>
           </div>
-          {error && <p className="text-red-600 text-sm">{error}</p>}
-          <button onClick={() => void handleConnect()} className="w-full bg-brand-800 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-brand-700 flex items-center justify-center gap-2">
+          {error && <p className="text-rose-600 text-sm">{error}</p>}
+          <button
+            onClick={() => void handleRequestAccess()}
+            disabled={submitting}
+            className="w-full bg-brand-800 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-brand-700 disabled:opacity-50"
+          >
+            {submitting ? t("gmail.requesting") : t("gmail.requestBtn")}
+          </button>
+        </div>
+      )}
+
+      {/* Pending */}
+      {request?.status === "pending" && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+            <p className="text-sm font-semibold text-amber-800">{t("gmail.pendingTitle")}</p>
+          </div>
+          <p className="text-xs text-amber-700">{t("gmail.pendingDesc")}</p>
+        </div>
+      )}
+
+      {/* Approved — can now connect */}
+      {request?.status === "approved" && (
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-teal-light bg-teal-light/20 p-4 flex items-center gap-3">
+            <div className="w-7 h-7 bg-teal rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">✓</div>
+            <div>
+              <p className="text-sm font-semibold text-teal">{t("gmail.approvedTitle")}</p>
+              <p className="text-xs text-slate-500">{t("gmail.approvedDesc")}</p>
+            </div>
+          </div>
+          {error && <p className="text-rose-600 text-sm">{error}</p>}
+          <button
+            onClick={() => void handleConnect()}
+            className="w-full bg-brand-800 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-brand-700 flex items-center justify-center gap-2"
+          >
             <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
               <path d="M20.283 10.356h-8.327v3.451h4.792c-.446 2.193-2.313 3.453-4.792 3.453a5.27 5.27 0 0 1-5.279-5.28 5.27 5.27 0 0 1 5.279-5.279c1.259 0 2.397.447 3.29 1.178l2.6-2.599c-1.584-1.381-3.615-2.233-5.89-2.233a8.908 8.908 0 0 0-8.934 8.934 8.908 8.908 0 0 0 8.934 8.934c4.467 0 8.529-3.249 8.529-8.934 0-.528-.081-1.097-.202-1.625z" />
             </svg>
             {t("gmail.connectBtn")}
+          </button>
+        </div>
+      )}
+
+      {/* Rejected */}
+      {request?.status === "rejected" && (
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 space-y-1">
+            <p className="text-sm font-semibold text-rose-700">{t("gmail.rejectedTitle")}</p>
+            {request.rejection_reason && (
+              <p className="text-xs text-rose-600">{request.rejection_reason}</p>
+            )}
+          </div>
+          {error && <p className="text-rose-600 text-sm">{error}</p>}
+          <button
+            onClick={() => { setRequest(null); }}
+            className="w-full border border-slate-300 text-slate-700 rounded-xl py-2.5 text-sm font-semibold hover:bg-slate-50"
+          >
+            {t("gmail.reRequestBtn")}
           </button>
         </div>
       )}

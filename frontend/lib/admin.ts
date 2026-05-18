@@ -164,3 +164,42 @@ export async function deleteContact(listId: string, contactId: string): Promise<
   const res = await fetch(`${getApiBaseUrl()}${BASE}/lists/${listId}/contacts/${contactId}`, { method: "DELETE", headers: authHeaders() });
   if (!res.ok && res.status !== 204) throw new Error("Failed to delete contact");
 }
+
+// ── Gmail Connection Requests ──────────────────────────────────────────────────
+
+export type AdminGmailRequestItem = {
+  id: string;
+  user_id: string;
+  user_email: string;
+  user_name: string | null;
+  status: "pending" | "approved" | "rejected";
+  rejection_reason: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+};
+
+export async function listGmailRequests(status?: string): Promise<AdminGmailRequestItem[]> {
+  const qs = status ? `?status=${status}` : "";
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/gmail-requests${qs}`, { headers: authHeaders() });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to load Gmail requests"));
+  return res.json();
+}
+
+export async function approveGmailRequest(id: string): Promise<AdminGmailRequestItem> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/gmail-requests/${id}/approve`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to approve request"));
+  return res.json();
+}
+
+export async function rejectGmailRequest(id: string, reason?: string): Promise<AdminGmailRequestItem> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/gmail-requests/${id}/reject`, {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ reason: reason ?? null }),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to reject request"));
+  return res.json();
+}

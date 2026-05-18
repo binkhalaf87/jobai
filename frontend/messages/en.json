@@ -1881,7 +1881,18 @@
       "composeBtn": "Compose & Send",
       "disconnect": "Disconnect Gmail",
       "disconnecting": "Disconnecting…",
-      "disconnectFailed": "Failed to disconnect Gmail"
+      "disconnectFailed": "Failed to disconnect Gmail",
+      "requestTitle": "Admin approval required",
+      "requestDesc": "To protect our sending reputation, Gmail access requires a one-time admin approval. Submit a request and we'll review it shortly.",
+      "requestBtn": "Request Gmail Access",
+      "requesting": "Submitting request…",
+      "pendingTitle": "Request under review",
+      "pendingDesc": "Your Gmail access request is awaiting admin approval. You'll be able to connect once it's approved.",
+      "approvedTitle": "Request approved!",
+      "approvedDesc": "Your request has been approved. Click below to connect your Gmail account.",
+      "rejectedTitle": "Request rejected",
+      "reRequestBtn": "Submit a new request",
+      "requestFailed": "Failed to submit request"
     },
     "campaigns": {
       "tab": "Campaigns",

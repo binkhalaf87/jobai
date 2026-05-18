@@ -17,11 +17,13 @@ from app.models.email_campaign_contact import EmailCampaignContact
 from app.models.enums import UserRole
 from app.models.mailing_list import Recipient, RecipientList
 from app.models.user import User
+from app.models.gmail_connection_request import GmailConnectionRequest
 from app.schemas.smart_send import (
     CampaignCreate,
     CampaignResponse,
     GenerateLetterRequest,
     GenerateLetterResponse,
+    GmailConnectionRequestResponse,
     GmailStatusResponse,
     RecipientListItem,
     SendHistoryItem,
@@ -33,13 +35,64 @@ from app.services import cover_letter_service, gmail_oauth_service
 router = APIRouter(prefix="/smart-send", tags=["smart-send"])
 
 
+# ── Gmail Connection Request ───────────────────────────────────────────────────
+
+@router.post("/gmail/request", response_model=GmailConnectionRequestResponse, status_code=status.HTTP_201_CREATED)
+def request_gmail_connection(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> GmailConnectionRequest:
+    """Submit a request to the admin to enable Gmail OAuth for this account."""
+    existing = db.scalar(
+        select(GmailConnectionRequest)
+        .where(GmailConnectionRequest.user_id == current_user.id)
+        .order_by(GmailConnectionRequest.created_at.desc())
+    )
+    if existing and existing.status in ("pending", "approved"):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A pending or approved request already exists.",
+        )
+    req = GmailConnectionRequest(user_id=current_user.id, status="pending")
+    db.add(req)
+    db.commit()
+    db.refresh(req)
+    return req
+
+
+@router.get("/gmail/request/status", response_model=GmailConnectionRequestResponse | None)
+def get_gmail_request_status(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> GmailConnectionRequest | None:
+    """Return the latest Gmail connection request for the current user."""
+    return db.scalar(
+        select(GmailConnectionRequest)
+        .where(GmailConnectionRequest.user_id == current_user.id)
+        .order_by(GmailConnectionRequest.created_at.desc())
+    )
+
+
 # ── Gmail OAuth ────────────────────────────────────────────────────────────────
 
 @router.get("/gmail/auth")
 def gmail_auth(
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Return the Google OAuth authorization URL."""
+    """Return the Google OAuth authorization URL. Requires an approved connection request."""
+    approved = db.scalar(
+        select(GmailConnectionRequest)
+        .where(
+            GmailConnectionRequest.user_id == current_user.id,
+            GmailConnectionRequest.status == "approved",
+        )
+    )
+    if not approved:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Gmail connection requires admin approval. Submit a request first.",
+        )
     try:
         auth_url = gmail_oauth_service.get_authorization_url(current_user.id)
     except ValueError as exc:

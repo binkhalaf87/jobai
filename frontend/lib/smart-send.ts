@@ -1,47 +1,35 @@
-import { getApiBaseUrl } from "@/lib/api";
-import type { GenerateLetterResponse, GmailStatus, SendHistoryItem } from "@/types";
+import { api } from "@/lib/api";
+import type { GenerateLetterResponse, GmailConnectionRequest, GmailStatus, SendHistoryItem } from "@/types";
 
 const BASE = "/smart-send";
 
-function getToken(): string {
-  if (typeof window === "undefined") return "";
-  return window.localStorage.getItem("jobai_access_token") ?? "";
+// ── Gmail Connection Request ──────────────────────────────────────────────────
+
+export async function requestGmailAccess(): Promise<GmailConnectionRequest> {
+  return api.post<GmailConnectionRequest>(`${BASE}/gmail/request`);
 }
 
-function authHeaders(extra?: Record<string, string>): Record<string, string> {
-  return { Authorization: `Bearer ${getToken()}`, ...extra };
-}
-
-async function parseDetail(res: Response, fallback: string): Promise<string> {
-  const payload = await res.json().catch(() => ({})) as { detail?: string };
-  return payload.detail || fallback;
+export async function getGmailRequestStatus(): Promise<GmailConnectionRequest | null> {
+  try {
+    return await api.get<GmailConnectionRequest | null>(`${BASE}/gmail/request/status`);
+  } catch {
+    return null;
+  }
 }
 
 // ── Gmail OAuth ───────────────────────────────────────────────────────────────
 
 export async function getGmailAuthUrl(): Promise<string> {
-  const res = await fetch(`${getApiBaseUrl()}${BASE}/gmail/auth`, {
-    headers: authHeaders(),
-  });
-  if (!res.ok) throw new Error(await parseDetail(res, "Failed to get auth URL"));
-  const data = await res.json() as { auth_url: string };
+  const data = await api.get<{ auth_url: string }>(`${BASE}/gmail/auth`);
   return data.auth_url;
 }
 
 export async function getGmailStatus(): Promise<GmailStatus> {
-  const res = await fetch(`${getApiBaseUrl()}${BASE}/gmail/status`, {
-    headers: authHeaders(),
-  });
-  if (!res.ok) throw new Error(await parseDetail(res, "Failed to load Gmail status"));
-  return res.json();
+  return api.get<GmailStatus>(`${BASE}/gmail/status`);
 }
 
 export async function disconnectGmail(): Promise<void> {
-  const res = await fetch(`${getApiBaseUrl()}${BASE}/gmail/disconnect`, {
-    method: "DELETE",
-    headers: authHeaders(),
-  });
-  if (!res.ok && res.status !== 204) throw new Error("Failed to disconnect Gmail");
+  return api.delete<void>(`${BASE}/gmail/disconnect`);
 }
 
 // ── Generate Letter ───────────────────────────────────────────────────────────
@@ -52,13 +40,7 @@ export async function generateLetter(data: {
   job_description?: string;
   resume_id?: string;
 }): Promise<GenerateLetterResponse> {
-  const res = await fetch(`${getApiBaseUrl()}${BASE}/generate`, {
-    method: "POST",
-    headers: authHeaders({ "Content-Type": "application/json" }),
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error(await parseDetail(res, "Failed to generate letter"));
-  return res.json();
+  return api.post<GenerateLetterResponse>(`${BASE}/generate`, data);
 }
 
 // ── Send ──────────────────────────────────────────────────────────────────────
@@ -72,33 +54,19 @@ export async function sendEmail(data: {
   recipient_name?: string;
   resume_id?: string;
 }): Promise<{ id: string; status: string; recipient_email: string; sent_at: string | null }> {
-  const res = await fetch(`${getApiBaseUrl()}${BASE}/send`, {
-    method: "POST",
-    headers: authHeaders({ "Content-Type": "application/json" }),
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error(await parseDetail(res, "Failed to send email"));
-  return res.json();
+  return api.post(`${BASE}/send`, data);
 }
 
 // ── History ───────────────────────────────────────────────────────────────────
 
 export async function getHistory(): Promise<SendHistoryItem[]> {
-  const res = await fetch(`${getApiBaseUrl()}${BASE}/history`, {
-    headers: authHeaders(),
-  });
-  if (!res.ok) throw new Error("Failed to load history");
-  return res.json();
+  return api.get<SendHistoryItem[]>(`${BASE}/history`);
 }
 
 // ── Recipient Lists ───────────────────────────────────────────────────────────
 
 export async function getRecipientLists(): Promise<import("@/types").RecipientList[]> {
-  const res = await fetch(`${getApiBaseUrl()}${BASE}/recipient-lists`, {
-    headers: authHeaders(),
-  });
-  if (!res.ok) throw new Error("Failed to load lists");
-  return res.json();
+  return api.get<import("@/types").RecipientList[]>(`${BASE}/recipient-lists`);
 }
 
 // ── Campaigns ─────────────────────────────────────────────────────────────────
@@ -110,37 +78,17 @@ export async function createCampaign(data: {
   resume_id?: string;
   daily_limit?: number;
 }): Promise<import("@/types").Campaign> {
-  const res = await fetch(`${getApiBaseUrl()}${BASE}/campaigns`, {
-    method: "POST",
-    headers: authHeaders({ "Content-Type": "application/json" }),
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error(await parseDetail(res, "Failed to create campaign"));
-  return res.json();
+  return api.post<import("@/types").Campaign>(`${BASE}/campaigns`, data);
 }
 
 export async function getCampaigns(): Promise<import("@/types").Campaign[]> {
-  const res = await fetch(`${getApiBaseUrl()}${BASE}/campaigns`, {
-    headers: authHeaders(),
-  });
-  if (!res.ok) throw new Error("Failed to load campaigns");
-  return res.json();
+  return api.get<import("@/types").Campaign[]>(`${BASE}/campaigns`);
 }
 
 export async function pauseCampaign(id: string): Promise<import("@/types").Campaign> {
-  const res = await fetch(`${getApiBaseUrl()}${BASE}/campaigns/${id}/pause`, {
-    method: "PATCH",
-    headers: authHeaders(),
-  });
-  if (!res.ok) throw new Error(await parseDetail(res, "Failed to pause campaign"));
-  return res.json();
+  return api.patch<import("@/types").Campaign>(`${BASE}/campaigns/${id}/pause`);
 }
 
 export async function resumeCampaign(id: string): Promise<import("@/types").Campaign> {
-  const res = await fetch(`${getApiBaseUrl()}${BASE}/campaigns/${id}/resume`, {
-    method: "PATCH",
-    headers: authHeaders(),
-  });
-  if (!res.ok) throw new Error(await parseDetail(res, "Failed to resume campaign"));
-  return res.json();
+  return api.patch<import("@/types").Campaign>(`${BASE}/campaigns/${id}/resume`);
 }

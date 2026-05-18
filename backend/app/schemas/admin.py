@@ -82,3 +82,22 @@ class AdminContactCreate(BaseModel):
 
 class AdminContactsBulk(BaseModel):
     emails: list[str]
+
+
+# ── Gmail Connection Requests ──────────────────────────────────────────────────
+
+class AdminGmailRequestItem(BaseModel):
+    id: str
+    user_id: str
+    user_email: str
+    user_name: str | None
+    status: str
+    rejection_reason: str | None
+    created_at: datetime
+    reviewed_at: datetime | None
+
+    model_config = {"from_attributes": True}
+
+
+class AdminGmailRequestReject(BaseModel):
+    reason: str | None = None

@@ -347,6 +347,14 @@ export type GmailStatus = {
   gmail_address: string | null;
 };
 
+export type GmailConnectionRequest = {
+  id: string;
+  status: "pending" | "approved" | "rejected";
+  rejection_reason: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+};
+
 export type GenerateLetterResponse = {
   subject: string;
   body: string;

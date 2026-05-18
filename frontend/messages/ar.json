@@ -1881,7 +1881,18 @@
       "composeBtn": "إنشاء وإرسال",
       "disconnect": "فصل حساب Gmail",
       "disconnecting": "جارٍ الفصل…",
-      "disconnectFailed": "تعذّر فصل حساب Gmail"
+      "disconnectFailed": "تعذّر فصل حساب Gmail",
+      "requestTitle": "مطلوب موافقة الأدمن",
+      "requestDesc": "للحفاظ على سمعة الإرسال، يتطلب الوصول إلى Gmail موافقة الأدمن لمرة واحدة. أرسل طلباً وسنراجعه قريباً.",
+      "requestBtn": "طلب الوصول إلى Gmail",
+      "requesting": "جارٍ إرسال الطلب…",
+      "pendingTitle": "الطلب قيد المراجعة",
+      "pendingDesc": "طلب الوصول إلى Gmail الخاص بك في انتظار موافقة الأدمن. ستتمكن من الربط بعد الموافقة.",
+      "approvedTitle": "تمت الموافقة على الطلب!",
+      "approvedDesc": "تمت الموافقة على طلبك. اضغط أدناه لربط حساب Gmail الخاص بك.",
+      "rejectedTitle": "تم رفض الطلب",
+      "reRequestBtn": "إرسال طلب جديد",
+      "requestFailed": "تعذّر إرسال الطلب"
     },
     "campaigns": {
       "tab": "الحملات",
