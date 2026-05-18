@@ -262,7 +262,7 @@ export default function DashboardResumesPage() {
                     {fileLoading && (
                       <div className="flex items-center gap-2 text-sm text-slate-500">
                         <span className="h-3 w-3 animate-spin rounded-full border-2 border-brand-800 border-t-transparent" />
-                        جاري التحميل…
+                        {t("list.loading")}
                       </div>
                     )}
                     {fileError && <p className="text-sm text-rose-600">{fileError}</p>}
@@ -270,19 +270,19 @@ export default function DashboardResumesPage() {
                     {fileState && fileState.fileType === "pdf" && (
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500">معاينة PDF</p>
+                          <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500">{t("list.preview.pdfTitle")}</p>
                           <a
                             href={fileState.blobUrl}
                             download={fileState.filename}
                             className="rounded-xl border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 transition hover:bg-brand-100"
                           >
-                            تحميل
+                            {t("list.actions.download")}
                           </a>
                         </div>
                         <iframe
                           src={fileState.blobUrl}
                           className="h-[500px] w-full rounded-xl border border-slate-200"
-                          title="معاينة السيرة الذاتية"
+                          title={t("list.preview.pdfTitle")}
                         />
                       </div>
                     )}
@@ -296,14 +296,14 @@ export default function DashboardResumesPage() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-semibold text-slate-900">{fileState.filename}</p>
-                          <p className="mt-0.5 text-xs text-slate-500">لا يمكن معاينة DOCX — قم بتحميله لفتحه في Word أو Google Docs.</p>
+                          <p className="mt-0.5 text-xs text-slate-500">{t("list.preview.docxHint")}</p>
                         </div>
                         <button
                           type="button"
                           onClick={() => { const a = document.createElement("a"); a.href = fileState.blobUrl; a.download = fileState.filename; a.click(); }}
                           className="flex-shrink-0 rounded-xl border border-brand-300 bg-brand-50 px-4 py-2 text-xs font-semibold text-brand-700 transition hover:bg-brand-100"
                         >
-                          تحميل
+                          {t("list.actions.download")}
                         </button>
                       </div>
                     )}
