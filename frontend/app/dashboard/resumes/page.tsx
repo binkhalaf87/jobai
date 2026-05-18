@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
@@ -113,6 +114,19 @@ export default function DashboardResumesPage() {
 
   return (
     <div className="space-y-6">
+      {/* Back button */}
+      <div>
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-brand-700"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 rtl:rotate-180">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+          {t("backToDashboard")}
+        </Link>
+      </div>
+
       {/* Upload card */}
       <ResumeUploadCard onUploadComplete={() => void loadResumes()} />
 
@@ -220,6 +234,18 @@ export default function DashboardResumesPage() {
                   >
                     {isExpanded ? t("list.actions.close") : isPdf ? t("list.actions.preview") : t("list.actions.download")}
                   </button>
+                  {isReady ? (
+                    <Link
+                      href="/dashboard/analysis"
+                      className="rounded-xl border border-teal-light bg-teal-light/20 px-3 py-2 text-xs font-semibold text-teal transition hover:bg-teal-light/40"
+                    >
+                      {t("list.actions.analyze")}
+                    </Link>
+                  ) : (
+                    <span className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-300 cursor-not-allowed">
+                      {t("list.actions.analyze")}
+                    </span>
+                  )}
                   <button
                     type="button"
                     disabled={isDeleting}

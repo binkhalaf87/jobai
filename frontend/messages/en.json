@@ -142,7 +142,8 @@
         "close": "Close",
         "delete": "Delete",
         "deleting": "Deleting…",
-        "processingTooltip": "Processing…"
+        "processingTooltip": "Processing…",
+        "analyze": "Analyze"
       },
       "status": {
         "parsed": "Parsed",
@@ -158,6 +159,7 @@
         "noText": "No text extracted yet."
       },
       "deleteConfirm": "Delete \"{name}\"?\n\nThis will also remove all analyses linked to this CV.",
+      "backToDashboard": "Back to Dashboard",
       "pagesCount": "{count, plural, one {1 page} other {{count} pages}}",
       "retry": "Retry",
       "stats": {

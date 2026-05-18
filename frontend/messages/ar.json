@@ -142,7 +142,8 @@
         "close": "إغلاق",
         "delete": "حذف",
         "deleting": "جارٍ الحذف…",
-        "processingTooltip": "قيد المعالجة…"
+        "processingTooltip": "قيد المعالجة…",
+        "analyze": "تحليل"
       },
       "status": {
         "parsed": "مُعالَج",
@@ -158,6 +159,7 @@
         "noText": "لم يُستخرج أي نص بعد."
       },
       "deleteConfirm": "هل تريد حذف \"{name}\"؟\n\nسيُحذف معه جميع التحليلات المرتبطة بهذه السيرة الذاتية.",
+      "backToDashboard": "العودة إلى لوحة التحكم",
       "pagesCount": "{count, plural, one {صفحة واحدة} other {{count} صفحات}}",
       "retry": "إعادة المحاولة",
       "stats": {
