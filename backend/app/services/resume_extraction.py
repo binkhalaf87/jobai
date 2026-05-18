@@ -124,37 +124,88 @@ def _docx_raw_text(file_path: Path) -> tuple[str, int | None]:
     return "\n".join(paragraphs), len(doc.sections) or None
 
 
+def _pdf_raw_text(file_path: Path) -> str:
+    """Extract plain text from a PDF using PyMuPDF (no GPT required)."""
+    pages: list[str] = []
+    with fitz.open(file_path) as doc:
+        for page in doc:
+            pages.append(page.get_text())
+    return "\n".join(pages).strip()
+
+
+def _local_extract_pdf(file_path: Path) -> ExtractedResumeContent:
+    page_count = _pdf_page_count(file_path)
+    raw_text = _pdf_raw_text(file_path)
+    return ExtractedResumeContent(
+        raw_text=raw_text,
+        normalized_text=raw_text,
+        structured_data={"raw_text": raw_text},
+        page_count=page_count,
+    )
+
+
+def _local_extract_docx(file_path: Path) -> ExtractedResumeContent:
+    raw_text, page_count = _docx_raw_text(file_path)
+    return ExtractedResumeContent(
+        raw_text=raw_text,
+        normalized_text=raw_text,
+        structured_data={"raw_text": raw_text},
+        page_count=page_count,
+    )
+
+
 def extract_resume_with_gpt(file_path: Path, suffix: str) -> ExtractedResumeContent:
     """Extract and structure all resume content via GPT.
 
     PDF  → renders pages to PNG images → GPT Vision (gpt-4o)
     DOCX → extracts plain text → GPT text (gpt-4o-mini)
+
+    Falls back to local extraction (PyMuPDF / python-docx) if GPT is
+    unavailable so the resume still reaches PARSED status.
     """
     normalized = suffix.lower()
 
     if normalized == ".pdf":
         page_count = _pdf_page_count(file_path)
-        images = _pdf_page_images(file_path)
-        parsed = _call_gpt_with_images(images)
-        raw_text = parsed.get("raw_text") or ""
-        return ExtractedResumeContent(
-            raw_text=raw_text,
-            normalized_text=raw_text,
-            structured_data=parsed,
-            page_count=page_count,
-        )
+        try:
+            images = _pdf_page_images(file_path)
+            parsed = _call_gpt_with_images(images)
+            raw_text = parsed.get("raw_text") or ""
+            return ExtractedResumeContent(
+                raw_text=raw_text,
+                normalized_text=raw_text,
+                structured_data=parsed,
+                page_count=page_count,
+            )
+        except Exception:
+            logger.warning("GPT PDF extraction failed for %s, falling back to local text extraction", file_path.name)
+            raw_text = _pdf_raw_text(file_path)
+            return ExtractedResumeContent(
+                raw_text=raw_text,
+                normalized_text=raw_text,
+                structured_data={"raw_text": raw_text},
+                page_count=page_count,
+            )
 
     if normalized == ".docx":
         raw_text, page_count = _docx_raw_text(file_path)
-        parsed = _call_gpt_with_text(raw_text)
-        # Prefer GPT's raw_text if it provides more content
-        final_text = parsed.get("raw_text") or raw_text
-        return ExtractedResumeContent(
-            raw_text=final_text,
-            normalized_text=final_text,
-            structured_data=parsed,
-            page_count=page_count,
-        )
+        try:
+            parsed = _call_gpt_with_text(raw_text)
+            final_text = parsed.get("raw_text") or raw_text
+            return ExtractedResumeContent(
+                raw_text=final_text,
+                normalized_text=final_text,
+                structured_data=parsed,
+                page_count=page_count,
+            )
+        except Exception:
+            logger.warning("GPT DOCX extraction failed for %s, falling back to local text extraction", file_path.name)
+            return ExtractedResumeContent(
+                raw_text=raw_text,
+                normalized_text=raw_text,
+                structured_data={"raw_text": raw_text},
+                page_count=page_count,
+            )
 
     raise ValueError(f"Unsupported file type: {suffix}")
 

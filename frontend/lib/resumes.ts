@@ -34,12 +34,10 @@ export async function listResumes(): Promise<ResumeListItem[]> {
 export type ResumeFileResult = { blobUrl: string; filename: string };
 
 export async function getResumeFile(resumeId: string, fallbackFilename: string): Promise<ResumeFileResult> {
-  const token = typeof window !== "undefined" ? window.localStorage.getItem("jobai_access_token") : null;
   const baseUrl = getApiBaseUrl();
 
-  // fetch with redirect:follow so the browser transparently follows 307 → presigned S3 URL
   const response = await fetch(`${baseUrl}/resume/${resumeId}/file`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    credentials: "include",
     redirect: "follow",
   });
 
