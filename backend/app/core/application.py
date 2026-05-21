@@ -9,7 +9,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request as StarletteRequest
 from starlette.types import ASGIApp
 
-from app.core.config import get_optional_env, resolve_cors_configuration
+from app.core.config import get_bool_env, resolve_cors_configuration
 
 ALLOWED_CORS_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 
@@ -50,13 +50,13 @@ def wrap_with_cors(application: ASGIApp) -> CORSMiddleware:
 
 def create_unavailable_application(startup_error: Exception) -> ASGIApp:
     """Serve a CORS-enabled fallback response when startup fails before the real app is ready."""
-    is_production = get_optional_env("ENVIRONMENT", "development").lower() == "production"
+    include_diagnostics = get_bool_env("DEBUG", False)
     diagnostic_payload: dict[str, Any] = {
         "status": "error",
         "detail": "Backend failed to start.",
     }
 
-    if not is_production:
+    if include_diagnostics:
         diagnostic_payload["error"] = str(startup_error)
         diagnostic_payload["error_type"] = type(startup_error).__name__
 

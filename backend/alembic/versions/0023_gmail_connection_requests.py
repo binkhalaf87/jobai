@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 revision = "0023"
 down_revision = "0022"
@@ -19,12 +20,12 @@ depends_on = None
 def upgrade() -> None:
     op.create_table(
         "gmail_connection_requests",
-        sa.Column("id", sa.String(), nullable=False),
-        sa.Column("user_id", sa.String(), nullable=False),
+        sa.Column("id", postgresql.UUID(as_uuid=False), nullable=False),
+        sa.Column("user_id", postgresql.UUID(as_uuid=False), nullable=False),
         sa.Column("status", sa.String(20), nullable=False, server_default="pending"),
         sa.Column("rejection_reason", sa.Text(), nullable=True),
         sa.Column("reviewed_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("reviewed_by", sa.String(), nullable=True),
+        sa.Column("reviewed_by", postgresql.UUID(as_uuid=False), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
