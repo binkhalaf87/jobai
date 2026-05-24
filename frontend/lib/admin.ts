@@ -62,6 +62,27 @@ export async function getAdminStats(): Promise<AdminStatsResponse> {
   return res.json();
 }
 
+export type AdminActivityItem = {
+  event_type: string;
+  user_name: string | null;
+  user_email: string;
+  detail: string | null;
+  created_at: string;
+};
+
+export type AdminActivityResponse = {
+  recent_activity: AdminActivityItem[];
+  visitors_last_24h: number;
+};
+
+export async function getAdminActivity(): Promise<AdminActivityResponse> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/activity`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to load activity"));
+  return res.json();
+}
+
 export async function listAdminUsers(params: {
   search?: string;
   role?: string;

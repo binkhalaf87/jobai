@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.api.deps.auth import get_current_admin
 from app.api.deps.db import get_db
 from app.models.enums import UserRole, UsageEventType, WalletTransactionDirection, WalletTransactionStatus, WalletTransactionType
+from app.models.usage_log import UsageLog
 from app.services.audit_log import emit as audit_emit
 from app.models.interview import InterviewSession
 from app.models.resume import Resume
@@ -25,6 +26,8 @@ from app.schemas.admin import (
     AdminContactCreate,
     AdminContactItem,
     AdminContactsBulk,
+    AdminActivityItem,
+    AdminActivityResponse,
     AdminGmailRequestItem,
     AdminGmailRequestReject,
     AdminListCreate,
@@ -65,6 +68,42 @@ def get_stats(
         total_interviews=total_interviews,
         total_sends=total_sends,
     )
+
+
+# ── Activity feed ─────────────────────────────────────────────────────────────
+
+@router.get("/activity", response_model=AdminActivityResponse)
+def get_activity(
+    _: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> AdminActivityResponse:
+    rows = db.execute(
+        select(UsageLog, User)
+        .join(User, UsageLog.user_id == User.id)
+        .order_by(UsageLog.created_at.desc())
+        .limit(15)
+    ).all()
+
+    since = datetime.now(timezone.utc) - timedelta(hours=24)
+    visitors_last_24h = db.scalar(
+        select(func.count(func.distinct(UsageLog.user_id))).where(
+            UsageLog.event_type == UsageEventType.AUTH_LOGIN,
+            UsageLog.created_at >= since,
+        )
+    ) or 0
+
+    items = [
+        AdminActivityItem(
+            event_type=log.event_type,
+            user_name=user.full_name,
+            user_email=user.email,
+            detail=log.detail,
+            created_at=log.created_at,
+        )
+        for log, user in rows
+    ]
+
+    return AdminActivityResponse(recent_activity=items, visitors_last_24h=visitors_last_24h)
 
 
 # ── Users list ─────────────────────────────────────────────────────────────────

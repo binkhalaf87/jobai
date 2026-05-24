@@ -101,3 +101,18 @@ class AdminGmailRequestItem(BaseModel):
 
 class AdminGmailRequestReject(BaseModel):
     reason: str | None = None
+
+
+# ── Activity feed ──────────────────────────────────────────────────────────────
+
+class AdminActivityItem(BaseModel):
+    event_type: str
+    user_name: str | None
+    user_email: str
+    detail: str | None
+    created_at: datetime
+
+
+class AdminActivityResponse(BaseModel):
+    recent_activity: list[AdminActivityItem]
+    visitors_last_24h: int
