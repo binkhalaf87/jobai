@@ -108,17 +108,12 @@ export function AuthForm({ mode }: AuthFormProps) {
                 >
                   {f("jobseeker")}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setRole("recruiter")}
-                  className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
-                    role === "recruiter"
-                      ? "border-brand-800 bg-brand-800 text-white"
-                      : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
-                  }`}
-                >
+                <div className="relative rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-400 cursor-not-allowed select-none">
                   {f("recruiter")}
-                </button>
+                  <span className="absolute -top-2 -right-2 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-white leading-none">
+                    قريباً
+                  </span>
+                </div>
               </div>
             </div>
           </>
