@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useState } from "react";
@@ -86,7 +86,7 @@ const AR: Content = {
     jobseeker: {
       h1: ["كم مرة أرسلت سيرتك", "ولم يردّ عليك أحد؟"],
       sub: "JobAI يحلل سيرتك في ٣٠ ثانية، يكشف نقاط الضعف الخفية، ويعيد كتابتها لتخترق أنظمة الـ ATS — ويضاعف فرصك في الحصول على مقابلة.",
-      cta: "حلّل سيرتك مجاناً",
+      cta: "حلّل سيرتك مجاناً — في ٣٠ ثانية",
       ctaAlt: "لديّ حساب — سجّل الدخول",
     },
     recruiter: {
@@ -328,7 +328,7 @@ const EN: Content = {
     jobseeker: {
       h1: ["Your resume is being rejected", "before any human reads it."],
       sub: "JobAI analyzes your resume in 30 seconds, reveals hidden ATS failures, and rewrites it to pass every filter — doubling your chances of landing an interview.",
-      cta: "Analyze My Resume — Free",
+      cta: "Analyze My Resume — Free in 30 Seconds",
       ctaAlt: "Sign In",
     },
     recruiter: {
@@ -607,15 +607,9 @@ export default function HomePage() {
       <Pain t={t} />
       <Solution t={t} Arrow={Arrow} isAr={isAr} />
       <Features t={t} />
-      <ProductPreview t={t} />
-      <RecruiterBenefits t={t} Arrow={Arrow} />
-      <CandidateBenefits t={t} Arrow={Arrow} />
-      <SaudiSection t={t} />
-      <TrustSection t={t} />
-      <Results t={t} />
-      <Testimonials t={t} />
+      <SocialProof t={t} />
       <Pricing t={t} />
-      <Faq t={t} />
+      <MiniFaq t={t} />
       <FinalCta t={t} Arrow={Arrow} />
     </div>
   );
@@ -625,14 +619,13 @@ type SectionProps = { t: Content; Arrow: React.ElementType; isAr?: boolean };
 
 /* ─── 1. hero ────────────────────────────────────────────────────────── */
 function Hero({ t, Arrow }: SectionProps) {
-  const [role, setRole] = useState<"jobseeker" | "recruiter">("jobseeker");
-  const c = t.hero[role];
+  const c = t.hero.jobseeker;
 
   return (
-    <section className="relative isolate overflow-hidden bg-white pt-10 pb-20 md:pt-16 md:pb-28">
+    <section className="relative isolate overflow-hidden bg-white pt-10 pb-20 md:pt-16 md:pb-32">
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-32 end-0 h-[500px] w-[500px] rounded-full bg-brand-100/50 blur-3xl" />
-        <div className="absolute top-48 -start-20 h-[360px] w-[460px] rounded-full bg-teal-light/60 blur-3xl" />
+        <div className="absolute -top-32 end-0 h-[600px] w-[600px] rounded-full bg-brand-100/60 blur-3xl" />
+        <div className="absolute top-48 -start-20 h-[400px] w-[500px] rounded-full bg-teal-light/70 blur-3xl" />
       </div>
 
       <div className="mx-auto max-w-5xl px-6 text-center">
@@ -640,34 +633,21 @@ function Hero({ t, Arrow }: SectionProps) {
           <Chip><Sparkles className="h-3.5 w-3.5 text-brand-500" />{t.hero.badge}</Chip>
         </div>
 
-        {/* Role toggle */}
-        <div className="mb-8 inline-flex rounded-2xl border border-slate-200 bg-slate-50 p-1.5 gap-1">
-          {(["jobseeker", "recruiter"] as const).map((r) => (
-            <button key={r} onClick={() => setRole(r)}
-              className={`rounded-xl px-5 py-2.5 text-sm font-bold transition-all ${role === r ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
-              {t.hero.toggle[r]}
-            </button>
-          ))}
-        </div>
-
-        <h1 className="text-[2.4rem] font-black leading-[1.1] tracking-tight text-slate-900 md:text-[4.5rem]">
+        <h1 className="text-[2.6rem] font-black leading-[1.08] tracking-tight text-slate-900 md:text-[5rem]">
           {c.h1[0]}<br /><span className="text-brand-600">{c.h1[1]}</span>
         </h1>
-        <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-slate-500 md:text-xl">{c.sub}</p>
+        <p className="mx-auto mt-7 max-w-2xl text-xl leading-relaxed text-slate-500 md:text-2xl">{c.sub}</p>
 
-        <div className="mt-10 flex flex-wrap justify-center gap-4">
+        <div className="mt-11 flex flex-col items-center gap-4">
           <Link href="/register"
-            className="group inline-flex h-14 items-center gap-3 rounded-2xl bg-brand-600 px-10 text-base font-black text-white shadow-xl shadow-brand-200/60 transition-all hover:bg-brand-700 hover:-translate-y-0.5">
+            className="group inline-flex h-16 items-center gap-3 rounded-2xl bg-brand-600 px-12 text-lg font-black text-white shadow-2xl shadow-brand-200/70 transition-all hover:bg-brand-700 hover:-translate-y-1 hover:shadow-brand-300/50">
             {c.cta}<Arrow className="h-5 w-5" />
           </Link>
-          <Link href={role === "recruiter" ? "#pricing" : "/login"}
-            className="inline-flex h-14 items-center rounded-2xl border-2 border-slate-200 bg-white px-10 text-base font-bold text-slate-700 transition hover:border-brand-200 hover:bg-brand-50">
-            {c.ctaAlt}
-          </Link>
+          <p className="text-sm text-slate-400">{t.hero.trust[2]}</p>
         </div>
 
         <div className="mt-8 flex flex-wrap justify-center gap-5 text-sm text-slate-500">
-          {t.hero.trust.map((item) => (
+          {t.hero.trust.slice(0, 2).map((item) => (
             <span key={item} className="flex items-center gap-1.5">
               <CheckCircle2 className="h-4 w-4 text-teal" />{item}
             </span>
@@ -714,30 +694,22 @@ function StatsBar({ t }: { t: Content }) {
 
 /* ─── 3. pain ────────────────────────────────────────────────────────── */
 function Pain({ t }: { t: Content }) {
-  const [tab, setTab] = useState<"jobseeker" | "recruiter">("jobseeker");
-  const items = t.pain[tab];
+  const items = t.pain.jobseeker.slice(0, 3);
 
   return (
     <section className="py-24 bg-white" id="pain">
       <div className="mx-auto max-w-5xl px-6">
-        <div className="text-center mb-12">
+        <div className="text-center mb-14">
           <Eyebrow>{t.pain.sectionLabel}</Eyebrow>
           <h2 className="text-3xl font-black text-slate-900 md:text-5xl max-w-2xl mx-auto leading-tight">{t.pain.headline}</h2>
           <p className="mt-4 text-lg text-slate-500 max-w-xl mx-auto">{t.pain.sub}</p>
-          <div className="mt-8 inline-flex rounded-2xl border border-slate-200 bg-slate-50 p-1.5 gap-1">
-            {(["jobseeker", "recruiter"] as const).map((r) => (
-              <button key={r} onClick={() => setTab(r)}
-                className={`rounded-xl px-5 py-2 text-sm font-bold transition-all ${tab === r ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
-                {t.pain.tabs[r]}
-              </button>
-            ))}
-          </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          {items.map((p) => (
-            <div key={p.title} className={`rounded-2xl border p-6 hover:shadow-md transition-shadow ${PAIN_BG[p.color] ?? "bg-slate-50 border-slate-100"}`}>
-              <h3 className="font-black text-slate-900 text-lg mb-2">{p.title}</h3>
+        <div className="grid gap-6 md:grid-cols-3">
+          {items.map((p, i) => (
+            <div key={p.title} className={`relative rounded-3xl border p-8 hover:shadow-lg transition-all hover:-translate-y-1 ${PAIN_BG[p.color] ?? "bg-slate-50 border-slate-100"}`}>
+              <div className="text-5xl font-black text-slate-100 mb-4 leading-none select-none">{i + 1}</div>
+              <h3 className="font-black text-slate-900 text-xl mb-3">{p.title}</h3>
               <p className="text-slate-600 leading-relaxed text-sm">{p.desc}</p>
             </div>
           ))}
@@ -749,61 +721,38 @@ function Pain({ t }: { t: Content }) {
 
 /* ─── 4. solution ────────────────────────────────────────────────────── */
 function Solution({ t, Arrow, isAr }: SectionProps) {
-  const renderFlow = (flow: Content["solution"]["jobseeker"]) => (
-    <div className="relative">
-      <div aria-hidden className={`absolute top-10 bottom-10 w-0.5 bg-brand-100 hidden md:block ${isAr ? "right-[2.75rem]" : "left-[2.75rem]"}`} />
-      <div className="space-y-5">
-        {flow.steps.map((s, i) => (
-          <div key={i} className="relative flex gap-5 items-start">
-            <div className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-600 text-white font-black text-lg shadow-lg shadow-brand-200/50">{s.num}</div>
-            <div className="flex-1 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
-              <h3 className="font-black text-slate-900 text-lg mb-1.5">{s.title}</h3>
-              <p className="text-slate-500 leading-relaxed text-sm">{s.desc}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  const flow = t.solution.jobseeker;
 
   return (
     <section className="py-24 bg-gradient-to-b from-slate-50 to-white" id="how-it-works">
       <div className="mx-auto max-w-5xl px-6">
-        <div className="text-center mb-14"><Eyebrow>{t.solution.sectionLabel}</Eyebrow></div>
+        <div className="text-center mb-14">
+          <Eyebrow>{t.solution.sectionLabel}</Eyebrow>
+          <h2 className="text-3xl font-black text-slate-900 md:text-4xl">
+            {flow.headline}<br />
+            <span className="text-brand-600">{flow.headlineAccent}</span>
+          </h2>
+        </div>
 
-        <div className="mb-14">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl font-black text-slate-900 md:text-4xl">
-              {t.solution.jobseeker.headline}<br />
-              <span className="text-brand-600">{t.solution.jobseeker.headlineAccent}</span>
-            </h2>
-          </div>
-          {renderFlow(t.solution.jobseeker)}
-          <div className="mt-10 text-center">
-            <Link href="/register" className="group inline-flex h-14 items-center gap-3 rounded-2xl bg-brand-600 px-10 text-base font-black text-white shadow-xl shadow-brand-200/60 transition hover:bg-brand-700 hover:-translate-y-0.5">
-              {t.finalCta.cta}<Arrow className="h-5 w-5" />
-            </Link>
+        <div className="relative">
+          <div aria-hidden className={`absolute top-10 bottom-10 w-0.5 bg-brand-100 hidden md:block ${isAr ? "right-[2.75rem]" : "left-[2.75rem]"}`} />
+          <div className="space-y-5">
+            {flow.steps.map((s, i) => (
+              <div key={i} className="relative flex gap-5 items-start">
+                <div className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-600 text-white font-black text-lg shadow-lg shadow-brand-200/50">{s.num}</div>
+                <div className="flex-1 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
+                  <h3 className="font-black text-slate-900 text-lg mb-1.5">{s.title}</h3>
+                  <p className="text-slate-500 leading-relaxed text-sm">{s.desc}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="relative my-14">
-          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200" /></div>
-          <div className="relative flex justify-center"><span className="bg-white px-4"><Building2 className="h-6 w-6 text-slate-400" /></span></div>
-        </div>
-
-        <div>
-          <div className="text-center mb-10">
-            <h2 className="text-3xl font-black text-slate-900 md:text-4xl">
-              {t.solution.recruiter.headline}<br />
-              <span className="text-brand-600">{t.solution.recruiter.headlineAccent}</span>
-            </h2>
-          </div>
-          {renderFlow(t.solution.recruiter)}
-          <div className="mt-10 text-center">
-            <Link href="/register?role=recruiter" className="group inline-flex h-14 items-center gap-3 rounded-2xl border-2 border-brand-600 bg-white px-10 text-base font-black text-brand-700 transition hover:bg-brand-50 hover:-translate-y-0.5">
-              {t.hero.recruiter.cta}<Arrow className="h-5 w-5" />
-            </Link>
-          </div>
+        <div className="mt-12 text-center">
+          <Link href="/register" className="group inline-flex h-14 items-center gap-3 rounded-2xl bg-brand-600 px-10 text-base font-black text-white shadow-xl shadow-brand-200/60 transition hover:bg-brand-700 hover:-translate-y-0.5">
+            {t.finalCta.cta}<Arrow className="h-5 w-5" />
+          </Link>
         </div>
       </div>
     </section>
@@ -823,8 +772,8 @@ function Features({ t }: { t: Content }) {
           <p className="mt-4 text-lg text-slate-500 max-w-xl mx-auto">{t.features.sub}</p>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {t.features.items.map((f, i) => {
+        <div className="grid gap-5 md:grid-cols-2">
+          {t.features.items.slice(0, 4).map((f, i) => {
             const Icon = FEAT_ICONS[i] ?? BarChart3;
             const cls = FEAT_COLORS[f.color] ?? "bg-brand-50 text-brand-600";
             return (
@@ -850,314 +799,24 @@ function Features({ t }: { t: Content }) {
   );
 }
 
-/* ─── 6. product preview ─────────────────────────────────────────────── */
-function ProductPreview({ t }: { t: Content }) {
-  const [active, setActive] = useState<"ats" | "letter" | "interview">("ats");
-  const { ats, letter, interview } = t.preview;
-
-  return (
-    <section className="py-24 bg-slate-900 relative overflow-hidden">
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="absolute top-0 start-1/4 h-80 w-80 rounded-full bg-brand-600/15 blur-3xl" />
-        <div className="absolute bottom-0 end-1/4 h-60 w-60 rounded-full bg-teal/10 blur-3xl" />
-      </div>
-
-      <div className="relative mx-auto max-w-6xl px-6">
-        <div className="text-center mb-12">
-          <p className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-brand-400">{t.preview.sectionLabel}</p>
-          <h2 className="text-3xl font-black text-white md:text-5xl">{t.preview.headline}</h2>
-          <p className="mt-4 text-slate-400 text-lg max-w-xl mx-auto">{t.preview.sub}</p>
-        </div>
-
-        <div className="flex flex-wrap justify-center gap-3 mb-10">
-          {t.preview.tabs.map((tab) => (
-            <button key={tab.id} onClick={() => setActive(tab.id as "ats" | "letter" | "interview")}
-              className={`rounded-2xl border px-6 py-3 text-start transition-all ${active === tab.id ? "border-brand-500 bg-brand-600 text-white shadow-lg" : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"}`}>
-              <div className="font-bold text-sm">{tab.label}</div>
-              <div className="text-xs opacity-70 mt-0.5 hidden sm:block">{tab.desc}</div>
-            </button>
-          ))}
-        </div>
-
-        <div className="mx-auto max-w-2xl">
-          <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm overflow-hidden shadow-2xl">
-            <div className="flex items-center gap-2 border-b border-white/10 bg-white/5 px-5 py-3">
-              <div className="flex gap-1.5">
-                <div className="h-3 w-3 rounded-full bg-red-400/60" />
-                <div className="h-3 w-3 rounded-full bg-amber-400/60" />
-                <div className="h-3 w-3 rounded-full bg-green-400/60" />
-              </div>
-              <div className="mx-auto text-xs text-slate-400 font-medium">JobAI</div>
-            </div>
-
-            {active === "ats" && (
-              <div className="p-6 space-y-5">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-black text-white text-base">{ats.title}</h3>
-                  <div className="text-end">
-                    <div className="text-3xl font-black text-brand-300">{ats.score}</div>
-                    <div className="text-xs text-slate-400">{ats.scoreLabel}</div>
-                  </div>
-                </div>
-                <div className="h-2.5 w-full rounded-full bg-white/10">
-                  <div className="h-full w-[85%] rounded-full bg-gradient-to-r from-brand-500 to-teal" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs font-bold text-teal mb-2">{ats.matchLabel}</p>
-                    <div className="space-y-1.5">
-                      {ats.matches.map((m) => (
-                        <div key={m} className="flex items-center gap-2 rounded-lg bg-teal/10 px-3 py-1.5">
-                          <CheckCircle2 className="h-3.5 w-3.5 text-teal shrink-0" />
-                          <span className="text-xs text-white">{m}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-red-400 mb-2">{ats.missingLabel}</p>
-                    <div className="space-y-1.5">
-                      {ats.missing.map((m) => (
-                        <div key={m} className="flex items-center gap-2 rounded-lg bg-red-400/10 px-3 py-1.5">
-                          <XCircle className="h-3.5 w-3.5 text-red-400 shrink-0" />
-                          <span className="text-xs text-white">{m}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-amber-400 mb-2">{ats.tipsLabel}</p>
-                  {ats.tips.map((tip, i) => (
-                    <div key={i} className="flex items-start gap-2 py-1.5">
-                      <span className="text-amber-400 text-xs font-black shrink-0">{i + 1}.</span>
-                      <span className="text-xs text-slate-300">{tip}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {active === "letter" && (
-              <div className="p-6 space-y-5">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-black text-white text-base">{letter.title}</h3>
-                  <span className="text-xs text-teal bg-teal/10 rounded-full px-3 py-1 font-bold">{letter.variantsLabel}</span>
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                  {letter.styles.map((s, i) => (
-                    <button key={i} className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${i === 0 ? "bg-brand-600 text-white" : "bg-white/10 text-slate-300 hover:bg-white/20"}`}>{s}</button>
-                  ))}
-                </div>
-                <div className="rounded-2xl bg-white/5 p-4 border border-white/10">
-                  <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">{letter.preview}</p>
-                  <div className="mt-3 h-2 w-3/4 rounded bg-white/10 animate-pulse" />
-                  <div className="mt-1.5 h-2 w-1/2 rounded bg-white/10 animate-pulse" />
-                </div>
-                <button className="w-full rounded-2xl bg-brand-600 py-3 text-sm font-black text-white flex items-center justify-center gap-2 hover:bg-brand-500 transition-colors">
-                  <Send className="h-4 w-4" />{letter.sendLabel}
-                </button>
-              </div>
-            )}
-
-            {active === "interview" && (
-              <div className="p-6 space-y-5">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-black text-white text-base">{interview.title}</h3>
-                  <span className="text-xs text-brand-300 bg-brand-600/20 rounded-full px-3 py-1">{interview.meta}</span>
-                </div>
-                <div className="text-xs text-slate-400 font-bold">{interview.qLabel}</div>
-                <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
-                  <Brain className="h-5 w-5 text-brand-400 mb-2" />
-                  <p className="text-sm text-white leading-relaxed">{interview.question}</p>
-                </div>
-                <div className="rounded-2xl bg-teal/10 border border-teal/20 p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs font-black text-teal">{interview.evalLabel}</p>
-                    <div className="text-2xl font-black text-teal">{interview.evalScore}</div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {interview.evalTags.map((tag) => (
-                      <span key={tag} className="rounded-full bg-teal/20 px-3 py-1 text-xs text-teal font-semibold">{tag}</span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── 7. recruiter benefits ──────────────────────────────────────────── */
-function RecruiterBenefits({ t, Arrow }: SectionProps) {
-  return (
-    <section className="py-24 bg-white" id="for-recruiters">
-      <div className="mx-auto max-w-6xl px-6">
-        <div className="text-center mb-14">
-          <Eyebrow>{t.recruiterBenefits.sectionLabel}</Eyebrow>
-          <h2 className="text-3xl font-black text-slate-900 md:text-5xl">
-            {t.recruiterBenefits.headline}<br />
-            <span className="text-brand-600">{t.recruiterBenefits.headlineAccent}</span>
-          </h2>
-          <p className="mt-4 text-lg text-slate-500 max-w-2xl mx-auto">{t.recruiterBenefits.sub}</p>
-        </div>
-
-        <div className="grid gap-5 md:grid-cols-2">
-          {t.recruiterBenefits.items.map((item) => (
-            <div key={item.title} className="flex gap-5 rounded-3xl border border-slate-100 bg-white p-7 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5">
-              <div className="shrink-0 text-center min-w-[72px]">
-                <div className="text-4xl font-black text-brand-600 leading-none">{item.stat}</div>
-                <div className="text-xs text-slate-400 mt-1 leading-tight">{item.statLabel}</div>
-              </div>
-              <div className="border-s border-slate-100 ps-5">
-                <h3 className="font-black text-slate-900 text-lg mb-2">{item.title}</h3>
-                <p className="text-slate-500 text-sm leading-relaxed">{item.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-10 text-center">
-          <Link href="/register?role=recruiter" className="group inline-flex h-14 items-center gap-3 rounded-2xl bg-brand-600 px-10 text-base font-black text-white shadow-xl shadow-brand-200/60 transition hover:bg-brand-700 hover:-translate-y-0.5">
-            {t.hero.recruiter.cta}<Arrow className="h-5 w-5" />
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── 8. candidate benefits ──────────────────────────────────────────── */
-function CandidateBenefits({ t, Arrow }: SectionProps) {
-  return (
-    <section className="py-24 bg-gradient-to-b from-slate-50 to-white">
-      <div className="mx-auto max-w-5xl px-6">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <Eyebrow>{t.candidateBenefits.sectionLabel}</Eyebrow>
-            <h2 className="text-3xl font-black text-slate-900 md:text-5xl leading-tight">
-              {t.candidateBenefits.headline}<br />
-              <span className="text-teal">{t.candidateBenefits.headlineAccent}</span>
-            </h2>
-            <p className="mt-5 text-lg text-slate-500 leading-relaxed">{t.candidateBenefits.sub}</p>
-            <div className="mt-8">
-              <Link href="/register" className="group inline-flex h-14 items-center gap-3 rounded-2xl bg-brand-600 px-10 text-base font-black text-white shadow-xl shadow-brand-200/60 transition hover:bg-brand-700 hover:-translate-y-0.5">
-                {t.finalCta.cta}<Arrow className="h-5 w-5" />
-              </Link>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            {t.candidateBenefits.items.map((item, i) => (
-              <div key={i} className="flex gap-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-                  <CheckCircle2 className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="font-black text-slate-900 mb-1">{item.title}</h3>
-                  <p className="text-sm text-slate-500 leading-relaxed">{item.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── 9. saudi ───────────────────────────────────────────────────────── */
-function SaudiSection({ t }: { t: Content }) {
-  return (
-    <section className="py-24 bg-white">
-      <div className="mx-auto max-w-5xl px-6">
-        <div className="text-center mb-14">
-          <Eyebrow>{t.saudi.sectionLabel}</Eyebrow>
-          <h2 className="text-3xl font-black text-slate-900 md:text-5xl">
-            {t.saudi.headline}<br /><span className="text-brand-600">{t.saudi.headlineAccent}</span>
-          </h2>
-          <p className="mt-4 text-lg text-slate-500 max-w-xl mx-auto">{t.saudi.sub}</p>
-        </div>
-
-        <div className="grid gap-5 md:grid-cols-2">
-          {t.saudi.items.map((item, i) => {
-            const Icon = SAUDI_ICONS[i] ?? Globe;
-            return (
-              <div key={item.title} className="flex gap-4 rounded-2xl border border-slate-100 bg-gradient-to-br from-white to-slate-50 p-6 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="font-black text-slate-900 mb-2">{item.title}</h3>
-                  <p className="text-sm text-slate-500 leading-relaxed">{item.desc}</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── 10. trust ──────────────────────────────────────────────────────── */
-function TrustSection({ t }: { t: Content }) {
-  return (
-    <section className="py-20 bg-slate-50">
-      <div className="mx-auto max-w-5xl px-6">
-        <div className="text-center mb-12">
-          <Eyebrow>{t.trust.sectionLabel}</Eyebrow>
-          <h2 className="text-3xl font-black text-slate-900 md:text-4xl">
-            {t.trust.headline}<span className="text-brand-600"> {t.trust.headlineAccent}</span>
-          </h2>
-          <p className="mt-4 text-slate-500 max-w-xl mx-auto">{t.trust.sub}</p>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {t.trust.items.map((item, i) => {
-            const Icon = TRUST_ICONS[i] ?? Lock;
-            return (
-              <div key={item.title} className="rounded-2xl bg-white border border-slate-100 p-6 shadow-sm text-center">
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <h3 className="font-black text-slate-900 text-sm mb-2">{item.title}</h3>
-                <p className="text-xs text-slate-500 leading-relaxed">{item.desc}</p>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── 11. results ────────────────────────────────────────────────────── */
-function Results({ t }: { t: Content }) {
+/* ─── 6. social proof ────────────────────────────────────────────────── */
+function SocialProof({ t }: { t: Content }) {
   const cs = t.results.caseStudy;
+  const testimonials = [t.testimonials.items[0], t.testimonials.items[2]];
+
   return (
-    <section className="py-24 bg-white">
+    <section className="py-24 bg-slate-50">
       <div className="mx-auto max-w-5xl px-6">
         <div className="text-center mb-14">
           <Eyebrow>{t.results.sectionLabel}</Eyebrow>
           <h2 className="text-3xl font-black text-slate-900 md:text-5xl">
-            {t.results.headline}<span className="text-brand-600"> {t.results.headlineAccent}</span>
+            {t.testimonials.headline}<br />
+            <span className="text-brand-600">{t.testimonials.headlineAccent}</span>
           </h2>
         </div>
 
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-12">
-          {t.results.metrics.map((m) => (
-            <div key={m.label} className="rounded-3xl border border-slate-100 bg-white p-6 text-center shadow-sm">
-              <div className={`text-5xl font-black mb-2 tabular-nums ${m.color}`}>{m.num}</div>
-              <p className="text-slate-500 text-xs leading-relaxed">{m.label}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="rounded-3xl bg-brand-50 border border-brand-100 p-8 md:p-10">
+        {/* Case study */}
+        <div className="rounded-3xl bg-brand-50 border border-brand-100 p-8 md:p-10 mb-8">
           <div className="grid md:grid-cols-2 gap-8 items-start">
             <div>
               <Chip className="mb-4">{cs.badge}</Chip>
@@ -1178,27 +837,11 @@ function Results({ t }: { t: Content }) {
             </div>
           </div>
         </div>
-      </div>
-    </section>
-  );
-}
 
-/* ─── 12. testimonials ───────────────────────────────────────────────── */
-function Testimonials({ t }: { t: Content }) {
-  return (
-    <section className="py-24 bg-slate-50">
-      <div className="mx-auto max-w-6xl px-6">
-        <div className="text-center mb-14">
-          <Eyebrow>{t.testimonials.sectionLabel}</Eyebrow>
-          <h2 className="text-3xl font-black text-slate-900 md:text-5xl">
-            {t.testimonials.headline}<br />
-            <span className="text-brand-600">{t.testimonials.headlineAccent}</span>
-          </h2>
-        </div>
-
+        {/* Testimonials */}
         <div className="grid gap-5 md:grid-cols-2">
-          {t.testimonials.items.map((item) => (
-            <div key={item.name} className="rounded-3xl border border-slate-100 bg-white p-8 shadow-sm hover:shadow-md transition-shadow">
+          {testimonials.map((item) => (
+            <div key={item.name} className="rounded-3xl border border-slate-100 bg-white p-8 shadow-sm">
               <div className="flex gap-0.5 text-amber-400 mb-4">
                 {[...Array(5)].map((_, i) => <Star key={i} className="h-4 w-4 fill-current" />)}
               </div>
@@ -1219,10 +862,8 @@ function Testimonials({ t }: { t: Content }) {
   );
 }
 
-/* ─── 13. pricing ────────────────────────────────────────────────────── */
+/* ─── 7. pricing ─────────────────────────────────────────────────────── */
 function Pricing({ t }: { t: Content }) {
-  const [tab, setTab] = useState<"individual" | "enterprise">("individual");
-
   return (
     <section className="py-24 bg-white" id="pricing">
       <div className="mx-auto max-w-6xl px-6">
@@ -1232,101 +873,73 @@ function Pricing({ t }: { t: Content }) {
             {t.pricing.headline}<span className="text-brand-600"> {t.pricing.headlineAccent}</span>
           </h2>
           <p className="mt-4 text-lg text-slate-500">{t.pricing.sub}</p>
-
-          <div className="mt-8 inline-flex rounded-2xl border border-slate-200 bg-slate-50 p-1.5 gap-1">
-            {(["individual", "enterprise"] as const).map((r) => (
-              <button key={r} onClick={() => setTab(r)}
-                className={`rounded-xl px-6 py-2.5 text-sm font-bold transition-all ${tab === r ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
-                {t.pricing.tabs[r]}
-              </button>
-            ))}
-          </div>
         </div>
 
-        {tab === "individual" && (
-          <>
-            <div className="grid gap-6 md:grid-cols-3">
-              {t.pricing.individual.map((plan) => (
-                <div key={plan.name} className={`relative rounded-3xl p-8 border transition-all ${plan.highlight ? "bg-brand-600 border-brand-600 text-white shadow-2xl shadow-brand-200 scale-[1.03]" : "bg-white border-slate-100 shadow-sm"}`}>
-                  {plan.tag && (
-                    <div className="absolute -top-4 inset-x-0 flex justify-center">
-                      <span className={`rounded-full px-4 py-1.5 text-xs font-black shadow ${plan.highlight ? "bg-amber-400 text-amber-900" : "bg-brand-600 text-white"}`}>{plan.tag}</span>
-                    </div>
-                  )}
-                  <div className="mb-6">
-                    <h3 className={`font-black text-xl mb-1 ${plan.highlight ? "text-white" : "text-slate-900"}`}>{plan.name}</h3>
-                    <p className={`text-sm mb-4 ${plan.highlight ? "text-brand-200" : "text-slate-500"}`}>{plan.desc}</p>
-                    <div className="flex items-baseline gap-1">
-                      <span className={`text-5xl font-black ${plan.highlight ? "text-white" : "text-slate-900"}`}>{plan.price}</span>
-                      {plan.price !== "٠" && plan.price !== "0" && (
-                        <span className={`text-sm ${plan.highlight ? "text-brand-200" : "text-slate-500"}`}>{t.pricing.currencyLabel}{plan.period}</span>
-                      )}
-                    </div>
-                  </div>
-                  <ul className="space-y-2.5 mb-8">
-                    {plan.features.map((f) => (
-                      <li key={f} className="flex items-start gap-2 text-sm">
-                        <CheckCircle2 className={`h-4 w-4 shrink-0 mt-0.5 ${plan.highlight ? "text-green-300" : "text-teal"}`} />
-                        <span className={plan.highlight ? "text-brand-100" : "text-slate-600"}>{f}</span>
-                      </li>
-                    ))}
-                    {plan.disabled.map((f) => (
-                      <li key={f} className="flex items-start gap-2 text-sm">
-                        <XCircle className="h-4 w-4 shrink-0 mt-0.5 text-slate-300" />
-                        <span className="text-slate-300 line-through">{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Link href="/register" className={`block w-full rounded-2xl py-3.5 text-center font-black text-sm transition hover:-translate-y-0.5 ${plan.highlight ? "bg-white text-brand-600 shadow-lg hover:bg-brand-50" : "bg-brand-600 text-white hover:bg-brand-700"}`}>
-                    {plan.cta}
-                  </Link>
+        <div className="grid gap-6 md:grid-cols-3">
+          {t.pricing.individual.map((plan) => (
+            <div key={plan.name} className={`relative rounded-3xl p-8 border transition-all ${plan.highlight ? "bg-brand-600 border-brand-600 text-white shadow-2xl shadow-brand-200 scale-[1.03]" : "bg-white border-slate-100 shadow-sm"}`}>
+              {plan.tag && (
+                <div className="absolute -top-4 inset-x-0 flex justify-center">
+                  <span className={`rounded-full px-4 py-1.5 text-xs font-black shadow ${plan.highlight ? "bg-amber-400 text-amber-900" : "bg-brand-600 text-white"}`}>{plan.tag}</span>
                 </div>
-              ))}
-            </div>
-            <p className="mt-8 text-center text-xs text-slate-400">{t.pricing.note}</p>
-          </>
-        )}
-
-        {tab === "enterprise" && (
-          <div className="mx-auto max-w-3xl rounded-3xl border border-brand-100 bg-gradient-to-br from-brand-50 to-white p-10 shadow-lg">
-            <div className="grid md:grid-cols-2 gap-8 items-start">
-              <div>
-                <h3 className="text-2xl font-black text-slate-900 mb-3">{t.pricing.enterprise.headline}</h3>
-                <p className="text-slate-600 leading-relaxed text-sm mb-6">{t.pricing.enterprise.sub}</p>
-                <Link href="mailto:hello@jobai.sa" className="inline-flex h-14 items-center gap-3 rounded-2xl bg-brand-600 px-8 text-base font-black text-white shadow-xl shadow-brand-200/60 transition hover:bg-brand-700">
-                  {t.pricing.enterprise.cta}
-                </Link>
-                <p className="mt-3 text-xs text-slate-400">{t.pricing.enterprise.ctaNote}</p>
+              )}
+              <div className="mb-6">
+                <h3 className={`font-black text-xl mb-1 ${plan.highlight ? "text-white" : "text-slate-900"}`}>{plan.name}</h3>
+                <p className={`text-sm mb-4 ${plan.highlight ? "text-brand-200" : "text-slate-500"}`}>{plan.desc}</p>
+                <div className="flex items-baseline gap-1">
+                  <span className={`text-5xl font-black ${plan.highlight ? "text-white" : "text-slate-900"}`}>{plan.price}</span>
+                  {plan.price !== "٠" && plan.price !== "0" && (
+                    <span className={`text-sm ${plan.highlight ? "text-brand-200" : "text-slate-500"}`}>{t.pricing.currencyLabel}{plan.period}</span>
+                  )}
+                </div>
               </div>
-              <ul className="space-y-3">
-                {t.pricing.enterprise.features.map((f) => (
-                  <li key={f} className="flex items-start gap-3 text-sm">
-                    <CheckCircle2 className="h-4 w-4 text-teal shrink-0 mt-0.5" />
-                    <span className="text-slate-700">{f}</span>
+              <ul className="space-y-2.5 mb-8">
+                {plan.features.map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm">
+                    <CheckCircle2 className={`h-4 w-4 shrink-0 mt-0.5 ${plan.highlight ? "text-green-300" : "text-teal"}`} />
+                    <span className={plan.highlight ? "text-brand-100" : "text-slate-600"}>{f}</span>
+                  </li>
+                ))}
+                {plan.disabled.map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm">
+                    <XCircle className="h-4 w-4 shrink-0 mt-0.5 text-slate-300" />
+                    <span className="text-slate-300 line-through">{f}</span>
                   </li>
                 ))}
               </ul>
+              <Link href="/register" className={`block w-full rounded-2xl py-3.5 text-center font-black text-sm transition hover:-translate-y-0.5 ${plan.highlight ? "bg-white text-brand-600 shadow-lg hover:bg-brand-50" : "bg-brand-600 text-white hover:bg-brand-700"}`}>
+                {plan.cta}
+              </Link>
             </div>
-          </div>
-        )}
+          ))}
+        </div>
+
+        <p className="mt-8 text-center text-xs text-slate-400">{t.pricing.note}</p>
+        <p className="mt-3 text-center text-xs text-slate-400">
+          <Link href="mailto:hello@jobai.sa" className="text-brand-600 underline underline-offset-2 hover:text-brand-700">
+            {t.pricing.tabs.enterprise} &rarr;
+          </Link>
+        </p>
       </div>
     </section>
   );
 }
 
-/* ─── 14. faq ────────────────────────────────────────────────────────── */
-function Faq({ t }: { t: Content }) {
+/* ─── 8. mini faq ────────────────────────────────────────────────────── */
+function MiniFaq({ t }: { t: Content }) {
   const [open, setOpen] = useState<number | null>(null);
+  const items = [t.faq.items[6], t.faq.items[2], t.faq.items[4]];
+
   return (
-    <section className="py-24 bg-slate-50">
+    <section className="py-16 bg-white">
       <div className="mx-auto max-w-3xl px-6">
-        <div className="text-center mb-12">
+        <div className="text-center mb-10">
           <Eyebrow>{t.faq.sectionLabel}</Eyebrow>
-          <h2 className="text-3xl font-black text-slate-900 md:text-4xl">{t.faq.headline}</h2>
+          <h2 className="text-2xl font-black text-slate-900 md:text-3xl">{t.faq.headline}</h2>
         </div>
 
         <div className="space-y-2.5">
-          {t.faq.items.map((item, i) => (
+          {items.map((item, i) => (
             <div key={i} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <button className="flex w-full items-center justify-between gap-4 p-5 text-start" onClick={() => setOpen(open === i ? null : i)}>
                 <span className="font-bold text-slate-900 text-sm leading-snug">{item.q}</span>
@@ -1343,7 +956,7 @@ function Faq({ t }: { t: Content }) {
   );
 }
 
-/* ─── 15. final cta ──────────────────────────────────────────────────── */
+/* ─── 9. final cta ───────────────────────────────────────────────────── */
 function FinalCta({ t, Arrow }: SectionProps) {
   return (
     <section className="py-10 px-6 pb-20">
