@@ -31,6 +31,8 @@ from app.schemas.smart_send import (
     SendResponse,
 )
 from app.services import cover_letter_service, gmail_oauth_service
+from app.services.subscription_access_service import JOBSEEKER_SMART_SEND_FEATURE, DEFAULT_JOBSEEKER_POINTS_COSTS
+from app.services.wallet_service import InsufficientPointsError, deduct_points
 
 router = APIRouter(prefix="/smart-send", tags=["smart-send"])
 
@@ -186,6 +188,12 @@ async def send_email(
     conn = gmail_oauth_service.get_connection(db, current_user.id)
     if not conn or not conn.is_connected:
         raise HTTPException(status_code=400, detail="Gmail account not connected")
+
+    try:
+        deduct_points(db, current_user.id, DEFAULT_JOBSEEKER_POINTS_COSTS[JOBSEEKER_SMART_SEND_FEATURE], JOBSEEKER_SMART_SEND_FEATURE)
+        db.commit()
+    except InsufficientPointsError as exc:
+        raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail=str(exc)) from exc
 
     try:
         access_token = await gmail_oauth_service.get_valid_access_token(db, current_user.id)

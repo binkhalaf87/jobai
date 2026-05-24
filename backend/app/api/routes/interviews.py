@@ -23,6 +23,8 @@ from app.services.interview_service import (
     list_sessions,
     stream_evaluate_answer,
 )
+from app.services.subscription_access_service import JOBSEEKER_MOCK_INTERVIEW_FEATURE, DEFAULT_JOBSEEKER_POINTS_COSTS
+from app.services.wallet_service import InsufficientPointsError, deduct_points
 
 router = APIRouter(prefix="/interviews", tags=["interviews"])
 
@@ -86,6 +88,12 @@ def start_interview_session(
     current_user: User = Depends(get_current_user),
 ) -> InterviewSessionResponse:
     """Create a new interview session and generate the opening question via AI."""
+    try:
+        deduct_points(db, current_user.id, DEFAULT_JOBSEEKER_POINTS_COSTS[JOBSEEKER_MOCK_INTERVIEW_FEATURE], JOBSEEKER_MOCK_INTERVIEW_FEATURE)
+        db.commit()
+    except InsufficientPointsError as exc:
+        raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail=str(exc)) from exc
+
     try:
         session = create_session(
             db=db,

@@ -16,6 +16,7 @@ from app.core.security import (
 )
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
+from app.models.user_wallet import UserWallet
 from app.schemas.auth import LoginRequest
 from app.schemas.user import UserCreate
 
@@ -43,6 +44,10 @@ def create_user(db: Session, payload: UserCreate) -> User:
         role=payload.role,
     )
     db.add(user)
+    db.flush()
+
+    wallet = UserWallet(user_id=user.id)
+    db.add(wallet)
     db.commit()
     db.refresh(user)
     emit(db, user_id=user.id, event_type=UsageEventType.AUTH_REGISTER)
