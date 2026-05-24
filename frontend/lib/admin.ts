@@ -5,8 +5,19 @@ function getToken(): string {
   return window.localStorage.getItem("jobai_access_token") ?? "";
 }
 
+function getCsrfToken(): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 function authHeaders(extra?: Record<string, string>): Record<string, string> {
   return { Authorization: `Bearer ${getToken()}`, ...extra };
+}
+
+function mutationHeaders(extra?: Record<string, string>): Record<string, string> {
+  const csrf = getCsrfToken();
+  return authHeaders({ ...(csrf ? { "X-CSRF-Token": csrf } : {}), ...extra });
 }
 
 async function parseDetail(res: Response, fallback: string): Promise<string> {
@@ -75,7 +86,7 @@ export async function patchAdminUser(
 ): Promise<AdminUserItem> {
   const res = await fetch(`${getApiBaseUrl()}${BASE}/users/${id}`, {
     method: "PATCH",
-    headers: authHeaders({ "Content-Type": "application/json" }),
+    headers: mutationHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error(await parseDetail(res, "Failed to update user"));
@@ -88,7 +99,7 @@ export async function adjustWallet(
 ): Promise<{ balance_points: number }> {
   const res = await fetch(`${getApiBaseUrl()}${BASE}/users/${id}/wallet`, {
     method: "POST",
-    headers: authHeaders({ "Content-Type": "application/json" }),
+    headers: mutationHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error(await parseDetail(res, "Failed to adjust wallet"));
@@ -122,7 +133,7 @@ export async function getLists(): Promise<AdminListItem[]> {
 export async function createList(data: { name: string; description?: string }): Promise<AdminListItem> {
   const res = await fetch(`${getApiBaseUrl()}${BASE}/lists`, {
     method: "POST",
-    headers: authHeaders({ "Content-Type": "application/json" }),
+    headers: mutationHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error(await parseDetail(res, "Failed to create list"));
@@ -130,7 +141,7 @@ export async function createList(data: { name: string; description?: string }): 
 }
 
 export async function deleteList(id: string): Promise<void> {
-  const res = await fetch(`${getApiBaseUrl()}${BASE}/lists/${id}`, { method: "DELETE", headers: authHeaders() });
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/lists/${id}`, { method: "DELETE", headers: mutationHeaders() });
   if (!res.ok && res.status !== 204) throw new Error("Failed to delete list");
 }
 
@@ -143,7 +154,7 @@ export async function getListContacts(id: string): Promise<AdminContactItem[]> {
 export async function addContact(listId: string, data: { email: string; full_name?: string; company_name?: string; job_title?: string }): Promise<AdminContactItem> {
   const res = await fetch(`${getApiBaseUrl()}${BASE}/lists/${listId}/contacts`, {
     method: "POST",
-    headers: authHeaders({ "Content-Type": "application/json" }),
+    headers: mutationHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error(await parseDetail(res, "Failed to add contact"));
@@ -153,7 +164,7 @@ export async function addContact(listId: string, data: { email: string; full_nam
 export async function bulkAddContacts(listId: string, emails: string[]): Promise<{ added: number }> {
   const res = await fetch(`${getApiBaseUrl()}${BASE}/lists/${listId}/contacts/bulk`, {
     method: "POST",
-    headers: authHeaders({ "Content-Type": "application/json" }),
+    headers: mutationHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ emails }),
   });
   if (!res.ok) throw new Error(await parseDetail(res, "Failed to bulk add"));
@@ -161,7 +172,7 @@ export async function bulkAddContacts(listId: string, emails: string[]): Promise
 }
 
 export async function deleteContact(listId: string, contactId: string): Promise<void> {
-  const res = await fetch(`${getApiBaseUrl()}${BASE}/lists/${listId}/contacts/${contactId}`, { method: "DELETE", headers: authHeaders() });
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/lists/${listId}/contacts/${contactId}`, { method: "DELETE", headers: mutationHeaders() });
   if (!res.ok && res.status !== 204) throw new Error("Failed to delete contact");
 }
 
@@ -188,7 +199,7 @@ export async function listGmailRequests(status?: string): Promise<AdminGmailRequ
 export async function approveGmailRequest(id: string): Promise<AdminGmailRequestItem> {
   const res = await fetch(`${getApiBaseUrl()}${BASE}/gmail-requests/${id}/approve`, {
     method: "POST",
-    headers: authHeaders(),
+    headers: mutationHeaders(),
   });
   if (!res.ok) throw new Error(await parseDetail(res, "Failed to approve request"));
   return res.json();
@@ -197,7 +208,7 @@ export async function approveGmailRequest(id: string): Promise<AdminGmailRequest
 export async function rejectGmailRequest(id: string, reason?: string): Promise<AdminGmailRequestItem> {
   const res = await fetch(`${getApiBaseUrl()}${BASE}/gmail-requests/${id}/reject`, {
     method: "POST",
-    headers: authHeaders({ "Content-Type": "application/json" }),
+    headers: mutationHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ reason: reason ?? null }),
   });
   if (!res.ok) throw new Error(await parseDetail(res, "Failed to reject request"));
