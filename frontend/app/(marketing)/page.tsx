@@ -607,7 +607,6 @@ export default function HomePage() {
       <Pain t={t} />
       <Solution t={t} Arrow={Arrow} isAr={isAr} />
       <Features t={t} />
-      <SocialProof t={t} />
       <Pricing t={t} />
       <MiniFaq t={t} />
       <FinalCta t={t} Arrow={Arrow} />
@@ -793,69 +792,6 @@ function Features({ t }: { t: Content }) {
               </div>
             );
           })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── 6. social proof ────────────────────────────────────────────────── */
-function SocialProof({ t }: { t: Content }) {
-  const cs = t.results.caseStudy;
-  const testimonials = [t.testimonials.items[0], t.testimonials.items[2]];
-
-  return (
-    <section className="py-24 bg-slate-50">
-      <div className="mx-auto max-w-5xl px-6">
-        <div className="text-center mb-14">
-          <Eyebrow>{t.results.sectionLabel}</Eyebrow>
-          <h2 className="text-3xl font-black text-slate-900 md:text-5xl">
-            {t.testimonials.headline}<br />
-            <span className="text-brand-600">{t.testimonials.headlineAccent}</span>
-          </h2>
-        </div>
-
-        {/* Case study */}
-        <div className="rounded-3xl bg-brand-50 border border-brand-100 p-8 md:p-10 mb-8">
-          <div className="grid md:grid-cols-2 gap-8 items-start">
-            <div>
-              <Chip className="mb-4">{cs.badge}</Chip>
-              <h3 className="text-2xl font-black text-slate-900 mb-4">{cs.headline}</h3>
-              <p className="text-slate-600 leading-relaxed text-sm">{cs.story}</p>
-            </div>
-            <div className="space-y-3">
-              {cs.rows.map((row) => (
-                <div key={row.label} className="flex items-center justify-between rounded-2xl bg-white px-5 py-4 border border-brand-100">
-                  <span className="text-sm text-slate-600">{row.label}</span>
-                  <div className="flex items-center gap-2.5 text-sm font-bold">
-                    <span className="text-slate-400 line-through">{row.before}</span>
-                    <TrendingUp className="h-4 w-4 text-teal" />
-                    <span className="text-teal">{row.after}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Testimonials */}
-        <div className="grid gap-5 md:grid-cols-2">
-          {testimonials.map((item) => (
-            <div key={item.name} className="rounded-3xl border border-slate-100 bg-white p-8 shadow-sm">
-              <div className="flex gap-0.5 text-amber-400 mb-4">
-                {[...Array(5)].map((_, i) => <Star key={i} className="h-4 w-4 fill-current" />)}
-              </div>
-              <span className="inline-block rounded-full bg-teal-light/60 px-3 py-1 text-xs font-black text-teal mb-4">✓ {item.highlight}</span>
-              <blockquote className="text-slate-700 leading-relaxed mb-6 text-sm">&ldquo;{item.text}&rdquo;</blockquote>
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-600 text-white font-black text-sm">{item.name.charAt(0)}</div>
-                <div>
-                  <div className="font-black text-slate-900 text-sm">{item.name}</div>
-                  <div className="text-xs text-slate-500">{item.role} — {item.city}</div>
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     </section>
