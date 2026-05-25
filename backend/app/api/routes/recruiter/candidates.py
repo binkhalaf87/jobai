@@ -17,7 +17,6 @@ from app.models.resume import Resume
 from app.models.user import User
 from app.services.gpt_matching_service import (
     GPT_MATCH_MODEL_NAME,
-    gpt_match_resume_to_job,
     gpt_screen_resume_against_jobs,
 )
 from app.models.ai_report import AIAnalysisReport

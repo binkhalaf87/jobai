@@ -27,7 +27,6 @@ from app.models.enums import (
 from app.models.mixins import utc_now
 from app.models.payment_order import PaymentOrder
 from app.models.payment_webhook_event import PaymentWebhookEvent
-from app.models.plan import Plan
 from app.models.subscription import Subscription
 from app.models.user_wallet import UserWallet
 from app.models.wallet_transaction import WalletTransaction

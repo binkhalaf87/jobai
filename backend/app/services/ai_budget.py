@@ -6,10 +6,6 @@ import logging
 import os
 from datetime import datetime, timezone
 
-# Maximum tokens allowed per single OpenAI request (cost control).
-# Override via AI_MAX_TOKENS_PER_REQUEST env var.
-MAX_TOKENS_PER_REQUEST: int = int(os.getenv("AI_MAX_TOKENS_PER_REQUEST", "8000"))
-
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -17,6 +13,10 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.models.enums import UsageEventType
 from app.models.usage_log import UsageLog
+
+# Maximum tokens allowed per single OpenAI request (cost control).
+# Override via AI_MAX_TOKENS_PER_REQUEST env var.
+MAX_TOKENS_PER_REQUEST: int = int(os.getenv("AI_MAX_TOKENS_PER_REQUEST", "8000"))
 
 logger = logging.getLogger(__name__)
 

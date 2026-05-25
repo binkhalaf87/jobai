@@ -8,7 +8,7 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models.enums import PlanAudience, PlanKind, SubscriptionStatus, UserRole
+from app.models.enums import PlanAudience, PlanKind, SubscriptionStatus
 from app.models.job_description import JobDescription
 from app.models.plan import Plan
 from app.models.resume import Resume

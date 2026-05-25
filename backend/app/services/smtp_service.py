@@ -14,9 +14,9 @@ from cryptography.fernet import Fernet
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.models.smtp_connection import SmtpConnection
 
 settings = get_settings()
-from app.models.smtp_connection import SmtpConnection
 
 logger = logging.getLogger(__name__)
 

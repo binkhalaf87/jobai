@@ -2,7 +2,6 @@ import logging
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps.auth import get_current_user
@@ -11,7 +10,6 @@ from app.core.config import get_settings
 from app.core.rate_limit import limiter
 from app.core.security import blacklist_token, decode_access_token
 from app.models.enums import UsageEventType
-from app.models.refresh_token import RefreshToken
 from app.models.user import User
 from app.schemas.auth import (
     AuthResponse,
@@ -36,7 +34,6 @@ from app.services.auth import (
     generate_password_reset_token,
     get_verification_resend_retry_after_seconds,
     get_user_by_email,
-    hash_refresh_token,
     revoke_refresh_token,
     rotate_refresh_token,
     verify_email_token,

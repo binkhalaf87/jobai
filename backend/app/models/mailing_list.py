@@ -4,7 +4,7 @@ Phase 1: tables exist but are not yet exposed via UI.
 Phase 2: CSV import, list segmentation, unsubscribe management.
 """
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
