@@ -235,3 +235,94 @@ export async function rejectGmailRequest(id: string, reason?: string): Promise<A
   if (!res.ok) throw new Error(await parseDetail(res, "Failed to reject request"));
   return res.json();
 }
+
+// ── Promo Codes ────────────────────────────────────────────────────────────────
+
+export type AdminPromoCodeItem = {
+  id: string;
+  code: string;
+  description: string | null;
+  discount_type: "percentage" | "fixed_amount";
+  discount_value: number;
+  applicable_to: "all" | "jobseeker" | "recruiter";
+  plan_id: string | null;
+  plan_name: string | null;
+  max_uses: number | null;
+  uses_count: number;
+  max_uses_per_user: number;
+  valid_from: string | null;
+  valid_until: string | null;
+  is_active: boolean;
+  created_by_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AdminPromoCodeCreate = {
+  code: string;
+  description?: string;
+  discount_type: "percentage" | "fixed_amount";
+  discount_value: number;
+  applicable_to?: "all" | "jobseeker" | "recruiter";
+  plan_id?: string;
+  max_uses?: number;
+  max_uses_per_user?: number;
+  valid_from?: string;
+  valid_until?: string;
+};
+
+export type AdminPromoCodeUsageItem = {
+  id: string;
+  user_id: string;
+  user_email: string;
+  user_name: string | null;
+  payment_order_id: string | null;
+  discount_applied_minor: number;
+  created_at: string;
+};
+
+export async function listPromoCodes(isActive?: boolean): Promise<AdminPromoCodeItem[]> {
+  const qs = isActive !== undefined ? `?is_active=${isActive}` : "";
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/promotions${qs}`, { headers: authHeaders() });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to load promo codes"));
+  return res.json();
+}
+
+export async function createPromoCode(data: AdminPromoCodeCreate): Promise<AdminPromoCodeItem> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/promotions`, {
+    method: "POST",
+    headers: mutationHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to create promo code"));
+  return res.json();
+}
+
+export async function patchPromoCode(
+  id: string,
+  data: { is_active?: boolean; description?: string; max_uses?: number; valid_until?: string },
+): Promise<AdminPromoCodeItem> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/promotions/${id}`, {
+    method: "PATCH",
+    headers: mutationHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to update promo code"));
+  return res.json();
+}
+
+export async function deletePromoCode(id: string): Promise<void> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/promotions/${id}`, {
+    method: "DELETE",
+    headers: mutationHeaders(),
+  });
+  if (!res.ok && res.status !== 204) throw new Error(await parseDetail(res, "Failed to delete promo code"));
+}
+
+export async function listPromoCodeUsages(id: string, page = 1): Promise<AdminPromoCodeUsageItem[]> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/promotions/${id}/usages?page=${page}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to load usages"));
+  return res.json();
+}

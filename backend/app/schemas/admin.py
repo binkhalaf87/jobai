@@ -116,3 +116,57 @@ class AdminActivityItem(BaseModel):
 class AdminActivityResponse(BaseModel):
     recent_activity: list[AdminActivityItem]
     visitors_last_24h: int
+
+
+# ── Promo Codes ────────────────────────────────────────────────────────────────
+
+class AdminPromoCodeCreate(BaseModel):
+    code: str
+    description: str | None = None
+    discount_type: str
+    discount_value: int
+    applicable_to: str = "all"
+    plan_id: str | None = None
+    max_uses: int | None = None
+    max_uses_per_user: int = 1
+    valid_from: datetime | None = None
+    valid_until: datetime | None = None
+
+
+class AdminPromoCodePatch(BaseModel):
+    is_active: bool | None = None
+    description: str | None = None
+    max_uses: int | None = None
+    valid_until: datetime | None = None
+
+
+class AdminPromoCodeItem(BaseModel):
+    id: str
+    code: str
+    description: str | None
+    discount_type: str
+    discount_value: int
+    applicable_to: str
+    plan_id: str | None
+    plan_name: str | None
+    max_uses: int | None
+    uses_count: int
+    max_uses_per_user: int
+    valid_from: datetime | None
+    valid_until: datetime | None
+    is_active: bool
+    created_by_id: str | None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class AdminPromoCodeUsageItem(BaseModel):
+    id: str
+    user_id: str
+    user_email: str
+    user_name: str | None
+    payment_order_id: str | None
+    discount_applied_minor: int
+    created_at: datetime

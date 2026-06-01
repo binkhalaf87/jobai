@@ -15,6 +15,9 @@ from app.models.enums import UserRole, UsageEventType, WalletTransactionDirectio
 from app.models.usage_log import UsageLog
 from app.services.audit_log import emit as audit_emit
 from app.models.interview import InterviewSession
+from app.models.plan import Plan
+from app.models.promo_code import PromoCode
+from app.models.promo_code_usage import PromoCodeUsage
 from app.models.resume import Resume
 from app.models.send_history import SendHistory
 from app.models.user import User
@@ -32,6 +35,10 @@ from app.schemas.admin import (
     AdminGmailRequestReject,
     AdminListCreate,
     AdminListItem,
+    AdminPromoCodeCreate,
+    AdminPromoCodeItem,
+    AdminPromoCodePatch,
+    AdminPromoCodeUsageItem,
     AdminStatsResponse,
     AdminUserItem,
     AdminUserPatch,
@@ -450,3 +457,161 @@ def reject_gmail_request(
         status=req.status, rejection_reason=req.rejection_reason,
         created_at=req.created_at, reviewed_at=req.reviewed_at,
     )
+
+
+# ── Promo Codes ────────────────────────────────────────────────────────────────
+
+def _promo_to_item(promo: PromoCode, plan_name: str | None) -> AdminPromoCodeItem:
+    return AdminPromoCodeItem(
+        id=promo.id,
+        code=promo.code,
+        description=promo.description,
+        discount_type=promo.discount_type,
+        discount_value=promo.discount_value,
+        applicable_to=promo.applicable_to,
+        plan_id=promo.plan_id,
+        plan_name=plan_name,
+        max_uses=promo.max_uses,
+        uses_count=promo.uses_count,
+        max_uses_per_user=promo.max_uses_per_user,
+        valid_from=promo.valid_from,
+        valid_until=promo.valid_until,
+        is_active=promo.is_active,
+        created_by_id=promo.created_by_id,
+        created_at=promo.created_at,
+        updated_at=promo.updated_at,
+    )
+
+
+@router.get("/promotions", response_model=list[AdminPromoCodeItem])
+def list_promo_codes(
+    is_active: bool | None = Query(None),
+    _: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> list[AdminPromoCodeItem]:
+    q = select(PromoCode, Plan).outerjoin(Plan, PromoCode.plan_id == Plan.id)
+    if is_active is not None:
+        q = q.where(PromoCode.is_active.is_(is_active))
+    rows = db.execute(q.order_by(PromoCode.created_at.desc())).all()
+    return [_promo_to_item(promo, plan.name if plan else None) for promo, plan in rows]
+
+
+@router.post("/promotions", response_model=AdminPromoCodeItem, status_code=status.HTTP_201_CREATED)
+def create_promo_code(
+    body: AdminPromoCodeCreate,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> AdminPromoCodeItem:
+    code = body.code.strip().upper()
+    existing = db.scalar(select(PromoCode).where(PromoCode.code == code))
+    if existing:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="A promo code with this value already exists.")
+    promo = PromoCode(
+        id=str(uuid.uuid4()),
+        code=code,
+        description=body.description,
+        discount_type=body.discount_type,
+        discount_value=body.discount_value,
+        applicable_to=body.applicable_to,
+        plan_id=body.plan_id,
+        max_uses=body.max_uses,
+        uses_count=0,
+        max_uses_per_user=body.max_uses_per_user,
+        valid_from=body.valid_from,
+        valid_until=body.valid_until,
+        is_active=True,
+        created_by_id=admin.id,
+    )
+    db.add(promo)
+    db.commit()
+    db.refresh(promo)
+    plan = db.get(Plan, promo.plan_id) if promo.plan_id else None
+    audit_emit(
+        db,
+        user_id=admin.id,
+        event_type=UsageEventType.ADMIN_PROMO_CREATED,
+        detail=f"code={code}",
+        event_payload={"code": code, "discount_type": body.discount_type, "discount_value": body.discount_value},
+    )
+    return _promo_to_item(promo, plan.name if plan else None)
+
+
+@router.patch("/promotions/{code_id}", response_model=AdminPromoCodeItem)
+def patch_promo_code(
+    code_id: str,
+    body: AdminPromoCodePatch,
+    _: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> AdminPromoCodeItem:
+    promo = db.get(PromoCode, code_id)
+    if not promo:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Promo code not found.")
+    if body.is_active is not None:
+        promo.is_active = body.is_active
+    if body.description is not None:
+        promo.description = body.description
+    if body.max_uses is not None:
+        promo.max_uses = body.max_uses
+    if body.valid_until is not None:
+        promo.valid_until = body.valid_until
+    db.commit()
+    db.refresh(promo)
+    plan = db.get(Plan, promo.plan_id) if promo.plan_id else None
+    return _promo_to_item(promo, plan.name if plan else None)
+
+
+@router.delete("/promotions/{code_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+def delete_promo_code(
+    code_id: str,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> None:
+    promo = db.get(PromoCode, code_id)
+    if not promo:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Promo code not found.")
+    if promo.uses_count > 0:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot delete a code that has been used. Deactivate it instead.",
+        )
+    audit_emit(
+        db,
+        user_id=admin.id,
+        event_type=UsageEventType.ADMIN_PROMO_DELETED,
+        detail=f"code={promo.code}",
+    )
+    db.delete(promo)
+    db.commit()
+
+
+@router.get("/promotions/{code_id}/usages", response_model=list[AdminPromoCodeUsageItem])
+def list_promo_code_usages(
+    code_id: str,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+    _: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> list[AdminPromoCodeUsageItem]:
+    promo = db.get(PromoCode, code_id)
+    if not promo:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Promo code not found.")
+    rows = db.execute(
+        select(PromoCodeUsage, User)
+        .join(User, PromoCodeUsage.user_id == User.id)
+        .where(PromoCodeUsage.promo_code_id == code_id)
+        .order_by(PromoCodeUsage.created_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    ).all()
+    return [
+        AdminPromoCodeUsageItem(
+            id=usage.id,
+            user_id=usage.user_id,
+            user_email=user.email,
+            user_name=user.full_name,
+            payment_order_id=usage.payment_order_id,
+            discount_applied_minor=usage.discount_applied_minor,
+            created_at=usage.created_at,
+        )
+        for usage, user in rows
+    ]

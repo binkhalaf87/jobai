@@ -159,3 +159,16 @@ class BillingWalletTransactionSummary(BaseModel):
 class BillingWalletTransactionsResponse(BaseModel):
     user_id: str
     transactions: list[BillingWalletTransactionSummary]
+
+
+class BillingPromoValidateRequest(BaseModel):
+    code: str
+    plan_id: str
+
+
+class BillingPromoValidateResponse(BaseModel):
+    valid: bool
+    discount_type: str | None = None
+    discount_value: int | None = None
+    discount_applied_minor: int | None = None
+    message: str | None = None

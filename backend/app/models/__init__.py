@@ -10,6 +10,8 @@ from app.models.mailing_list import Recipient, RecipientList
 from app.models.payment_order import PaymentOrder
 from app.models.payment_webhook_event import PaymentWebhookEvent
 from app.models.plan import Plan
+from app.models.promo_code import PromoCode
+from app.models.promo_code_usage import PromoCodeUsage
 from app.models.resume import Resume
 from app.models.rewrite_suggestion import RewriteSuggestion
 from app.models.saved_job import SavedJob
@@ -34,6 +36,8 @@ __all__ = [
     "PaymentOrder",
     "PaymentWebhookEvent",
     "Plan",
+    "PromoCode",
+    "PromoCodeUsage",
     "Recipient",
     "RecipientList",
     "Resume",

@@ -1,12 +1,16 @@
 import json
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps.auth import get_current_user
 from app.api.deps.db import get_db
 from app.models.enums import UserRole
 from app.models.plan import Plan
+from app.models.promo_code import PromoCode
+from app.models.promo_code_usage import PromoCodeUsage
 from app.models.subscription import Subscription
 from app.models.user import User
 from app.models.user_wallet import UserWallet
@@ -20,6 +24,8 @@ from app.schemas.billing import (
     BillingOrderSummary,
     BillingPlansResponse,
     BillingPlanRead,
+    BillingPromoValidateRequest,
+    BillingPromoValidateResponse,
     BillingSubscriptionSummary,
     BillingWalletSummary,
     BillingWebhookResponse,
@@ -252,4 +258,57 @@ async def handle_paymob_webhook(
         payment_order_id=result.payment_order_id,
         status=result.status,
         duplicate=result.duplicate,
+    )
+
+
+@router.post("/promo/validate", response_model=BillingPromoValidateResponse)
+def validate_promo_code(
+    body: BillingPromoValidateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> BillingPromoValidateResponse:
+    """Check whether a promo code is valid for the current user and plan. Read-only — never increments uses_count."""
+    code = body.code.strip().upper()
+    promo = db.scalar(select(PromoCode).where(PromoCode.code == code, PromoCode.is_active.is_(True)))
+    if not promo:
+        return BillingPromoValidateResponse(valid=False, message="Invalid or inactive promo code.")
+
+    now = datetime.now(timezone.utc)
+    if promo.valid_from and promo.valid_from > now:
+        return BillingPromoValidateResponse(valid=False, message="This promo code is not yet active.")
+    if promo.valid_until and promo.valid_until < now:
+        return BillingPromoValidateResponse(valid=False, message="This promo code has expired.")
+
+    if promo.max_uses is not None and promo.uses_count >= promo.max_uses:
+        return BillingPromoValidateResponse(valid=False, message="This promo code has reached its usage limit.")
+
+    if promo.applicable_to != "all" and promo.applicable_to != current_user.role.value:
+        return BillingPromoValidateResponse(valid=False, message="This promo code is not available for your account type.")
+
+    if promo.plan_id is not None and promo.plan_id != body.plan_id:
+        return BillingPromoValidateResponse(valid=False, message="This promo code is not valid for the selected plan.")
+
+    user_uses = db.scalar(
+        select(func.count()).select_from(PromoCodeUsage).where(
+            PromoCodeUsage.promo_code_id == promo.id,
+            PromoCodeUsage.user_id == current_user.id,
+        )
+    ) or 0
+    if user_uses >= promo.max_uses_per_user:
+        return BillingPromoValidateResponse(valid=False, message="You have already used this promo code.")
+
+    plan = db.get(Plan, body.plan_id)
+    if not plan or plan.price_amount_minor is None:
+        return BillingPromoValidateResponse(valid=False, message="Plan not found.")
+
+    if promo.discount_type == "percentage":
+        discount_applied = round(plan.price_amount_minor * promo.discount_value / 10000)
+    else:
+        discount_applied = min(promo.discount_value, plan.price_amount_minor)
+
+    return BillingPromoValidateResponse(
+        valid=True,
+        discount_type=promo.discount_type,
+        discount_value=promo.discount_value,
+        discount_applied_minor=discount_applied,
     )

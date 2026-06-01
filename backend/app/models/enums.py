@@ -73,6 +73,9 @@ class UsageEventType(str, Enum):
     RESUME_DELETED = "resume_deleted"
     BILLING_CHECKOUT_INITIATED = "billing_checkout_initiated"
     BILLING_PAYMENT_CONFIRMED = "billing_payment_confirmed"
+    ADMIN_PROMO_CREATED = "admin_promo_created"
+    ADMIN_PROMO_DELETED = "admin_promo_deleted"
+    BILLING_PROMO_APPLIED = "billing_promo_applied"
 
 
 class UserRole(str, Enum):
@@ -165,3 +168,18 @@ class WalletTransactionDirection(str, Enum):
 
     CREDIT = "credit"
     DEBIT = "debit"
+
+
+class PromoDiscountType(str, Enum):
+    """Discount calculation method for a promo code."""
+
+    PERCENTAGE = "percentage"
+    FIXED_AMOUNT = "fixed_amount"
+
+
+class PromoApplicableTo(str, Enum):
+    """Which user segment a promo code can be applied by."""
+
+    ALL = "all"
+    JOBSEEKER = "jobseeker"
+    RECRUITER = "recruiter"
