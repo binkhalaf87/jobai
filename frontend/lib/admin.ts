@@ -387,6 +387,20 @@ export type AdminUserProfileResponse = {
   services_summary: AdminUserServiceSummaryItem[];
 };
 
+export async function getAdminResumeFileUrl(
+  userId: string,
+  resumeId: string,
+  inline = false,
+): Promise<string> {
+  const res = await fetch(
+    `${getApiBaseUrl()}${BASE}/users/${userId}/resumes/${resumeId}/file${inline ? "?inline=true" : ""}`,
+    { headers: authHeaders() },
+  );
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to load file"));
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
+}
+
 export async function getAdminUserProfile(
   userId: string,
   params: { activityPage?: number; activityPageSize?: number } = {},

@@ -6,6 +6,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import FileResponse, Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -25,6 +26,7 @@ from app.models.user_wallet import UserWallet
 from app.models.mailing_list import Recipient, RecipientList
 from app.models.wallet_transaction import WalletTransaction
 from app.models.gmail_connection_request import GmailConnectionRequest
+from app.services.storage import get_storage
 from app.schemas.admin import (
     AdminContactCreate,
     AdminContactItem,
@@ -325,6 +327,59 @@ def get_user_profile(
             AdminUserServiceSummaryItem(event_type=row.event_type, count=row.count)
             for row in summary_rows
         ],
+    )
+
+
+# ── Resume file access (admin) ────────────────────────────────────────────────
+
+_MIME_TYPES: dict[str, str] = {
+    "pdf":  "application/pdf",
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "doc":  "application/msword",
+}
+
+
+@router.get("/users/{user_id}/resumes/{resume_id}/file", response_model=None)
+def get_admin_resume_file(
+    user_id: str,
+    resume_id: str,
+    inline: bool = Query(False),
+    _: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """Stream the resume file for admin download/preview.
+
+    Pass ?inline=true to set Content-Disposition: inline (browser preview).
+    Default is attachment (force download).
+    """
+    resume = db.scalar(select(Resume).where(Resume.id == resume_id, Resume.user_id == user_id))
+    if not resume:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume not found.")
+
+    storage = get_storage()
+    key = resume.storage_key or ""
+    media_type = _MIME_TYPES.get(resume.file_type or "", "application/octet-stream")
+    filename = resume.source_filename or f"{resume_id}.{resume.file_type or 'bin'}"
+    disposition = "inline" if inline else f'attachment; filename="{filename}"'
+
+    local_path = storage.get_local_path(key)
+    if local_path:
+        return FileResponse(
+            path=str(local_path),
+            media_type=media_type,
+            filename=None if inline else filename,
+            headers={"Content-Disposition": disposition},
+        )
+
+    try:
+        data = storage.download(key)
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume file not found.") from exc
+
+    return Response(
+        content=data,
+        media_type=media_type,
+        headers={"Content-Disposition": disposition},
     )
 
 

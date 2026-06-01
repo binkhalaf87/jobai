@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowLeft, Download, Eye, X } from "lucide-react";
 
 import {
   getAdminUserProfile,
+  getAdminResumeFileUrl,
   type AdminUserProfileResponse,
   type AdminUserActivityItem,
   type AdminUserResumeItem,
@@ -201,55 +202,205 @@ function ServicesTab({ summary }: { summary: AdminUserServiceSummaryItem[] }) {
   );
 }
 
-function FilesTab({ resumes }: { resumes: AdminUserResumeItem[] }) {
+function PreviewModal({
+  url,
+  filename,
+  fileType,
+  onClose,
+}: {
+  url: string;
+  filename: string;
+  fileType: string | null;
+  onClose: () => void;
+}) {
+  const isPdf = fileType === "pdf";
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-black/80" onClick={onClose}>
+      {/* Header */}
+      <div
+        className="flex items-center justify-between bg-slate-900 px-4 py-3"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p className="truncate text-sm font-semibold text-white">{filename}</p>
+        <div className="flex items-center gap-2">
+          <a
+            href={url}
+            download={filename}
+            className="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/20"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Download size={12} />
+            تنزيل
+          </a>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      </div>
+      {/* Content */}
+      <div className="flex-1 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        {isPdf ? (
+          <iframe
+            src={url}
+            className="h-full w-full"
+            title={filename}
+          />
+        ) : (
+          <div className="flex h-full flex-col items-center justify-center gap-4 text-white">
+            <p className="text-lg font-semibold">لا تتوفر معاينة لهذا النوع من الملفات</p>
+            <p className="text-sm text-slate-400">صيغة {fileType?.toUpperCase() ?? "غير معروفة"} لا تدعم المعاينة في المتصفح</p>
+            <a
+              href={url}
+              download={filename}
+              className="flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 hover:bg-slate-100"
+            >
+              <Download size={14} />
+              تنزيل الملف
+            </a>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FilesTab({
+  resumes,
+  userId,
+}: {
+  resumes: AdminUserResumeItem[];
+  userId: string;
+}) {
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{ url: string; filename: string; fileType: string | null } | null>(null);
+  const [blobUrls, setBlobUrls] = useState<Record<string, string>>({});
+
+  const fetchFile = useCallback(
+    async (resume: AdminUserResumeItem, mode: "preview" | "download") => {
+      const key = `${resume.id}_${mode}`;
+      setLoadingId(key);
+      try {
+        const cached = blobUrls[key];
+        const url = cached ?? await getAdminResumeFileUrl(userId, resume.id, mode === "preview");
+        if (!cached) setBlobUrls((prev) => ({ ...prev, [key]: url }));
+
+        if (mode === "preview") {
+          setPreview({
+            url,
+            filename: resume.source_filename ?? resume.title,
+            fileType: resume.file_type,
+          });
+        } else {
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = resume.source_filename ?? resume.title;
+          a.click();
+        }
+      } catch {
+        /* ignore — could add a toast here */
+      } finally {
+        setLoadingId(null);
+      }
+    },
+    [userId, blobUrls],
+  );
+
   if (resumes.length === 0) {
     return <p className="py-10 text-center text-sm text-slate-400">لم يرفع هذا المستخدم أي ملفات.</p>;
   }
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-slate-100 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-            <th className="px-3 py-2">العنوان</th>
-            <th className="px-3 py-2">اسم الملف</th>
-            <th className="px-3 py-2">النوع</th>
-            <th className="px-3 py-2">الحالة</th>
-            <th className="px-3 py-2">الصفحات</th>
-            <th className="px-3 py-2">التاريخ</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-50">
-          {resumes.map((r) => (
-            <tr key={r.id} className="hover:bg-slate-50/50">
-              <td className="px-3 py-2.5 font-medium text-slate-800 text-[13px] max-w-[140px] truncate">
-                {r.title}
-              </td>
-              <td className="px-3 py-2.5 text-[11px] text-slate-500 max-w-[160px] truncate">
-                {r.source_filename ?? "—"}
-              </td>
-              <td className="px-3 py-2.5">
-                {r.file_type ? (
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${FILE_TYPE_COLORS[r.file_type] ?? "bg-slate-100 text-slate-600"}`}>
-                    {r.file_type.toUpperCase()}
-                  </span>
-                ) : "—"}
-              </td>
-              <td className="px-3 py-2.5">
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${STATUS_COLORS[r.processing_status] ?? "bg-slate-100 text-slate-600"}`}>
-                  {r.processing_status}
-                </span>
-              </td>
-              <td className="px-3 py-2.5 text-[12px] text-slate-500">
-                {r.page_count ?? "—"}
-              </td>
-              <td className="px-3 py-2.5 text-[11px] text-slate-400">
-                {formatDate(r.created_at)}
-              </td>
+    <>
+      {preview && (
+        <PreviewModal
+          url={preview.url}
+          filename={preview.filename}
+          fileType={preview.fileType}
+          onClose={() => setPreview(null)}
+        />
+      )}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-slate-100 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              <th className="px-3 py-2">العنوان</th>
+              <th className="px-3 py-2">اسم الملف</th>
+              <th className="px-3 py-2">النوع</th>
+              <th className="px-3 py-2">الحالة</th>
+              <th className="px-3 py-2">الصفحات</th>
+              <th className="px-3 py-2">التاريخ</th>
+              <th className="px-3 py-2">الإجراءات</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody className="divide-y divide-slate-50">
+            {resumes.map((r) => (
+              <tr key={r.id} className="hover:bg-slate-50/50">
+                <td className="px-3 py-2.5 font-medium text-slate-800 text-[13px] max-w-[140px] truncate">
+                  {r.title}
+                </td>
+                <td className="px-3 py-2.5 text-[11px] text-slate-500 max-w-[160px] truncate">
+                  {r.source_filename ?? "—"}
+                </td>
+                <td className="px-3 py-2.5">
+                  {r.file_type ? (
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${FILE_TYPE_COLORS[r.file_type] ?? "bg-slate-100 text-slate-600"}`}>
+                      {r.file_type.toUpperCase()}
+                    </span>
+                  ) : "—"}
+                </td>
+                <td className="px-3 py-2.5">
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${STATUS_COLORS[r.processing_status] ?? "bg-slate-100 text-slate-600"}`}>
+                    {r.processing_status}
+                  </span>
+                </td>
+                <td className="px-3 py-2.5 text-[12px] text-slate-500">
+                  {r.page_count ?? "—"}
+                </td>
+                <td className="px-3 py-2.5 text-[11px] text-slate-400">
+                  {formatDate(r.created_at)}
+                </td>
+                <td className="px-3 py-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      disabled={loadingId === `${r.id}_preview`}
+                      onClick={() => void fetchFile(r, "preview")}
+                      title="معاينة"
+                      className="flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700 disabled:opacity-40"
+                    >
+                      {loadingId === `${r.id}_preview` ? (
+                        <span className="h-3 w-3 animate-spin rounded-full border border-slate-400 border-t-slate-700" />
+                      ) : (
+                        <Eye size={11} />
+                      )}
+                      معاينة
+                    </button>
+                    <button
+                      type="button"
+                      disabled={loadingId === `${r.id}_download`}
+                      onClick={() => void fetchFile(r, "download")}
+                      title="تنزيل"
+                      className="flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-emerald-300 hover:text-emerald-700 disabled:opacity-40"
+                    >
+                      {loadingId === `${r.id}_download` ? (
+                        <span className="h-3 w-3 animate-spin rounded-full border border-slate-400 border-t-slate-700" />
+                      ) : (
+                        <Download size={11} />
+                      )}
+                      تنزيل
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 
@@ -394,7 +545,7 @@ export default function AdminUserProfilePage() {
             />
           )}
           {tab === "services" && <ServicesTab summary={profile.services_summary} />}
-          {tab === "files" && <FilesTab resumes={profile.resumes} />}
+          {tab === "files" && <FilesTab resumes={profile.resumes} userId={profile.id} />}
         </div>
       </div>
     </div>
