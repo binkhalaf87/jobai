@@ -17,6 +17,7 @@ from app.api.routes.recruiter.talent_fit import router as recruiter_talent_fit_r
 from app.api.routes.resumes import router as resumes_router
 from app.api.routes.smart_send import router as smart_send_router
 from app.api.routes.system import router as system_router
+from app.api.routes.tracking import router as tracking_router
 
 # This router becomes the single entrypoint for versioned API route groups.
 api_router = APIRouter()
@@ -37,3 +38,4 @@ api_router.include_router(recruiter_screening_router)
 api_router.include_router(recruiter_talent_fit_router)
 api_router.include_router(smart_send_router)
 api_router.include_router(system_router)
+api_router.include_router(tracking_router)

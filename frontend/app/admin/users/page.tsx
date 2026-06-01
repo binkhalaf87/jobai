@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Search, ChevronLeft, ChevronRight, Coins } from "lucide-react";
 
 import {
@@ -96,6 +97,7 @@ function WalletModal({
 }
 
 export default function AdminUsersPage() {
+  const router = useRouter();
   const [users, setUsers] = useState<AdminUserItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -187,7 +189,11 @@ export default function AdminUsersPage() {
               ) : users.length === 0 ? (
                 <tr><td colSpan={6} className="px-4 py-8 text-center text-xs text-slate-400">No users found.</td></tr>
               ) : users.map((u) => (
-                <tr key={u.id} className="hover:bg-slate-50/50">
+                <tr
+                  key={u.id}
+                  className="hover:bg-slate-50/50 cursor-pointer"
+                  onClick={() => router.push(`/admin/users/${u.id}`)}
+                >
                   <td className="px-4 py-3">
                     <p className="font-semibold text-slate-900 text-[13px]">{u.full_name ?? "—"}</p>
                     <p className="text-[11px] text-slate-400">{u.email}</p>
@@ -195,7 +201,8 @@ export default function AdminUsersPage() {
                   <td className="px-4 py-3">
                     <select
                       value={u.role}
-                      onChange={(e) => void changeRole(u, e.target.value)}
+                      onChange={(e) => { e.stopPropagation(); void changeRole(u, e.target.value); }}
+                      onClick={(e) => e.stopPropagation()}
                       className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold outline-none focus:border-slate-400"
                     >
                       {["jobseeker", "recruiter", "admin"].map((r) => (
@@ -206,7 +213,7 @@ export default function AdminUsersPage() {
                   <td className="px-4 py-3">
                     <button
                       type="button"
-                      onClick={() => void toggleActive(u)}
+                      onClick={(e) => { e.stopPropagation(); void toggleActive(u); }}
                       className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold transition ${
                         u.is_active
                           ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
@@ -225,7 +232,7 @@ export default function AdminUsersPage() {
                   <td className="px-4 py-3">
                     <button
                       type="button"
-                      onClick={() => setWalletUser(u)}
+                      onClick={(e) => { e.stopPropagation(); setWalletUser(u); }}
                       className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-amber-300 hover:text-amber-700"
                     >
                       <Coins size={11} />

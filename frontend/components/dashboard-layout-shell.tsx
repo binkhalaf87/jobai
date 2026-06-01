@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
+import { usePageTracking } from "@/hooks/usePageTracking";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { DASHBOARD_NAV_GROUPS } from "@/lib/navigation";
 import { resendVerification } from "@/lib/auth";
@@ -124,6 +125,7 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
   const { user, isLoading, hasSession, signOut } = useAuth();
   const t = useTranslations("nav");
 
+  usePageTracking();
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const allItems = DASHBOARD_NAV_GROUPS.flatMap((g) => g.items);
   const currentItem = allItems.find((item) => isActive(pathname, item.href));

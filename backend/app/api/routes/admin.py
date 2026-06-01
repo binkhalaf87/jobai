@@ -41,8 +41,12 @@ from app.schemas.admin import (
     AdminPromoCodePatch,
     AdminPromoCodeUsageItem,
     AdminStatsResponse,
+    AdminUserActivityItem,
     AdminUserItem,
     AdminUserPatch,
+    AdminUserProfileResponse,
+    AdminUserResumeItem,
+    AdminUserServiceSummaryItem,
     AdminUsersResponse,
     AdminWalletAdjust,
 )
@@ -250,6 +254,78 @@ def adjust_wallet(
         event_payload={"balance_before": balance_before, "balance_after": balance_after, "reason": body.reason},
     )
     return {"balance_points": balance_after}
+
+
+# ── User profile ───────────────────────────────────────────────────────────────
+
+@router.get("/users/{user_id}/profile", response_model=AdminUserProfileResponse)
+def get_user_profile(
+    user_id: str,
+    activity_page: int = Query(1, ge=1),
+    activity_page_size: int = Query(50, ge=1, le=100),
+    _: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> AdminUserProfileResponse:
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+
+    balance = user.user_wallet.balance_points if user.user_wallet else None
+
+    activity_q = (
+        select(UsageLog)
+        .where(
+            UsageLog.user_id == user_id,
+            UsageLog.event_type != UsageEventType.PAGE_VIEW,
+        )
+        .order_by(UsageLog.created_at.desc())
+    )
+    activity_total = db.scalar(select(func.count()).select_from(activity_q.subquery())) or 0
+    logs = db.scalars(
+        activity_q.offset((activity_page - 1) * activity_page_size).limit(activity_page_size)
+    ).all()
+
+    resumes = db.scalars(
+        select(Resume).where(Resume.user_id == user_id).order_by(Resume.created_at.desc())
+    ).all()
+
+    summary_rows = db.execute(
+        select(UsageLog.event_type, func.count().label("count"))
+        .where(
+            UsageLog.user_id == user_id,
+            UsageLog.event_type != UsageEventType.PAGE_VIEW,
+        )
+        .group_by(UsageLog.event_type)
+        .order_by(func.count().desc())
+    ).all()
+
+    return AdminUserProfileResponse(
+        id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        role=user.role,
+        is_active=user.is_active,
+        is_email_verified=user.is_email_verified,
+        created_at=user.created_at,
+        last_login_at=user.last_login_at,
+        balance_points=balance,
+        activity=[
+            AdminUserActivityItem(
+                id=log.id,
+                event_type=log.event_type,
+                detail=log.detail,
+                credits_used=log.credits_used,
+                created_at=log.created_at,
+            )
+            for log in logs
+        ],
+        activity_total=activity_total,
+        resumes=[AdminUserResumeItem.model_validate(r) for r in resumes],
+        services_summary=[
+            AdminUserServiceSummaryItem(event_type=row.event_type, count=row.count)
+            for row in summary_rows
+        ],
+    )
 
 
 # ── Recipient Lists ────────────────────────────────────────────────────────────

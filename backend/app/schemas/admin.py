@@ -184,3 +184,46 @@ class AdminPromoCodeUsageItem(BaseModel):
     payment_order_id: str | None
     discount_applied_minor: int
     created_at: datetime
+
+
+# ── User Profile ───────────────────────────────────────────────────────────────
+
+class AdminUserResumeItem(BaseModel):
+    id: str
+    title: str
+    source_filename: str | None
+    file_type: str | None
+    processing_status: str
+    page_count: int | None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class AdminUserActivityItem(BaseModel):
+    id: str
+    event_type: str
+    detail: str | None
+    credits_used: int
+    created_at: datetime
+
+
+class AdminUserServiceSummaryItem(BaseModel):
+    event_type: str
+    count: int
+
+
+class AdminUserProfileResponse(BaseModel):
+    id: str
+    email: str
+    full_name: str | None
+    role: str
+    is_active: bool
+    is_email_verified: bool
+    created_at: datetime
+    last_login_at: datetime | None
+    balance_points: int | None
+    activity: list[AdminUserActivityItem]
+    activity_total: int
+    resumes: list[AdminUserResumeItem]
+    services_summary: list[AdminUserServiceSummaryItem]

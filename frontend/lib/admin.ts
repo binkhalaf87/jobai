@@ -344,3 +344,60 @@ export async function listPromoCodeUsages(id: string, page = 1): Promise<AdminPr
   if (!res.ok) throw new Error(await parseDetail(res, "Failed to load usages"));
   return res.json();
 }
+
+
+// ── User Profile ───────────────────────────────────────────────────────────────
+
+export type AdminUserResumeItem = {
+  id: string;
+  title: string;
+  source_filename: string | null;
+  file_type: string | null;
+  processing_status: string;
+  page_count: number | null;
+  created_at: string;
+};
+
+export type AdminUserActivityItem = {
+  id: string;
+  event_type: string;
+  detail: string | null;
+  credits_used: number;
+  created_at: string;
+};
+
+export type AdminUserServiceSummaryItem = {
+  event_type: string;
+  count: number;
+};
+
+export type AdminUserProfileResponse = {
+  id: string;
+  email: string;
+  full_name: string | null;
+  role: string;
+  is_active: boolean;
+  is_email_verified: boolean;
+  created_at: string;
+  last_login_at: string | null;
+  balance_points: number | null;
+  activity: AdminUserActivityItem[];
+  activity_total: number;
+  resumes: AdminUserResumeItem[];
+  services_summary: AdminUserServiceSummaryItem[];
+};
+
+export async function getAdminUserProfile(
+  userId: string,
+  params: { activityPage?: number; activityPageSize?: number } = {},
+): Promise<AdminUserProfileResponse> {
+  const qs = new URLSearchParams();
+  if (params.activityPage) qs.set("activity_page", String(params.activityPage));
+  if (params.activityPageSize) qs.set("activity_page_size", String(params.activityPageSize));
+  const query = qs.toString() ? `?${qs}` : "";
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/users/${userId}/profile${query}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to load user profile"));
+  return res.json();
+}

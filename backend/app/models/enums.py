@@ -76,6 +76,7 @@ class UsageEventType(str, Enum):
     ADMIN_PROMO_CREATED = "admin_promo_created"
     ADMIN_PROMO_DELETED = "admin_promo_deleted"
     BILLING_PROMO_APPLIED = "billing_promo_applied"
+    PAGE_VIEW = "page_view"
 
 
 class UserRole(str, Enum):
