@@ -20,7 +20,7 @@ class PageViewRequest(BaseModel):
     path: str
 
 
-@router.post("/page-view", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/page-view", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 @limiter.limit("60/minute")
 def track_page_view(
     request: Request,
