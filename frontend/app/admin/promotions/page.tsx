@@ -6,9 +6,11 @@ import { Tag, Plus, Eye, EyeOff, Trash2, X } from "lucide-react";
 import {
   createPromoCode,
   deletePromoCode,
+  listAdminPlans,
   listPromoCodes,
   listPromoCodeUsages,
   patchPromoCode,
+  type AdminPlanItem,
   type AdminPromoCodeCreate,
   type AdminPromoCodeItem,
   type AdminPromoCodeUsageItem,
@@ -116,11 +118,13 @@ function CreateModal({
   onCancel,
   saving,
   error,
+  plans,
 }: {
   onSave: (data: AdminPromoCodeCreate) => void;
   onCancel: () => void;
   saving: boolean;
   error: string | null;
+  plans: AdminPlanItem[];
 }) {
   const [form, setForm] = useState<AdminPromoCodeCreate>(DEFAULT_FORM);
 
@@ -220,16 +224,21 @@ function CreateModal({
             </select>
           </div>
 
-          {/* Plan ID */}
+          {/* Plan */}
           <div>
-            <label className="mb-1 block text-xs font-semibold text-slate-600">Plan ID (optional — leave blank for any plan)</label>
-            <input
-              type="text"
-              placeholder="e.g. recruiter_starter_monthly"
+            <label className="mb-1 block text-xs font-semibold text-slate-600">Plan (optional — leave blank for any plan)</label>
+            <select
               value={form.plan_id ?? ""}
-              onChange={(e) => set("plan_id", e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-slate-400"
-            />
+              onChange={(e) => set("plan_id", e.target.value || undefined)}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+            >
+              <option value="">All plans</option>
+              {plans.filter((p) => p.is_active).map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} ({p.audience}) — {p.price_amount_minor != null ? `SAR ${(p.price_amount_minor / 100).toFixed(2)}` : "free"}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Max uses + per user */}
@@ -338,6 +347,7 @@ function UsageSubRow({ usages, loading }: { usages: AdminPromoCodeUsageItem[] | 
 
 export default function PromotionsPage() {
   const [codes, setCodes] = useState<AdminPromoCodeItem[]>([]);
+  const [plans, setPlans] = useState<AdminPlanItem[]>([]);
   const [filter, setFilter] = useState<Filter>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -355,8 +365,9 @@ export default function PromotionsPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await listPromoCodes();
-      setCodes(data);
+      const [codesData, plansData] = await Promise.all([listPromoCodes(), listAdminPlans()]);
+      setCodes(codesData);
+      setPlans(plansData);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to load promo codes");
     } finally {
@@ -447,6 +458,7 @@ export default function PromotionsPage() {
           onCancel={() => { setShowCreate(false); setSaveError(null); }}
           saving={saving}
           error={saveError}
+          plans={plans}
         />
       )}
       {deleteTarget && (

@@ -35,6 +35,7 @@ from app.schemas.admin import (
     AdminGmailRequestReject,
     AdminListCreate,
     AdminListItem,
+    AdminPlanItem,
     AdminPromoCodeCreate,
     AdminPromoCodeItem,
     AdminPromoCodePatch,
@@ -457,6 +458,17 @@ def reject_gmail_request(
         status=req.status, rejection_reason=req.rejection_reason,
         created_at=req.created_at, reviewed_at=req.reviewed_at,
     )
+
+
+# ── Plans (read-only) ─────────────────────────────────────────────────────────
+
+@router.get("/plans", response_model=list[AdminPlanItem])
+def list_plans(
+    _: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> list[AdminPlanItem]:
+    plans = db.scalars(select(Plan).order_by(Plan.display_order, Plan.name)).all()
+    return [AdminPlanItem.model_validate(p) for p in plans]
 
 
 # ── Promo Codes ────────────────────────────────────────────────────────────────

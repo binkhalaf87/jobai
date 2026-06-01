@@ -118,6 +118,20 @@ class AdminActivityResponse(BaseModel):
     visitors_last_24h: int
 
 
+# ── Plans (admin read-only) ───────────────────────────────────────────────────
+
+class AdminPlanItem(BaseModel):
+    id: str
+    code: str
+    name: str
+    audience: str
+    kind: str
+    price_amount_minor: int | None
+    is_active: bool
+
+    model_config = {"from_attributes": True}
+
+
 # ── Promo Codes ────────────────────────────────────────────────────────────────
 
 class AdminPromoCodeCreate(BaseModel):

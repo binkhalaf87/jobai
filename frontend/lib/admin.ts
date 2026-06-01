@@ -236,6 +236,24 @@ export async function rejectGmailRequest(id: string, reason?: string): Promise<A
   return res.json();
 }
 
+// ── Plans (admin read-only) ───────────────────────────────────────────────────
+
+export type AdminPlanItem = {
+  id: string;
+  code: string;
+  name: string;
+  audience: string;
+  kind: string;
+  price_amount_minor: number | null;
+  is_active: boolean;
+};
+
+export async function listAdminPlans(): Promise<AdminPlanItem[]> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/plans`, { headers: authHeaders() });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to load plans"));
+  return res.json();
+}
+
 // ── Promo Codes ────────────────────────────────────────────────────────────────
 
 export type AdminPromoCodeItem = {
