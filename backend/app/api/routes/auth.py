@@ -208,8 +208,8 @@ def resend_verification(request: Request, payload: ResendVerificationRequest, db
 
     user = get_user_by_email(db, payload.email)
     retry_after_seconds = get_verification_resend_retry_after_seconds(user) if user else None
-    logger.error(
-        "RESEND_DEBUG: email=%r user_found=%s verified=%s retry_after_seconds=%s",
+    logger.debug(
+        "resend_verification: email=%r user_found=%s verified=%s retry_after_seconds=%s",
         payload.email,
         user is not None,
         user.is_email_verified if user else "N/A",
@@ -262,7 +262,14 @@ def forgot_password(request: Request, payload: ForgotPasswordRequest, db: Sessio
     user = get_user_by_email(db, payload.email)
     if user and user.is_email_verified:
         token = generate_password_reset_token(db, user)
-        send_password_reset_email(user.email, token, user.full_name)
+        result = send_password_reset_email(user.email, token, user.full_name)
+        if not result.sent:
+            logger.error(
+                "PASSWORD_RESET_EMAIL_FAILED: user_id=%s email=%s error=%s",
+                user.id,
+                user.email,
+                result.error,
+            )
         audit_emit(db, user_id=user.id, event_type=UsageEventType.AUTH_PASSWORD_RESET_REQUESTED)
 
     return {"message": "If that email is registered, a reset link has been sent."}

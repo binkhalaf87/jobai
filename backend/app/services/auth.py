@@ -53,7 +53,15 @@ def create_user(db: Session, payload: UserCreate) -> User:
     emit(db, user_id=user.id, event_type=UsageEventType.AUTH_REGISTER)
 
     token = generate_email_verification_token(db, user)
-    send_verification_email(user.email, token, user.full_name)
+    result = send_verification_email(user.email, token, user.full_name)
+    if not result.sent:
+        import logging
+        logging.getLogger(__name__).error(
+            "REGISTRATION_EMAIL_FAILED: user_id=%s email=%s error=%s",
+            user.id,
+            user.email,
+            result.error,
+        )
     return user
 
 

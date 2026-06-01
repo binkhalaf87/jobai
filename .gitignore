@@ -25,3 +25,8 @@ Thumbs.db
 .vscode/
 dist/
 build/
+
+.vercel
+
+# Stale project copy — not part of the active codebase
+jobai/

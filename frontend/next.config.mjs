@@ -1,4 +1,5 @@
 import createNextIntlPlugin from "next-intl/plugin";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
@@ -44,4 +45,15 @@ const nextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+const sentryOptions = {
+  silent: true,
+  disableLogger: true,
+  // Only upload source maps when SENTRY_AUTH_TOKEN is set (CI/prod)
+  ...(process.env.SENTRY_AUTH_TOKEN
+    ? { org: process.env.SENTRY_ORG, project: process.env.SENTRY_PROJECT }
+    : { dryRun: true }),
+};
+
+export default process.env.NEXT_PUBLIC_SENTRY_DSN
+  ? withSentryConfig(withNextIntl(nextConfig), sentryOptions)
+  : withNextIntl(nextConfig);

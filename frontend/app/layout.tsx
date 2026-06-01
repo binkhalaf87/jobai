@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import type { ReactNode } from "react";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "JobAI",
@@ -23,6 +24,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
       <body className="min-h-screen bg-slate-50 text-slate-900 antialiased">
         <NextIntlClientProvider locale={locale} messages={messages}>
           {children}
+          <Analytics />
         </NextIntlClientProvider>
       </body>
     </html>
