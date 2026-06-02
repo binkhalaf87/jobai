@@ -339,6 +339,46 @@
       "lastName": "اسم العائلة",
       "city": "المدينة",
       "country": "الدولة"
+    },
+    "store": {
+      "balanceEyebrow": "رصيدك الحالي",
+      "title": "متجر خدمات JobAI",
+      "subtitle": "أضف الخدمات التي تحتاجها للسلة وادفع دفعة واحدة",
+      "oneTimeServices": "خدمات لمرة واحدة",
+      "oneTimeSingleUse": "دفعة واحدة · استخدام واحد",
+      "oneTime": "دفعة واحدة",
+      "jobSearch": "البحث عن الوظائف",
+      "free": "مجاني",
+      "freeForAll": "متاح لجميع المستخدمين",
+      "smartSendPackages": "💌 باقات الإرسال الذكي",
+      "mostPopular": "الأكثر شعبية",
+      "bestValue": "الأفضل قيمة",
+      "addToCart": "🛒 أضف للسلة",
+      "inCartRemove": "✓ في السلة — إزالة",
+      "remove": "إزالة",
+      "cartEyebrow": "السلة",
+      "cartTitle": "مراجعة الطلب",
+      "total": "المجموع",
+      "viewCart": "عرض السلة",
+      "completePayment": "اكمل الدفع ←",
+      "preparing": "جاري التحضير…",
+      "oneService": "خدمة واحدة",
+      "manyServices": "{count} خدمات",
+      "credits": {
+        "resumeAnalysis": "تحليل السيرة",
+        "resumeImprovement": "تحسين السيرة",
+        "mockInterview": "تدريب المقابلة",
+        "smartSend": "جهة إرسال ذكي",
+        "smartSendUnit": "جهة متاحة",
+        "usageUnit": "استخدام متاح"
+      }
+    },
+    "creditUpsell": {
+      "title": "هذه الخدمة تتطلب شراء كريديت",
+      "improvementDesc": "تحسين السيرة الذاتية متاح بسعر <strong>10 ريال</strong> للتحسين الواحد.",
+      "analysisDesc": "تحليل السيرة الذاتية متاح بسعر <strong>7 ريال</strong> للتحليل الواحد.",
+      "interviewDesc": "تدريب المقابلة متاح بسعر <strong>10 ريال</strong> للجلسة الواحدة.",
+      "buyNow": "اشتري الآن ←"
     }
   },
   "profile": {

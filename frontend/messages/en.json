@@ -339,6 +339,46 @@
       "lastName": "Last name",
       "city": "City",
       "country": "Country"
+    },
+    "store": {
+      "balanceEyebrow": "Your current balance",
+      "title": "JobAI Services Store",
+      "subtitle": "Add the services you need to your cart and pay in one go",
+      "oneTimeServices": "One-time services",
+      "oneTimeSingleUse": "One-time · single use",
+      "oneTime": "One-time",
+      "jobSearch": "Job Search",
+      "free": "Free",
+      "freeForAll": "Available to all users",
+      "smartSendPackages": "Smart Send Packages",
+      "mostPopular": "Most Popular",
+      "bestValue": "Best Value",
+      "addToCart": "Add to Cart",
+      "inCartRemove": "✓ In Cart — Remove",
+      "remove": "Remove",
+      "cartEyebrow": "Cart",
+      "cartTitle": "Review Order",
+      "total": "Total",
+      "viewCart": "View Cart",
+      "completePayment": "Complete Payment →",
+      "preparing": "Preparing…",
+      "oneService": "1 service",
+      "manyServices": "{count} services",
+      "credits": {
+        "resumeAnalysis": "Resume Analysis",
+        "resumeImprovement": "Resume Improvement",
+        "mockInterview": "Mock Interview",
+        "smartSend": "Smart Send Target",
+        "smartSendUnit": "target available",
+        "usageUnit": "use available"
+      }
+    },
+    "creditUpsell": {
+      "title": "This service requires credits",
+      "improvementDesc": "Resume improvement is available for <strong>SAR 10</strong> per use.",
+      "analysisDesc": "Resume analysis is available for <strong>SAR 7</strong> per use.",
+      "interviewDesc": "Mock interview is available for <strong>SAR 10</strong> per session.",
+      "buyNow": "Buy Now →"
     }
   },
   "profile": {

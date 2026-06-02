@@ -969,6 +969,7 @@ type PageState = "idle" | "streaming" | "done" | "error";
 
 export default function DashboardAnalysisPage() {
   const t = useTranslations("analysisPage");
+  const tBilling = useTranslations("billing");
   const [resumes, setResumes]               = useState<ResumeListItem[]>([]);
   const [selectedResume, setSelectedResume] = useState("");
   const [reportLanguage, setReportLanguage] = useState("English");
@@ -1148,13 +1149,13 @@ export default function DashboardAnalysisPage() {
             </svg>
           </div>
           <div className="flex-1">
-            <p className="text-sm font-bold text-amber-900">هذه الخدمة تتطلب شراء كريديت</p>
-            <p className="mt-1 text-xs text-amber-700">تحليل السيرة الذاتية متاح بسعر <strong>7 ريال</strong> للتحليل الواحد.</p>
+            <p className="text-sm font-bold text-amber-900">{tBilling("creditUpsell.title")}</p>
+            <p className="mt-1 text-xs text-amber-700" dangerouslySetInnerHTML={{ __html: tBilling("creditUpsell.analysisDesc") }} />
             <Link
               href="/dashboard/billing"
               className="mt-3 inline-flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-700"
             >
-              اشتري الآن ←
+              {tBilling("creditUpsell.buyNow")}
             </Link>
           </div>
           <button type="button" onClick={() => setPaymentRequired(false)} className="text-amber-400 hover:text-amber-600">

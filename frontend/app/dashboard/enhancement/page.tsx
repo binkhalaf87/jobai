@@ -220,6 +220,7 @@ export default function DashboardEnhancementPage() {
   }
 
   const t = useTranslations("enhancementPage");
+  const tBilling = useTranslations("billing");
   const hasOutput = streamText.length > 0;
   const canSubmit = selectedResume && pageState !== "streaming";
   const showToolbar = pageState === "done" && hasOutput;
@@ -236,13 +237,13 @@ export default function DashboardEnhancementPage() {
             </svg>
           </div>
           <div className="flex-1">
-            <p className="text-sm font-bold text-amber-900">هذه الخدمة تتطلب شراء كريديت</p>
-            <p className="mt-1 text-xs text-amber-700">تحسين السيرة الذاتية متاح بسعر <strong>10 ريال</strong> للتحسين الواحد.</p>
+            <p className="text-sm font-bold text-amber-900">{tBilling("creditUpsell.title")}</p>
+            <p className="mt-1 text-xs text-amber-700" dangerouslySetInnerHTML={{ __html: tBilling("creditUpsell.improvementDesc") }} />
             <Link
               href="/dashboard/billing"
               className="mt-3 inline-flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-700"
             >
-              اشتري الآن ←
+              {tBilling("creditUpsell.buyNow")}
             </Link>
           </div>
           <button type="button" onClick={() => setPaymentRequired(false)} className="text-amber-400 hover:text-amber-600">

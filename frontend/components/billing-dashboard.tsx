@@ -350,18 +350,18 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
       {/* Section 2 — Store (feature plans + smart send) */}
       {audience === "jobseeker" && (featurePlans.length > 0 || smartSendPlans.length > 0) && (
         <Panel className="p-6 md:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">رصيدك الحالي</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">متجر خدمات JobAI</h2>
-          <p className="mt-1 text-sm text-slate-500">أضف الخدمات التي تحتاجها للسلة وادفع دفعة واحدة</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{t("store.balanceEyebrow")}</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{t("store.title")}</h2>
+          <p className="mt-1 text-sm text-slate-500">{t("store.subtitle")}</p>
 
           {/* Feature credit balances */}
           {Object.keys(featureCredits).some((k) => featureCredits[k] > 0) && (
             <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {[
-                { key: "resume_analysis", label: "تحليل السيرة" },
-                { key: "resume_improvement", label: "تحسين السيرة" },
-                { key: "mock_interview", label: "تدريب المقابلة" },
-                { key: "smart_send_contacts", label: "جهة إرسال ذكي" },
+                { key: "resume_analysis", label: t("store.credits.resumeAnalysis") },
+                { key: "resume_improvement", label: t("store.credits.resumeImprovement") },
+                { key: "mock_interview", label: t("store.credits.mockInterview") },
+                { key: "smart_send_contacts", label: t("store.credits.smartSend") },
               ].map(({ key, label }) => {
                 const balance = featureCredits[key] ?? 0;
                 if (balance === 0) return null;
@@ -369,7 +369,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                   <div key={key} className="rounded-2xl border border-teal-200 bg-teal-50 px-4 py-3">
                     <p className="text-xs font-semibold text-teal-700 uppercase tracking-wide">{label}</p>
                     <p className="mt-1 text-2xl font-bold text-teal-900">{balance}</p>
-                    <p className="text-xs text-teal-600">{key === "smart_send_contacts" ? "جهة متاحة" : "استخدام متاح"}</p>
+                    <p className="text-xs text-teal-600">{key === "smart_send_contacts" ? t("store.credits.smartSendUnit") : t("store.credits.usageUnit")}</p>
                   </div>
                 );
               })}
@@ -379,7 +379,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
           {/* Feature purchase cards */}
           {featurePlans.length > 0 && (
             <div className="mt-6">
-              <p className="text-sm font-semibold text-slate-600 mb-3">خدمات لمرة واحدة</p>
+              <p className="text-sm font-semibold text-slate-600 mb-3">{t("store.oneTimeServices")}</p>
               <div className="grid gap-4 sm:grid-cols-3">
                 {featurePlans.map((plan) => {
                   const inCart = isInCart(plan.id);
@@ -399,7 +399,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                       <p className="mt-3 text-2xl font-bold text-brand-800">
                         {formatMoney(plan.price_amount_minor, plan.currency)}
                       </p>
-                      <p className="text-xs text-slate-500 mt-1">دفعة واحدة · استخدام واحد</p>
+                      <p className="text-xs text-slate-500 mt-1">{t("store.oneTimeSingleUse")}</p>
                       {inCart ? (
                         <div className="mt-4 flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
@@ -424,7 +424,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                             onClick={() => removeFromCart(plan.id)}
                             className="text-xs text-rose-500 underline underline-offset-2 hover:text-rose-700"
                           >
-                            إزالة
+                            {t("store.remove")}
                           </button>
                         </div>
                       ) : (
@@ -433,7 +433,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                           onClick={() => addToCart(plan)}
                           className="mt-4 w-full rounded-full border border-brand-800 py-2 text-sm font-semibold text-brand-800 transition hover:bg-brand-800 hover:text-white"
                         >
-                          🛒 أضف للسلة
+                          {t("store.addToCart")}
                         </button>
                       )}
                     </div>
@@ -442,9 +442,9 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                 {/* Job search - free */}
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-right">
                   <div className="text-2xl mb-2">🔍</div>
-                  <h3 className="text-base font-semibold text-slate-900">البحث عن الوظائف</h3>
-                  <p className="mt-3 text-2xl font-bold text-emerald-700">مجاني</p>
-                  <p className="text-xs text-emerald-600 mt-1">متاح لجميع المستخدمين</p>
+                  <h3 className="text-base font-semibold text-slate-900">{t("store.jobSearch")}</h3>
+                  <p className="mt-3 text-2xl font-bold text-emerald-700">{t("store.free")}</p>
+                  <p className="text-xs text-emerald-600 mt-1">{t("store.freeForAll")}</p>
                 </div>
               </div>
             </div>
@@ -453,11 +453,11 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
           {/* Smart send packages */}
           {smartSendPlans.length > 0 && (
             <div className="mt-6">
-              <p className="text-sm font-semibold text-slate-600 mb-3">💌 باقات الإرسال الذكي</p>
+              <p className="text-sm font-semibold text-slate-600 mb-3">{t("store.smartSendPackages")}</p>
               <div className="grid gap-4 sm:grid-cols-3">
                 {smartSendPlans.map((plan, idx) => {
                   const inCart = isInCart(plan.id);
-                  const badges = ["", "الأكثر شعبية", "الأفضل قيمة"];
+                  const badges = ["", t("store.mostPopular"), t("store.bestValue")];
                   return (
                     <div
                       key={plan.id}
@@ -478,14 +478,14 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                       <p className="mt-3 text-2xl font-bold text-brand-800">
                         {formatMoney(plan.price_amount_minor, plan.currency)}
                       </p>
-                      <p className="text-xs text-slate-500 mt-1">دفعة واحدة</p>
+                      <p className="text-xs text-slate-500 mt-1">{t("store.oneTime")}</p>
                       {inCart ? (
                         <button
                           type="button"
                           onClick={() => removeFromCart(plan.id)}
                           className="mt-4 w-full rounded-full bg-brand-800 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
                         >
-                          ✓ في السلة — إزالة
+                          {t("store.inCartRemove")}
                         </button>
                       ) : (
                         <button
@@ -493,7 +493,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                           onClick={() => addToCart(plan)}
                           className="mt-4 w-full rounded-full border border-brand-800 py-2 text-sm font-semibold text-brand-800 transition hover:bg-brand-800 hover:text-white"
                         >
-                          🛒 أضف للسلة
+                          {t("store.addToCart")}
                         </button>
                       )}
                     </div>
@@ -552,7 +552,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                     onClick={() => removeFromCart(plan.id)}
                     className="mt-4 w-full rounded-full bg-brand-800 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
                   >
-                    ✓ في السلة — إزالة
+                    {t("store.inCartRemove")}
                   </button>
                 ) : (
                   <button
@@ -599,7 +599,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                         onClick={() => removeFromCart(plan.id)}
                         className="mt-4 w-full rounded-full bg-brand-800 py-2 text-sm font-semibold text-white"
                       >
-                        ✓ في السلة — إزالة
+                        {t("store.inCartRemove")}
                       </button>
                     ) : (
                       <button
@@ -622,8 +622,8 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
       {/* Section 4 — Cart & Checkout */}
       {cart.length > 0 && (
         <Panel id="cart-section" className="p-6 md:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">السلة</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">مراجعة الطلب</h2>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{t("store.cartEyebrow")}</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{t("store.cartTitle")}</h2>
 
           {/* Cart items */}
           <div className="mt-5 divide-y divide-slate-100 rounded-2xl border border-slate-200 overflow-hidden">
@@ -665,7 +665,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                   type="button"
                   onClick={() => removeFromCart(item.plan.id)}
                   className="shrink-0 text-slate-400 hover:text-rose-500 transition"
-                  aria-label="إزالة"
+                  aria-label={t("store.remove")}
                 >
                   ✕
                 </button>
@@ -675,7 +675,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
 
           {/* Total */}
           <div className="mt-4 flex items-center justify-between rounded-2xl bg-slate-50 px-5 py-4">
-            <p className="font-semibold text-slate-700">المجموع</p>
+            <p className="font-semibold text-slate-700">{t("store.total")}</p>
             <p className="text-2xl font-bold text-brand-800">{formatMoney(cartTotal, cartCurrency)}</p>
           </div>
 
@@ -795,7 +795,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
               </div>
               <div>
                 <p className="text-xs font-semibold text-slate-500 leading-none mb-0.5">
-                  {cartCount === 1 ? "خدمة واحدة" : `${cartCount} خدمات`}
+                  {cartCount === 1 ? t("store.oneService") : t("store.manyServices", { count: cartCount })}
                 </p>
                 <p className="text-lg font-bold text-slate-950 leading-none">
                   {formatMoney(cartTotal, cartCurrency)}
@@ -815,7 +815,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                 }}
                 className="hidden rounded-full border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 md:block"
               >
-                عرض السلة
+                {t("store.viewCart")}
               </button>
               <button
                 type="button"
@@ -823,7 +823,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                 onClick={() => void handlePay()}
                 className="rounded-full bg-brand-800 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-slate-300"
               >
-                {checkoutLoading ? "جاري التحضير…" : "اكمل الدفع ←"}
+                {checkoutLoading ? t("store.preparing") : t("store.completePayment")}
               </button>
             </div>
           </div>
