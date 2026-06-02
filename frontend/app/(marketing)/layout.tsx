@@ -54,7 +54,7 @@ async function SiteFooter() {
             { label: "For Companies — Try Free", href: "/register?role=recruiter" },
           ],
     },
-    copyright: isAr ? "© ٢٠٢٥ JobAI. جميع الحقوق محفوظة." : "© 2025 JobAI. All rights reserved.",
+    copyright: isAr ? "© ٢٠٢٥ JobAI24. جميع الحقوق محفوظة." : "© 2025 JobAI24. All rights reserved.",
     madeIn: isAr ? "صُنع بشغف في المملكة العربية السعودية 🇸🇦" : "Made with passion in Saudi Arabia 🇸🇦",
   };
 
