@@ -881,3 +881,50 @@ def admin_activate_payment_order(
         detail=f"manual_activation order_id={order_id}",
     )
     return {"detail": "Payment order activated successfully."}
+
+
+@router.post("/payment-orders/bulk-activate", status_code=status.HTTP_200_OK)
+def admin_bulk_activate_payment_orders(
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Activate all PENDING payment orders and send invoice emails.
+
+    Use when the bank confirms charges but Paymob webhooks were never received.
+    Returns a summary of activated and failed order IDs.
+    """
+    from sqlalchemy.orm import selectinload as _sel
+    from app.models.enums import PaymentOrderStatus as _POS
+
+    pending_orders = db.scalars(
+        select(PaymentOrder)
+        .options(_sel(PaymentOrder.plan), _sel(PaymentOrder.subscription))
+        .where(PaymentOrder.status == _POS.PENDING)
+        .order_by(PaymentOrder.created_at.asc())
+    ).all()
+
+    activated: list[str] = []
+    already_paid: list[str] = []
+    failed: list[dict] = []
+
+    for order in pending_orders:
+        try:
+            manually_activate_payment_order(db, order.id)
+            activated.append(order.id)
+            audit_emit(
+                db,
+                user_id=admin.id,
+                event_type=UsageEventType.ADMIN_PROMO_DELETED,
+                detail=f"bulk_activation order_id={order.id}",
+            )
+        except ValueError:
+            already_paid.append(order.id)
+        except Exception as exc:
+            failed.append({"order_id": order.id, "error": str(exc)})
+
+    return {
+        "activated": activated,
+        "already_paid": already_paid,
+        "failed": failed,
+        "total_pending": len(pending_orders),
+    }
