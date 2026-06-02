@@ -22,3 +22,7 @@ export async function createBillingCheckoutIntention(payload: BillingCheckoutPay
 export async function getWalletTransactions(limit = 20): Promise<BillingWalletTransactionsResponse> {
   return api.get<BillingWalletTransactionsResponse>(`/billing/wallet/transactions?limit=${limit}`);
 }
+
+export async function getFeatureCredits(): Promise<Record<string, number>> {
+  return api.get<Record<string, number>>("/billing/feature-credits");
+}

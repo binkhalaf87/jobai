@@ -11,6 +11,7 @@ from app.models.resume import Resume
 from app.models.rewrite_suggestion import RewriteSuggestion
 from app.models.subscription import Subscription
 from app.models.usage_log import UsageLog
+from app.models.user_feature_credit import UserFeatureCredit
 from app.models.user_wallet import UserWallet
 from app.models.user import User
 from app.models.wallet_transaction import WalletTransaction
@@ -32,6 +33,7 @@ __all__ = [
     "Subscription",
     "UsageLog",
     "User",
+    "UserFeatureCredit",
     "UserWallet",
     "WalletTransaction",
 ]

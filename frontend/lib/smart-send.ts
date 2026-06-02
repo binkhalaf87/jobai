@@ -5,8 +5,10 @@ const BASE = "/smart-send";
 
 // ── Gmail Connection Request ──────────────────────────────────────────────────
 
-export async function requestGmailAccess(): Promise<GmailConnectionRequest> {
-  return api.post<GmailConnectionRequest>(`${BASE}/gmail/request`);
+export async function requestGmailAccess(requestedGmail?: string): Promise<GmailConnectionRequest> {
+  return api.post<GmailConnectionRequest>(`${BASE}/gmail/request`, {
+    requested_gmail: requestedGmail ?? null,
+  });
 }
 
 export async function getGmailRequestStatus(): Promise<GmailConnectionRequest | null> {
@@ -30,6 +32,10 @@ export async function getGmailStatus(): Promise<GmailStatus> {
 
 export async function disconnectGmail(): Promise<void> {
   return api.delete<void>(`${BASE}/gmail/disconnect`);
+}
+
+export async function testGmailSend(): Promise<{ detail: string }> {
+  return api.post<{ detail: string }>(`${BASE}/gmail/test-send`);
 }
 
 // ── Generate Letter ───────────────────────────────────────────────────────────

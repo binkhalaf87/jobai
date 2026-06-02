@@ -641,6 +641,27 @@ export function DashboardOverview() {
       {/* ── Hero ── */}
       <HeroCard overview={overview} onRefresh={() => setRefreshIndex((v) => v + 1)} />
 
+      {/* ── Quick Buy CTA ── */}
+      <div className="rounded-2xl border border-brand-200 bg-gradient-to-l from-brand-50 to-white p-5">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-brand-800">خدمات JobAI — بدون اشتراك شهري</p>
+            <div className="mt-2 flex flex-wrap gap-4 text-xs text-slate-600">
+              <span>📊 تحليل السيرة <strong>7 ريال</strong></span>
+              <span>✍️ تحسين السيرة <strong>10 ريال</strong></span>
+              <span>🎤 تدريب مقابلة <strong>10 ريال</strong></span>
+              <span>💌 إرسال ذكي من <strong>100 ريال</strong></span>
+            </div>
+          </div>
+          <Link
+            href="/dashboard/billing"
+            className="rounded-xl bg-brand-800 px-5 py-2.5 text-sm font-bold text-white hover:bg-brand-700 transition shrink-0"
+          >
+            اشتري الآن ←
+          </Link>
+        </div>
+      </div>
+
       {/* ── Partial error warning ── */}
       {failedLabels.length > 0 && failedLabels.length < 6 && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-800">

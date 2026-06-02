@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 
 _scheduler = AsyncIOScheduler()
 
+_STUCK_CAMPAIGN_HOURS = 48
+
 
 async def _process_campaigns() -> None:
     """Send pending campaign contacts up to each campaign's daily_limit."""
@@ -29,9 +31,33 @@ async def _process_campaigns() -> None:
             select(EmailCampaign).where(EmailCampaign.status == "active")
         ).all()
 
-        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        now = datetime.now(timezone.utc)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        stuck_cutoff = now - timedelta(hours=_STUCK_CAMPAIGN_HOURS)
 
         for campaign in active:
+            # Detect stuck campaigns: active for > 48h with no progress
+            campaign_created = campaign.created_at
+            if campaign_created.tzinfo is None:
+                campaign_created = campaign_created.replace(tzinfo=timezone.utc)
+            last_activity = campaign.last_sent_at or campaign_created
+            if last_activity.tzinfo is None:
+                last_activity = last_activity.replace(tzinfo=timezone.utc)
+
+            if last_activity < stuck_cutoff:
+                campaign.status = "error"
+                campaign.error_message = (
+                    f"Campaign stuck: no progress for {_STUCK_CAMPAIGN_HOURS}h. "
+                    "Check Gmail connection and re-activate manually."
+                )
+                db.commit()
+                logger.error(
+                    "Campaign %s marked as stuck/error after %dh of inactivity.",
+                    campaign.id,
+                    _STUCK_CAMPAIGN_HOURS,
+                )
+                continue
+
             conn = db.scalar(
                 select(GmailConnection).where(
                     GmailConnection.user_id == campaign.user_id,
@@ -39,10 +65,12 @@ async def _process_campaigns() -> None:
                 )
             )
             if not conn:
-                logger.warning("Campaign %s: no Gmail connection, skipping.", campaign.id)
+                campaign.status = "error"
+                campaign.error_message = "No active Gmail connection found. Please reconnect Gmail and re-activate."
+                db.commit()
+                logger.error("Campaign %s: no Gmail connection — marked as error.", campaign.id)
                 continue
 
-            # Count how many already sent today
             sent_today = db.query(EmailCampaignContact).filter(
                 EmailCampaignContact.campaign_id == campaign.id,
                 EmailCampaignContact.status == "sent",
@@ -64,9 +92,8 @@ async def _process_campaigns() -> None:
             ).all()
 
             if not pending:
-                # All contacts processed — mark complete
                 campaign.status = "completed"
-                campaign.completed_at = datetime.now(timezone.utc)
+                campaign.completed_at = now
                 db.commit()
                 logger.info("Campaign %s completed.", campaign.id)
                 continue
@@ -74,7 +101,11 @@ async def _process_campaigns() -> None:
             try:
                 access_token = await gmail_oauth_service.get_valid_access_token(db, campaign.user_id)
             except Exception as exc:
-                logger.error("Campaign %s: failed to get access token: %s", campaign.id, exc)
+                error_msg = f"Gmail token refresh failed: {exc}"
+                campaign.status = "error"
+                campaign.error_message = error_msg
+                db.commit()
+                logger.error("Campaign %s: %s", campaign.id, error_msg)
                 continue
 
             from app.models.user import User
@@ -83,6 +114,7 @@ async def _process_campaigns() -> None:
             if user and user.full_name:
                 from_name = user.full_name
 
+            sent_count = 0
             for contact in pending:
                 try:
                     await gmail_oauth_service.send_email(
@@ -95,16 +127,26 @@ async def _process_campaigns() -> None:
                         body=campaign.body,
                     )
                     contact.status = "sent"
-                    contact.sent_at = datetime.now(timezone.utc)
+                    contact.sent_at = now
                     campaign.total_sent += 1
+                    campaign.last_sent_at = now
+                    sent_count += 1
                     logger.debug("Campaign %s: sent to %s", campaign.id, contact.recipient_email)
                 except Exception as exc:
                     contact.status = "failed"
                     contact.error_message = str(exc)[:500]
                     campaign.total_failed += 1
-                    logger.warning("Campaign %s: failed to send to %s: %s", campaign.id, contact.recipient_email, exc)
+                    logger.warning(
+                        "Campaign %s: failed to send to %s: %s",
+                        campaign.id,
+                        contact.recipient_email,
+                        exc,
+                    )
 
                 db.commit()
+
+            if sent_count > 0:
+                logger.info("Campaign %s: sent %d emails this run.", campaign.id, sent_count)
 
     except Exception as exc:
         logger.exception("Scheduler error: %s", exc)

@@ -350,6 +350,7 @@ export type GmailStatus = {
 export type GmailConnectionRequest = {
   id: string;
   status: "pending" | "approved" | "rejected";
+  requested_gmail: string | null;
   rejection_reason: string | null;
   created_at: string;
   reviewed_at: string | null;
@@ -392,12 +393,14 @@ export type Campaign = {
   id: string;
   list_name: string | null;
   subject: string;
-  status: "active" | "paused" | "completed" | "failed";
+  status: "active" | "paused" | "completed" | "failed" | "error";
   daily_limit: number;
   total_contacts: number;
   total_sent: number;
   total_failed: number;
   estimated_days_remaining: number;
+  error_message: string | null;
+  last_sent_at: string | null;
   started_at: string | null;
   completed_at: string | null;
   created_at: string;

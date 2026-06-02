@@ -21,6 +21,9 @@ class GmailConnectionRequest(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="pending"
     )  # pending | approved | rejected
+    requested_gmail: Mapped[str | None] = mapped_column(
+        String(320), nullable=True
+    )  # optional alternate Gmail address to send from
     rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     reviewed_by: Mapped[str | None] = mapped_column(

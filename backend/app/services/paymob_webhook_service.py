@@ -6,6 +6,7 @@ import calendar
 import hashlib
 import hmac
 import json
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
@@ -30,7 +31,12 @@ from app.models.payment_webhook_event import PaymentWebhookEvent
 from app.models.subscription import Subscription
 from app.models.user_wallet import UserWallet
 from app.models.wallet_transaction import WalletTransaction
+from app.models.user import User
+from app.services.email_service import send_payment_invoice_email
+from app.services.feature_credit_service import grant_feature_credits
 from app.services.paymob_service import get_paymob_hmac_secret
+
+logger = logging.getLogger(__name__)
 
 PAYMOB_TRANSACTION_HMAC_FIELDS = (
     "amount_cents",
@@ -485,6 +491,106 @@ def _finalize_paid_order(
     elif payment_order.plan and payment_order.plan.kind == PlanKind.POINTS_PACK:
         _credit_wallet_for_order(db, payment_order, processed_at, transaction_id, event_payload)
 
+    # Always attempt feature credit grants if plan defines them (new pricing model)
+    _credit_features_for_order(db, payment_order)
+
+
+def _credit_features_for_order(db: Session, payment_order: PaymentOrder) -> None:
+    """Grant feature credits based on plan.metadata_payload.feature_grants."""
+    if not payment_order.plan:
+        return
+    payload = payment_order.plan.metadata_payload or {}
+    grants = payload.get("feature_grants", [])
+    if not grants:
+        return
+
+    from app.models.user_feature_credit import UserFeatureCredit as _UFC
+
+    for grant in grants:
+        feature = grant.get("feature")
+        quantity = grant.get("quantity", 0)
+        if not feature or quantity <= 0:
+            continue
+        existing = db.scalar(
+            select(_UFC).where(
+                _UFC.payment_order_id == payment_order.id,
+                _UFC.feature == feature,
+            )
+        )
+        if existing:
+            continue
+        grant_feature_credits(
+            db,
+            user_id=payment_order.user_id,
+            feature=feature,
+            quantity=quantity,
+            payment_order_id=payment_order.id,
+        )
+        logger.info(
+            "FEATURE_CREDIT_GRANTED: order_id=%s user_id=%s feature=%s quantity=%d",
+            payment_order.id,
+            payment_order.user_id,
+            feature,
+            quantity,
+        )
+
+
+def _send_invoice_email(db: Session, payment_order: PaymentOrder) -> None:
+    try:
+        user = db.get(User, payment_order.user_id)
+        if not user:
+            logger.warning("INVOICE_EMAIL_SKIP: user %s not found", payment_order.user_id)
+            return
+        plan_name = payment_order.plan.name if payment_order.plan else "خدمة JobAI"
+        send_payment_invoice_email(
+            to_email=user.email,
+            name=user.full_name,
+            plan_name=plan_name,
+            amount_minor=payment_order.amount_minor,
+            transaction_id=payment_order.provider_transaction_id,
+            paid_at=payment_order.paid_at,
+        )
+    except Exception as exc:
+        logger.exception("INVOICE_EMAIL_FAILED: order_id=%s error=%s", payment_order.id, exc)
+
+
+def manually_activate_payment_order(db: Session, payment_order_id: str) -> None:
+    """Admin-only: force-activate a PENDING/FAILED payment order without a webhook.
+
+    Useful when the Paymob webhook was never received but the bank confirmed the charge.
+    """
+    from sqlalchemy.orm import selectinload as _sel
+
+    order = db.scalar(
+        select(PaymentOrder)
+        .options(_sel(PaymentOrder.plan), _sel(PaymentOrder.subscription))
+        .where(PaymentOrder.id == payment_order_id)
+        .with_for_update()
+    )
+    if not order:
+        raise LookupError(f"Payment order {payment_order_id} not found.")
+    if order.status == PaymentOrderStatus.PAID:
+        raise ValueError("Payment order is already PAID — no action needed.")
+
+    processed_at = utc_now()
+    fake_event_object: dict[str, Any] = {
+        "success": True,
+        "pending": False,
+        "amount_cents": order.amount_minor,
+        "currency": order.currency,
+        "id": order.provider_transaction_id or "manual",
+        "created_at": processed_at.isoformat(),
+    }
+    fake_payload: dict[str, Any] = {"manual_activation": True}
+    _finalize_paid_order(db, order, fake_event_object, fake_payload)
+    db.commit()
+    logger.warning(
+        "MANUAL_ACTIVATION: order_id=%s user_id=%s plan_id=%s by admin",
+        order.id,
+        order.user_id,
+        order.plan_id,
+    )
+
 
 def process_paymob_webhook(
     db: Session,
@@ -511,6 +617,18 @@ def process_paymob_webhook(
     signature_valid = verify_paymob_webhook_hmac(event_object, provided_hmac)
     webhook_event.signature_valid = signature_valid
     if not signature_valid:
+        expected_prefix = compute_paymob_transaction_hmac(event_object)[:12]
+        provided_prefix = (provided_hmac or "")[:12]
+        logger.error(
+            "WEBHOOK_HMAC_INVALID: event_id=%s order_id=%s tx_id=%s merchant_ref=%s "
+            "expected_prefix=%s provided_prefix=%s",
+            provider_transaction_id,
+            provider_order_id,
+            provider_transaction_id,
+            merchant_reference,
+            expected_prefix,
+            provided_prefix,
+        )
         webhook_event.status = PaymentWebhookEventStatus.FAILED
         webhook_event.processing_error = "Invalid Paymob HMAC signature."
         webhook_event.processed_at = utc_now()
@@ -532,6 +650,12 @@ def process_paymob_webhook(
         provider_order_id=provider_order_id,
     )
     if not payment_order:
+        logger.error(
+            "WEBHOOK_ORDER_NOT_FOUND: merchant_ref=%s provider_order_id=%s tx_id=%s",
+            merchant_reference,
+            provider_order_id,
+            provider_transaction_id,
+        )
         webhook_event.status = PaymentWebhookEventStatus.FAILED
         webhook_event.processing_error = "Payment order not found for Paymob webhook."
         webhook_event.processed_at = utc_now()
@@ -544,6 +668,15 @@ def process_paymob_webhook(
 
     amount_error = _get_order_amount_error(payment_order, event_object)
     if amount_error:
+        logger.error(
+            "WEBHOOK_AMOUNT_MISMATCH: order_id=%s internal_amount=%s internal_currency=%s "
+            "webhook_amount=%s webhook_currency=%s",
+            payment_order.id,
+            payment_order.amount_minor,
+            payment_order.currency,
+            event_object.get("amount_cents"),
+            event_object.get("currency"),
+        )
         webhook_event.status = PaymentWebhookEventStatus.FAILED
         webhook_event.processing_error = amount_error
         webhook_event.processed_at = utc_now()
@@ -565,6 +698,14 @@ def process_paymob_webhook(
         )
 
     if _is_successful_payment(event_object):
+        logger.info(
+            "WEBHOOK_PAYMENT_SUCCESS: order_id=%s user_id=%s plan_id=%s amount=%s tx_id=%s",
+            payment_order.id,
+            payment_order.user_id,
+            payment_order.plan_id,
+            payment_order.amount_minor,
+            provider_transaction_id,
+        )
         _finalize_paid_order(db, payment_order, event_object, payload)
         webhook_event.subscription_id = payment_order.subscription_id
         webhook_event.user_id = payment_order.user_id
@@ -572,6 +713,12 @@ def process_paymob_webhook(
         webhook_event.processing_error = None
         webhook_event.processed_at = utc_now()
         db.commit()
+        logger.info(
+            "WEBHOOK_FINALIZED: order_id=%s subscription_id=%s",
+            payment_order.id,
+            payment_order.subscription_id,
+        )
+        _send_invoice_email(db, payment_order)
         return PaymobWebhookProcessResult(
             event_id=webhook_event.id,
             payment_order_id=payment_order.id,

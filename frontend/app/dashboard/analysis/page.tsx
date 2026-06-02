@@ -7,6 +7,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { Panel } from "@/components/panel";
+import { ApiError } from "@/lib/api";
 import { getAIReport, listAIReports, streamAIReport } from "@/lib/ai-reports";
 import { listResumes } from "@/lib/resumes";
 import type { AIReportFull, AIReportListItem, ResumeListItem } from "@/types";
@@ -976,6 +977,7 @@ export default function DashboardAnalysisPage() {
   const [pageState, setPageState]     = useState<PageState>("idle");
   const [streamText, setStreamText]   = useState("");
   const [streamError, setStreamError] = useState("");
+  const [paymentRequired, setPaymentRequired] = useState(false);
   const [activeReportId, setActiveReportId] = useState<string | null>(null);
 
   const [reports, setReports]     = useState<AIReportListItem[]>([]);
@@ -1016,6 +1018,7 @@ export default function DashboardAnalysisPage() {
     setPageState("streaming");
     setStreamText("");
     setStreamError("");
+    setPaymentRequired(false);
     setActiveReportId(null);
     setViewReport(null);
     try {
@@ -1026,8 +1029,13 @@ export default function DashboardAnalysisPage() {
         if (event.type === "error") { setStreamError(event.message); setPageState("error"); }
       }, "analysis", reportLanguage);
     } catch (e) {
-      setStreamError(e instanceof Error ? e.message : "Request failed.");
-      setPageState("error");
+      if (e instanceof ApiError && e.status === 402) {
+        setPaymentRequired(true);
+        setPageState("idle");
+      } else {
+        setStreamError(e instanceof Error ? e.message : "Request failed.");
+        setPageState("error");
+      }
     }
   }
 
@@ -1130,6 +1138,32 @@ export default function DashboardAnalysisPage() {
           })()}
         </div>
       </div>
+
+      {/* ─── Payment required banner ──────────────────────────────── */}
+      {paymentRequired && (
+        <div className="flex items-start gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-5" data-no-print>
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+              <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-bold text-amber-900">هذه الخدمة تتطلب شراء كريديت</p>
+            <p className="mt-1 text-xs text-amber-700">تحليل السيرة الذاتية متاح بسعر <strong>7 ريال</strong> للتحليل الواحد.</p>
+            <Link
+              href="/dashboard/billing"
+              className="mt-3 inline-flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-700"
+            >
+              اشتري الآن ←
+            </Link>
+          </div>
+          <button type="button" onClick={() => setPaymentRequired(false)} className="text-amber-400 hover:text-amber-600">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       {/* ─── History panel — shown first for quick access ─────────── */}
       <Panel className="overflow-hidden" data-no-print>

@@ -24,6 +24,7 @@ from app.schemas.smart_send import (
     GenerateLetterRequest,
     GenerateLetterResponse,
     GmailConnectionRequestResponse,
+    GmailRequestCreate,
     GmailStatusResponse,
     RecipientListItem,
     SendHistoryItem,
@@ -41,10 +42,15 @@ router = APIRouter(prefix="/smart-send", tags=["smart-send"])
 
 @router.post("/gmail/request", response_model=GmailConnectionRequestResponse, status_code=status.HTTP_201_CREATED)
 def request_gmail_connection(
+    body: GmailRequestCreate = GmailRequestCreate(),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> GmailConnectionRequest:
-    """Submit a request to the admin to enable Gmail OAuth for this account."""
+    """Submit a request to the admin to enable Gmail OAuth for this account.
+
+    Optionally provide `requested_gmail` to specify a different @gmail.com address
+    than the one used to register on the site.
+    """
     existing = db.scalar(
         select(GmailConnectionRequest)
         .where(GmailConnectionRequest.user_id == current_user.id)
@@ -55,7 +61,11 @@ def request_gmail_connection(
             status_code=status.HTTP_409_CONFLICT,
             detail="A pending or approved request already exists.",
         )
-    req = GmailConnectionRequest(user_id=current_user.id, status="pending")
+    req = GmailConnectionRequest(
+        user_id=current_user.id,
+        status="pending",
+        requested_gmail=body.requested_gmail,
+    )
     db.add(req)
     db.commit()
     db.refresh(req)
@@ -368,12 +378,49 @@ def resume_campaign(
     current_user: User = Depends(get_current_user),
 ) -> CampaignResponse:
     campaign = _get_user_campaign(db, campaign_id, current_user.id)
-    if campaign.status != "paused":
-        raise HTTPException(status_code=400, detail="Only paused campaigns can be resumed.")
+    if campaign.status not in ("paused", "error"):
+        raise HTTPException(status_code=400, detail="Only paused or errored campaigns can be resumed.")
     campaign.status = "active"
+    campaign.error_message = None
+    campaign.last_sent_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(campaign)
     return _campaign_response(campaign)
+
+
+@router.get("/campaigns/{campaign_id}", response_model=CampaignResponse)
+def get_campaign(
+    campaign_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> CampaignResponse:
+    campaign = _get_user_campaign(db, campaign_id, current_user.id)
+    return _campaign_response(campaign)
+
+
+@router.post("/gmail/test-send", status_code=status.HTTP_200_OK)
+async def test_gmail_send(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """Send a test email to the authenticated user to verify Gmail connection works."""
+    conn = gmail_oauth_service.get_connection(db, current_user.id)
+    if not conn or not conn.is_connected:
+        raise HTTPException(status_code=400, detail="Gmail account not connected.")
+    try:
+        access_token = await gmail_oauth_service.get_valid_access_token(db, current_user.id)
+        await gmail_oauth_service.send_email(
+            access_token=access_token,
+            from_email=conn.gmail_address,
+            from_name=current_user.full_name or conn.gmail_address,
+            to_email=conn.gmail_address,
+            to_name=current_user.full_name,
+            subject="✅ اختبار الإرسال الذكي — JobAI",
+            body="هذا إيميل اختباري للتحقق من أن اتصال Gmail يعمل بشكل صحيح.\n\nتم الإرسال بنجاح من منصة JobAI.",
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"فشل إرسال الاختبار: {exc}")
+    return {"detail": "تم إرسال إيميل الاختبار بنجاح. تحقق من صندوق الوارد."}
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -398,6 +445,8 @@ def _campaign_response(c: EmailCampaign) -> CampaignResponse:
         total_sent=c.total_sent,
         total_failed=c.total_failed,
         estimated_days_remaining=estimated_days,
+        error_message=c.error_message,
+        last_sent_at=c.last_sent_at,
         started_at=c.started_at,
         completed_at=c.completed_at,
         created_at=c.created_at,

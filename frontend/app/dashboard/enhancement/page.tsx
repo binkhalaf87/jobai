@@ -5,7 +5,10 @@ import { useTranslations } from "next-intl";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+import Link from "next/link";
+
 import { Panel } from "@/components/panel";
+import { ApiError } from "@/lib/api";
 import { getAIReport, listAIReports, streamAIReport, updateAIReport } from "@/lib/ai-reports";
 import { listResumes } from "@/lib/resumes";
 import type { AIReportFull, AIReportListItem, ResumeListItem } from "@/types";
@@ -42,6 +45,7 @@ export default function DashboardEnhancementPage() {
   const [pageState, setPageState]     = useState<PageState>("idle");
   const [streamText, setStreamText]   = useState("");
   const [streamError, setStreamError] = useState("");
+  const [paymentRequired, setPaymentRequired] = useState(false);
   const [activeReportId, setActiveReportId] = useState<string | null>(null);
 
   // History
@@ -91,6 +95,7 @@ export default function DashboardEnhancementPage() {
     setPageState("streaming");
     setStreamText("");
     setStreamError("");
+    setPaymentRequired(false);
     setActiveReportId(null);
     setViewReport(null);
     setEditMode("preview");
@@ -103,8 +108,13 @@ export default function DashboardEnhancementPage() {
         if (event.type === "error") { setStreamError(event.message); setPageState("error"); }
       }, "enhancement");
     } catch (e) {
-      setStreamError(e instanceof Error ? e.message : "Request failed.");
-      setPageState("error");
+      if (e instanceof ApiError && e.status === 402) {
+        setPaymentRequired(true);
+        setPageState("idle");
+      } else {
+        setStreamError(e instanceof Error ? e.message : "Request failed.");
+        setPageState("error");
+      }
     }
   }
 
@@ -217,6 +227,32 @@ export default function DashboardEnhancementPage() {
 
   return (
     <div className="space-y-6">
+      {/* ─── Payment required banner ──────────────────────────────── */}
+      {paymentRequired && (
+        <div className="flex items-start gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+              <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-bold text-amber-900">هذه الخدمة تتطلب شراء كريديت</p>
+            <p className="mt-1 text-xs text-amber-700">تحسين السيرة الذاتية متاح بسعر <strong>10 ريال</strong> للتحسين الواحد.</p>
+            <Link
+              href="/dashboard/billing"
+              className="mt-3 inline-flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-700"
+            >
+              اشتري الآن ←
+            </Link>
+          </div>
+          <button type="button" onClick={() => setPaymentRequired(false)} className="text-amber-400 hover:text-amber-600">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* ─── Input panel ─────────────────────────────────────────── */}
       <Panel className="p-6 md:p-8">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{t("newImprovement")}</p>

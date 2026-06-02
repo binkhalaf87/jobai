@@ -15,9 +15,24 @@ class GmailStatusResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class GmailRequestCreate(BaseModel):
+    requested_gmail: str | None = None
+
+    @field_validator("requested_gmail")
+    @classmethod
+    def validate_gmail(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        v = v.strip().lower()
+        if v and not v.endswith("@gmail.com"):
+            raise ValueError("يجب أن يكون الإيميل حساب Gmail (@gmail.com)")
+        return v or None
+
+
 class GmailConnectionRequestResponse(BaseModel):
     id: str
     status: str  # pending | approved | rejected
+    requested_gmail: str | None = None
     rejection_reason: str | None = None
     created_at: datetime
     reviewed_at: datetime | None = None
@@ -112,6 +127,8 @@ class CampaignResponse(BaseModel):
     total_sent: int
     total_failed: int
     estimated_days_remaining: int
+    error_message: str | None = None
+    last_sent_at: datetime | None = None
     started_at: datetime | None
     completed_at: datetime | None
     created_at: datetime

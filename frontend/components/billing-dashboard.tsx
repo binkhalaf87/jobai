@@ -9,6 +9,7 @@ import {
   createBillingCheckoutIntention,
   getBillingPlans,
   getBillingSnapshot,
+  getFeatureCredits,
   getWalletTransactions,
 } from "@/lib/billing";
 import type {
@@ -86,6 +87,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
   const [snapshot, setSnapshot] = useState<BillingMeResponse | null>(null);
   const [plans, setPlans] = useState<BillingPlan[]>([]);
   const [transactions, setTransactions] = useState<BillingWalletTransaction[]>([]);
+  const [featureCredits, setFeatureCredits] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -137,8 +139,12 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
       setPlans(plansResponse.plans);
       setSnapshot(snapshotResponse);
       if (snapshotResponse.role === "jobseeker") {
-        const walletResponse = await getWalletTransactions(20);
+        const [walletResponse, creditsResponse] = await Promise.all([
+          getWalletTransactions(20),
+          getFeatureCredits().catch(() => ({})),
+        ]);
         setTransactions(walletResponse.transactions);
+        setFeatureCredits(creditsResponse);
       } else {
         setTransactions([]);
       }
@@ -154,10 +160,23 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const { subscriptionPlans, pointsPlans } = useMemo(() => ({
-    subscriptionPlans: plans.filter((p) => p.kind === "subscription"),
-    pointsPlans: plans.filter((p) => p.kind === "points_pack"),
-  }), [plans]);
+  const { subscriptionPlans, pointsPlans, featurePlans, smartSendPlans } = useMemo(() => {
+    const featureCodes = ["resume_analysis", "resume_improvement", "mock_interview_10sar"];
+    const smartSendCodes = ["smart_send_500", "smart_send_1500", "smart_send_3000"];
+    return {
+      subscriptionPlans: plans.filter((p) => p.kind === "subscription"),
+      pointsPlans: plans.filter((p) => p.kind === "points_pack" &&
+        !featureCodes.some((c) => p.code.includes(c)) &&
+        !smartSendCodes.some((c) => p.code.includes(c))
+      ),
+      featurePlans: plans.filter((p) => p.kind === "points_pack" && (
+        p.code.includes("resume_analysis") ||
+        p.code.includes("resume_improvement") ||
+        p.code.includes("mock_interview")
+      )),
+      smartSendPlans: plans.filter((p) => p.kind === "points_pack" && p.code.includes("smart_send")),
+    };
+  }, [plans]);
 
   async function handlePay() {
     if (!selectedPlan) return;
@@ -275,7 +294,116 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
         </div>
       </Panel>
 
-      {/* Section 2 — Plan selection */}
+      {/* Section 2a — Feature credits balance (jobseeker new pricing) */}
+      {audience === "jobseeker" && (featurePlans.length > 0 || smartSendPlans.length > 0) && (
+        <Panel className="p-6 md:p-8">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">رصيدك الحالي</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">خدمات JobAI</h2>
+          <p className="mt-1 text-sm text-slate-500">ادفع لكل خدمة مرة واحدة فقط — بدون اشتراك شهري</p>
+
+          {/* Feature credit balances */}
+          {Object.keys(featureCredits).some((k) => featureCredits[k] > 0) && (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {[
+                { key: "resume_analysis", label: "تحليل السيرة" },
+                { key: "resume_improvement", label: "تحسين السيرة" },
+                { key: "mock_interview", label: "تدريب المقابلة" },
+                { key: "smart_send_contacts", label: "جهة إرسال ذكي" },
+              ].map(({ key, label }) => {
+                const balance = featureCredits[key] ?? 0;
+                if (balance === 0) return null;
+                return (
+                  <div key={key} className="rounded-2xl border border-teal-200 bg-teal-50 px-4 py-3">
+                    <p className="text-xs font-semibold text-teal-700 uppercase tracking-wide">{label}</p>
+                    <p className="mt-1 text-2xl font-bold text-teal-900">{balance}</p>
+                    <p className="text-xs text-teal-600">{key === "smart_send_contacts" ? "جهة متاحة" : "استخدام متاح"}</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Feature purchase cards */}
+          {featurePlans.length > 0 && (
+            <div className="mt-6">
+              <p className="text-sm font-semibold text-slate-600 mb-3">خدمات لمرة واحدة</p>
+              <div className="grid gap-4 sm:grid-cols-3">
+                {featurePlans.map((plan) => {
+                  const isSelected = selectedPlan?.id === plan.id;
+                  const icon = plan.code.includes("analysis") ? "📊" : plan.code.includes("improvement") ? "✍️" : "🎤";
+                  return (
+                    <button
+                      key={plan.id}
+                      type="button"
+                      onClick={() => { setSelectedPlan(isSelected ? null : plan); setCheckoutError(null); }}
+                      className={`rounded-2xl border p-5 text-right transition ${
+                        isSelected
+                          ? "border-brand-800 bg-brand-800/5 ring-1 ring-brand-800"
+                          : "border-slate-200 bg-white hover:border-brand-300 hover:bg-brand-50"
+                      }`}
+                    >
+                      <div className="text-2xl mb-2">{icon}</div>
+                      <h3 className="text-base font-semibold text-slate-900">{plan.name}</h3>
+                      <p className="mt-3 text-2xl font-bold text-brand-800">
+                        {formatMoney(plan.price_amount_minor, plan.currency)}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">دفعة واحدة · استخدام واحد</p>
+                    </button>
+                  );
+                })}
+                {/* Job search - free */}
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-right">
+                  <div className="text-2xl mb-2">🔍</div>
+                  <h3 className="text-base font-semibold text-slate-900">البحث عن الوظائف</h3>
+                  <p className="mt-3 text-2xl font-bold text-emerald-700">مجاني</p>
+                  <p className="text-xs text-emerald-600 mt-1">متاح لجميع المستخدمين</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Smart send packages */}
+          {smartSendPlans.length > 0 && (
+            <div className="mt-6">
+              <p className="text-sm font-semibold text-slate-600 mb-3">💌 باقات الإرسال الذكي</p>
+              <div className="grid gap-4 sm:grid-cols-3">
+                {smartSendPlans.map((plan, idx) => {
+                  const isSelected = selectedPlan?.id === plan.id;
+                  const badges = ["", "الأكثر شعبية", "الأفضل قيمة"];
+                  return (
+                    <button
+                      key={plan.id}
+                      type="button"
+                      onClick={() => { setSelectedPlan(isSelected ? null : plan); setCheckoutError(null); }}
+                      className={`rounded-2xl border p-5 text-right transition relative ${
+                        isSelected
+                          ? "border-brand-800 bg-brand-800/5 ring-1 ring-brand-800"
+                          : idx === 1
+                            ? "border-brand-300 bg-brand-50 hover:border-brand-400"
+                            : "border-slate-200 bg-white hover:border-brand-300 hover:bg-brand-50"
+                      }`}
+                    >
+                      {badges[idx] && (
+                        <span className="absolute -top-2 right-4 rounded-full bg-brand-800 px-2.5 py-0.5 text-xs font-semibold text-white">
+                          {badges[idx]}
+                        </span>
+                      )}
+                      <h3 className="text-base font-semibold text-slate-900">{plan.name}</h3>
+                      <p className="mt-3 text-2xl font-bold text-brand-800">
+                        {formatMoney(plan.price_amount_minor, plan.currency)}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">دفعة واحدة</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </Panel>
+      )}
+
+      {/* Section 2 — Plan selection (recruiter subscriptions + old points packs) */}
+      {(subscriptionPlans.length > 0 || (audience === "jobseeker" && pointsPlans.length > 0 && featurePlans.length === 0)) && (
       <Panel className="p-6 md:p-8">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{t("choosePlan")}</p>
         <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
@@ -362,6 +490,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
           </div>
         ) : null}
       </Panel>
+      )}
 
       {/* Section 3 — Checkout (only when plan selected) */}
       {selectedPlan ? (

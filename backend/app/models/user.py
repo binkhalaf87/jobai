@@ -47,3 +47,4 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     gmail_connection_request = relationship("GmailConnectionRequest", foreign_keys="GmailConnectionRequest.user_id", back_populates="user", uselist=False, cascade="all, delete-orphan")
     promo_codes_created = relationship("PromoCode", foreign_keys="PromoCode.created_by_id", back_populates="created_by")
     promo_code_usages = relationship("PromoCodeUsage", back_populates="user", cascade="all, delete-orphan")
+    feature_credits = relationship("UserFeatureCredit", back_populates="user", cascade="all, delete-orphan")

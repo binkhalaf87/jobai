@@ -26,6 +26,9 @@ from app.models.user_wallet import UserWallet
 from app.models.mailing_list import Recipient, RecipientList
 from app.models.wallet_transaction import WalletTransaction
 from app.models.gmail_connection_request import GmailConnectionRequest
+from app.models.payment_order import PaymentOrder
+from app.services.email_service import send_gmail_approval_email, send_gmail_rejection_email
+from app.services.paymob_webhook_service import manually_activate_payment_order
 from app.services.storage import get_storage
 from app.schemas.admin import (
     AdminContactCreate,
@@ -47,6 +50,7 @@ from app.schemas.admin import (
     AdminUserItem,
     AdminUserPatch,
     AdminUserProfileResponse,
+    AdminPaymentOrderItem,
     AdminUserResumeItem,
     AdminUserServiceSummaryItem,
     AdminUsersResponse,
@@ -556,10 +560,16 @@ def approve_gmail_request(
     db.commit()
     db.refresh(req)
     user = db.get(User, req.user_id)
+    if user:
+        try:
+            send_gmail_approval_email(user.email, user.full_name)
+        except Exception:
+            pass
     return AdminGmailRequestItem(
         id=req.id, user_id=req.user_id,
         user_email=user.email if user else "", user_name=user.full_name if user else None,
-        status=req.status, rejection_reason=req.rejection_reason,
+        status=req.status, requested_gmail=req.requested_gmail,
+        rejection_reason=req.rejection_reason,
         created_at=req.created_at, reviewed_at=req.reviewed_at,
     )
 
@@ -583,10 +593,16 @@ def reject_gmail_request(
     db.commit()
     db.refresh(req)
     user = db.get(User, req.user_id)
+    if user:
+        try:
+            send_gmail_rejection_email(user.email, user.full_name, body.reason)
+        except Exception:
+            pass
     return AdminGmailRequestItem(
         id=req.id, user_id=req.user_id,
         user_email=user.email if user else "", user_name=user.full_name if user else None,
-        status=req.status, rejection_reason=req.rejection_reason,
+        status=req.status, requested_gmail=req.requested_gmail,
+        rejection_reason=req.rejection_reason,
         created_at=req.created_at, reviewed_at=req.reviewed_at,
     )
 
@@ -758,3 +774,110 @@ def list_promo_code_usages(
         )
         for usage, user in rows
     ]
+
+
+# ── Payment Orders ────────────────────────────────────────────────────────────
+
+@router.get("/payment-orders", response_model=list[AdminPaymentOrderItem])
+def list_payment_orders(
+    user_id: str | None = Query(None),
+    status_filter: str | None = Query(None, alias="status"),
+    limit: int = Query(50, ge=1, le=200),
+    _: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> list[AdminPaymentOrderItem]:
+    """List payment orders with optional filters. Use status=PENDING to find stuck orders."""
+    q = (
+        select(PaymentOrder, User, Plan)
+        .join(User, PaymentOrder.user_id == User.id)
+        .join(Plan, PaymentOrder.plan_id == Plan.id)
+        .order_by(PaymentOrder.created_at.desc())
+        .limit(limit)
+    )
+    if user_id:
+        q = q.where(PaymentOrder.user_id == user_id)
+    if status_filter:
+        q = q.where(PaymentOrder.status == status_filter)
+    rows = db.execute(q).all()
+    return [
+        AdminPaymentOrderItem(
+            id=order.id,
+            user_id=order.user_id,
+            user_email=user.email,
+            plan_code=plan.code,
+            plan_name=plan.name,
+            order_type=order.order_type.value,
+            status=order.status.value,
+            amount_minor=order.amount_minor,
+            currency=order.currency,
+            provider_name=order.provider_name,
+            provider_order_id=order.provider_order_id,
+            provider_transaction_id=order.provider_transaction_id,
+            merchant_reference=order.merchant_reference,
+            failure_reason=order.failure_reason,
+            paid_at=order.paid_at,
+            created_at=order.created_at,
+        )
+        for order, user, plan in rows
+    ]
+
+
+@router.get("/payment-orders/{order_id}", response_model=AdminPaymentOrderItem)
+def get_payment_order(
+    order_id: str,
+    _: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> AdminPaymentOrderItem:
+    """Get a single payment order by ID."""
+    row = db.execute(
+        select(PaymentOrder, User, Plan)
+        .join(User, PaymentOrder.user_id == User.id)
+        .join(Plan, PaymentOrder.plan_id == Plan.id)
+        .where(PaymentOrder.id == order_id)
+    ).first()
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment order not found.")
+    order, user, plan = row
+    return AdminPaymentOrderItem(
+        id=order.id,
+        user_id=order.user_id,
+        user_email=user.email,
+        plan_code=plan.code,
+        plan_name=plan.name,
+        order_type=order.order_type.value,
+        status=order.status.value,
+        amount_minor=order.amount_minor,
+        currency=order.currency,
+        provider_name=order.provider_name,
+        provider_order_id=order.provider_order_id,
+        provider_transaction_id=order.provider_transaction_id,
+        merchant_reference=order.merchant_reference,
+        failure_reason=order.failure_reason,
+        paid_at=order.paid_at,
+        created_at=order.created_at,
+    )
+
+
+@router.post("/payment-orders/{order_id}/activate", status_code=status.HTTP_200_OK)
+def admin_activate_payment_order(
+    order_id: str,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Manually activate a payment order (subscription or credits) without a webhook.
+
+    Use when the bank confirms a charge but the Paymob webhook was never received.
+    """
+    try:
+        manually_activate_payment_order(db, order_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    audit_emit(
+        db,
+        user_id=admin.id,
+        event_type=UsageEventType.ADMIN_PROMO_DELETED,  # reuse closest event type for now
+        detail=f"manual_activation order_id={order_id}",
+    )
+    return {"detail": "Payment order activated successfully."}

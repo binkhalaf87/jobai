@@ -140,6 +140,7 @@ export default function DashboardAiInterviewPage() {
   });
   const [pageState, setPageState] = useState<PageState>("setup");
   const [pageError, setPageError] = useState("");
+  const [paymentRequired, setPaymentRequired] = useState(false);
   const [answerError, setAnswerError] = useState("");
   const [answerMode, setAnswerMode] = useState<"text" | "video">("text");
   const [resumes, setResumes] = useState<ResumeListItem[]>([]);
@@ -200,6 +201,7 @@ export default function DashboardAiInterviewPage() {
 
   async function handleStart() {
     setPageError("");
+    setPaymentRequired(false);
     setPageState("generating");
     try {
       const session = await startInterview({
@@ -225,7 +227,11 @@ export default function DashboardAiInterviewPage() {
       setCompletedSession(null);
       setPageState("brief");
     } catch (error) {
-      setPageError(error instanceof ApiError ? error.detail : t("failedToStart"));
+      if (error instanceof ApiError && error.status === 402) {
+        setPaymentRequired(true);
+      } else {
+        setPageError(error instanceof ApiError ? error.detail : t("failedToStart"));
+      }
       setPageState("setup");
     }
   }
@@ -617,6 +623,27 @@ export default function DashboardAiInterviewPage() {
             <textarea value={setup.jobDescription} onChange={(e) => setSetup((p) => ({ ...p, jobDescription: e.target.value }))} rows={6} placeholder={t("form.jdPlaceholder")} className="md:col-span-2 rounded-xl border border-slate-300 px-4 py-3 text-sm" />
           </div>
           {pageError && <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{pageError}</div>}
+          {paymentRequired && (
+            <div className="mt-4 flex items-start gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                  <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-amber-900">هذه الخدمة تتطلب شراء كريديت</p>
+                <p className="mt-0.5 text-xs text-amber-700">تدريب المقابلة متاح بسعر <strong>10 ريال</strong> للجلسة الواحدة.</p>
+                <a href="/dashboard/billing" className="mt-3 inline-flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-700">
+                  اشتري الآن ←
+                </a>
+              </div>
+              <button type="button" onClick={() => setPaymentRequired(false)} className="text-amber-400 hover:text-amber-600">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+          )}
           <div className="mt-6 flex flex-wrap gap-3">
             <button type="button" disabled={!setup.jobTitle.trim() || pageState === "generating"} onClick={() => void handleStart()} className="rounded-xl bg-brand-800 px-6 py-3 text-sm font-semibold text-white disabled:opacity-50">{pageState === "generating" ? t("form.preparingInterviewer") : t("form.startInterview")}</button>
             <button type="button" disabled={pageState === "generating"} onClick={handleQuickPractice} className="rounded-xl border border-brand-800 bg-white px-5 py-3 text-sm font-semibold text-brand-800 hover:bg-brand-50 disabled:opacity-50">

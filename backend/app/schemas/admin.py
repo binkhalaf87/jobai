@@ -92,6 +92,7 @@ class AdminGmailRequestItem(BaseModel):
     user_email: str
     user_name: str | None
     status: str
+    requested_gmail: str | None = None
     rejection_reason: str | None
     created_at: datetime
     reviewed_at: datetime | None
@@ -211,6 +212,27 @@ class AdminUserActivityItem(BaseModel):
 class AdminUserServiceSummaryItem(BaseModel):
     event_type: str
     count: int
+
+
+# ── Payment Orders ────────────────────────────────────────────────────────────
+
+class AdminPaymentOrderItem(BaseModel):
+    id: str
+    user_id: str
+    user_email: str
+    plan_code: str
+    plan_name: str
+    order_type: str
+    status: str
+    amount_minor: int
+    currency: str
+    provider_name: str
+    provider_order_id: str | None
+    provider_transaction_id: str | None
+    merchant_reference: str
+    failure_reason: str | None
+    paid_at: datetime | None
+    created_at: datetime
 
 
 class AdminUserProfileResponse(BaseModel):

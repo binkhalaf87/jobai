@@ -40,6 +40,7 @@ from app.services.billing_service import (
     list_recent_payment_orders_for_user,
     list_wallet_transactions_for_user,
 )
+from app.services.feature_credit_service import get_all_feature_balances
 from app.services.paymob_webhook_service import process_paymob_webhook
 
 router = APIRouter(prefix="/billing", tags=["billing"])
@@ -212,6 +213,15 @@ def get_wallet_transactions(
         user_id=current_user.id,
         transactions=[_wallet_transaction_to_schema(transaction) for transaction in transactions],
     )
+
+
+@router.get("/feature-credits", response_model=dict)
+def get_feature_credits(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """Return available feature credit balances for the authenticated user."""
+    return get_all_feature_balances(db, current_user.id)
 
 
 @router.post("/paymob/webhook", response_model=BillingWebhookResponse)

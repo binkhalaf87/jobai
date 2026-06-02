@@ -41,8 +41,9 @@ function StatusBadge({ status }: { status: string }) {
     active:    "bg-emerald-100 text-emerald-700 border border-emerald-200",
     paused:    "bg-amber-100 text-amber-700 border border-amber-200",
     completed: "bg-slate-100 text-slate-600 border border-slate-200",
+    error:     "bg-rose-100 text-rose-700 border border-rose-300",
   };
-  const validKeys = ["sent", "failed", "active", "paused", "completed"];
+  const validKeys = ["sent", "failed", "active", "paused", "completed", "error"];
   const key = validKeys.includes(status) ? status : "unknown";
   return (
     <span className={`px-2 py-0.5 rounded text-xs font-medium ${colorMap[status] ?? "bg-slate-100 text-slate-500"}`}>
@@ -76,7 +77,10 @@ function GmailConnectPanel({
   const [loadingRequest, setLoadingRequest] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [testingSend, setTestingSend] = useState(false);
+  const [testResult, setTestResult] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [requestedGmail, setRequestedGmail] = useState("");
 
   useEffect(() => {
     if (!status.is_connected) {
@@ -87,10 +91,15 @@ function GmailConnectPanel({
   }, [status.is_connected]);
 
   async function handleRequestAccess() {
+    const gmail = requestedGmail.trim().toLowerCase();
+    if (gmail && !gmail.endsWith("@gmail.com")) {
+      setError("يجب أن يكون الإيميل حساب Gmail (@gmail.com)");
+      return;
+    }
     setSubmitting(true);
     setError("");
     try {
-      const req = await requestGmailAccess();
+      const req = await requestGmailAccess(gmail || undefined);
       setRequest(req);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t("gmail.requestFailed"));
@@ -140,6 +149,30 @@ function GmailConnectPanel({
           <button onClick={onConnected} className="w-full bg-brand-800 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-brand-700">
             {t("gmail.composeBtn")}
           </button>
+          <button
+            onClick={async () => {
+              setTestingSend(true);
+              setTestResult(null);
+              try {
+                const { testGmailSend } = await import("@/lib/smart-send");
+                const res = await testGmailSend();
+                setTestResult(res.detail ?? "تم الإرسال بنجاح");
+              } catch (e: unknown) {
+                setTestResult(`فشل: ${e instanceof Error ? e.message : "خطأ غير معروف"}`);
+              } finally {
+                setTestingSend(false);
+              }
+            }}
+            disabled={testingSend}
+            className="w-full border border-brand-200 text-brand-700 rounded-lg py-2 text-sm hover:bg-brand-50 disabled:opacity-50"
+          >
+            {testingSend ? "جاري الإرسال..." : "🧪 اختبار الإرسال"}
+          </button>
+          {testResult && (
+            <p className={`text-xs px-3 py-2 rounded-lg ${testResult.startsWith("فشل") ? "bg-rose-50 text-rose-700" : "bg-teal-50 text-teal-700"}`}>
+              {testResult}
+            </p>
+          )}
           {error && <p className="text-rose-600 text-sm">{error}</p>}
           <button onClick={() => void handleDisconnect()} disabled={disconnecting} className="w-full border border-slate-200 text-slate-600 rounded-lg py-2 text-sm hover:bg-slate-50 disabled:opacity-50">
             {disconnecting ? t("gmail.disconnecting") : t("gmail.disconnect")}
@@ -166,6 +199,23 @@ function GmailConnectPanel({
           <div className="rounded-2xl border border-brand-200 bg-brand-50 p-4 text-sm text-brand-800 space-y-2">
             <p className="font-semibold">{t("gmail.requestTitle")}</p>
             <p className="text-brand-700">{t("gmail.requestDesc")}</p>
+          </div>
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-slate-700">
+              إيميل Gmail للإرسال
+              <span className="text-slate-400 font-normal mr-1">(اختياري)</span>
+            </label>
+            <input
+              type="email"
+              value={requestedGmail}
+              onChange={(e) => setRequestedGmail(e.target.value)}
+              placeholder="example@gmail.com"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              dir="ltr"
+            />
+            <p className="text-xs text-slate-400">
+              إذا كنت تريد الإرسال من حساب Gmail مختلف عن حساب الموقع، أدخله هنا. يجب أن يكون @gmail.com.
+            </p>
           </div>
           {error && <p className="text-rose-600 text-sm">{error}</p>}
           <button
@@ -490,7 +540,13 @@ function CampaignsPanel({ refreshKey }: { refreshKey: number }) {
                 )}
               </div>
 
-              {(c.status === "active" || c.status === "paused") && (
+              {c.status === "error" && c.error_message && (
+                <div className="bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 text-xs text-rose-700">
+                  {c.error_message}
+                </div>
+              )}
+
+              {(c.status === "active" || c.status === "paused" || c.status === "error") && (
                 <div className="flex gap-2">
                   {c.status === "active" ? (
                     <button onClick={() => void handlePause(c.id)} disabled={actionLoading === c.id} className="flex-1 border border-amber-200 text-amber-700 rounded-lg py-1.5 text-xs font-semibold hover:bg-amber-50 disabled:opacity-50">
@@ -498,7 +554,7 @@ function CampaignsPanel({ refreshKey }: { refreshKey: number }) {
                     </button>
                   ) : (
                     <button onClick={() => void handleResume(c.id)} disabled={actionLoading === c.id} className="flex-1 border border-emerald-200 text-emerald-700 rounded-lg py-1.5 text-xs font-semibold hover:bg-emerald-50 disabled:opacity-50">
-                      {actionLoading === c.id ? "…" : `▶ ${t("campaigns.resume")}`}
+                      {actionLoading === c.id ? "…" : `▶ ${c.status === "error" ? "إعادة تشغيل" : t("campaigns.resume")}`}
                     </button>
                   )}
                 </div>
