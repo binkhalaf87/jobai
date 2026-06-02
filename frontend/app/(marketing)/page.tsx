@@ -60,6 +60,21 @@ type Content = {
     labelAfter: string;
     rows: { metric: string; before: string; after: string }[];
   };
+  ui: {
+    matched: string;
+    missing: string;
+    topFixes: string;
+    before: string;
+    afterRewrite: string;
+    question: string;
+    yourAnswer: string;
+    aiEval: string;
+    score: string;
+    atsScore: string;
+    rejectedBy: string;
+    passes: string;
+    avatarInitials: string[];
+  };
   testimonials: {
     label: string;
     headline: string;
@@ -214,6 +229,21 @@ const AR: Content = {
     cta: "حلّل سيرتي مجاناً الآن",
     trust: ["بدون بطاقة ائتمانية", "إلغاء في أي وقت", "نتائج في ٣٠ ثانية"],
   },
+  ui: {
+    matched: "✓ متطابق",
+    missing: "✗ مفقود",
+    topFixes: "أهم الإصلاحات",
+    before: "قبل",
+    afterRewrite: "بعد إعادة الكتابة بالذكاء الاصطناعي",
+    question: "السؤال",
+    yourAnswer: "إجابتك (مسجلة)",
+    aiEval: "تقييم الذكاء الاصطناعي",
+    score: "النتيجة",
+    atsScore: "درجة ATS",
+    rejectedBy: "مرفوض من ٩٢٪ من أنظمة ATS",
+    passes: "يتجاوز ٩٥٪ من أنظمة ATS ✓",
+    avatarInitials: ["م", "س", "أ", "ف", "ر"],
+  },
 };
 
 const EN: Content = {
@@ -355,6 +385,21 @@ const EN: Content = {
     sub: "Over 5,000 Saudi and Gulf professionals have transformed their careers with JobAI. You're next.",
     cta: "Analyze My Resume — Free",
     trust: ["No credit card required", "Cancel anytime", "Results in 30 seconds"],
+  },
+  ui: {
+    matched: "✓ Matched",
+    missing: "✗ Missing",
+    topFixes: "Top Fixes",
+    before: "Before",
+    afterRewrite: "After AI Rewrite",
+    question: "Question",
+    yourAnswer: "Your Answer (recorded)",
+    aiEval: "AI Evaluation",
+    score: "Score",
+    atsScore: "ATS Score",
+    rejectedBy: "Rejected by 92% of ATS systems",
+    passes: "Passes 95% of ATS systems ✓",
+    avatarInitials: ["S", "A", "N", "F", "R"],
   },
 };
 
@@ -506,7 +551,7 @@ function HeroSection({ t, Arrow }: { t: Content; Arrow: React.ElementType }) {
         {/* Avatar + rating */}
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <div className="flex -space-x-2.5 rtl:space-x-reverse">
-            {["م", "س", "أ", "ف", "ر"].map((l, i) => (
+            {t.ui.avatarInitials.map((l, i) => (
               <div
                 key={i}
                 className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-slate-900 text-xs font-black text-white shadow-md"
@@ -606,9 +651,9 @@ function DemoSection({ t }: { t: Content }) {
 
           {/* Content */}
           <div className="p-6 md:p-10">
-            {active === "ats" && <AtsPanel d={d} />}
-            {active === "rewrite" && <RewritePanel d={d} />}
-            {active === "interview" && <InterviewPanel d={d} />}
+            {active === "ats" && <AtsPanel d={d} ui={t.ui} />}
+            {active === "rewrite" && <RewritePanel d={d} ui={t.ui} />}
+            {active === "interview" && <InterviewPanel d={d} ui={t.ui} />}
           </div>
         </div>
       </div>
@@ -616,7 +661,7 @@ function DemoSection({ t }: { t: Content }) {
   );
 }
 
-function AtsPanel({ d }: { d: Content["demo"] }) {
+function AtsPanel({ d, ui }: { d: Content["demo"]; ui: Content["ui"] }) {
   const a = d.ats;
   const score = parseInt(a.score.replace(/[^\d]/g, ""), 10) || 85;
   return (
@@ -635,7 +680,7 @@ function AtsPanel({ d }: { d: Content["demo"] }) {
       {/* Keywords */}
       <div className="space-y-4">
         <div className="rounded-2xl bg-white p-5 border border-slate-100 shadow-sm">
-          <p className="text-xs font-black uppercase tracking-wider text-teal mb-3">✓ Matched</p>
+          <p className="text-xs font-black uppercase tracking-wider text-teal mb-3">{ui.matched}</p>
           <div className="flex flex-wrap gap-1.5">
             {a.matched.map((kw) => (
               <span key={kw} className="rounded-full bg-teal-light/60 px-2.5 py-1 text-xs font-semibold text-teal">{kw}</span>
@@ -643,7 +688,7 @@ function AtsPanel({ d }: { d: Content["demo"] }) {
           </div>
         </div>
         <div className="rounded-2xl bg-white p-5 border border-slate-100 shadow-sm">
-          <p className="text-xs font-black uppercase tracking-wider text-red-500 mb-3">✗ Missing</p>
+          <p className="text-xs font-black uppercase tracking-wider text-red-500 mb-3">{ui.missing}</p>
           <div className="flex flex-wrap gap-1.5">
             {a.missing.map((kw) => (
               <span key={kw} className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-500">{kw}</span>
@@ -654,7 +699,7 @@ function AtsPanel({ d }: { d: Content["demo"] }) {
 
       {/* Tips */}
       <div className="rounded-2xl bg-white p-5 border border-slate-100 shadow-sm">
-        <p className="text-xs font-black uppercase tracking-wider text-brand-600 mb-3">Top Fixes</p>
+        <p className="text-xs font-black uppercase tracking-wider text-brand-600 mb-3">{ui.topFixes}</p>
         <ul className="space-y-3">
           {a.tips.map((tip, i) => (
             <li key={i} className="flex items-start gap-2.5">
@@ -668,7 +713,7 @@ function AtsPanel({ d }: { d: Content["demo"] }) {
   );
 }
 
-function RewritePanel({ d }: { d: Content["demo"] }) {
+function RewritePanel({ d, ui }: { d: Content["demo"]; ui: Content["ui"] }) {
   const r = d.rewrite;
   const scoreB = parseInt(r.scoreB.replace(/[^\d]/g, ""), 10) || 34;
   const scoreA = parseInt(r.scoreA.replace(/[^\d]/g, ""), 10) || 89;
@@ -676,7 +721,7 @@ function RewritePanel({ d }: { d: Content["demo"] }) {
     <div className="grid gap-6 md:grid-cols-2">
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-black uppercase tracking-wider text-red-500">Before</p>
+          <p className="text-xs font-black uppercase tracking-wider text-red-500">{ui.before}</p>
           <span className="rounded-full bg-red-50 px-3 py-1 text-sm font-black text-red-500">{r.scoreB}</span>
         </div>
         <div className="rounded-2xl border border-red-100 bg-red-50/50 p-5">
@@ -688,7 +733,7 @@ function RewritePanel({ d }: { d: Content["demo"] }) {
       </div>
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-black uppercase tracking-wider text-teal">After AI Rewrite</p>
+          <p className="text-xs font-black uppercase tracking-wider text-teal">{ui.afterRewrite}</p>
           <span className="rounded-full bg-teal-light/60 px-3 py-1 text-sm font-black text-teal">{r.scoreA}</span>
         </div>
         <div className="rounded-2xl border border-teal-light bg-teal-light/30 p-5">
@@ -702,18 +747,18 @@ function RewritePanel({ d }: { d: Content["demo"] }) {
   );
 }
 
-function InterviewPanel({ d }: { d: Content["demo"] }) {
+function InterviewPanel({ d, ui }: { d: Content["demo"]; ui: Content["ui"] }) {
   const iv = d.interview;
   const score = parseInt(iv.score.replace(/[^\d]/g, ""), 10) || 88;
   return (
     <div className="grid gap-6 md:grid-cols-2">
       <div className="space-y-4">
         <div className="rounded-2xl bg-white border border-slate-100 shadow-sm p-5">
-          <p className="text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Question</p>
+          <p className="text-xs font-black uppercase tracking-wider text-slate-400 mb-2">{ui.question}</p>
           <p className="text-base font-semibold text-slate-800 leading-relaxed">{'"'}{iv.q}{'"'}</p>
         </div>
         <div className="rounded-2xl bg-brand-600 p-5">
-          <p className="text-xs font-bold uppercase tracking-wider text-brand-200 mb-2">Your Answer (recorded)</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-brand-200 mb-2">{ui.yourAnswer}</p>
           <div className="flex items-center gap-3">
             <div className="h-2 flex-1 rounded-full bg-brand-500">
               <div className="h-2 w-[72%] rounded-full bg-white/70" />
@@ -723,12 +768,12 @@ function InterviewPanel({ d }: { d: Content["demo"] }) {
         </div>
       </div>
       <div className="flex flex-col items-center justify-center rounded-2xl bg-white border border-slate-100 shadow-sm p-6 gap-4">
-        <p className="text-xs font-black uppercase tracking-wider text-slate-400">AI Evaluation</p>
+        <p className="text-xs font-black uppercase tracking-wider text-slate-400">{ui.aiEval}</p>
         <div className="relative flex items-center justify-center">
           <ScoreRing score={score} size={110} color="#00A878" />
           <div className="absolute flex flex-col items-center">
             <span className="text-2xl font-black text-teal">{iv.score}</span>
-            <span className="text-[10px] text-slate-400">Score</span>
+            <span className="text-[10px] text-slate-400">{ui.score}</span>
           </div>
         </div>
         <div className="flex flex-wrap justify-center gap-1.5">
@@ -926,11 +971,11 @@ function BeforeAfterSection({ t }: { t: Content }) {
                 <ScoreRing score={scoreB} size={150} color="#ef4444" />
                 <div className="absolute flex flex-col items-center">
                   <span className="text-4xl font-black text-red-500">{ba.scoreBefore}</span>
-                  <span className="text-xs text-slate-400 font-medium">ATS Score</span>
+                  <span className="text-xs text-slate-400 font-medium">{t.ui.atsScore}</span>
                 </div>
               </div>
               <div className="text-center">
-                <p className="text-sm text-slate-400">Rejected by 92% of ATS systems</p>
+                <p className="text-sm text-slate-400">{t.ui.rejectedBy}</p>
               </div>
             </div>
 
@@ -943,11 +988,11 @@ function BeforeAfterSection({ t }: { t: Content }) {
                 <ScoreRing score={scoreA} size={150} color="#00A878" />
                 <div className="absolute flex flex-col items-center">
                   <span className="text-4xl font-black text-teal">{ba.scoreAfter}</span>
-                  <span className="text-xs text-slate-400 font-medium">ATS Score</span>
+                  <span className="text-xs text-slate-400 font-medium">{t.ui.atsScore}</span>
                 </div>
               </div>
               <div className="text-center">
-                <p className="text-sm text-teal font-semibold">Passes 95% of ATS systems ✓</p>
+                <p className="text-sm text-teal font-semibold">{t.ui.passes}</p>
               </div>
             </div>
           </div>
@@ -974,7 +1019,6 @@ function BeforeAfterSection({ t }: { t: Content }) {
 /* ─── 8. testimonials ────────────────────────────────────────────────── */
 function TestimonialsSection({ t }: { t: Content }) {
   const te = t.testimonials;
-  const initials = ["س", "م", "ن"];
   const colors = ["from-brand-400 to-brand-600", "from-teal to-teal-light", "from-purple-400 to-purple-600"];
 
   return (
@@ -1009,7 +1053,7 @@ function TestimonialsSection({ t }: { t: Content }) {
               {/* Author */}
               <div className="flex items-center gap-3">
                 <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${colors[i]} text-sm font-black text-white`}>
-                  {initials[i]}
+                  {item.name.charAt(0)}
                 </div>
                 <div>
                   <p className="font-bold text-white text-sm">{item.name}</p>
