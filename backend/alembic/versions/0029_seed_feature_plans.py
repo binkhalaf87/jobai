@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import datetime, timezone
 
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy.dialects import postgresql
 
 revision = "0029"
 down_revision = "0028"
@@ -15,10 +15,6 @@ branch_labels = None
 depends_on = None
 
 _NOW = datetime.now(timezone.utc)
-
-plan_audience = sa.Enum("jobseeker", "recruiter", name="plan_audience", create_type=False)
-plan_kind = sa.Enum("subscription", "points_pack", name="plan_kind", create_type=False)
-billing_interval = sa.Enum("monthly", "one_time", name="billing_interval", create_type=False)
 
 
 def _plan(code, name, price_sar, feature, quantity, display_order):
@@ -35,7 +31,7 @@ def _plan(code, name, price_sar, feature, quantity, display_order):
         "is_active": True,
         "display_order": display_order,
         "description": None,
-        "metadata_payload": {"feature_grants": [{"feature": feature, "quantity": quantity}]},
+        "metadata_payload": json.dumps({"feature_grants": [{"feature": feature, "quantity": quantity}]}),
         "created_at": _NOW,
         "updated_at": _NOW,
     }
@@ -50,40 +46,29 @@ NEW_PLANS = [
     _plan("smart_send_3000_269sar", "إرسال ذكي — 3000 شركة", 269, "smart_send_contacts", 3000, 22),
 ]
 
+_INSERT_SQL = sa.text("""
+    INSERT INTO plans (
+        id, code, name, audience, kind, billing_interval, currency,
+        price_amount_minor, points_grant, is_active, display_order,
+        description, metadata_payload, created_at, updated_at
+    ) VALUES (
+        :id::uuid, :code, :name,
+        :audience::plan_audience, :kind::plan_kind, :billing_interval::billing_interval,
+        :currency, :price_amount_minor, :points_grant, :is_active, :display_order,
+        :description, :metadata_payload::jsonb, :created_at, :updated_at
+    )
+""")
+
 
 def upgrade() -> None:
     conn = op.get_bind()
-
-    plans_table = sa.table(
-        "plans",
-        sa.column("id", sa.String(36)),
-        sa.column("code", sa.String(100)),
-        sa.column("name", sa.String(100)),
-        sa.column("audience", plan_audience),
-        sa.column("kind", plan_kind),
-        sa.column("billing_interval", billing_interval),
-        sa.column("currency", sa.String(3)),
-        sa.column("price_amount_minor", sa.Integer()),
-        sa.column("points_grant", sa.Integer()),
-        sa.column("is_active", sa.Boolean()),
-        sa.column("display_order", sa.Integer()),
-        sa.column("description", sa.Text()),
-        sa.column("metadata_payload", postgresql.JSONB(astext_type=sa.Text())),
-        sa.column("created_at", sa.DateTime(timezone=True)),
-        sa.column("updated_at", sa.DateTime(timezone=True)),
-    )
-
-    to_insert = []
     for plan in NEW_PLANS:
         existing = conn.execute(
             sa.text("SELECT id FROM plans WHERE code = :code"),
             {"code": plan["code"]},
         ).fetchone()
         if not existing:
-            to_insert.append(plan)
-
-    if to_insert:
-        op.bulk_insert(plans_table, to_insert)
+            conn.execute(_INSERT_SQL, plan)
 
 
 def downgrade() -> None:
