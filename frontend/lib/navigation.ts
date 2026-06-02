@@ -39,7 +39,6 @@ export const DASHBOARD_NAV_GROUPS: DashboardNavGroup[] = [
     key: "account",
     items: [
       { label: "Billing", key: "billing", href: "/dashboard/billing", icon: "credit-card" },
-      { label: "Points", key: "points", href: "/dashboard/points", icon: "star" },
       { label: "Profile", key: "profile", href: "/dashboard/profile", icon: "user" },
     ],
   },

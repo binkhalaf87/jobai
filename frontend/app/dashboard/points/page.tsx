@@ -1,5 +1,5 @@
-import { BillingDashboard } from "@/components/billing-dashboard";
+import { redirect } from "next/navigation";
 
 export default function DashboardPointsPage() {
-  return <BillingDashboard audience="jobseeker" />;
+  redirect("/dashboard/billing");
 }
