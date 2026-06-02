@@ -52,10 +52,11 @@ _INSERT_SQL = sa.text("""
         price_amount_minor, points_grant, is_active, display_order,
         description, metadata_payload, created_at, updated_at
     ) VALUES (
-        :id::uuid, :code, :name,
-        :audience::plan_audience, :kind::plan_kind, :billing_interval::billing_interval,
+        CAST(:id AS uuid), :code, :name,
+        CAST(:audience AS plan_audience), CAST(:kind AS plan_kind),
+        CAST(:billing_interval AS billing_interval),
         :currency, :price_amount_minor, :points_grant, :is_active, :display_order,
-        :description, :metadata_payload::jsonb, :created_at, :updated_at
+        :description, CAST(:metadata_payload AS jsonb), :created_at, :updated_at
     )
 """)
 
