@@ -632,6 +632,7 @@ def manually_activate_payment_order(db: Session, payment_order_id: str) -> None:
         order.user_id,
         order.plan_id,
     )
+    _send_invoice_email(db, order)
 
 
 def verify_and_activate_payment_order(
