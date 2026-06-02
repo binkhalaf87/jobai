@@ -1974,6 +1974,7 @@
         "active": "Active",
         "paused": "Paused",
         "completed": "Completed",
+        "error": "Error",
         "unknown": "Pending"
       }
     }

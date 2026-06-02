@@ -619,10 +619,19 @@ export default function SmartSendPage() {
   const [step, setStep] = useState<Step>("connect");
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [campaignRefreshKey, setCampaignRefreshKey] = useState(0);
+  const [oauthError, setOauthError] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
+      const gmailError = params.get("gmail_error");
+      if (gmailError) {
+        const errorMessages: Record<string, string> = {
+          invalid_state: "فشل التحقق من الجلسة. يرجى المحاولة مجدداً.",
+          token_exchange_failed: "فشل ربط حساب Gmail. يرجى المحاولة مجدداً.",
+        };
+        setOauthError(errorMessages[gmailError] ?? "حدث خطأ أثناء ربط Gmail.");
+      }
       if (params.has("gmail_connected") || params.has("gmail_error")) {
         window.history.replaceState({}, "", window.location.pathname);
       }
@@ -655,6 +664,13 @@ export default function SmartSendPage() {
         <h1 className="text-2xl font-bold">{t("title")}</h1>
         <p className="text-sm text-gray-500 mt-1">{t("description")}</p>
       </div>
+
+      {oauthError && (
+        <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 flex items-center justify-between gap-3">
+          <span>{oauthError}</span>
+          <button onClick={() => setOauthError(null)} className="text-rose-400 hover:text-rose-600 text-xs font-bold">✕</button>
+        </div>
+      )}
 
       <Panel>
         <div className="flex border-b mb-6">
