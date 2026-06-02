@@ -379,6 +379,14 @@
       "analysisDesc": "تحليل السيرة الذاتية متاح بسعر <strong>7 ريال</strong> للتحليل الواحد.",
       "interviewDesc": "تدريب المقابلة متاح بسعر <strong>10 ريال</strong> للجلسة الواحدة.",
       "buyNow": "اشتري الآن ←"
+    },
+    "plans": {
+      "resumeAnalysis": "تحليل السيرة الذاتية",
+      "resumeImprovement": "تحسين السيرة الذاتية",
+      "mockInterview": "تدريب على المقابلة",
+      "smartSend500": "إرسال ذكي — 500 شركة",
+      "smartSend1500": "إرسال ذكي — 1500 شركة",
+      "smartSend3000": "إرسال ذكي — 3000 شركة"
     }
   },
   "profile": {

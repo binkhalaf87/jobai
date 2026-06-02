@@ -22,6 +22,17 @@ import type {
 
 type CartItem = { plan: BillingPlan; quantity: number };
 
+function getPlanName(plan: BillingPlan, t: (key: string) => string): string {
+  const c = plan.code.toLowerCase();
+  if (c.includes("resume_analysis")) return t("plans.resumeAnalysis");
+  if (c.includes("resume_improvement")) return t("plans.resumeImprovement");
+  if (c.includes("mock_interview")) return t("plans.mockInterview");
+  if (c.includes("smart_send_3000")) return t("plans.smartSend3000");
+  if (c.includes("smart_send_1500")) return t("plans.smartSend1500");
+  if (c.includes("smart_send_500")) return t("plans.smartSend500");
+  return plan.name;
+}
+
 const DEFAULT_CONTACT = {
   email: "",
   first_name: "",
@@ -395,7 +406,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                       }`}
                     >
                       <div className="text-2xl mb-2">{icon}</div>
-                      <h3 className="text-base font-semibold text-slate-900">{plan.name}</h3>
+                      <h3 className="text-base font-semibold text-slate-900">{getPlanName(plan, t)}</h3>
                       <p className="mt-3 text-2xl font-bold text-brand-800">
                         {formatMoney(plan.price_amount_minor, plan.currency)}
                       </p>
@@ -474,7 +485,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                           {badges[idx]}
                         </span>
                       )}
-                      <h3 className="text-base font-semibold text-slate-900">{plan.name}</h3>
+                      <h3 className="text-base font-semibold text-slate-900">{getPlanName(plan, t)}</h3>
                       <p className="mt-3 text-2xl font-bold text-brand-800">
                         {formatMoney(plan.price_amount_minor, plan.currency)}
                       </p>
@@ -560,7 +571,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                     onClick={() => addToCart(plan)}
                     className="mt-4 w-full rounded-full border border-brand-800 py-2 text-sm font-semibold text-brand-800 transition hover:bg-brand-800 hover:text-white"
                   >
-                    🛒 أضف للسلة
+                    {t("store.addToCart")}
                   </button>
                 )}
               </div>
@@ -607,7 +618,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                         onClick={() => addToCart(plan)}
                         className="mt-4 w-full rounded-full border border-brand-800 py-2 text-sm font-semibold text-brand-800 transition hover:bg-brand-800 hover:text-white"
                       >
-                        🛒 أضف للسلة
+                        {t("store.addToCart")}
                       </button>
                     )}
                   </div>

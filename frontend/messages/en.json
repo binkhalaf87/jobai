@@ -379,6 +379,14 @@
       "analysisDesc": "Resume analysis is available for <strong>SAR 7</strong> per use.",
       "interviewDesc": "Mock interview is available for <strong>SAR 10</strong> per session.",
       "buyNow": "Buy Now →"
+    },
+    "plans": {
+      "resumeAnalysis": "Resume Analysis",
+      "resumeImprovement": "Resume Improvement",
+      "mockInterview": "Interview Training",
+      "smartSend500": "Smart Send — 500 companies",
+      "smartSend1500": "Smart Send — 1,500 companies",
+      "smartSend3000": "Smart Send — 3,000 companies"
     }
   },
   "profile": {
