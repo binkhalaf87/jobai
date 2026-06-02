@@ -193,7 +193,7 @@ def build_settings() -> Settings:
         )
 
     return Settings(
-        app_name=get_optional_env("APP_NAME", "JobAI Backend"),
+        app_name=get_optional_env("APP_NAME", "JobAI24 Backend"),
         app_version=get_optional_env("APP_VERSION", "0.1.0"),
         api_prefix=get_optional_env("API_PREFIX", "/api/v1"),
         environment=_environment,

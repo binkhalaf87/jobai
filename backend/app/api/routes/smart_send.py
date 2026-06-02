@@ -415,8 +415,8 @@ async def test_gmail_send(
             from_name=current_user.full_name or conn.gmail_address,
             to_email=conn.gmail_address,
             to_name=current_user.full_name,
-            subject="✅ اختبار الإرسال الذكي — JobAI",
-            body="هذا إيميل اختباري للتحقق من أن اتصال Gmail يعمل بشكل صحيح.\n\nتم الإرسال بنجاح من منصة JobAI.",
+            subject="✅ اختبار الإرسال الذكي — JobAI24",
+            body="هذا إيميل اختباري للتحقق من أن اتصال Gmail يعمل بشكل صحيح.\n\nتم الإرسال بنجاح من منصة JobAI24.",
         )
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"فشل إرسال الاختبار: {exc}")

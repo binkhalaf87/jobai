@@ -61,7 +61,7 @@ def create_unavailable_application(startup_error: Exception) -> ASGIApp:
         diagnostic_payload["error_type"] = type(startup_error).__name__
 
     fallback_app = FastAPI(
-        title="JobAI Backend Unavailable",
+        title="JobAI24 Backend Unavailable",
         docs_url=None,
         redoc_url=None,
         openapi_url=None,

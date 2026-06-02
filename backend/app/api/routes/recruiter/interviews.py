@@ -313,7 +313,7 @@ def generate_interview_link(
 
     settings = get_settings()
     origins = settings.allowed_origins()
-    frontend_url = origins[0].rstrip("/") if origins else "https://jobai-alpha.vercel.app"
+    frontend_url = origins[0].rstrip("/") if origins else "https://www.jobai24.com"
     interview_link = f"{frontend_url}/interview/{token}"
 
     if not interview.invite_token:
@@ -386,7 +386,7 @@ def send_invite(
     settings = get_settings()
     # Use the first allowed origin as the frontend base URL
     origins = settings.allowed_origins()
-    frontend_url = origins[0].rstrip("/") if origins else "https://jobai-alpha.vercel.app"
+    frontend_url = origins[0].rstrip("/") if origins else "https://www.jobai24.com"
     interview_link = f"{frontend_url}/interview/{token}"
 
     candidate_name = _candidate_name(resume)

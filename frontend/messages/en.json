@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "JobAI",
+    "appName": "JobAI24",
     "loading": "Loading…",
     "save": "Save",
     "cancel": "Cancel",
@@ -25,7 +25,7 @@
   "auth": {
     "login": {
       "eyebrow": "Account Access",
-      "title": "Sign in to JobAI",
+      "title": "Sign in to JobAI24",
       "description": "Enter your credentials to access your dashboard.",
       "submit": "Continue",
       "submitting": "Signing in…",
@@ -35,7 +35,7 @@
     "register": {
       "eyebrow": "Create Account",
       "title": "Create your account",
-      "description": "Join JobAI and start building your career.",
+      "description": "Join JobAI24 and start building your career.",
       "submit": "Create account",
       "submitting": "Creating account…",
       "hasAccount": "Already have an account?",
@@ -342,7 +342,7 @@
     },
     "store": {
       "balanceEyebrow": "Your current balance",
-      "title": "JobAI Services Store",
+      "title": "JobAI24 Services Store",
       "subtitle": "Add the services you need to your cart and pay in one go",
       "oneTimeServices": "One-time services",
       "oneTimeSingleUse": "One-time · single use",
@@ -405,7 +405,7 @@
     "hero": {
       "badge": "Smart hiring platform",
       "title": "Save time and build your career path with AI-powered hiring",
-      "description": "JobAI delivers a modern bilingual experience that blends Elm-grade professionalism with a polished SaaS feel, so you can find the right role and manage your career with confidence.",
+      "description": "JobAI24 delivers a modern bilingual experience that blends Elm-grade professionalism with a polished SaaS feel, so you can find the right role and manage your career with confidence.",
       "primaryCta": "Get Started",
       "secondaryCta": "Quick tour",
       "cta": "Get Started",
@@ -603,8 +603,8 @@
       "badge": "Updated"
     },
     "why": {
-      "eyebrow": "Why JobAI?",
-      "title": "Why JobAI?",
+      "eyebrow": "Why JobAI24?",
+      "title": "Why JobAI24?",
       "points": [
         "Designed for Arabic and RTL from day one.",
         "A simple, organized interface that keeps your focus on what matters.",
@@ -1833,7 +1833,7 @@
       "instructionsTitle": "Create a Gmail App Password:",
       "step1": "Enable 2-Step Verification on your Google account",
       "step2": "Go to Google Account → Security → App Passwords",
-      "step3": "Select app: Mail, device: Other → type \"JobAI\"",
+      "step3": "Select app: Mail, device: Other → type \"JobAI24\"",
       "step4": "Copy the 16-character password and paste it below",
       "gmailAddress": "Gmail address",
       "gmailPlaceholder": "you@gmail.com",

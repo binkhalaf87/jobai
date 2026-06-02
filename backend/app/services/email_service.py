@@ -43,15 +43,15 @@ def _verification_html(verify_url: str, name: str) -> str:
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="font-family:sans-serif;background:#f8fafc;margin:0;padding:32px">
   <div style="max-width:480px;margin:0 auto;background:#fff;border-radius:16px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,.08)">
-    <h2 style="color:#0f172a;margin-top:0">Verify your JobAI email</h2>
+    <h2 style="color:#0f172a;margin-top:0">Verify your JobAI24 email</h2>
     <p style="color:#475569">Hi {name},</p>
     <p style="color:#475569">Click the button below to verify your email address. This link expires in <strong>24 hours</strong>.</p>
     <a href="{verify_url}" style="display:inline-block;margin:24px 0;padding:14px 28px;background:#1e40af;color:#fff;border-radius:10px;text-decoration:none;font-weight:600">
       Verify Email Address
     </a>
-    <p style="color:#94a3b8;font-size:13px">If you did not create a JobAI account you can safely ignore this email.</p>
+    <p style="color:#94a3b8;font-size:13px">If you did not create a JobAI24 account you can safely ignore this email.</p>
     <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">
-    <p style="color:#94a3b8;font-size:12px">JobAI &mdash; AI-powered career platform</p>
+    <p style="color:#94a3b8;font-size:12px">JobAI24 &mdash; AI-powered career platform</p>
   </div>
 </body>
 </html>"""
@@ -63,7 +63,7 @@ def _invoice_html(name: str, plan_name: str, amount_sar: str, transaction_id: st
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="font-family:sans-serif;background:#f8fafc;margin:0;padding:32px;direction:rtl">
   <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:16px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,.08)">
-    <h2 style="color:#0f172a;margin-top:0">✅ تم الدفع بنجاح — JobAI</h2>
+    <h2 style="color:#0f172a;margin-top:0">✅ تم الدفع بنجاح — JobAI24</h2>
     <p style="color:#475569">مرحباً {name}،</p>
     <p style="color:#475569">شكراً لك! تم استلام دفعتك وتفعيل خدمتك بنجاح.</p>
     <div style="background:#f1f5f9;border-radius:12px;padding:20px;margin:24px 0">
@@ -88,7 +88,7 @@ def _invoice_html(name: str, plan_name: str, amount_sar: str, transaction_id: st
     </div>
     <p style="color:#94a3b8;font-size:13px">يُرجى الاحتفاظ بهذا البريد كإيصال للدفع.</p>
     <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">
-    <p style="color:#94a3b8;font-size:12px">JobAI &mdash; منصة المسار المهني بالذكاء الاصطناعي</p>
+    <p style="color:#94a3b8;font-size:12px">JobAI24 &mdash; منصة المسار المهني بالذكاء الاصطناعي</p>
   </div>
 </body>
 </html>"""
@@ -100,7 +100,7 @@ def _password_reset_html(reset_url: str, name: str) -> str:
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="font-family:sans-serif;background:#f8fafc;margin:0;padding:32px">
   <div style="max-width:480px;margin:0 auto;background:#fff;border-radius:16px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,.08)">
-    <h2 style="color:#0f172a;margin-top:0">Reset your JobAI password</h2>
+    <h2 style="color:#0f172a;margin-top:0">Reset your JobAI24 password</h2>
     <p style="color:#475569">Hi {name},</p>
     <p style="color:#475569">Click the button below to reset your password. This link expires in <strong>1 hour</strong>.</p>
     <a href="{reset_url}" style="display:inline-block;margin:24px 0;padding:14px 28px;background:#1e40af;color:#fff;border-radius:10px;text-decoration:none;font-weight:600">
@@ -108,7 +108,7 @@ def _password_reset_html(reset_url: str, name: str) -> str:
     </a>
     <p style="color:#94a3b8;font-size:13px">If you did not request a password reset you can safely ignore this email.</p>
     <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">
-    <p style="color:#94a3b8;font-size:12px">JobAI &mdash; AI-powered career platform</p>
+    <p style="color:#94a3b8;font-size:12px">JobAI24 &mdash; AI-powered career platform</p>
   </div>
 </body>
 </html>"""
@@ -133,7 +133,7 @@ def _send(to_email: str, subject: str, html_body: str) -> EmailSendResult:
         return EmailSendResult(sent=False, provider="resend", error=error)
 
     payload = {
-        "from": f"JobAI <{settings.system_email_from}>",
+        "from": f"JobAI24 <{settings.system_email_from}>",
         "to": [to_email],
         "subject": subject,
         "html": html_body,
@@ -171,19 +171,19 @@ def send_gmail_approval_email(to_email: str, name: str | None = None) -> EmailSe
     settings = get_settings()
     display_name = name or "عزيزي المستخدم"
     dashboard_url = f"{settings.frontend_url}/dashboard/smart-send"
-    return _send(to_email, "تمت الموافقة على ربط Gmail — JobAI", _gmail_approval_html(display_name, dashboard_url))
+    return _send(to_email, "تمت الموافقة على ربط Gmail — JobAI24", _gmail_approval_html(display_name, dashboard_url))
 
 
 def send_gmail_rejection_email(to_email: str, name: str | None = None, reason: str | None = None) -> EmailSendResult:
     display_name = name or "عزيزي المستخدم"
-    return _send(to_email, "تحديث طلب ربط Gmail — JobAI", _gmail_rejection_html(display_name, reason))
+    return _send(to_email, "تحديث طلب ربط Gmail — JobAI24", _gmail_rejection_html(display_name, reason))
 
 
 def send_verification_email(to_email: str, token: str, name: str | None = None) -> EmailSendResult:
     settings = get_settings()
     display_name = name or "there"
     url = f"{settings.frontend_url}/verify-email?token={token}"
-    return _send(to_email, "Verify your JobAI email address", _verification_html(url, display_name))
+    return _send(to_email, "Verify your JobAI24 email address", _verification_html(url, display_name))
 
 
 def _gmail_approval_html(name: str, dashboard_url: str) -> str:
@@ -194,12 +194,12 @@ def _gmail_approval_html(name: str, dashboard_url: str) -> str:
   <div style="max-width:480px;margin:0 auto;background:#fff;border-radius:16px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,.08)">
     <h2 style="color:#0f172a;margin-top:0">✅ تمت الموافقة على ربط Gmail</h2>
     <p style="color:#475569">مرحباً {name}،</p>
-    <p style="color:#475569">تمت الموافقة على طلبك لربط حساب Gmail بمنصة JobAI. يمكنك الآن الانتقال إلى لوحة التحكم وإكمال ربط حسابك لبدء حملات الإرسال الذكي.</p>
+    <p style="color:#475569">تمت الموافقة على طلبك لربط حساب Gmail بمنصة JobAI24. يمكنك الآن الانتقال إلى لوحة التحكم وإكمال ربط حسابك لبدء حملات الإرسال الذكي.</p>
     <a href="{dashboard_url}" style="display:inline-block;margin:24px 0;padding:14px 28px;background:#1e40af;color:#fff;border-radius:10px;text-decoration:none;font-weight:600">
       اذهب إلى الإرسال الذكي
     </a>
     <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">
-    <p style="color:#94a3b8;font-size:12px">JobAI &mdash; منصة المسار المهني بالذكاء الاصطناعي</p>
+    <p style="color:#94a3b8;font-size:12px">JobAI24 &mdash; منصة المسار المهني بالذكاء الاصطناعي</p>
   </div>
 </body>
 </html>"""
@@ -218,7 +218,7 @@ def _gmail_rejection_html(name: str, reason: str | None) -> str:
     {reason_text}
     <p style="color:#475569">يمكنك التواصل مع فريق الدعم لمزيد من المعلومات.</p>
     <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">
-    <p style="color:#94a3b8;font-size:12px">JobAI &mdash; منصة المسار المهني بالذكاء الاصطناعي</p>
+    <p style="color:#94a3b8;font-size:12px">JobAI24 &mdash; منصة المسار المهني بالذكاء الاصطناعي</p>
   </div>
 </body>
 </html>"""
@@ -243,7 +243,7 @@ def send_payment_invoice_email(
     )
     return _send(
         to_email,
-        f"إيصال دفع JobAI — {plan_name}",
+        f"إيصال دفع JobAI24 — {plan_name}",
         _invoice_html(display_name, plan_name, amount_sar, tx_id, paid_str),
     )
 
@@ -252,4 +252,4 @@ def send_password_reset_email(to_email: str, token: str, name: str | None = None
     settings = get_settings()
     display_name = name or "there"
     url = f"{settings.frontend_url}/reset-password?token={token}"
-    return _send(to_email, "Reset your JobAI password", _password_reset_html(reset_url=url, name=display_name))
+    return _send(to_email, "Reset your JobAI24 password", _password_reset_html(reset_url=url, name=display_name))

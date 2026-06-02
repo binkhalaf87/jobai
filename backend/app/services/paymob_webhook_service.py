@@ -583,7 +583,7 @@ def _send_invoice_email(db: Session, payment_order: PaymentOrder) -> None:
             names = [item.get("plan_name", "") for item in req.get("cart_items", []) if item.get("plan_name")]
             plan_name = " + ".join(names) if names else "سلة خدمات"
         else:
-            plan_name = payment_order.plan.name if payment_order.plan else "خدمة JobAI"
+            plan_name = payment_order.plan.name if payment_order.plan else "خدمة JobAI24"
         send_payment_invoice_email(
             to_email=user.email,
             name=user.full_name,
