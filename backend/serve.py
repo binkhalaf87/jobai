@@ -33,10 +33,14 @@ def build_application():
     """Boot the live backend, or a CORS-enabled fallback app when startup fails."""
     try:
         run_database_migrations()
+        print("SERVE: migrations complete, importing app...", flush=True)
         from main import app as application
-
+        print("SERVE: app imported successfully.", flush=True)
         return application
     except Exception as exc:
+        import traceback
+        print(f"SERVE: STARTUP_FAILED type={type(exc).__name__} msg={exc}", flush=True)
+        traceback.print_exc()
         logger.exception("Backend startup failed before serving traffic.")
         return create_unavailable_application(exc)
 
