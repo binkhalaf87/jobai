@@ -195,3 +195,14 @@ class CartCheckoutResponse(BaseModel):
     currency: str
     item_count: int
     checkout: BillingCheckoutSession
+
+
+class PaymentVerifyRequest(BaseModel):
+    payment_order_id: str | None = None
+    merchant_reference: str | None = None
+    paymob_transaction_id: str | None = None
+
+
+class PaymentVerifyResponse(BaseModel):
+    status: str
+    activated: bool

@@ -33,6 +33,8 @@ from app.schemas.billing import (
     BillingWalletTransactionsResponse,
     CartCheckoutRequest,
     CartCheckoutResponse,
+    PaymentVerifyRequest,
+    PaymentVerifyResponse,
 )
 from app.services.billing_service import (
     create_cart_checkout_intention,
@@ -44,7 +46,7 @@ from app.services.billing_service import (
     list_wallet_transactions_for_user,
 )
 from app.services.feature_credit_service import get_all_feature_balances
-from app.services.paymob_webhook_service import process_paymob_webhook
+from app.services.paymob_webhook_service import process_paymob_webhook, verify_and_activate_payment_order
 
 router = APIRouter(prefix="/billing", tags=["billing"])
 
@@ -261,6 +263,40 @@ def get_feature_credits(
 ) -> dict:
     """Return available feature credit balances for the authenticated user."""
     return get_all_feature_balances(db, current_user.id)
+
+
+@router.post("/verify-payment", response_model=PaymentVerifyResponse)
+def verify_payment(
+    payload: PaymentVerifyRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> PaymentVerifyResponse:
+    """Verify a payment with Paymob after redirect and activate the order if confirmed paid."""
+    if not payload.payment_order_id and not payload.merchant_reference:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Provide payment_order_id or merchant_reference.",
+        )
+    try:
+        final_status = verify_and_activate_payment_order(
+            db,
+            payment_order_id=payload.payment_order_id,
+            merchant_reference=payload.merchant_reference,
+            user_id=current_user.id,
+            paymob_transaction_id=payload.paymob_transaction_id,
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+
+    from app.models.enums import PaymentOrderStatus as _POS
+    return PaymentVerifyResponse(
+        status=final_status.value,
+        activated=final_status == _POS.PAID,
+    )
 
 
 @router.post("/paymob/webhook", response_model=BillingWebhookResponse)

@@ -293,6 +293,27 @@ def _extract_paymob_error(response: httpx.Response) -> str:
     return str(payload)
 
 
+def query_paymob_transaction(transaction_id: str) -> dict[str, Any]:
+    """Query a single Paymob transaction by its ID."""
+    with httpx.Client(base_url=PAYMOB_BASE_URL, timeout=PAYMOB_TIMEOUT) as client:
+        response = client.get(
+            f"/api/acceptance/transactions/{transaction_id}",
+            headers=_paymob_headers(),
+        )
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        raise RuntimeError(
+            f"Paymob transaction query failed with status {response.status_code}: "
+            f"{_extract_paymob_error(response)}"
+        ) from exc
+
+    result = response.json()
+    if not isinstance(result, dict):
+        raise RuntimeError("Paymob transaction query did not return a JSON object.")
+    return cast(dict[str, Any], result)
+
+
 def _post_intention(payload: dict[str, Any]) -> dict[str, Any]:
     with httpx.Client(base_url=PAYMOB_BASE_URL, timeout=PAYMOB_TIMEOUT) as client:
         response = client.post(PAYMOB_INTENTION_PATH, headers=_paymob_headers(), json=payload)

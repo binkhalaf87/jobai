@@ -32,3 +32,15 @@ export async function getFeatureCredits(): Promise<Record<string, number>> {
 export async function createCartCheckoutIntention(payload: CartCheckoutPayload): Promise<CartCheckoutResponse> {
   return api.post<CartCheckoutResponse>("/billing/cart/checkout", payload);
 }
+
+export async function verifyPayment(params: {
+  paymentOrderId?: string;
+  merchantReference?: string;
+  paymobTransactionId?: string;
+}): Promise<{ status: string; activated: boolean }> {
+  return api.post<{ status: string; activated: boolean }>("/billing/verify-payment", {
+    payment_order_id: params.paymentOrderId,
+    merchant_reference: params.merchantReference,
+    paymob_transaction_id: params.paymobTransactionId,
+  });
+}

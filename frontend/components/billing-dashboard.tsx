@@ -11,6 +11,7 @@ import {
   getBillingSnapshot,
   getFeatureCredits,
   getWalletTransactions,
+  verifyPayment,
 } from "@/lib/billing";
 import type {
   BillingMeResponse,
@@ -105,10 +106,23 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
     const params = new URLSearchParams(window.location.search);
     const success = params.get("success");
     const isSuccess = params.get("is_success");
+    const paymobTxId = params.get("id") ?? undefined;
+
     if (success === "true" || isSuccess === "1") {
       setReturnBanner("success");
-      const timer = setTimeout(() => void loadBillingState(), 3000);
-      return () => clearTimeout(timer);
+      const paymentOrderId = sessionStorage.getItem("pending_payment_order_id") ?? undefined;
+      const merchantReference = sessionStorage.getItem("pending_merchant_reference") ?? undefined;
+      sessionStorage.removeItem("pending_payment_order_id");
+      sessionStorage.removeItem("pending_merchant_reference");
+
+      if (paymentOrderId || merchantReference) {
+        void verifyPayment({ paymentOrderId, merchantReference, paymobTransactionId: paymobTxId })
+          .catch(() => null)
+          .finally(() => void loadBillingState());
+      } else {
+        const timer = setTimeout(() => void loadBillingState(), 3000);
+        return () => clearTimeout(timer);
+      }
     } else if (success === "false" || isSuccess === "0") {
       setReturnBanner("failed");
     }
@@ -238,6 +252,8 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
         },
       };
       const response = await createCartCheckoutIntention(payload);
+      sessionStorage.setItem("pending_payment_order_id", response.payment_order_id);
+      sessionStorage.setItem("pending_merchant_reference", response.merchant_reference);
       window.location.href = buildCheckoutUrl(
         response.checkout.public_key,
         response.checkout.client_secret,

@@ -634,6 +634,66 @@ def manually_activate_payment_order(db: Session, payment_order_id: str) -> None:
     )
 
 
+def verify_and_activate_payment_order(
+    db: Session,
+    *,
+    payment_order_id: str | None = None,
+    merchant_reference: str | None = None,
+    user_id: str,
+    paymob_transaction_id: str | None = None,
+) -> PaymentOrderStatus:
+    """Verify a payment with Paymob and activate the order if confirmed successful.
+
+    Called after Paymob redirect when webhook delivery cannot be guaranteed.
+    Requires either payment_order_id or merchant_reference.
+    """
+    from app.services.paymob_service import query_paymob_transaction as _query_tx
+
+    query = (
+        select(PaymentOrder)
+        .options(selectinload(PaymentOrder.plan), selectinload(PaymentOrder.subscription))
+        .where(PaymentOrder.user_id == user_id)
+        .with_for_update()
+    )
+    if payment_order_id:
+        order = db.scalar(query.where(PaymentOrder.id == payment_order_id))
+    elif merchant_reference:
+        order = db.scalar(query.where(PaymentOrder.merchant_reference == merchant_reference))
+    else:
+        raise ValueError("Provide payment_order_id or merchant_reference.")
+
+    if not order:
+        raise LookupError("Payment order not found.")
+
+    if order.status == PaymentOrderStatus.PAID:
+        return order.status
+
+    tx_id = paymob_transaction_id or order.provider_transaction_id
+    if not tx_id:
+        raise ValueError("No Paymob transaction ID available to verify — wait for webhook.")
+
+    tx_data = _query_tx(tx_id)
+
+    if not _is_successful_payment(tx_data):
+        mapped_status = _map_unsuccessful_order_status(tx_data)
+        if mapped_status and order.status != mapped_status:
+            order.status = mapped_status
+            order.provider_transaction_id = tx_id
+            db.commit()
+        return order.status
+
+    _finalize_paid_order(db, order, tx_data, {"source": "payment_verify", "paymob_tx_id": tx_id})
+    db.commit()
+    logger.info(
+        "VERIFY_ACTIVATED: order_id=%s user_id=%s tx_id=%s",
+        order.id,
+        order.user_id,
+        tx_id,
+    )
+    _send_invoice_email(db, order)
+    return PaymentOrderStatus.PAID
+
+
 def process_paymob_webhook(
     db: Session,
     payload: dict[str, Any],
