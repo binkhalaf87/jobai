@@ -680,7 +680,7 @@ function RewritePanel({ d }: { d: Content["demo"] }) {
           <span className="rounded-full bg-red-50 px-3 py-1 text-sm font-black text-red-500">{r.scoreB}</span>
         </div>
         <div className="rounded-2xl border border-red-100 bg-red-50/50 p-5">
-          <p className="text-sm text-slate-500 leading-relaxed italic">"{r.before}"</p>
+          <p className="text-sm text-slate-500 leading-relaxed italic">{'"'}{r.before}{'"'}</p>
         </div>
         <div className="flex justify-center">
           <ScoreRing score={scoreB} size={80} color="#ef4444" label={r.scoreB} />
@@ -692,7 +692,7 @@ function RewritePanel({ d }: { d: Content["demo"] }) {
           <span className="rounded-full bg-teal-light/60 px-3 py-1 text-sm font-black text-teal">{r.scoreA}</span>
         </div>
         <div className="rounded-2xl border border-teal-light bg-teal-light/30 p-5">
-          <p className="text-sm text-slate-700 leading-relaxed font-medium">"{r.after}"</p>
+          <p className="text-sm text-slate-700 leading-relaxed font-medium">{'"'}{r.after}{'"'}</p>
         </div>
         <div className="flex justify-center">
           <ScoreRing score={scoreA} size={80} color="#00A878" label={r.scoreA} />
@@ -710,7 +710,7 @@ function InterviewPanel({ d }: { d: Content["demo"] }) {
       <div className="space-y-4">
         <div className="rounded-2xl bg-white border border-slate-100 shadow-sm p-5">
           <p className="text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Question</p>
-          <p className="text-base font-semibold text-slate-800 leading-relaxed">"{iv.q}"</p>
+          <p className="text-base font-semibold text-slate-800 leading-relaxed">{'"'}{iv.q}{'"'}</p>
         </div>
         <div className="rounded-2xl bg-brand-600 p-5">
           <p className="text-xs font-bold uppercase tracking-wider text-brand-200 mb-2">Your Answer (recorded)</p>
@@ -1004,7 +1004,7 @@ function TestimonialsSection({ t }: { t: Content }) {
               </span>
 
               {/* Quote */}
-              <p className="text-slate-300 leading-relaxed text-sm mb-6">"{item.text}"</p>
+              <p className="text-slate-300 leading-relaxed text-sm mb-6">{'"'}{item.text}{'"'}</p>
 
               {/* Author */}
               <div className="flex items-center gap-3">
