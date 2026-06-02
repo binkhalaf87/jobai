@@ -753,6 +753,17 @@
       "interviews": "المقابلات",
       "campaigns": "الحملات"
     },
+    "quickBuy": {
+      "title": "خدمات JobAI24 — بدون اشتراك شهري",
+      "resumeAnalysis": "📊 تحليل السيرة",
+      "resumeEnhancement": "✍️ تحسين السيرة",
+      "interview": "🎤 تدريب مقابلة",
+      "smartSend": "💌 إرسال ذكي من",
+      "price7": "7 ريال",
+      "price10": "10 ريال",
+      "price100": "100 ريال",
+      "cta": "اشتري الآن ←"
+    },
     "warnings": {
       "partialUnavailable": "بعض البيانات غير متاحة مؤقتاً: {labels}."
     },
@@ -1940,7 +1951,19 @@
       "approvedDesc": "تمت الموافقة على طلبك. اضغط أدناه لربط حساب Gmail الخاص بك.",
       "rejectedTitle": "تم رفض الطلب",
       "reRequestBtn": "إرسال طلب جديد",
-      "requestFailed": "تعذّر إرسال الطلب"
+      "requestFailed": "تعذّر إرسال الطلب",
+      "invalidGmail": "يجب أن يكون الإيميل حساب Gmail (@gmail.com)",
+      "gmailLabel": "إيميل Gmail للإرسال",
+      "gmailOptional": "(اختياري)",
+      "gmailHint": "إذا كنت تريد الإرسال من حساب Gmail مختلف عن حساب الموقع، أدخله هنا. يجب أن يكون @gmail.com.",
+      "testBtn": "🧪 اختبار الإرسال",
+      "testSending": "جارٍ الإرسال...",
+      "testSuccess": "تم الإرسال بنجاح",
+      "testFailed": "فشل",
+      "testUnknownError": "خطأ غير معروف",
+      "oauthErrorInvalidState": "فشل التحقق من الجلسة. يرجى المحاولة مجدداً.",
+      "oauthErrorTokenExchange": "فشل ربط حساب Gmail. يرجى المحاولة مجدداً.",
+      "oauthErrorUnknown": "حدث خطأ أثناء ربط Gmail."
     },
     "campaigns": {
       "tab": "الحملات",
@@ -1968,6 +1991,7 @@
       "remaining": "~{days}ي متبقية · {limit}/يوم",
       "pause": "إيقاف مؤقت",
       "resume": "استئناف",
+      "restart": "إعادة تشغيل",
       "status": {
         "sent": "مُرسل",
         "failed": "فشل",

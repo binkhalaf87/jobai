@@ -753,6 +753,17 @@
       "interviews": "interviews",
       "campaigns": "campaigns"
     },
+    "quickBuy": {
+      "title": "JobAI24 Services — No monthly subscription",
+      "resumeAnalysis": "📊 Resume Analysis",
+      "resumeEnhancement": "✍️ Resume Enhancement",
+      "interview": "🎤 Interview Training",
+      "smartSend": "💌 Smart Send from",
+      "price7": "SAR 7",
+      "price10": "SAR 10",
+      "price100": "SAR 100",
+      "cta": "Buy Now →"
+    },
     "warnings": {
       "partialUnavailable": "Some data is temporarily unavailable: {labels}."
     },
@@ -1940,7 +1951,19 @@
       "approvedDesc": "Your request has been approved. Click below to connect your Gmail account.",
       "rejectedTitle": "Request rejected",
       "reRequestBtn": "Submit a new request",
-      "requestFailed": "Failed to submit request"
+      "requestFailed": "Failed to submit request",
+      "invalidGmail": "Email must be a Gmail account (@gmail.com)",
+      "gmailLabel": "Gmail address for sending",
+      "gmailOptional": "(optional)",
+      "gmailHint": "If you want to send from a different Gmail account than your site account, enter it here. Must be @gmail.com.",
+      "testBtn": "🧪 Test Send",
+      "testSending": "Sending...",
+      "testSuccess": "Email sent successfully",
+      "testFailed": "Failed",
+      "testUnknownError": "Unknown error",
+      "oauthErrorInvalidState": "Session verification failed. Please try again.",
+      "oauthErrorTokenExchange": "Failed to connect Gmail account. Please try again.",
+      "oauthErrorUnknown": "An error occurred while connecting Gmail."
     },
     "campaigns": {
       "tab": "Campaigns",
@@ -1968,6 +1991,7 @@
       "remaining": "~{days}d remaining · {limit}/day",
       "pause": "Pause",
       "resume": "Resume",
+      "restart": "Restart",
       "status": {
         "sent": "Sent",
         "failed": "Failed",

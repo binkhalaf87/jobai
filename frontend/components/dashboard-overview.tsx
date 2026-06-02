@@ -645,19 +645,19 @@ export function DashboardOverview() {
       <div className="rounded-2xl border border-brand-200 bg-gradient-to-l from-brand-50 to-white p-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-brand-800">خدمات JobAI — بدون اشتراك شهري</p>
+            <p className="text-sm font-semibold text-brand-800">{t("dashboardOverview.quickBuy.title")}</p>
             <div className="mt-2 flex flex-wrap gap-4 text-xs text-slate-600">
-              <span>📊 تحليل السيرة <strong>7 ريال</strong></span>
-              <span>✍️ تحسين السيرة <strong>10 ريال</strong></span>
-              <span>🎤 تدريب مقابلة <strong>10 ريال</strong></span>
-              <span>💌 إرسال ذكي من <strong>100 ريال</strong></span>
+              <span>{t("dashboardOverview.quickBuy.resumeAnalysis")} <strong>{t("dashboardOverview.quickBuy.price7")}</strong></span>
+              <span>{t("dashboardOverview.quickBuy.resumeEnhancement")} <strong>{t("dashboardOverview.quickBuy.price10")}</strong></span>
+              <span>{t("dashboardOverview.quickBuy.interview")} <strong>{t("dashboardOverview.quickBuy.price10")}</strong></span>
+              <span>{t("dashboardOverview.quickBuy.smartSend")} <strong>{t("dashboardOverview.quickBuy.price100")}</strong></span>
             </div>
           </div>
           <Link
             href="/dashboard/billing"
             className="rounded-xl bg-brand-800 px-5 py-2.5 text-sm font-bold text-white hover:bg-brand-700 transition shrink-0"
           >
-            اشتري الآن ←
+            {t("dashboardOverview.quickBuy.cta")}
           </Link>
         </div>
       </div>

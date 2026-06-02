@@ -79,6 +79,7 @@ function GmailConnectPanel({
   const [disconnecting, setDisconnecting] = useState(false);
   const [testingSend, setTestingSend] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);
+  const [testFailed, setTestFailed] = useState(false);
   const [error, setError] = useState("");
   const [requestedGmail, setRequestedGmail] = useState("");
 
@@ -93,7 +94,7 @@ function GmailConnectPanel({
   async function handleRequestAccess() {
     const gmail = requestedGmail.trim().toLowerCase();
     if (gmail && !gmail.endsWith("@gmail.com")) {
-      setError("يجب أن يكون الإيميل حساب Gmail (@gmail.com)");
+      setError(t("gmail.invalidGmail"));
       return;
     }
     setSubmitting(true);
@@ -156,9 +157,11 @@ function GmailConnectPanel({
               try {
                 const { testGmailSend } = await import("@/lib/smart-send");
                 const res = await testGmailSend();
-                setTestResult(res.detail ?? "تم الإرسال بنجاح");
+                setTestFailed(false);
+                setTestResult(res.detail ?? t("gmail.testSuccess"));
               } catch (e: unknown) {
-                setTestResult(`فشل: ${e instanceof Error ? e.message : "خطأ غير معروف"}`);
+                setTestFailed(true);
+                setTestResult(`${t("gmail.testFailed")}: ${e instanceof Error ? e.message : t("gmail.testUnknownError")}`);
               } finally {
                 setTestingSend(false);
               }
@@ -166,10 +169,10 @@ function GmailConnectPanel({
             disabled={testingSend}
             className="w-full border border-brand-200 text-brand-700 rounded-lg py-2 text-sm hover:bg-brand-50 disabled:opacity-50"
           >
-            {testingSend ? "جاري الإرسال..." : "🧪 اختبار الإرسال"}
+            {testingSend ? t("gmail.testSending") : t("gmail.testBtn")}
           </button>
           {testResult && (
-            <p className={`text-xs px-3 py-2 rounded-lg ${testResult.startsWith("فشل") ? "bg-rose-50 text-rose-700" : "bg-teal-50 text-teal-700"}`}>
+            <p className={`text-xs px-3 py-2 rounded-lg ${testFailed ? "bg-rose-50 text-rose-700" : "bg-teal-50 text-teal-700"}`}>
               {testResult}
             </p>
           )}
@@ -202,8 +205,8 @@ function GmailConnectPanel({
           </div>
           <div className="space-y-1">
             <label className="block text-sm font-medium text-slate-700">
-              إيميل Gmail للإرسال
-              <span className="text-slate-400 font-normal mr-1">(اختياري)</span>
+              {t("gmail.gmailLabel")}
+              <span className="text-slate-400 font-normal mx-1">{t("gmail.gmailOptional")}</span>
             </label>
             <input
               type="email"
@@ -214,7 +217,7 @@ function GmailConnectPanel({
               dir="ltr"
             />
             <p className="text-xs text-slate-400">
-              إذا كنت تريد الإرسال من حساب Gmail مختلف عن حساب الموقع، أدخله هنا. يجب أن يكون @gmail.com.
+              {t("gmail.gmailHint")}
             </p>
           </div>
           {error && <p className="text-rose-600 text-sm">{error}</p>}
@@ -554,7 +557,7 @@ function CampaignsPanel({ refreshKey }: { refreshKey: number }) {
                     </button>
                   ) : (
                     <button onClick={() => void handleResume(c.id)} disabled={actionLoading === c.id} className="flex-1 border border-emerald-200 text-emerald-700 rounded-lg py-1.5 text-xs font-semibold hover:bg-emerald-50 disabled:opacity-50">
-                      {actionLoading === c.id ? "…" : `▶ ${c.status === "error" ? "إعادة تشغيل" : t("campaigns.resume")}`}
+                      {actionLoading === c.id ? "…" : `▶ ${c.status === "error" ? t("campaigns.restart") : t("campaigns.resume")}`}
                     </button>
                   )}
                 </div>
@@ -626,11 +629,11 @@ export default function SmartSendPage() {
       const params = new URLSearchParams(window.location.search);
       const gmailError = params.get("gmail_error");
       if (gmailError) {
-        const errorMessages: Record<string, string> = {
-          invalid_state: "فشل التحقق من الجلسة. يرجى المحاولة مجدداً.",
-          token_exchange_failed: "فشل ربط حساب Gmail. يرجى المحاولة مجدداً.",
-        };
-        setOauthError(errorMessages[gmailError] ?? "حدث خطأ أثناء ربط Gmail.");
+        const errorKey =
+          gmailError === "invalid_state" ? "gmail.oauthErrorInvalidState" :
+          gmailError === "token_exchange_failed" ? "gmail.oauthErrorTokenExchange" :
+          "gmail.oauthErrorUnknown";
+        setOauthError(t(errorKey as Parameters<typeof t>[0]));
       }
       if (params.has("gmail_connected") || params.has("gmail_error")) {
         window.history.replaceState({}, "", window.location.pathname);
