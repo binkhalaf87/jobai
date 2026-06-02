@@ -489,22 +489,59 @@ def _finalize_paid_order(
     if payment_order.plan and payment_order.plan.kind == PlanKind.SUBSCRIPTION:
         _activate_subscription_for_order(db, payment_order, processed_at)
     elif payment_order.plan and payment_order.plan.kind == PlanKind.POINTS_PACK:
-        _credit_wallet_for_order(db, payment_order, processed_at, transaction_id, event_payload)
+        if (payment_order.plan.points_grant or 0) > 0:
+            _credit_wallet_for_order(db, payment_order, processed_at, transaction_id, event_payload)
 
     # Always attempt feature credit grants if plan defines them (new pricing model)
     _credit_features_for_order(db, payment_order)
 
 
 def _credit_features_for_order(db: Session, payment_order: PaymentOrder) -> None:
-    """Grant feature credits based on plan.metadata_payload.feature_grants."""
-    if not payment_order.plan:
-        return
-    payload = payment_order.plan.metadata_payload or {}
-    grants = payload.get("feature_grants", [])
-    if not grants:
+    """Grant feature credits — handles both single-plan and cart orders."""
+    from app.models.user_feature_credit import UserFeatureCredit as _UFC
+
+    req = payment_order.request_payload or {}
+    if req.get("is_cart"):
+        # Cart order: aggregate grants across all cart items
+        feature_totals: dict[str, int] = {}
+        for cart_item in req.get("cart_items", []):
+            for g in cart_item.get("feature_grants", []):
+                feat = g.get("feature")
+                qty = int(g.get("quantity", 0))
+                if feat and qty > 0:
+                    feature_totals[feat] = feature_totals.get(feat, 0) + qty
+        for feature, total_qty in feature_totals.items():
+            existing = db.scalar(
+                select(_UFC).where(
+                    _UFC.payment_order_id == payment_order.id,
+                    _UFC.feature == feature,
+                )
+            )
+            if existing:
+                continue
+            grant_feature_credits(
+                db,
+                user_id=payment_order.user_id,
+                feature=feature,
+                quantity=total_qty,
+                payment_order_id=payment_order.id,
+            )
+            logger.info(
+                "CART_FEATURE_CREDIT_GRANTED: order_id=%s user_id=%s feature=%s quantity=%d",
+                payment_order.id,
+                payment_order.user_id,
+                feature,
+                total_qty,
+            )
         return
 
-    from app.models.user_feature_credit import UserFeatureCredit as _UFC
+    # Single-plan order: read grants from plan.metadata_payload
+    if not payment_order.plan:
+        return
+    plan_payload = payment_order.plan.metadata_payload or {}
+    grants = plan_payload.get("feature_grants", [])
+    if not grants:
+        return
 
     for grant in grants:
         feature = grant.get("feature")
@@ -541,7 +578,12 @@ def _send_invoice_email(db: Session, payment_order: PaymentOrder) -> None:
         if not user:
             logger.warning("INVOICE_EMAIL_SKIP: user %s not found", payment_order.user_id)
             return
-        plan_name = payment_order.plan.name if payment_order.plan else "خدمة JobAI"
+        req = payment_order.request_payload or {}
+        if req.get("is_cart"):
+            names = [item.get("plan_name", "") for item in req.get("cart_items", []) if item.get("plan_name")]
+            plan_name = " + ".join(names) if names else "سلة خدمات"
+        else:
+            plan_name = payment_order.plan.name if payment_order.plan else "خدمة JobAI"
         send_payment_invoice_email(
             to_email=user.email,
             name=user.full_name,

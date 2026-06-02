@@ -6,18 +6,20 @@ import { useTranslations } from "next-intl";
 import { Panel } from "@/components/panel";
 import { useAuth } from "@/hooks/use-auth";
 import {
-  createBillingCheckoutIntention,
+  createCartCheckoutIntention,
   getBillingPlans,
   getBillingSnapshot,
   getFeatureCredits,
   getWalletTransactions,
 } from "@/lib/billing";
 import type {
-  BillingCheckoutPayload,
   BillingMeResponse,
   BillingPlan,
   BillingWalletTransaction,
+  CartCheckoutPayload,
 } from "@/types";
+
+type CartItem = { plan: BillingPlan; quantity: number };
 
 const DEFAULT_CONTACT = {
   email: "",
@@ -91,7 +93,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [selectedPlan, setSelectedPlan] = useState<BillingPlan | null>(null);
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [contact, setContact] = useState(DEFAULT_CONTACT);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
@@ -178,13 +180,47 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
     };
   }, [plans]);
 
+  const cartTotal = cart.reduce((sum, item) => sum + (item.plan.price_amount_minor ?? 0) * item.quantity, 0);
+  const cartCurrency = cart[0]?.plan.currency ?? "SAR";
+
+  function addToCart(plan: BillingPlan) {
+    setCart((c) => {
+      const existing = c.find((item) => item.plan.id === plan.id);
+      if (existing) {
+        return c.map((item) => item.plan.id === plan.id ? { ...item, quantity: item.quantity + 1 } : item);
+      }
+      return [...c, { plan, quantity: 1 }];
+    });
+    setCheckoutError(null);
+  }
+
+  function removeFromCart(planId: string) {
+    setCart((c) => c.filter((item) => item.plan.id !== planId));
+  }
+
+  function updateQuantity(planId: string, delta: number) {
+    setCart((c) =>
+      c
+        .map((item) => item.plan.id === planId ? { ...item, quantity: item.quantity + delta } : item)
+        .filter((item) => item.quantity > 0)
+    );
+  }
+
+  function isInCart(planId: string) {
+    return cart.some((item) => item.plan.id === planId);
+  }
+
+  function cartQuantity(planId: string) {
+    return cart.find((item) => item.plan.id === planId)?.quantity ?? 0;
+  }
+
   async function handlePay() {
-    if (!selectedPlan) return;
+    if (cart.length === 0) return;
     try {
       setCheckoutLoading(true);
       setCheckoutError(null);
-      const payload: BillingCheckoutPayload = {
-        plan_code: selectedPlan.code,
+      const payload: CartCheckoutPayload = {
+        items: cart.map((item) => ({ plan_code: item.plan.code, quantity: item.quantity })),
         billing_data: {
           email: contact.email,
           first_name: contact.first_name,
@@ -201,7 +237,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
           state: "NA",
         },
       };
-      const response = await createBillingCheckoutIntention(payload);
+      const response = await createCartCheckoutIntention(payload);
       window.location.href = buildCheckoutUrl(
         response.checkout.public_key,
         response.checkout.client_secret,
@@ -294,12 +330,12 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
         </div>
       </Panel>
 
-      {/* Section 2a — Feature credits balance (jobseeker new pricing) */}
+      {/* Section 2 — Store (feature plans + smart send) */}
       {audience === "jobseeker" && (featurePlans.length > 0 || smartSendPlans.length > 0) && (
         <Panel className="p-6 md:p-8">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">رصيدك الحالي</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">خدمات JobAI</h2>
-          <p className="mt-1 text-sm text-slate-500">ادفع لكل خدمة مرة واحدة فقط — بدون اشتراك شهري</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">متجر خدمات JobAI</h2>
+          <p className="mt-1 text-sm text-slate-500">أضف الخدمات التي تحتاجها للسلة وادفع دفعة واحدة</p>
 
           {/* Feature credit balances */}
           {Object.keys(featureCredits).some((k) => featureCredits[k] > 0) && (
@@ -329,17 +365,16 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
               <p className="text-sm font-semibold text-slate-600 mb-3">خدمات لمرة واحدة</p>
               <div className="grid gap-4 sm:grid-cols-3">
                 {featurePlans.map((plan) => {
-                  const isSelected = selectedPlan?.id === plan.id;
+                  const inCart = isInCart(plan.id);
+                  const qty = cartQuantity(plan.id);
                   const icon = plan.code.includes("analysis") ? "📊" : plan.code.includes("improvement") ? "✍️" : "🎤";
                   return (
-                    <button
+                    <div
                       key={plan.id}
-                      type="button"
-                      onClick={() => { setSelectedPlan(isSelected ? null : plan); setCheckoutError(null); }}
                       className={`rounded-2xl border p-5 text-right transition ${
-                        isSelected
+                        inCart
                           ? "border-brand-800 bg-brand-800/5 ring-1 ring-brand-800"
-                          : "border-slate-200 bg-white hover:border-brand-300 hover:bg-brand-50"
+                          : "border-slate-200 bg-white"
                       }`}
                     >
                       <div className="text-2xl mb-2">{icon}</div>
@@ -348,7 +383,43 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                         {formatMoney(plan.price_amount_minor, plan.currency)}
                       </p>
                       <p className="text-xs text-slate-500 mt-1">دفعة واحدة · استخدام واحد</p>
-                    </button>
+                      {inCart ? (
+                        <div className="mt-4 flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => updateQuantity(plan.id, -1)}
+                              className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-slate-700 hover:bg-slate-100"
+                            >
+                              −
+                            </button>
+                            <span className="min-w-[1.5rem] text-center font-semibold text-slate-900">{qty}</span>
+                            <button
+                              type="button"
+                              onClick={() => updateQuantity(plan.id, 1)}
+                              className="flex h-8 w-8 items-center justify-center rounded-full border border-brand-800 text-brand-800 hover:bg-brand-50"
+                            >
+                              +
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeFromCart(plan.id)}
+                            className="text-xs text-rose-500 underline underline-offset-2 hover:text-rose-700"
+                          >
+                            إزالة
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => addToCart(plan)}
+                          className="mt-4 w-full rounded-full border border-brand-800 py-2 text-sm font-semibold text-brand-800 transition hover:bg-brand-800 hover:text-white"
+                        >
+                          🛒 أضف للسلة
+                        </button>
+                      )}
+                    </div>
                   );
                 })}
                 {/* Job search - free */}
@@ -368,19 +439,17 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
               <p className="text-sm font-semibold text-slate-600 mb-3">💌 باقات الإرسال الذكي</p>
               <div className="grid gap-4 sm:grid-cols-3">
                 {smartSendPlans.map((plan, idx) => {
-                  const isSelected = selectedPlan?.id === plan.id;
+                  const inCart = isInCart(plan.id);
                   const badges = ["", "الأكثر شعبية", "الأفضل قيمة"];
                   return (
-                    <button
+                    <div
                       key={plan.id}
-                      type="button"
-                      onClick={() => { setSelectedPlan(isSelected ? null : plan); setCheckoutError(null); }}
-                      className={`rounded-2xl border p-5 text-right transition relative ${
-                        isSelected
+                      className={`relative rounded-2xl border p-5 text-right transition ${
+                        inCart
                           ? "border-brand-800 bg-brand-800/5 ring-1 ring-brand-800"
                           : idx === 1
-                            ? "border-brand-300 bg-brand-50 hover:border-brand-400"
-                            : "border-slate-200 bg-white hover:border-brand-300 hover:bg-brand-50"
+                            ? "border-brand-300 bg-brand-50"
+                            : "border-slate-200 bg-white"
                       }`}
                     >
                       {badges[idx] && (
@@ -393,7 +462,24 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                         {formatMoney(plan.price_amount_minor, plan.currency)}
                       </p>
                       <p className="text-xs text-slate-500 mt-1">دفعة واحدة</p>
-                    </button>
+                      {inCart ? (
+                        <button
+                          type="button"
+                          onClick={() => removeFromCart(plan.id)}
+                          className="mt-4 w-full rounded-full bg-brand-800 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
+                        >
+                          ✓ في السلة — إزالة
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => addToCart(plan)}
+                          className="mt-4 w-full rounded-full border border-brand-800 py-2 text-sm font-semibold text-brand-800 transition hover:bg-brand-800 hover:text-white"
+                        >
+                          🛒 أضف للسلة
+                        </button>
+                      )}
+                    </div>
                   );
                 })}
               </div>
@@ -402,7 +488,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
         </Panel>
       )}
 
-      {/* Section 2 — Plan selection (recruiter subscriptions + old points packs) */}
+      {/* Section 3 — Subscription plans (recruiter + legacy) */}
       {(subscriptionPlans.length > 0 || (audience === "jobseeker" && pointsPlans.length > 0 && featurePlans.length === 0)) && (
       <Panel className="p-6 md:p-8">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{t("choosePlan")}</p>
@@ -413,19 +499,14 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {subscriptionPlans.map((plan) => {
             const isCurrent = currentPlanId === plan.id;
-            const isSelected = selectedPlan?.id === plan.id;
+            const inCart = isInCart(plan.id);
             return (
-              <button
+              <div
                 key={plan.id}
-                type="button"
-                onClick={() => {
-                  setSelectedPlan(isSelected ? null : plan);
-                  setCheckoutError(null);
-                }}
-                className={`rounded-[2rem] border p-5 text-left transition ${
-                  isSelected
+                className={`rounded-[2rem] border p-5 transition ${
+                  inCart
                     ? "border-brand-800 bg-brand-800/5 ring-1 ring-brand-800"
-                    : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100"
+                    : "border-slate-200 bg-slate-50"
                 }`}
               >
                 <div className="flex flex-wrap items-center gap-2">
@@ -448,7 +529,24 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                     {t("includesPoints", { count: plan.points_grant })}
                   </p>
                 ) : null}
-              </button>
+                {inCart ? (
+                  <button
+                    type="button"
+                    onClick={() => removeFromCart(plan.id)}
+                    className="mt-4 w-full rounded-full bg-brand-800 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
+                  >
+                    ✓ في السلة — إزالة
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => addToCart(plan)}
+                    className="mt-4 w-full rounded-full border border-brand-800 py-2 text-sm font-semibold text-brand-800 transition hover:bg-brand-800 hover:text-white"
+                  >
+                    🛒 أضف للسلة
+                  </button>
+                )}
+              </div>
             );
           })}
         </div>
@@ -458,19 +556,14 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{t("pointsPacks")}</p>
             <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {pointsPlans.map((plan) => {
-                const isSelected = selectedPlan?.id === plan.id;
+                const inCart = isInCart(plan.id);
                 return (
-                  <button
+                  <div
                     key={plan.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedPlan(isSelected ? null : plan);
-                      setCheckoutError(null);
-                    }}
-                    className={`rounded-[2rem] border p-5 text-left transition ${
-                      isSelected
+                    className={`rounded-[2rem] border p-5 transition ${
+                      inCart
                         ? "border-brand-800 bg-brand-800/5 ring-1 ring-brand-800"
-                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                        : "border-slate-200 bg-white"
                     }`}
                   >
                     <h3 className="text-lg font-semibold tracking-tight text-slate-950">{plan.name}</h3>
@@ -483,7 +576,24 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
                     <p className="mt-1 text-xs text-slate-500">
                       {t("includesPoints", { count: plan.points_grant })}
                     </p>
-                  </button>
+                    {inCart ? (
+                      <button
+                        type="button"
+                        onClick={() => removeFromCart(plan.id)}
+                        className="mt-4 w-full rounded-full bg-brand-800 py-2 text-sm font-semibold text-white"
+                      >
+                        ✓ في السلة — إزالة
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => addToCart(plan)}
+                        className="mt-4 w-full rounded-full border border-brand-800 py-2 text-sm font-semibold text-brand-800 transition hover:bg-brand-800 hover:text-white"
+                      >
+                        🛒 أضف للسلة
+                      </button>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -492,58 +602,93 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
       </Panel>
       )}
 
-      {/* Section 3 — Checkout (only when plan selected) */}
-      {selectedPlan ? (
+      {/* Section 4 — Cart & Checkout */}
+      {cart.length > 0 && (
         <Panel className="p-6 md:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{t("checkoutEyebrow")}</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{t("checkoutTitle")}</h2>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">السلة</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">مراجعة الطلب</h2>
 
-          {/* Plan summary */}
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
-            <div>
-              <p className="font-semibold text-slate-950">{selectedPlan.name}</p>
-              <p className="mt-1 text-sm text-slate-500">
-                {selectedPlan.kind === "points_pack" ? t("planSummaryOneTime") : t("planSummaryMonthly")}
-              </p>
-            </div>
-            <p className="text-xl font-semibold text-slate-950">
-              {formatMoney(selectedPlan.price_amount_minor, selectedPlan.currency)}
-            </p>
-            <button
-              type="button"
-              onClick={() => setSelectedPlan(null)}
-              className="text-sm text-slate-500 underline underline-offset-2 hover:text-slate-700"
-            >
-              {t("changePlan")}
-            </button>
+          {/* Cart items */}
+          <div className="mt-5 divide-y divide-slate-100 rounded-2xl border border-slate-200 overflow-hidden">
+            {cart.map((item) => (
+              <div key={item.plan.id} className="flex items-center justify-between gap-4 bg-white px-5 py-4">
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-slate-900 truncate">{item.plan.name}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {formatMoney(item.plan.price_amount_minor, item.plan.currency)} × {item.quantity}
+                  </p>
+                </div>
+                {item.plan.kind === "points_pack" && (
+                  item.plan.code.includes("resume") || item.plan.code.includes("mock_interview")
+                ) ? (
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => updateQuantity(item.plan.id, -1)}
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-slate-600 hover:bg-slate-100"
+                    >
+                      −
+                    </button>
+                    <span className="min-w-[1.5rem] text-center font-semibold text-slate-900">{item.quantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => updateQuantity(item.plan.id, 1)}
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-brand-800 text-brand-800 hover:bg-brand-50"
+                    >
+                      +
+                    </button>
+                  </div>
+                ) : (
+                  <span className="shrink-0 text-sm font-semibold text-slate-700">×{item.quantity}</span>
+                )}
+                <p className="shrink-0 text-sm font-semibold text-slate-950 min-w-[5rem] text-left">
+                  {formatMoney((item.plan.price_amount_minor ?? 0) * item.quantity, item.plan.currency)}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => removeFromCart(item.plan.id)}
+                  className="shrink-0 text-slate-400 hover:text-rose-500 transition"
+                  aria-label="إزالة"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Total */}
+          <div className="mt-4 flex items-center justify-between rounded-2xl bg-slate-50 px-5 py-4">
+            <p className="font-semibold text-slate-700">المجموع</p>
+            <p className="text-2xl font-bold text-brand-800">{formatMoney(cartTotal, cartCurrency)}</p>
           </div>
 
           {/* Contact form */}
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            {(
-              [
-                { key: "email", labelKey: "form.email", placeholder: "email@example.com" },
-                { key: "phone_number", labelKey: "form.phone", placeholder: "+9665xxxxxxxx" },
-                { key: "first_name", labelKey: "form.firstName", placeholder: "" },
-                { key: "last_name", labelKey: "form.lastName", placeholder: "" },
-                { key: "city", labelKey: "form.city", placeholder: "Riyadh" },
-                { key: "country", labelKey: "form.country", placeholder: "SA" },
-              ] as const
-            ).map((field) => (
-              <label key={field.key} className="block">
-                <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  {t(field.labelKey)}
-                </span>
-                <input
-                  value={contact[field.key as keyof typeof contact]}
-                  onChange={(e) =>
-                    setContact((c) => ({ ...c, [field.key]: e.target.value }))
-                  }
-                  placeholder={field.placeholder}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
-                />
-              </label>
-            ))}
+          <div className="mt-6">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 mb-4">{t("checkoutEyebrow")}</p>
+            <div className="grid gap-4 md:grid-cols-2">
+              {(
+                [
+                  { key: "email", labelKey: "form.email", placeholder: "email@example.com" },
+                  { key: "phone_number", labelKey: "form.phone", placeholder: "+9665xxxxxxxx" },
+                  { key: "first_name", labelKey: "form.firstName", placeholder: "" },
+                  { key: "last_name", labelKey: "form.lastName", placeholder: "" },
+                  { key: "city", labelKey: "form.city", placeholder: "Riyadh" },
+                  { key: "country", labelKey: "form.country", placeholder: "SA" },
+                ] as const
+              ).map((field) => (
+                <label key={field.key} className="block">
+                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    {t(field.labelKey)}
+                  </span>
+                  <input
+                    value={contact[field.key as keyof typeof contact]}
+                    onChange={(e) => setContact((c) => ({ ...c, [field.key]: e.target.value }))}
+                    placeholder={field.placeholder}
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                  />
+                </label>
+              ))}
+            </div>
           </div>
 
           {checkoutError ? (
@@ -554,15 +699,15 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
             type="button"
             disabled={!contact.phone_number.trim() || checkoutLoading}
             onClick={() => void handlePay()}
-            className="mt-6 rounded-full bg-brand-800 px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+            className="mt-6 rounded-full bg-brand-800 px-8 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-slate-300"
           >
-            {checkoutLoading ? t("payBtnLoading") : t("payBtn")}
+            {checkoutLoading ? t("payBtnLoading") : `${t("payBtn")} — ${formatMoney(cartTotal, cartCurrency)}`}
           </button>
           {!contact.phone_number.trim() ? (
             <p className="mt-2 text-xs text-slate-500">{t("phoneRequired")}</p>
           ) : null}
         </Panel>
-      ) : null}
+      )}
 
       {/* Recent orders */}
       <Panel className="p-6 md:p-8">

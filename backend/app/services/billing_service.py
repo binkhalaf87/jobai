@@ -24,9 +24,10 @@ from app.models.subscription import Subscription
 from app.models.user import User
 from app.models.user_wallet import UserWallet
 from app.models.wallet_transaction import WalletTransaction
-from app.schemas.billing import BillingCheckoutIntentionRequest
+from app.schemas.billing import BillingCheckoutIntentionRequest, BillingContactData, CartCheckoutRequest
 from app.services.paymob_service import (
     PaymobBillingData,
+    PaymobLineItem,
     PaymobPaymentIntention,
     create_points_pack_payment_intention,
     create_subscription_payment_intention,
@@ -46,6 +47,15 @@ RENEWAL_SUBSCRIPTION_STATUSES = {
 }
 
 PAYMENT_ORDER_EXPIRY_MINUTES = 30
+
+
+@dataclass(frozen=True)
+class CartCheckoutResult:
+    """Result of a newly created cart checkout session."""
+
+    payment_order: PaymentOrder
+    paymob_intention: PaymobPaymentIntention
+    item_count: int
 
 
 @dataclass(frozen=True)
@@ -174,10 +184,8 @@ def _split_full_name(full_name: str | None) -> tuple[str, str]:
     return (parts[0], " ".join(parts[1:]))
 
 
-def _build_paymob_billing_data(user: User, payload: BillingCheckoutIntentionRequest) -> PaymobBillingData:
+def _build_paymob_billing_data(user: User, billing_data: BillingContactData) -> PaymobBillingData:
     fallback_first_name, fallback_last_name = _split_full_name(user.full_name)
-    billing_data = payload.billing_data
-
     return PaymobBillingData(
         email=billing_data.email or user.email,
         first_name=billing_data.first_name or fallback_first_name,
@@ -285,7 +293,7 @@ def create_checkout_intention(
 ) -> BillingCheckoutResult:
     """Create a local payment order, then request a Paymob payment intention."""
     plan = get_plan_for_user_or_raise(db, user, payload.plan_code)
-    billing_data = _build_paymob_billing_data(user, payload)
+    billing_data = _build_paymob_billing_data(user, payload.billing_data)
 
     existing_subscription = get_current_subscription(db, user.id) if plan.kind == PlanKind.SUBSCRIPTION else None
     subscription: Subscription | None = None
@@ -342,4 +350,102 @@ def create_checkout_intention(
         plan=plan,
         payment_order=payment_order,
         paymob_intention=intention,
+    )
+
+
+def create_cart_checkout_intention(
+    db: Session,
+    user: User,
+    payload: CartCheckoutRequest,
+) -> CartCheckoutResult:
+    """Create a single payment order for multiple plans (cart checkout)."""
+    billing_data = _build_paymob_billing_data(user, payload.billing_data)
+
+    plans_by_code: dict[str, Plan] = {}
+    for item in payload.items:
+        plan = get_plan_for_user_or_raise(db, user, item.plan_code)
+        plans_by_code[item.plan_code] = plan
+
+    cart_items: list[dict] = []
+    paymob_line_items: list[PaymobLineItem] = []
+    total_amount = 0
+    currency = "SAR"
+
+    for item in payload.items:
+        plan = plans_by_code[item.plan_code]
+        unit_amount = plan.price_amount_minor or 0
+        item_total = unit_amount * item.quantity
+        total_amount += item_total
+        currency = plan.currency
+
+        feature_grants: list[dict] = []
+        if plan.metadata_payload:
+            for g in plan.metadata_payload.get("feature_grants", []):
+                feat = g.get("feature")
+                qty = int(g.get("quantity", 0))
+                if feat and qty > 0:
+                    feature_grants.append({"feature": feat, "quantity": qty * item.quantity})
+
+        cart_items.append({
+            "plan_id": plan.id,
+            "plan_code": plan.code,
+            "plan_name": plan.name,
+            "quantity": item.quantity,
+            "unit_amount_minor": unit_amount,
+            "amount_minor": item_total,
+            "feature_grants": feature_grants,
+        })
+        paymob_line_items.append(PaymobLineItem(
+            name=plan.name,
+            amount_minor=unit_amount,
+            quantity=item.quantity,
+        ))
+
+    if total_amount <= 0:
+        raise ValueError("Cart total must be a positive amount.")
+
+    first_plan = plans_by_code[payload.items[0].plan_code]
+    merchant_reference = f"jobai-cart-{user.id[:8]}-{uuid4().hex}"
+
+    payment_order = PaymentOrder(
+        user_id=user.id,
+        plan_id=first_plan.id,
+        subscription_id=None,
+        order_type=PaymentOrderType.POINTS_PURCHASE,
+        status=PaymentOrderStatus.PENDING,
+        amount_minor=total_amount,
+        currency=currency,
+        provider_name="paymob",
+        merchant_reference=merchant_reference,
+        idempotency_key=_build_idempotency_key(),
+        expired_at=utc_now() + timedelta(minutes=PAYMENT_ORDER_EXPIRY_MINUTES),
+        request_payload={"is_cart": True, "cart_items": cart_items},
+    )
+    db.add(payment_order)
+    db.flush()
+
+    try:
+        intention = create_points_pack_payment_intention(
+            payment_order,
+            billing_data,
+            items=paymob_line_items,
+        )
+    except Exception as exc:
+        payment_order.status = PaymentOrderStatus.FAILED
+        payment_order.failure_reason = str(exc)
+        db.commit()
+        raise
+
+    payment_order.status = PaymentOrderStatus.PAYMENT_KEY_ISSUED
+    payment_order.provider_order_id = _extract_provider_order_id(intention.raw_response)
+    payment_order.provider_payment_key = intention.client_secret
+    payment_order.response_payload = intention.raw_response
+
+    db.commit()
+    db.refresh(payment_order)
+
+    return CartCheckoutResult(
+        payment_order=payment_order,
+        paymob_intention=intention,
+        item_count=len(payload.items),
     )

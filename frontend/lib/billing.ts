@@ -5,6 +5,8 @@ import type {
   BillingMeResponse,
   BillingPlansResponse,
   BillingWalletTransactionsResponse,
+  CartCheckoutPayload,
+  CartCheckoutResponse,
 } from "@/types";
 
 export async function getBillingPlans(): Promise<BillingPlansResponse> {
@@ -25,4 +27,8 @@ export async function getWalletTransactions(limit = 20): Promise<BillingWalletTr
 
 export async function getFeatureCredits(): Promise<Record<string, number>> {
   return api.get<Record<string, number>>("/billing/feature-credits");
+}
+
+export async function createCartCheckoutIntention(payload: CartCheckoutPayload): Promise<CartCheckoutResponse> {
+  return api.post<CartCheckoutResponse>("/billing/cart/checkout", payload);
 }

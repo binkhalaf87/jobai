@@ -31,8 +31,11 @@ from app.schemas.billing import (
     BillingWebhookResponse,
     BillingWalletTransactionSummary,
     BillingWalletTransactionsResponse,
+    CartCheckoutRequest,
+    CartCheckoutResponse,
 )
 from app.services.billing_service import (
+    create_cart_checkout_intention,
     create_checkout_intention,
     get_current_subscription,
     get_wallet_for_user,
@@ -156,6 +159,42 @@ def create_billing_checkout_intention(
             price_amount_minor=result.plan.price_amount_minor,
             points_grant=result.plan.points_grant,
         ),
+        checkout=BillingCheckoutSession(
+            intention_id=result.paymob_intention.intention_id,
+            client_secret=result.paymob_intention.client_secret,
+            public_key=result.paymob_intention.public_key,
+            integration_id=result.paymob_intention.integration_id,
+            iframe_id=result.paymob_intention.iframe_id,
+        ),
+    )
+
+
+@router.post("/cart/checkout", response_model=CartCheckoutResponse, status_code=status.HTTP_201_CREATED)
+def create_cart_checkout(
+    payload: CartCheckoutRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> CartCheckoutResponse:
+    """Create a single payment order for all items in the cart."""
+    try:
+        result = create_cart_checkout_intention(db, current_user, payload)
+    except LookupError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+
+    return CartCheckoutResponse(
+        payment_order_id=result.payment_order.id,
+        merchant_reference=result.payment_order.merchant_reference,
+        provider_name=result.payment_order.provider_name,
+        status=result.payment_order.status,
+        amount_minor=result.payment_order.amount_minor,
+        currency=result.payment_order.currency,
+        item_count=result.item_count,
         checkout=BillingCheckoutSession(
             intention_id=result.paymob_intention.intention_id,
             client_secret=result.paymob_intention.client_secret,

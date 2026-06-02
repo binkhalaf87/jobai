@@ -172,3 +172,26 @@ class BillingPromoValidateResponse(BaseModel):
     discount_value: int | None = None
     discount_applied_minor: int | None = None
     message: str | None = None
+
+
+# ── Cart checkout ─────────────────────────────────────────────────────────────
+
+class CartItemRequest(BaseModel):
+    plan_code: str = Field(..., min_length=3, max_length=100)
+    quantity: int = Field(default=1, ge=1, le=10)
+
+
+class CartCheckoutRequest(BaseModel):
+    items: list[CartItemRequest] = Field(..., min_length=1, max_length=10)
+    billing_data: BillingContactData
+
+
+class CartCheckoutResponse(BaseModel):
+    payment_order_id: str
+    merchant_reference: str
+    provider_name: str
+    status: PaymentOrderStatus
+    amount_minor: int
+    currency: str
+    item_count: int
+    checkout: BillingCheckoutSession

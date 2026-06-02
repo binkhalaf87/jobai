@@ -548,3 +548,25 @@ export type BillingWalletTransactionsResponse = {
   user_id: string;
   transactions: BillingWalletTransaction[];
 };
+
+export type CartCheckoutPayload = {
+  items: Array<{ plan_code: string; quantity: number }>;
+  billing_data: BillingCheckoutPayload["billing_data"];
+};
+
+export type CartCheckoutResponse = {
+  payment_order_id: string;
+  merchant_reference: string;
+  provider_name: string;
+  status: BillingOrderStatus;
+  amount_minor: number;
+  currency: string;
+  item_count: number;
+  checkout: {
+    intention_id: string;
+    client_secret: string;
+    public_key: string;
+    integration_id: number;
+    iframe_id: string | null;
+  };
+};
