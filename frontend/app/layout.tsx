@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
-  title: "JobAI",
+  title: "JobAI24",
   description: "AI-powered resume analysis and career tools",
 };
 

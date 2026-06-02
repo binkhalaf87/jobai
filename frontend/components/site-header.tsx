@@ -32,12 +32,12 @@ export async function SiteHeader() {
       <PageContainer className="flex h-16 items-center justify-between gap-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-600 text-white">
-            <svg className="h-4 w-4 fill-current" viewBox="0 0 16 16">
-              <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 2a5 5 0 110 10A5 5 0 018 3zm-.75 2.5v3.25l2.75 1.5-.5.87L6.5 9.5V5.5h.75z" />
-            </svg>
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-brand-600 to-brand-900 text-white">
+            <span className="text-[11px] font-black tracking-tighter leading-none">J24</span>
           </div>
-          <span className="text-base font-black tracking-tight text-slate-950">JobAI</span>
+          <span className="text-base font-black tracking-tight text-slate-950">
+            JobAI<span className="text-brand-600">24</span>
+          </span>
         </Link>
 
         {/* Desktop nav */}

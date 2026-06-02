@@ -162,11 +162,13 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
         {/* Logo */}
         <div className="px-4 py-4">
           <Link href="/dashboard" className="inline-flex items-center gap-2">
-            <div className="relative flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand-600 to-brand-900 text-[11px] font-bold text-white shadow shadow-brand-800/25">
-              J
+            <div className="relative flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand-600 to-brand-900 text-[9px] font-black text-white shadow shadow-brand-800/25 tracking-tighter">
+              J24
               <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border-[1.5px] border-white bg-teal" />
             </div>
-            <span className="text-sm font-bold tracking-tight text-slate-900">JobAI</span>
+            <span className="text-sm font-bold tracking-tight text-slate-900">
+              JobAI<span className="text-brand-600">24</span>
+            </span>
           </Link>
         </div>
 

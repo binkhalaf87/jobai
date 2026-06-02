@@ -125,12 +125,14 @@ export default function RecruiterLayout({ children }: { children: ReactNode }) {
         {/* Logo */}
         <div className="px-4 py-4">
           <Link href="/recruiter" className="inline-flex items-center gap-2">
-            <div className="relative flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand-600 to-brand-900 text-[9px] font-bold text-white shadow shadow-brand-800/25">
-              JR
+            <div className="relative flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand-600 to-brand-900 text-[8px] font-black text-white shadow shadow-brand-800/25 tracking-tighter">
+              J24
               <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border-[1.5px] border-white bg-teal" />
             </div>
             <div>
-              <p className="text-sm font-bold tracking-tight text-slate-900 leading-none">JobAI</p>
+              <p className="text-sm font-bold tracking-tight text-slate-900 leading-none">
+                JobAI<span className="text-brand-600">24</span>
+              </p>
               <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 leading-none mt-0.5">Recruiter</p>
             </div>
           </Link>
