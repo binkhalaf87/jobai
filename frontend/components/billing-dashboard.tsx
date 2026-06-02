@@ -196,6 +196,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
 
   const cartTotal = cart.reduce((sum, item) => sum + (item.plan.price_amount_minor ?? 0) * item.quantity, 0);
   const cartCurrency = cart[0]?.plan.currency ?? "SAR";
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   function addToCart(plan: BillingPlan) {
     setCart((c) => {
@@ -298,7 +299,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
   const sub = snapshot.current_subscription;
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${cart.length > 0 ? "pb-28" : ""}`}>
       {/* Return banner */}
       {returnBanner === "success" ? (
         <div className="rounded-2xl bg-teal-light/30 px-6 py-4 text-sm font-semibold text-teal">
@@ -620,7 +621,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
 
       {/* Section 4 — Cart & Checkout */}
       {cart.length > 0 && (
-        <Panel className="p-6 md:p-8">
+        <Panel id="cart-section" className="p-6 md:p-8">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">السلة</p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">مراجعة الطلب</h2>
 
@@ -779,6 +780,58 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
           </div>
         </Panel>
       ) : null}
+
+      {/* Sticky cart bar */}
+      {cart.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 shadow-[0_-4px_24px_rgba(0,0,0,0.08)] backdrop-blur-md">
+          <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4 md:px-8">
+            {/* Cart summary */}
+            <div className="flex items-center gap-3">
+              <div className="relative flex h-11 w-11 items-center justify-center rounded-full bg-brand-800 text-white text-xl">
+                🛒
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white">
+                  {cartCount}
+                </span>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-500 leading-none mb-0.5">
+                  {cartCount === 1 ? "خدمة واحدة" : `${cartCount} خدمات`}
+                </p>
+                <p className="text-lg font-bold text-slate-950 leading-none">
+                  {formatMoney(cartTotal, cartCurrency)}
+                </p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-3">
+              {checkoutError && (
+                <p className="hidden text-xs text-rose-600 md:block">{checkoutError}</p>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  document.getElementById("cart-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                className="hidden rounded-full border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 md:block"
+              >
+                عرض السلة
+              </button>
+              <button
+                type="button"
+                disabled={!contact.phone_number.trim() || checkoutLoading}
+                onClick={() => void handlePay()}
+                className="rounded-full bg-brand-800 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                {checkoutLoading ? "جاري التحضير…" : "اكمل الدفع ←"}
+              </button>
+            </div>
+          </div>
+          {!contact.phone_number.trim() && (
+            <p className="pb-2 text-center text-xs text-slate-500">{t("phoneRequired")}</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
