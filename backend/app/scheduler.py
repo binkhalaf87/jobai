@@ -20,6 +20,44 @@ _scheduler = AsyncIOScheduler()
 
 _STUCK_CAMPAIGN_HOURS = 48
 
+# ── User-facing error messages ─────────────────────────────────────────────────
+
+_MSG_DISCONNECTED   = "انتهت صلاحية اتصال Gmail أو تم قطعه. أعد الربط من إعدادات Gmail."
+_MSG_QUOTA          = "تجاوزت حد الإرسال اليومي في Gmail. ستستأنف الحملة تلقائياً غداً."
+_MSG_REJECTED       = "رفض Gmail الرسالة. تحقق من عنوان البريد الإلكتروني للمستلم."
+_MSG_SERVER         = "خطأ مؤقت في خادم Gmail. ستُعاد المحاولة في الدورة القادمة."
+_MSG_GENERIC        = "فشل الإرسال. ستُعاد المحاولة تلقائياً."
+_MSG_NO_CONNECTION  = "لم يُعثر على اتصال Gmail نشط. أعد الربط من إعدادات Gmail وأعد تشغيل الحملة."
+_MSG_STUCK          = "توقفت الحملة لفترة طويلة دون تقدم. تحقق من اتصال Gmail وأعد تشغيل الحملة."
+
+
+def _friendly_send_error(raw: str) -> str:
+    """Translate a raw Gmail API / network exception to a safe user-facing message."""
+    r = raw.lower()
+    if any(k in r for k in ("401", "unauthorized", "invalid_grant", "token", "refresh")):
+        return _MSG_DISCONNECTED
+    if any(k in r for k in ("429", "ratelimitexceeded", "too many request", "daily sending quota")):
+        return _MSG_QUOTA
+    if any(k in r for k in ("400", "invalid", "bad request", "recipient", "malformed")):
+        return _MSG_REJECTED
+    if any(k in r for k in ("500", "502", "503", "internal error", "backend error")):
+        return _MSG_SERVER
+    if any(k in r for k in ("timeout", "connection", "network", "read error")):
+        return _MSG_SERVER
+    return _MSG_GENERIC
+
+
+def _friendly_campaign_error(raw: str) -> str:
+    """Translate a raw campaign-level error to a safe user-facing message."""
+    r = raw.lower()
+    if "stuck" in r or "no progress" in r or "inactiv" in r:
+        return _MSG_STUCK
+    if "no active gmail" in r or "not connected" in r or "gmail not connected" in r:
+        return _MSG_NO_CONNECTION
+    if any(k in r for k in ("token", "refresh", "invalid_grant", "unauthorized", "401")):
+        return _MSG_DISCONNECTED
+    return _MSG_NO_CONNECTION
+
 
 async def _process_campaigns() -> None:
     """Send pending campaign contacts up to each campaign's daily_limit."""
@@ -46,10 +84,7 @@ async def _process_campaigns() -> None:
 
             if last_activity < stuck_cutoff:
                 campaign.status = "error"
-                campaign.error_message = (
-                    f"Campaign stuck: no progress for {_STUCK_CAMPAIGN_HOURS}h. "
-                    "Check Gmail connection and re-activate manually."
-                )
+                campaign.error_message = _MSG_STUCK
                 db.commit()
                 logger.error(
                     "Campaign %s marked as stuck/error after %dh of inactivity.",
@@ -66,7 +101,7 @@ async def _process_campaigns() -> None:
             )
             if not conn:
                 campaign.status = "error"
-                campaign.error_message = "No active Gmail connection found. Please reconnect Gmail and re-activate."
+                campaign.error_message = _MSG_NO_CONNECTION
                 db.commit()
                 logger.error("Campaign %s: no Gmail connection — marked as error.", campaign.id)
                 continue
@@ -101,11 +136,10 @@ async def _process_campaigns() -> None:
             try:
                 access_token = await gmail_oauth_service.get_valid_access_token(db, campaign.user_id)
             except Exception as exc:
-                error_msg = f"Gmail token refresh failed: {exc}"
                 campaign.status = "error"
-                campaign.error_message = error_msg
+                campaign.error_message = _MSG_DISCONNECTED
                 db.commit()
-                logger.error("Campaign %s: %s", campaign.id, error_msg)
+                logger.error("Campaign %s: token refresh failed: %s", campaign.id, exc)
                 continue
 
             from app.models.user import User
@@ -134,7 +168,7 @@ async def _process_campaigns() -> None:
                     logger.debug("Campaign %s: sent to %s", campaign.id, contact.recipient_email)
                 except Exception as exc:
                     contact.status = "failed"
-                    contact.error_message = str(exc)[:500]
+                    contact.error_message = _friendly_send_error(str(exc))
                     campaign.total_failed += 1
                     logger.warning(
                         "Campaign %s: failed to send to %s: %s",

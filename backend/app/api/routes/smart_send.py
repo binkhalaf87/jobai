@@ -454,6 +454,20 @@ async def test_gmail_send(
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
+def _sanitize_error(raw: str) -> str:
+    """Return a user-safe error string, hiding any technical details."""
+    from app.scheduler import _friendly_campaign_error, _friendly_send_error
+    # Already a friendly Arabic message (no ASCII tech keywords) — pass through.
+    _tech_markers = ("gmail api error", "token", "http", "exception", "stuck", "no active", "no progress", "check gmail", "re-activate", "reconnect")
+    if not any(m in raw.lower() for m in _tech_markers):
+        return raw
+    # Looks like a campaign-level error if it mentions connection/token/stuck
+    _campaign_markers = ("stuck", "no active", "no progress", "token", "refresh", "connected")
+    if any(m in raw.lower() for m in _campaign_markers):
+        return _friendly_campaign_error(raw)
+    return _friendly_send_error(raw)
+
+
 def _get_user_campaign(db: Session, campaign_id: str, user_id: str) -> EmailCampaign:
     c = db.scalar(select(EmailCampaign).where(EmailCampaign.id == campaign_id, EmailCampaign.user_id == user_id))
     if not c:
@@ -476,7 +490,7 @@ def _campaign_response(c: EmailCampaign, db: Session) -> CampaignResponse:
             .distinct()
             .limit(3)
         ).all()
-        failed_reasons = [r for r in rows if r]
+        failed_reasons = [_sanitize_error(r) for r in rows if r]
     return CampaignResponse(
         id=c.id,
         list_name=c.list_name,
@@ -487,7 +501,7 @@ def _campaign_response(c: EmailCampaign, db: Session) -> CampaignResponse:
         total_sent=c.total_sent,
         total_failed=c.total_failed,
         estimated_days_remaining=estimated_days,
-        error_message=c.error_message,
+        error_message=_sanitize_error(c.error_message) if c.error_message else None,
         failed_reasons=failed_reasons,
         last_sent_at=c.last_sent_at,
         started_at=c.started_at,
