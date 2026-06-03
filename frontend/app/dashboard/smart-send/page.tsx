@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 
 import { Panel } from "@/components/panel";
-import { getBillingSnapshot } from "@/lib/billing";
+import { getFeatureCredits } from "@/lib/billing";
 import {
   createCampaign,
   disconnectGmail,
@@ -300,7 +300,9 @@ function ComposePanel({
   onLaunched: () => void;
 }) {
   const t = useTranslations("smartSendPage");
-  const POINTS_PER_SEND = 2;
+  // Pricing tiers: [min_contacts, price_sar]
+  const PRICING_TIERS: [number, number][] = [[500, 100], [1500, 200], [3000, 269]];
+  const SAR_PER_CONTACT = 100 / 500; // base rate from smallest package
 
   const [form, setForm] = useState({ job_title: "", company_name: "", job_description: "", resume_id: "" });
   const [letter, setLetter] = useState<GenerateLetterResponse | null>(null);
@@ -313,12 +315,12 @@ function ComposePanel({
   const [genError, setGenError] = useState("");
   const [launchError, setLaunchError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
-  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [contactCredits, setContactCredits] = useState<number | null>(null);
 
   useEffect(() => {
     void import("@/lib/resumes").then(({ listResumes }) => listResumes().then(setResumes).catch(() => {}));
     getRecipientLists().then(setLists).catch(() => {});
-    getBillingSnapshot().then((snap) => setWalletBalance(snap.wallet?.balance_points ?? 0)).catch(() => {});
+    getFeatureCredits().then((credits) => setContactCredits(credits["smart_send_contacts"] ?? 0)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -378,9 +380,11 @@ function ComposePanel({
   const estimatedDays = selectedList && dailyLimit > 0
     ? Math.ceil(selectedList.total_count / dailyLimit)
     : null;
-  const requiredPoints = selectedList ? selectedList.total_count * POINTS_PER_SEND : 0;
-  const canAffordFull = walletBalance !== null && walletBalance >= requiredPoints;
-  const affordableCount = walletBalance !== null ? Math.floor(walletBalance / POINTS_PER_SEND) : 0;
+  const requiredContacts = selectedList?.total_count ?? 0;
+  const canAffordFull = contactCredits !== null && contactCredits >= requiredContacts;
+  const balanceSar = contactCredits !== null ? Math.round(contactCredits * SAR_PER_CONTACT) : 0;
+  const requiredSar = Math.round(requiredContacts * SAR_PER_CONTACT);
+  const suggestedTier = PRICING_TIERS.find(([qty]) => qty >= requiredContacts - (contactCredits ?? 0)) ?? PRICING_TIERS[PRICING_TIERS.length - 1];
 
   return (
     <div className="space-y-6">
@@ -476,7 +480,7 @@ function ComposePanel({
               </div>
             )}
 
-            {selectedList && walletBalance !== null && (
+            {selectedList && contactCredits !== null && (
               <div className={`rounded-lg border px-3 py-3 space-y-2 text-xs ${canAffordFull ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
                 <p className={`font-semibold text-sm ${canAffordFull ? "text-emerald-700" : "text-amber-700"}`}>
                   {t("campaigns.settings.balanceTitle")}
@@ -486,7 +490,7 @@ function ComposePanel({
                     {t("campaigns.settings.balanceYours")}
                   </span>
                   <span className={`font-semibold ${canAffordFull ? "text-emerald-700" : "text-amber-700"}`}>
-                    {t("campaigns.settings.balancePoints", { count: walletBalance })}
+                    {t("campaigns.settings.balanceSar", { amount: balanceSar })}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -494,7 +498,7 @@ function ComposePanel({
                     {t("campaigns.settings.balanceRequired")}
                   </span>
                   <span className={`font-semibold ${canAffordFull ? "text-emerald-700" : "text-amber-700"}`}>
-                    {t("campaigns.settings.balancePoints", { count: requiredPoints })}
+                    {t("campaigns.settings.balanceSar", { amount: requiredSar })}
                   </span>
                 </div>
                 {canAffordFull ? (
@@ -504,13 +508,14 @@ function ComposePanel({
                 ) : (
                   <div className="space-y-2">
                     <p className="text-amber-700 font-medium">
-                      {t("campaigns.settings.balanceInsufficient", { count: affordableCount })}
+                      {t("campaigns.settings.balanceInsufficient", { count: requiredContacts - (contactCredits ?? 0) })}
                     </p>
                     <Link
                       href="/dashboard/billing"
-                      className="inline-block bg-amber-600 text-white rounded-lg px-3 py-1.5 text-xs font-semibold hover:bg-amber-700"
+                      className="inline-flex items-center gap-1.5 bg-amber-600 text-white rounded-lg px-3 py-1.5 text-xs font-semibold hover:bg-amber-700"
                     >
                       {t("campaigns.settings.balanceBuyMore")}
+                      {` — ${suggestedTier[0].toLocaleString()} ${t("campaigns.settings.balanceCompanies")} / ${suggestedTier[1]} ${t("campaigns.settings.balanceCurrency")}`}
                     </Link>
                   </div>
                 )}
@@ -521,7 +526,7 @@ function ComposePanel({
           {launchError && <p className="text-red-600 text-sm">{launchError}</p>}
           {successMsg && <p className="text-teal text-sm font-medium">{successMsg}</p>}
 
-          <button onClick={() => void handleLaunch()} disabled={launching || !selectedListId || (walletBalance !== null && !canAffordFull)} className="w-full bg-teal text-white rounded-lg py-2.5 text-sm font-medium hover:bg-teal/90 disabled:opacity-50 flex items-center justify-center gap-2">
+          <button onClick={() => void handleLaunch()} disabled={launching || !selectedListId || (contactCredits !== null && !canAffordFull)} className="w-full bg-teal text-white rounded-lg py-2.5 text-sm font-medium hover:bg-teal/90 disabled:opacity-50 flex items-center justify-center gap-2">
             {launching ? (<><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>{t("campaigns.settings.launching")}</>) : t("campaigns.settings.launch")}
           </button>
         </div>

@@ -1998,10 +1998,12 @@
         "balanceTitle": "Balance Check",
         "balanceYours": "Your balance",
         "balanceRequired": "Required",
-        "balancePoints": "{count} pts",
+        "balanceSar": "{amount} SAR",
+        "balanceCurrency": "SAR",
+        "balanceCompanies": "companies",
         "balanceSufficient": "Your balance is sufficient to send the full campaign ✓",
-        "balanceInsufficient": "Insufficient balance — you can only send to {count} companies",
-        "balanceBuyMore": "Buy more points"
+        "balanceInsufficient": "Insufficient balance — you need {count} more companies",
+        "balanceBuyMore": "Buy a package"
       },
       "sentOf": "{sent} / {total} sent",
       "failedCount": "· {count} failed",

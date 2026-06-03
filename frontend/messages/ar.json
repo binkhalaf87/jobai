@@ -1998,10 +1998,12 @@
         "balanceTitle": "فحص الرصيد",
         "balanceYours": "رصيدك",
         "balanceRequired": "المطلوب",
-        "balancePoints": "{count} نقطة",
+        "balanceSar": "{amount} ريال",
+        "balanceCurrency": "ريال",
+        "balanceCompanies": "شركة",
         "balanceSufficient": "رصيدك كافٍ لإرسال الحملة كاملة ✓",
-        "balanceInsufficient": "رصيدك غير كافٍ — يمكنك إرسال {count} شركة فقط",
-        "balanceBuyMore": "شراء نقاط إضافية"
+        "balanceInsufficient": "رصيدك غير كافٍ — تحتاج {count} شركة إضافية",
+        "balanceBuyMore": "شراء باقة"
       },
       "sentOf": "{sent} / {total} مُرسل",
       "failedCount": "· {count} فشل",
