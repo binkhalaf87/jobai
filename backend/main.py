@@ -9,6 +9,9 @@ try:
 
     app = create_application()
 except Exception as exc:
+    import traceback
+    print("STARTUP FAILURE:", exc, flush=True)
+    print(traceback.format_exc(), flush=True)
     logger.exception("JobAI backend failed to initialize.")
     app = create_unavailable_application(exc)
 
