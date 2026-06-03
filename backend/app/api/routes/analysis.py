@@ -359,13 +359,14 @@ def create_ai_report(
             detail="Resume has no extracted text. Make sure the file was parsed successfully.",
         )
 
+    report_type = payload.report_type if payload.report_type in ("analysis", "enhancement") else "analysis"
+    feature = FEATURE_RESUME_IMPROVEMENT if report_type == "enhancement" else FEATURE_RESUME_ANALYSIS
+
     try:
-        deduct_feature_credit(db, current_user.id, FEATURE_RESUME_ANALYSIS)
+        deduct_feature_credit(db, current_user.id, feature)
         db.commit()
     except InsufficientFeatureCreditError as exc:
         raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail=str(exc)) from exc
-
-    report_type = payload.report_type if payload.report_type in ("analysis", "enhancement") else "analysis"
     language = payload.language if payload.language else "English"
     report = create_pending_report(db, current_user.id, resume, payload.job_description, report_type=report_type)
 
