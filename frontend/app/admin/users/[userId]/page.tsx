@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, ArrowLeft, Download, Eye, X } from "lucide-r
 import {
   getAdminUserProfile,
   getAdminResumeFileUrl,
+  grantFeatureCredits,
   type AdminUserProfileResponse,
   type AdminUserActivityItem,
   type AdminUserResumeItem,
@@ -404,6 +405,123 @@ function FilesTab({
   );
 }
 
+// ─── Grant Credits Modal ───────────────────────────────────────────────────────
+
+const FEATURE_OPTIONS = [
+  { value: "smart_send_contacts", label: "إرسال ذكي (شركات)" },
+  { value: "resume_analysis",     label: "تحليل سيرة ذاتية" },
+  { value: "resume_improvement",  label: "تحسين سيرة ذاتية" },
+  { value: "mock_interview",      label: "تدريب مقابلة" },
+] as const;
+
+function GrantCreditsModal({
+  userId,
+  userEmail,
+  currentCredits,
+  onClose,
+  onDone,
+}: {
+  userId: string;
+  userEmail: string;
+  currentCredits: Record<string, number>;
+  onClose: () => void;
+  onDone: (updated: Record<string, number>) => void;
+}) {
+  const [feature, setFeature] = useState<string>("smart_send_contacts");
+  const [quantity, setQuantity] = useState("");
+  const [reason, setReason] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const qty = parseInt(quantity, 10);
+    if (!qty || qty <= 0) { setError("أدخل عدداً صحيحاً موجباً."); return; }
+    if (!reason.trim()) { setError("السبب مطلوب."); return; }
+    setLoading(true); setError(null);
+    try {
+      const updated = await grantFeatureCredits(userId, { feature, quantity: qty, reason: reason.trim() });
+      onDone(updated);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "فشل منح الرصيد");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const selectedLabel = FEATURE_OPTIONS.find((f) => f.value === feature)?.label ?? feature;
+  const currentBalance = currentCredits[feature] ?? 0;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+        <p className="text-sm font-bold text-slate-900">منح رصيد</p>
+        <p className="mt-0.5 text-xs text-slate-500">{userEmail}</p>
+
+        <form onSubmit={(e) => void handleSubmit(e)} className="mt-4 space-y-3">
+          {/* Feature */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">نوع الخدمة</label>
+            <select
+              value={feature}
+              onChange={(e) => setFeature(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+            >
+              {FEATURE_OPTIONS.map((f) => (
+                <option key={f.value} value={f.value}>{f.label}</option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-slate-400">
+              الرصيد الحالي: <span className="font-semibold text-slate-700">{currentBalance.toLocaleString()}</span>
+            </p>
+          </div>
+
+          {/* Quantity */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">الكمية المضافة</label>
+            <input
+              type="number"
+              min={1}
+              placeholder="مثال: 500"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+            />
+            {quantity && parseInt(quantity) > 0 && (
+              <p className="mt-1 text-xs text-emerald-600">
+                الرصيد بعد الإضافة: {(currentBalance + parseInt(quantity)).toLocaleString()} {selectedLabel}
+              </p>
+            )}
+          </div>
+
+          {/* Reason */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">السبب</label>
+            <input
+              type="text"
+              placeholder="مثال: تعويض، هدية، ..."
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+            />
+          </div>
+
+          {error && <p className="text-xs text-rose-600">{error}</p>}
+
+          <div className="flex gap-2 pt-1">
+            <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-slate-200 py-2 text-sm font-semibold text-slate-600">
+              إلغاء
+            </button>
+            <button type="submit" disabled={loading} className="flex-1 rounded-xl bg-emerald-600 py-2 text-sm font-semibold text-white disabled:opacity-50 hover:bg-emerald-700">
+              {loading ? "…" : "منح الرصيد"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 type Tab = "activity" | "services" | "files";
 
 export default function AdminUserProfilePage() {
@@ -415,6 +533,7 @@ export default function AdminUserProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("activity");
   const [activityPage, setActivityPage] = useState(1);
+  const [showGrantModal, setShowGrantModal] = useState(false);
   const PAGE_SIZE = 50;
 
   function load(page: number) {
@@ -498,8 +617,16 @@ export default function AdminUserProfilePage() {
           {/* Stats */}
           <div className="flex flex-wrap gap-4 text-right">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">الرصيد</p>
-              <p className="text-[15px] font-bold text-slate-900">{profile.balance_points ?? 0} نقطة</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">إرسال ذكي</p>
+              <p className="text-[15px] font-bold text-slate-900">
+                {(profile.feature_credits["smart_send_contacts"] ?? 0).toLocaleString()} شركة
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">تحليل</p>
+              <p className="text-[15px] font-bold text-slate-900">
+                {profile.feature_credits["resume_analysis"] ?? 0}
+              </p>
             </div>
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">انضم</p>
@@ -512,6 +639,17 @@ export default function AdminUserProfilePage() {
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Grant credits button */}
+        <div className="mt-4 flex justify-end border-t border-slate-100 pt-4">
+          <button
+            type="button"
+            onClick={() => setShowGrantModal(true)}
+            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 transition"
+          >
+            + منح رصيد
+          </button>
         </div>
       </div>
 
@@ -548,6 +686,20 @@ export default function AdminUserProfilePage() {
           {tab === "files" && <FilesTab resumes={profile.resumes} userId={profile.id} />}
         </div>
       </div>
+
+      {/* Grant Credits Modal */}
+      {showGrantModal && (
+        <GrantCreditsModal
+          userId={profile.id}
+          userEmail={profile.email}
+          currentCredits={profile.feature_credits}
+          onClose={() => setShowGrantModal(false)}
+          onDone={(updated) => {
+            setProfile((p) => p ? { ...p, feature_credits: updated } : p);
+            setShowGrantModal(false);
+          }}
+        />
+      )}
     </div>
   );
 }

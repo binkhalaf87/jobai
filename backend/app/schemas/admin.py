@@ -261,6 +261,12 @@ class AdminAnalyticsResponse(BaseModel):
     visitor_trends: dict[str, list[AdminVisitorPoint]]  # keys: "7d", "30d", "12mo"
 
 
+class AdminGrantCreditsBody(BaseModel):
+    feature: str
+    quantity: int
+    reason: str
+
+
 class AdminUserProfileResponse(BaseModel):
     id: str
     email: str
@@ -271,6 +277,7 @@ class AdminUserProfileResponse(BaseModel):
     created_at: datetime
     last_login_at: datetime | None
     balance_points: int | None
+    feature_credits: dict[str, int]
     activity: list[AdminUserActivityItem]
     activity_total: int
     resumes: list[AdminUserResumeItem]

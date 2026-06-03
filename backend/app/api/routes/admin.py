@@ -34,6 +34,7 @@ from app.schemas.admin import (
     AdminActivityFeedResponse,
     AdminAnalyticsResponse,
     AdminContactCreate,
+    AdminGrantCreditsBody,
     AdminContactItem,
     AdminContactsBulk,
     AdminActivityItem,
@@ -441,7 +442,9 @@ def get_user_profile(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
 
+    from app.services.feature_credit_service import get_all_feature_balances
     balance = user.user_wallet.balance_points if user.user_wallet else None
+    feature_credits = get_all_feature_balances(db, user_id)
 
     activity_q = (
         select(UsageLog)
@@ -480,6 +483,7 @@ def get_user_profile(
         created_at=user.created_at,
         last_login_at=user.last_login_at,
         balance_points=balance,
+        feature_credits=feature_credits,
         activity=[
             AdminUserActivityItem(
                 id=log.id,
@@ -497,6 +501,45 @@ def get_user_profile(
             for row in summary_rows
         ],
     )
+
+
+# ── Feature credits (admin grant) ────────────────────────────────────────────
+
+ALLOWED_FEATURES = {"smart_send_contacts", "resume_analysis", "resume_improvement", "mock_interview"}
+
+
+@router.post("/users/{user_id}/feature-credits", response_model=dict)
+def grant_user_feature_credits(
+    user_id: str,
+    body: AdminGrantCreditsBody,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> dict:
+    from app.services.feature_credit_service import grant_feature_credits, get_all_feature_balances
+
+    if body.feature not in ALLOWED_FEATURES:
+        raise HTTPException(status_code=400, detail=f"Unknown feature. Allowed: {sorted(ALLOWED_FEATURES)}")
+    if body.quantity <= 0:
+        raise HTTPException(status_code=400, detail="Quantity must be a positive integer.")
+    if not body.reason.strip():
+        raise HTTPException(status_code=400, detail="Reason is required.")
+
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    grant_feature_credits(db, user_id, body.feature, body.quantity)
+    db.commit()
+
+    audit_emit(
+        db,
+        user_id=admin.id,
+        event_type=UsageEventType.ADMIN_WALLET_ADJUSTED,
+        detail=f"Granted {body.quantity} {body.feature} credits to {user.email}. Reason: {body.reason}",
+    )
+    db.commit()
+
+    return get_all_feature_balances(db, user_id)
 
 
 # ── Resume file access (admin) ────────────────────────────────────────────────

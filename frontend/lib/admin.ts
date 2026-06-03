@@ -438,11 +438,25 @@ export type AdminUserProfileResponse = {
   created_at: string;
   last_login_at: string | null;
   balance_points: number | null;
+  feature_credits: Record<string, number>;
   activity: AdminUserActivityItem[];
   activity_total: number;
   resumes: AdminUserResumeItem[];
   services_summary: AdminUserServiceSummaryItem[];
 };
+
+export async function grantFeatureCredits(
+  userId: string,
+  data: { feature: string; quantity: number; reason: string },
+): Promise<Record<string, number>> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/users/${userId}/feature-credits`, {
+    method: "POST",
+    headers: mutationHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to grant credits"));
+  return res.json();
+}
 
 export async function getAdminResumeFileUrl(
   userId: string,
