@@ -37,9 +37,6 @@ def build_application():
 
         return application
     except Exception as exc:
-        import traceback
-        print("SERVE.PY BUILD FAILURE:", type(exc).__name__, exc, flush=True)
-        print(traceback.format_exc(), flush=True)
         logger.exception("Backend startup failed before serving traffic.")
         return create_unavailable_application(exc)
 

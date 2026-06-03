@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 revision = "0030"
 down_revision = "0029"
@@ -14,8 +15,8 @@ depends_on = None
 def upgrade() -> None:
     op.create_table(
         "smart_send_letter_cache",
-        sa.Column("id", sa.String(36), primary_key=True),
-        sa.Column("user_id", sa.String(36), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
+        sa.Column("id", postgresql.UUID(as_uuid=False), primary_key=True, nullable=False),
+        sa.Column("user_id", postgresql.UUID(as_uuid=False), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
         sa.Column("cache_key", sa.String(64), nullable=False),
         sa.Column("subject", sa.Text, nullable=False),
         sa.Column("body", sa.Text, nullable=False),
