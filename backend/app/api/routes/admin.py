@@ -31,6 +31,7 @@ from app.services.email_service import send_gmail_approval_email, send_gmail_rej
 from app.services.paymob_webhook_service import manually_activate_payment_order
 from app.services.storage import get_storage
 from app.schemas.admin import (
+    AdminAnalyticsResponse,
     AdminContactCreate,
     AdminContactItem,
     AdminContactsBulk,
@@ -40,6 +41,7 @@ from app.schemas.admin import (
     AdminGmailRequestReject,
     AdminListCreate,
     AdminListItem,
+    AdminMonthlyRevenue,
     AdminPlanItem,
     AdminPromoCodeCreate,
     AdminPromoCodeItem,
@@ -54,6 +56,7 @@ from app.schemas.admin import (
     AdminUserResumeItem,
     AdminUserServiceSummaryItem,
     AdminUsersResponse,
+    AdminVisitorPoint,
     AdminWalletAdjust,
 )
 
@@ -122,6 +125,90 @@ def get_activity(
     ]
 
     return AdminActivityResponse(recent_activity=items, visitors_last_24h=visitors_last_24h)
+
+
+# ── Analytics ─────────────────────────────────────────────────────────────────
+
+@router.get("/analytics", response_model=AdminAnalyticsResponse)
+def get_analytics(
+    _: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> AdminAnalyticsResponse:
+    from sqlalchemy import cast, Date, Integer, text
+
+    now = datetime.now(timezone.utc)
+
+    # ── Monthly revenue (last 12 months) ──────────────────────────────────────
+    twelve_months_ago = now - timedelta(days=365)
+    revenue_rows = db.execute(
+        text("""
+            SELECT
+                to_char(date_trunc('month', paid_at AT TIME ZONE 'UTC'), 'YYYY-MM') AS month,
+                SUM(amount_minor) AS total_minor,
+                COUNT(*) AS transactions
+            FROM payment_orders
+            WHERE status = 'paid'
+              AND paid_at >= :since
+            GROUP BY date_trunc('month', paid_at AT TIME ZONE 'UTC')
+            ORDER BY date_trunc('month', paid_at AT TIME ZONE 'UTC')
+        """),
+        {"since": twelve_months_ago},
+    ).fetchall()
+
+    monthly_revenue = [
+        AdminMonthlyRevenue(
+            month=row.month,
+            revenue_sar=round(row.total_minor / 100, 2),
+            transactions=row.transactions,
+        )
+        for row in revenue_rows
+    ]
+
+    # ── Visitor trends ────────────────────────────────────────────────────────
+    def _daily_visitor_points(since: datetime) -> list[AdminVisitorPoint]:
+        rows = db.execute(
+            text("""
+                SELECT
+                    to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS label,
+                    COUNT(*) FILTER (WHERE event_type = 'auth_login')    AS logins,
+                    COUNT(*) FILTER (WHERE event_type = 'auth_register') AS signups
+                FROM usage_logs
+                WHERE created_at >= :since
+                  AND event_type IN ('auth_login', 'auth_register')
+                GROUP BY to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD')
+                ORDER BY label
+            """),
+            {"since": since},
+        ).fetchall()
+        return [AdminVisitorPoint(label=r.label, logins=r.logins, signups=r.signups) for r in rows]
+
+    def _monthly_visitor_points(since: datetime) -> list[AdminVisitorPoint]:
+        rows = db.execute(
+            text("""
+                SELECT
+                    to_char(date_trunc('month', created_at AT TIME ZONE 'UTC'), 'YYYY-MM') AS label,
+                    COUNT(*) FILTER (WHERE event_type = 'auth_login')    AS logins,
+                    COUNT(*) FILTER (WHERE event_type = 'auth_register') AS signups
+                FROM usage_logs
+                WHERE created_at >= :since
+                  AND event_type IN ('auth_login', 'auth_register')
+                GROUP BY date_trunc('month', created_at AT TIME ZONE 'UTC')
+                ORDER BY label
+            """),
+            {"since": since},
+        ).fetchall()
+        return [AdminVisitorPoint(label=r.label, logins=r.logins, signups=r.signups) for r in rows]
+
+    visitor_trends = {
+        "7d":   _daily_visitor_points(now - timedelta(days=7)),
+        "30d":  _daily_visitor_points(now - timedelta(days=30)),
+        "12mo": _monthly_visitor_points(now - timedelta(days=365)),
+    }
+
+    return AdminAnalyticsResponse(
+        monthly_revenue=monthly_revenue,
+        visitor_trends=visitor_trends,
+    )
 
 
 # ── Users list ─────────────────────────────────────────────────────────────────

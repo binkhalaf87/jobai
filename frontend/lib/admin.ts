@@ -346,6 +346,34 @@ export async function listPromoCodeUsages(id: string, page = 1): Promise<AdminPr
 }
 
 
+// ── Analytics ─────────────────────────────────────────────────────────────────
+
+export type AdminMonthlyRevenue = {
+  month: string;        // "2026-01"
+  revenue_sar: number;
+  transactions: number;
+};
+
+export type AdminVisitorPoint = {
+  label: string;        // "2026-05-28" or "2026-01"
+  logins: number;
+  signups: number;
+};
+
+export type AdminAnalyticsResponse = {
+  monthly_revenue: AdminMonthlyRevenue[];
+  visitor_trends: Record<string, AdminVisitorPoint[]>; // "7d" | "30d" | "12mo"
+};
+
+export async function getAdminAnalytics(): Promise<AdminAnalyticsResponse> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/analytics`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to load analytics"));
+  return res.json();
+}
+
+
 // ── User Profile ───────────────────────────────────────────────────────────────
 
 export type AdminUserResumeItem = {

@@ -235,6 +235,25 @@ class AdminPaymentOrderItem(BaseModel):
     created_at: datetime
 
 
+# ── Analytics ─────────────────────────────────────────────────────────────────
+
+class AdminMonthlyRevenue(BaseModel):
+    month: str          # "2026-01"
+    revenue_sar: float
+    transactions: int
+
+
+class AdminVisitorPoint(BaseModel):
+    label: str          # "2026-05-28" for daily, "2026-01" for monthly
+    logins: int
+    signups: int
+
+
+class AdminAnalyticsResponse(BaseModel):
+    monthly_revenue: list[AdminMonthlyRevenue]
+    visitor_trends: dict[str, list[AdminVisitorPoint]]  # keys: "7d", "30d", "12mo"
+
+
 class AdminUserProfileResponse(BaseModel):
     id: str
     email: str

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Users, UserCheck, Briefcase, FileText, Send, Shield, Eye, Activity, LogIn, UserPlus, Settings } from "lucide-react";
 
-import { getAdminStats, getAdminActivity, type AdminStatsResponse, type AdminActivityResponse, type AdminActivityItem } from "@/lib/admin";
+import { getAdminStats, getAdminActivity, getAdminAnalytics, type AdminStatsResponse, type AdminActivityResponse, type AdminActivityItem, type AdminAnalyticsResponse, type AdminVisitorPoint } from "@/lib/admin";
 
 function StatCard({ label, value, icon: Icon, color, href }: {
   label: string;
@@ -52,6 +52,134 @@ const EVENT_COLORS: Record<string, string> = {
   admin_wallet_adjusted: "bg-amber-100 text-amber-700",
 };
 
+// ─── Revenue Chart ─────────────────────────────────────────────────────────────
+
+function RevenueChart({ data }: { data: AdminAnalyticsResponse["monthly_revenue"] }) {
+  if (!data.length) return (
+    <p className="text-sm text-slate-400 py-6 text-center">No revenue data yet</p>
+  );
+
+  const max = Math.max(...data.map((d) => d.revenue_sar), 1);
+  const total = data.reduce((s, d) => s + d.revenue_sar, 0);
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <p className="text-sm font-bold text-slate-900">Monthly Revenue</p>
+          <p className="text-xs text-slate-500 mt-0.5">Successful payments — last 12 months</p>
+        </div>
+        <div className="text-right">
+          <p className="text-lg font-bold text-emerald-600">{total.toLocaleString()} SAR</p>
+          <p className="text-xs text-slate-400">total</p>
+        </div>
+      </div>
+      <div className="flex items-end gap-1 h-32">
+        {data.map((d) => {
+          const heightPct = Math.round((d.revenue_sar / max) * 100);
+          const shortMonth = d.month.slice(5); // "01"→"01"
+          return (
+            <div key={d.month} className="flex-1 flex flex-col items-center gap-1 group relative">
+              <div
+                className="w-full bg-emerald-500 hover:bg-emerald-400 rounded-t transition-colors cursor-default"
+                style={{ height: `${Math.max(heightPct, 2)}%` }}
+              />
+              {/* Tooltip */}
+              <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block z-10 bg-slate-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap pointer-events-none">
+                {d.revenue_sar.toLocaleString()} SAR · {d.transactions} orders
+              </div>
+              <p className="text-[9px] text-slate-400">{shortMonth}</p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Visitor Chart ─────────────────────────────────────────────────────────────
+
+type VisitorPeriod = "7d" | "30d" | "12mo";
+
+function VisitorChart({ trends }: { trends: Record<string, AdminVisitorPoint[]> }) {
+  const [period, setPeriod] = useState<VisitorPeriod>("30d");
+  const data = trends[period] ?? [];
+
+  const maxLogins = Math.max(...data.map((d) => d.logins), 1);
+
+  const periodLabels: Record<VisitorPeriod, string> = {
+    "7d": "7 Days",
+    "30d": "30 Days",
+    "12mo": "12 Months",
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <p className="text-sm font-bold text-slate-900">Visitor Trends</p>
+          <p className="text-xs text-slate-500 mt-0.5">Logins &amp; new signups by period</p>
+        </div>
+        <div className="flex gap-1">
+          {(["7d", "30d", "12mo"] as VisitorPeriod[]).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                period === p ? "bg-brand-700 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              {periodLabels[p]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {data.length === 0 ? (
+        <p className="text-sm text-slate-400 py-6 text-center">No data for this period</p>
+      ) : (
+        <>
+          <div className="flex gap-4 mb-3">
+            <span className="flex items-center gap-1.5 text-xs text-slate-500">
+              <span className="w-3 h-3 rounded-sm bg-brand-600 inline-block" /> Logins
+            </span>
+            <span className="flex items-center gap-1.5 text-xs text-slate-500">
+              <span className="w-3 h-3 rounded-sm bg-violet-400 inline-block" /> Signups
+            </span>
+          </div>
+          <div className="flex items-end gap-0.5 h-28">
+            {data.map((d) => {
+              const loginH = Math.round((d.logins / maxLogins) * 100);
+              const signupH = Math.round((d.signups / maxLogins) * 100);
+              const shortLabel = period === "12mo" ? d.label.slice(5) : d.label.slice(8);
+              return (
+                <div key={d.label} className="flex-1 flex flex-col items-center gap-0.5 group relative">
+                  <div className="w-full flex gap-px items-end" style={{ height: "100%" }}>
+                    <div
+                      className="flex-1 bg-brand-600 hover:bg-brand-500 rounded-t transition-colors cursor-default"
+                      style={{ height: `${Math.max(loginH, 2)}%` }}
+                    />
+                    <div
+                      className="flex-1 bg-violet-400 hover:bg-violet-300 rounded-t transition-colors cursor-default"
+                      style={{ height: `${Math.max(signupH, 2)}%` }}
+                    />
+                  </div>
+                  <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block z-10 bg-slate-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap pointer-events-none">
+                    {d.label} · {d.logins} logins · {d.signups} signups
+                  </div>
+                  {data.length <= 14 && (
+                    <p className="text-[8px] text-slate-400">{shortLabel}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function ActivityRow({ item }: { item: AdminActivityItem }) {
   const label = EVENT_LABELS[item.event_type] ?? item.event_type.replace(/_/g, " ");
   const Icon = EVENT_ICONS[item.event_type] ?? Activity;
@@ -78,11 +206,12 @@ function ActivityRow({ item }: { item: AdminActivityItem }) {
 export default function AdminOverviewPage() {
   const [stats, setStats] = useState<AdminStatsResponse | null>(null);
   const [activity, setActivity] = useState<AdminActivityResponse | null>(null);
+  const [analytics, setAnalytics] = useState<AdminAnalyticsResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([getAdminStats(), getAdminActivity()])
-      .then(([s, a]) => { setStats(s); setActivity(a); })
+    Promise.all([getAdminStats(), getAdminActivity(), getAdminAnalytics()])
+      .then(([s, a, an]) => { setStats(s); setActivity(a); setAnalytics(an); })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : "Failed to load"));
   }, []);
 
@@ -144,6 +273,24 @@ export default function AdminOverviewPage() {
               {activity?.visitors_last_24h ?? "—"}
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* ── Analytics: Revenue + Visitors ── */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5">
+          {analytics ? (
+            <RevenueChart data={analytics.monthly_revenue} />
+          ) : (
+            <div className="h-40 animate-pulse rounded-xl bg-slate-100" />
+          )}
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5">
+          {analytics ? (
+            <VisitorChart trends={analytics.visitor_trends} />
+          ) : (
+            <div className="h-40 animate-pulse rounded-xl bg-slate-100" />
+          )}
         </div>
       </div>
     </div>
