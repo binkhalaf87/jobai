@@ -20,6 +20,7 @@ import {
   pauseCampaign,
   requestGmailAccess,
   resumeCampaign,
+  retryFailedContacts,
 } from "@/lib/smart-send";
 import type {
   Campaign,
@@ -564,6 +565,14 @@ function CampaignsPanel({ refreshKey }: { refreshKey: number }) {
     } catch { /* ignore */ } finally { setActionLoading(null); }
   }
 
+  async function handleRetry(id: string) {
+    setActionLoading(`retry-${id}`);
+    try {
+      const updated = await retryFailedContacts(id);
+      setCampaigns((prev) => prev.map((c) => c.id === updated.id ? updated : c));
+    } catch { /* ignore */ } finally { setActionLoading(null); }
+  }
+
   if (loading) return <p className="text-sm text-gray-400">{t("campaigns.loading")}</p>;
 
   return (
@@ -605,6 +614,15 @@ function CampaignsPanel({ refreshKey }: { refreshKey: number }) {
                 </div>
               )}
 
+              {c.failed_reasons && c.failed_reasons.length > 0 && (
+                <div className="bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 space-y-1">
+                  <p className="text-xs font-semibold text-rose-700">{t("campaigns.failedReasons")}</p>
+                  {c.failed_reasons.map((r, i) => (
+                    <p key={i} className="text-xs text-rose-600 font-mono break-all">{r}</p>
+                  ))}
+                </div>
+              )}
+
               {(c.status === "active" || c.status === "paused" || c.status === "error") && (
                 <div className="flex gap-2">
                   {c.status === "active" ? (
@@ -616,6 +634,14 @@ function CampaignsPanel({ refreshKey }: { refreshKey: number }) {
                       {actionLoading === c.id ? "…" : `▶ ${c.status === "error" ? t("campaigns.restart") : t("campaigns.resume")}`}
                     </button>
                   )}
+                </div>
+              )}
+
+              {(c.status === "completed" || c.status === "paused" || c.status === "error") && c.total_failed > 0 && (
+                <div className="flex gap-2">
+                  <button onClick={() => void handleRetry(c.id)} disabled={actionLoading === `retry-${c.id}`} className="flex-1 border border-rose-200 text-rose-700 rounded-lg py-1.5 text-xs font-semibold hover:bg-rose-50 disabled:opacity-50">
+                    {actionLoading === `retry-${c.id}` ? "…" : `↺ ${t("campaigns.retryFailed", { count: c.total_failed })}`}
+                  </button>
                 </div>
               )}
             </div>

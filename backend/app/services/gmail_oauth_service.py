@@ -6,8 +6,10 @@ import base64
 import logging
 import uuid
 from datetime import datetime, timedelta, timezone
+from email.header import Header
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import formataddr
 from urllib.parse import urlencode
 
 import httpx
@@ -187,6 +189,17 @@ def disconnect(db: Session, user_id: str) -> bool:
 
 # ── Email sending ──────────────────────────────────────────────────────────────
 
+def _format_addr(name: str | None, addr: str) -> str:
+    """Format an email address with optional display name, RFC 2047-encoding non-ASCII."""
+    if not name:
+        return addr
+    try:
+        name.encode("ascii")
+        return formataddr((name, addr))
+    except UnicodeEncodeError:
+        return formataddr((str(Header(name, "utf-8")), addr))
+
+
 async def send_email(
     access_token: str,
     from_email: str,
@@ -198,8 +211,8 @@ async def send_email(
 ) -> None:
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["From"] = f"{from_name} <{from_email}>" if from_name else from_email
-    msg["To"] = f"{to_name} <{to_email}>" if to_name else to_email
+    msg["From"] = _format_addr(from_name, from_email)
+    msg["To"] = _format_addr(to_name, to_email)
     msg.attach(MIMEText(body, "plain", "utf-8"))
 
     raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()

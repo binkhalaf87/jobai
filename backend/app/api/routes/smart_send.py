@@ -342,7 +342,7 @@ def create_campaign(
 
     db.commit()
     db.refresh(campaign)
-    return _campaign_response(campaign)
+    return _campaign_response(campaign, db)
 
 
 @router.get("/campaigns", response_model=list[CampaignResponse])
@@ -353,7 +353,7 @@ def list_campaigns(
     campaigns = db.scalars(
         select(EmailCampaign).where(EmailCampaign.user_id == current_user.id).order_by(EmailCampaign.created_at.desc())
     ).all()
-    return [_campaign_response(c) for c in campaigns]
+    return [_campaign_response(c, db) for c in campaigns]
 
 
 @router.patch("/campaigns/{campaign_id}/pause", response_model=CampaignResponse)
@@ -368,7 +368,7 @@ def pause_campaign(
     campaign.status = "paused"
     db.commit()
     db.refresh(campaign)
-    return _campaign_response(campaign)
+    return _campaign_response(campaign, db)
 
 
 @router.patch("/campaigns/{campaign_id}/resume", response_model=CampaignResponse)
@@ -385,7 +385,36 @@ def resume_campaign(
     campaign.last_sent_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(campaign)
-    return _campaign_response(campaign)
+    return _campaign_response(campaign, db)
+
+
+@router.post("/campaigns/{campaign_id}/retry-failed", response_model=CampaignResponse)
+def retry_failed_contacts(
+    campaign_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> CampaignResponse:
+    """Reset failed contacts back to pending and reactivate the campaign."""
+    campaign = _get_user_campaign(db, campaign_id, current_user.id)
+    failed = db.scalars(
+        select(EmailCampaignContact).where(
+            EmailCampaignContact.campaign_id == campaign.id,
+            EmailCampaignContact.status == "failed",
+        )
+    ).all()
+    if not failed:
+        raise HTTPException(status_code=400, detail="No failed contacts to retry.")
+    for contact in failed:
+        contact.status = "pending"
+        contact.error_message = None
+        contact.sent_at = None
+    campaign.total_failed = 0
+    campaign.status = "active"
+    campaign.error_message = None
+    campaign.last_sent_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(campaign)
+    return _campaign_response(campaign, db)
 
 
 @router.get("/campaigns/{campaign_id}", response_model=CampaignResponse)
@@ -395,7 +424,7 @@ def get_campaign(
     current_user: User = Depends(get_current_user),
 ) -> CampaignResponse:
     campaign = _get_user_campaign(db, campaign_id, current_user.id)
-    return _campaign_response(campaign)
+    return _campaign_response(campaign, db)
 
 
 @router.post("/gmail/test-send", status_code=status.HTTP_200_OK)
@@ -432,9 +461,22 @@ def _get_user_campaign(db: Session, campaign_id: str, user_id: str) -> EmailCamp
     return c
 
 
-def _campaign_response(c: EmailCampaign) -> CampaignResponse:
+def _campaign_response(c: EmailCampaign, db: Session) -> CampaignResponse:
     remaining = c.total_contacts - c.total_sent - c.total_failed
     estimated_days = max(0, -(-remaining // c.daily_limit)) if c.daily_limit > 0 else 0
+    failed_reasons: list[str] = []
+    if c.total_failed > 0:
+        rows = db.scalars(
+            select(EmailCampaignContact.error_message)
+            .where(
+                EmailCampaignContact.campaign_id == c.id,
+                EmailCampaignContact.status == "failed",
+                EmailCampaignContact.error_message.isnot(None),
+            )
+            .distinct()
+            .limit(3)
+        ).all()
+        failed_reasons = [r for r in rows if r]
     return CampaignResponse(
         id=c.id,
         list_name=c.list_name,
@@ -446,6 +488,7 @@ def _campaign_response(c: EmailCampaign) -> CampaignResponse:
         total_failed=c.total_failed,
         estimated_days_remaining=estimated_days,
         error_message=c.error_message,
+        failed_reasons=failed_reasons,
         last_sent_at=c.last_sent_at,
         started_at=c.started_at,
         completed_at=c.completed_at,

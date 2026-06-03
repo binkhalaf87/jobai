@@ -400,6 +400,7 @@ export type Campaign = {
   total_failed: number;
   estimated_days_remaining: number;
   error_message: string | null;
+  failed_reasons: string[];
   last_sent_at: string | null;
   started_at: string | null;
   completed_at: string | null;

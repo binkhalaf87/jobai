@@ -98,3 +98,7 @@ export async function pauseCampaign(id: string): Promise<import("@/types").Campa
 export async function resumeCampaign(id: string): Promise<import("@/types").Campaign> {
   return api.patch<import("@/types").Campaign>(`${BASE}/campaigns/${id}/resume`);
 }
+
+export async function retryFailedContacts(id: string): Promise<import("@/types").Campaign> {
+  return api.post<import("@/types").Campaign>(`${BASE}/campaigns/${id}/retry-failed`);
+}

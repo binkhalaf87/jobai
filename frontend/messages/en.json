@@ -2013,6 +2013,8 @@
       "sentOf": "{sent} / {total} sent",
       "failedCount": "· {count} failed",
       "remaining": "~{days}d remaining · {limit}/day",
+      "failedReasons": "Failure reason:",
+      "retryFailed": "↺ Retry {count} failed",
       "pause": "Pause",
       "resume": "Resume",
       "restart": "Restart",

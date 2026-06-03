@@ -2013,6 +2013,8 @@
       "sentOf": "{sent} / {total} مُرسل",
       "failedCount": "· {count} فشل",
       "remaining": "~{days}ي متبقية · {limit}/يوم",
+      "failedReasons": "سبب الفشل:",
+      "retryFailed": "↺ إعادة إرسال {count} فاشل",
       "pause": "إيقاف مؤقت",
       "resume": "استئناف",
       "restart": "إعادة تشغيل",

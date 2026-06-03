@@ -128,6 +128,7 @@ class CampaignResponse(BaseModel):
     total_failed: int
     estimated_days_remaining: int
     error_message: str | None = None
+    failed_reasons: list[str] = []
     last_sent_at: datetime | None = None
     started_at: datetime | None
     completed_at: datetime | None
