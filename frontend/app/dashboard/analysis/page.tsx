@@ -970,6 +970,7 @@ type PageState = "idle" | "streaming" | "done" | "error";
 export default function DashboardAnalysisPage() {
   const t = useTranslations("analysisPage");
   const tBilling = useTranslations("billing");
+  const tErrors = useTranslations("serviceErrors");
   const [resumes, setResumes]               = useState<ResumeListItem[]>([]);
   const [selectedResume, setSelectedResume] = useState("");
   const [reportLanguage, setReportLanguage] = useState("English");
@@ -1027,14 +1028,14 @@ export default function DashboardAnalysisPage() {
         if (event.type === "id")    setActiveReportId(event.report_id);
         if (event.type === "chunk") setStreamText((prev) => prev + event.text);
         if (event.type === "done")  { setActiveReportId(event.report_id); setPageState("done"); void loadData(); }
-        if (event.type === "error") { setStreamError(event.message); setPageState("error"); }
+        if (event.type === "error") { setStreamError(tErrors("generic")); setPageState("error"); }
       }, "analysis", reportLanguage);
     } catch (e) {
       if (e instanceof ApiError && e.status === 402) {
         setPaymentRequired(true);
         setPageState("idle");
       } else {
-        setStreamError(e instanceof Error ? e.message : "Request failed.");
+        setStreamError(tErrors("generic"));
         setPageState("error");
       }
     }
@@ -1142,27 +1143,26 @@ export default function DashboardAnalysisPage() {
 
       {/* ─── Payment required banner ──────────────────────────────── */}
       {paymentRequired && (
-        <div className="flex items-start gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-5" data-no-print>
-          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-              <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5" data-no-print>
+          <div className="flex items-start gap-4">
+            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-amber-100 text-2xl">💳</div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-amber-900">{tBilling("creditUpsell.title")}</p>
+              <p className="mt-0.5 text-xs text-amber-700">{tBilling("creditUpsell.subtitle")}</p>
+              <p className="mt-2 text-xs text-amber-700" dangerouslySetInnerHTML={{ __html: tBilling("creditUpsell.analysisDesc") }} />
+              <Link
+                href="/dashboard/billing"
+                className="mt-3 inline-flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-amber-700"
+              >
+                {tBilling("creditUpsell.buyNow")}
+              </Link>
+            </div>
+            <button type="button" onClick={() => setPaymentRequired(false)} className="text-amber-400 hover:text-amber-600 flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
           </div>
-          <div className="flex-1">
-            <p className="text-sm font-bold text-amber-900">{tBilling("creditUpsell.title")}</p>
-            <p className="mt-1 text-xs text-amber-700" dangerouslySetInnerHTML={{ __html: tBilling("creditUpsell.analysisDesc") }} />
-            <Link
-              href="/dashboard/billing"
-              className="mt-3 inline-flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-700"
-            >
-              {tBilling("creditUpsell.buyNow")}
-            </Link>
-          </div>
-          <button type="button" onClick={() => setPaymentRequired(false)} className="text-amber-400 hover:text-amber-600">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
         </div>
       )}
 
@@ -1366,10 +1366,17 @@ export default function DashboardAnalysisPage() {
       {/* ─── Error ───────────────────────────────────────────────── */}
       {pageState === "error" && (
         <div className="flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 h-4 w-4 flex-shrink-0 text-rose-500">
-            <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-          <p className="text-sm text-rose-700">{streamError}</p>
+          <span className="text-lg flex-shrink-0">⚠️</span>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-rose-800">{streamError}</p>
+            <button
+              type="button"
+              onClick={() => { setPageState("idle"); setStreamError(""); setStreamText(""); }}
+              className="mt-2 text-xs font-semibold text-rose-700 underline hover:text-rose-900"
+            >
+              {tErrors("retry")}
+            </button>
+          </div>
         </div>
       )}
 

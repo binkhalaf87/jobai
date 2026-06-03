@@ -127,6 +127,7 @@ function ContextChips({ context }: { context: InterviewContextSummary | null }) 
 export default function DashboardAiInterviewPage() {
   const t = useTranslations("aiInterviewPage");
   const tBilling = useTranslations("billing");
+  const tErrors = useTranslations("serviceErrors");
   const [setup, setSetup] = useState<SetupValues>({
     jobTitle: "",
     level: "mid",
@@ -231,7 +232,7 @@ export default function DashboardAiInterviewPage() {
       if (error instanceof ApiError && error.status === 402) {
         setPaymentRequired(true);
       } else {
-        setPageError(error instanceof ApiError ? error.detail : t("failedToStart"));
+        setPageError(tErrors("generic"));
       }
       setPageState("setup");
     }
@@ -623,26 +624,35 @@ export default function DashboardAiInterviewPage() {
             )}
             <textarea value={setup.jobDescription} onChange={(e) => setSetup((p) => ({ ...p, jobDescription: e.target.value }))} rows={6} placeholder={t("form.jdPlaceholder")} className="md:col-span-2 rounded-xl border border-slate-300 px-4 py-3 text-sm" />
           </div>
-          {pageError && <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{pageError}</div>}
-          {paymentRequired && (
-            <div className="mt-4 flex items-start gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                  <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                </svg>
-              </div>
+          {pageError && (
+            <div className="mt-4 flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
+              <span className="text-base flex-shrink-0">⚠️</span>
               <div className="flex-1">
+                <p className="text-sm font-semibold text-rose-800">{pageError}</p>
+                <button type="button" onClick={() => setPageError("")} className="mt-1.5 text-xs font-semibold text-rose-700 underline hover:text-rose-900">
+                  {tErrors("retry")}
+                </button>
+              </div>
+            </div>
+          )}
+          {paymentRequired && (
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+              <div className="flex items-start gap-4">
+              <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-amber-100 text-2xl">💳</div>
+              <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-amber-900">{tBilling("creditUpsell.title")}</p>
-                <p className="mt-0.5 text-xs text-amber-700" dangerouslySetInnerHTML={{ __html: tBilling("creditUpsell.interviewDesc") }} />
-                <a href="/dashboard/billing" className="mt-3 inline-flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-700">
+                <p className="mt-0.5 text-xs text-amber-700">{tBilling("creditUpsell.subtitle")}</p>
+                <p className="mt-2 text-xs text-amber-700" dangerouslySetInnerHTML={{ __html: tBilling("creditUpsell.interviewDesc") }} />
+                <a href="/dashboard/billing" className="mt-3 inline-flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-amber-700">
                   {tBilling("creditUpsell.buyNow")}
                 </a>
               </div>
-              <button type="button" onClick={() => setPaymentRequired(false)} className="text-amber-400 hover:text-amber-600">
+              <button type="button" onClick={() => setPaymentRequired(false)} className="text-amber-400 hover:text-amber-600 flex-shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
                   <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
               </button>
+            </div>
             </div>
           )}
           <div className="mt-6 flex flex-wrap gap-3">

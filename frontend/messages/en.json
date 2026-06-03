@@ -22,6 +22,12 @@
     "switch": "Arabic",
     "current": "English"
   },
+  "serviceErrors": {
+    "generic": "An error occurred during processing. Please try again.",
+    "serverBusy": "The server is temporarily busy. Please try again in a minute.",
+    "noResume": "Please upload your resume first to use this service.",
+    "retry": "Try Again"
+  },
   "auth": {
     "login": {
       "eyebrow": "Account Access",
@@ -50,11 +56,14 @@
       "passwordPlaceholder": "Enter your password",
       "roleLabel": "I am a",
       "jobseeker": "🎯 Job Seeker",
-      "recruiter": "🏢 Recruiter"
+      "recruiter": "🏢 Recruiter",
+      "comingSoon": "Coming soon"
     },
     "errors": {
-      "authFailed": "Authentication failed. Check your credentials and try again.",
-      "emailTaken": "An account with that email already exists."
+      "authFailed": "Incorrect email or password. Please check your credentials and try again.",
+      "emailTaken": "This email is already registered. Would you like to sign in instead?",
+      "emailNotVerified": "Please verify your email first — check your inbox and try again.",
+      "serverError": "An unexpected error occurred. Please try again in a moment."
     }
   },
   "nav": {
@@ -374,11 +383,12 @@
       }
     },
     "creditUpsell": {
-      "title": "This service requires credits",
-      "improvementDesc": "Resume improvement is available for <strong>SAR 10</strong> per use.",
-      "analysisDesc": "Resume analysis is available for <strong>SAR 7</strong> per use.",
-      "interviewDesc": "Mock interview is available for <strong>SAR 10</strong> per session.",
-      "buyNow": "Buy Now →"
+      "title": "Not enough points for this service",
+      "subtitle": "No worries! You can buy points and continue right away — no monthly subscription.",
+      "improvementDesc": "Resume enhancement costs <strong>SAR 10</strong> per use.",
+      "analysisDesc": "Resume analysis costs <strong>SAR 7</strong> per report.",
+      "interviewDesc": "Interview training costs <strong>SAR 10</strong> per session.",
+      "buyNow": "Buy Points & Start Now →"
     },
     "plans": {
       "resumeAnalysis": "Resume Analysis",

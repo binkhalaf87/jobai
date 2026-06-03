@@ -58,14 +58,18 @@ export function AuthForm({ mode }: AuthFormProps) {
       }
     } catch (error) {
       if (error instanceof ApiError) {
-        if (error.detail?.includes("already exists")) {
+        const detail = error.detail?.toLowerCase() ?? "";
+        if (detail.includes("already exists") || detail.includes("email taken")) {
           setErrorMessage(t("errors.emailTaken"));
+        } else if (detail.includes("not verified") || detail.includes("verify") || detail.includes("confirm")) {
+          setErrorMessage(t("errors.emailNotVerified"));
+        } else if (error.status >= 500) {
+          setErrorMessage(t("errors.serverError"));
         } else {
-          setErrorMessage(error.detail || t("errors.authFailed"));
+          setErrorMessage(t("errors.authFailed"));
         }
       } else {
-        const msg = error instanceof Error ? error.message : "";
-        setErrorMessage(msg || t("errors.authFailed"));
+        setErrorMessage(t("errors.serverError"));
       }
     } finally {
       setIsSubmitting(false);
@@ -111,7 +115,7 @@ export function AuthForm({ mode }: AuthFormProps) {
                 <div className="relative rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-400 cursor-not-allowed select-none">
                   {f("recruiter")}
                   <span className="absolute -top-2 -right-2 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-white leading-none">
-                    قريباً
+                    {f("comingSoon")}
                   </span>
                 </div>
               </div>
