@@ -1994,7 +1994,14 @@
         "launching": "جارٍ الإطلاق…",
         "launch": "إطلاق الحملة",
         "launched": "تم إطلاق الحملة! تحقق من تبويب الحملات لمتابعة التقدم.",
-        "launchFailed": "فشل إطلاق الحملة. يرجى المحاولة مجدداً."
+        "launchFailed": "فشل إطلاق الحملة. يرجى المحاولة مجدداً.",
+        "balanceTitle": "فحص الرصيد",
+        "balanceYours": "رصيدك",
+        "balanceRequired": "المطلوب",
+        "balancePoints": "{count} نقطة",
+        "balanceSufficient": "رصيدك كافٍ لإرسال الحملة كاملة ✓",
+        "balanceInsufficient": "رصيدك غير كافٍ — يمكنك إرسال {count} شركة فقط",
+        "balanceBuyMore": "شراء نقاط إضافية"
       },
       "sentOf": "{sent} / {total} مُرسل",
       "failedCount": "· {count} فشل",

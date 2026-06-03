@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 
 import { useTranslations } from "next-intl";
 
+import Link from "next/link";
+
 import { Panel } from "@/components/panel";
+import { getBillingSnapshot } from "@/lib/billing";
 import {
   createCampaign,
   disconnectGmail,
@@ -297,6 +300,8 @@ function ComposePanel({
   onLaunched: () => void;
 }) {
   const t = useTranslations("smartSendPage");
+  const POINTS_PER_SEND = 2;
+
   const [form, setForm] = useState({ job_title: "", company_name: "", job_description: "", resume_id: "" });
   const [letter, setLetter] = useState<GenerateLetterResponse | null>(null);
   const [resumes, setResumes] = useState<import("@/types").ResumeListItem[]>([]);
@@ -308,10 +313,12 @@ function ComposePanel({
   const [genError, setGenError] = useState("");
   const [launchError, setLaunchError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
 
   useEffect(() => {
     void import("@/lib/resumes").then(({ listResumes }) => listResumes().then(setResumes).catch(() => {}));
     getRecipientLists().then(setLists).catch(() => {});
+    getBillingSnapshot().then((snap) => setWalletBalance(snap.wallet?.balance_points ?? 0)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -371,6 +378,9 @@ function ComposePanel({
   const estimatedDays = selectedList && dailyLimit > 0
     ? Math.ceil(selectedList.total_count / dailyLimit)
     : null;
+  const requiredPoints = selectedList ? selectedList.total_count * POINTS_PER_SEND : 0;
+  const canAffordFull = walletBalance !== null && walletBalance >= requiredPoints;
+  const affordableCount = walletBalance !== null ? Math.floor(walletBalance / POINTS_PER_SEND) : 0;
 
   return (
     <div className="space-y-6">
@@ -465,12 +475,53 @@ function ComposePanel({
                 </span>
               </div>
             )}
+
+            {selectedList && walletBalance !== null && (
+              <div className={`rounded-lg border px-3 py-3 space-y-2 text-xs ${canAffordFull ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
+                <p className={`font-semibold text-sm ${canAffordFull ? "text-emerald-700" : "text-amber-700"}`}>
+                  {t("campaigns.settings.balanceTitle")}
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className={canAffordFull ? "text-emerald-600" : "text-amber-600"}>
+                    {t("campaigns.settings.balanceYours")}
+                  </span>
+                  <span className={`font-semibold ${canAffordFull ? "text-emerald-700" : "text-amber-700"}`}>
+                    {t("campaigns.settings.balancePoints", { count: walletBalance })}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className={canAffordFull ? "text-emerald-600" : "text-amber-600"}>
+                    {t("campaigns.settings.balanceRequired")}
+                  </span>
+                  <span className={`font-semibold ${canAffordFull ? "text-emerald-700" : "text-amber-700"}`}>
+                    {t("campaigns.settings.balancePoints", { count: requiredPoints })}
+                  </span>
+                </div>
+                {canAffordFull ? (
+                  <p className="text-emerald-600 font-medium">
+                    {t("campaigns.settings.balanceSufficient")}
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-amber-700 font-medium">
+                      {t("campaigns.settings.balanceInsufficient", { count: affordableCount })}
+                    </p>
+                    <Link
+                      href="/dashboard/billing"
+                      className="inline-block bg-amber-600 text-white rounded-lg px-3 py-1.5 text-xs font-semibold hover:bg-amber-700"
+                    >
+                      {t("campaigns.settings.balanceBuyMore")}
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {launchError && <p className="text-red-600 text-sm">{launchError}</p>}
           {successMsg && <p className="text-teal text-sm font-medium">{successMsg}</p>}
 
-          <button onClick={() => void handleLaunch()} disabled={launching || !selectedListId} className="w-full bg-teal text-white rounded-lg py-2.5 text-sm font-medium hover:bg-teal/90 disabled:opacity-50 flex items-center justify-center gap-2">
+          <button onClick={() => void handleLaunch()} disabled={launching || !selectedListId || (walletBalance !== null && !canAffordFull)} className="w-full bg-teal text-white rounded-lg py-2.5 text-sm font-medium hover:bg-teal/90 disabled:opacity-50 flex items-center justify-center gap-2">
             {launching ? (<><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>{t("campaigns.settings.launching")}</>) : t("campaigns.settings.launch")}
           </button>
         </div>
