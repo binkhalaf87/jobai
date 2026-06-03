@@ -75,6 +75,7 @@ class UsageEventType(str, Enum):
     BILLING_PAYMENT_CONFIRMED = "billing_payment_confirmed"
     ADMIN_PROMO_CREATED = "admin_promo_created"
     ADMIN_PROMO_DELETED = "admin_promo_deleted"
+    ADMIN_PAYMENT_ACTIVATED = "admin_payment_activated"
     BILLING_PROMO_APPLIED = "billing_promo_applied"
     PAGE_VIEW = "page_view"
 

@@ -1085,7 +1085,7 @@ def admin_activate_payment_order(
     audit_emit(
         db,
         user_id=admin.id,
-        event_type=UsageEventType.ADMIN_PROMO_DELETED,  # reuse closest event type for now
+        event_type=UsageEventType.ADMIN_PAYMENT_ACTIVATED,
         detail=f"manual_activation order_id={order_id}",
     )
     return {"detail": "Payment order activated successfully."}
@@ -1096,7 +1096,7 @@ def admin_bulk_activate_payment_orders(
     admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> dict:
-    """Activate all PENDING payment orders and send invoice emails.
+    """Activate all PENDING/PAYMENT_KEY_ISSUED orders and send invoice emails.
 
     Use when the bank confirms charges but Paymob webhooks were never received.
     Returns a summary of activated and failed order IDs.
@@ -1107,7 +1107,7 @@ def admin_bulk_activate_payment_orders(
     pending_orders = db.scalars(
         select(PaymentOrder)
         .options(_sel(PaymentOrder.plan), _sel(PaymentOrder.subscription))
-        .where(PaymentOrder.status == _POS.PENDING)
+        .where(PaymentOrder.status.in_([_POS.PENDING, _POS.PAYMENT_KEY_ISSUED]))
         .order_by(PaymentOrder.created_at.asc())
     ).all()
 
@@ -1122,7 +1122,7 @@ def admin_bulk_activate_payment_orders(
             audit_emit(
                 db,
                 user_id=admin.id,
-                event_type=UsageEventType.ADMIN_PROMO_DELETED,
+                event_type=UsageEventType.ADMIN_PAYMENT_ACTIVATED,
                 detail=f"bulk_activation order_id={order.id}",
             )
         except ValueError:
