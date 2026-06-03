@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { useLocale } from "next-intl";
 import {
   ArrowLeft, ArrowRight, CheckCircle2, Sparkles, Target, Zap,
-  BarChart3, Star, MessageSquare,
+  BarChart3, Star, Mail, FileText, Send,
   Brain, Award, TrendingUp, Upload, Clock,
   Play, Rocket,
 } from "lucide-react";
@@ -75,10 +75,15 @@ type Content = {
     passes: string;
     avatarInitials: string[];
   };
-  testimonials: {
-    label: string;
-    headline: string;
-    items: { name: string; role: string; city: string; text: string; highlight: string }[];
+  smartSend: {
+    badge: string;
+    title: string;
+    subtitle: string;
+    description: string;
+    steps: { title: string; desc: string }[];
+    stats: { value: string; label: string }[];
+    cta: string;
+    ctaNote: string;
   };
   finalCta: {
     headline: string;
@@ -171,9 +176,9 @@ const AR: Content = {
         bullets: ["اقتراحات جاهزة بنقرة واحدة", "يحافظ على أسلوبك", "يُضخّ الكلمات المفتاحية"],
       },
       {
-        title: "Cover Letter مخصصة لكل وظيفة",
-        desc: "ثلاثة أساليب: رسمي، إبداعي، مختصر — في ٣٠ ثانية.",
-        bullets: ["مخصصة لكل جهة عمل", "عربي وإنجليزي", "إرسال مباشر عبر Gmail"],
+        title: "الإرسال الذكي عبر Gmail",
+        desc: "أرسل طلباتك تلقائياً إلى مئات الشركات — رسالة مخصصة لكل وظيفة.",
+        bullets: ["ربط Gmail بنقرة واحدة", "حملات إرسال تلقائي", "تتبع الردود في الوقت الفعلي"],
       },
       {
         title: "تدريب تفاعلي على المقابلة",
@@ -196,32 +201,23 @@ const AR: Content = {
       { metric: "وقت إعداد CV", before: "٣ أيام", after: "٣٥ دقيقة" },
     ],
   },
-  testimonials: {
-    label: "يقولون عنا",
-    headline: "مستخدمونا يتحدثون عن النتائج.",
-    items: [
-      {
-        name: "سارة الأحمد",
-        role: "أخصائية تسويق رقمي",
-        city: "الرياض",
-        highlight: "٣ مقابلات في ٣ أسابيع",
-        text: "بعد ٦ أشهر من رفض ATS المتكرر، وصلت لمرحلة المقابلة في ٣ شركات كبرى خلال ٣ أسابيع. الفرق لا يُصدَّق.",
-      },
-      {
-        name: "محمد القحطاني",
-        role: "مدير مشاريع تقني",
-        city: "جدة",
-        highlight: "درجة ATS: من ٣٤ لـ ٨٩",
-        text: "التحليل كشف مشاكل لم أتوقعها. الأفضل أن التقرير يشرح بالضبط كيف تحل كل مشكلة — ليس مجرد انتقادات.",
-      },
-      {
-        name: "نورة الزهراني",
-        role: "محاسبة قانونية معتمدة",
-        city: "الدمام",
-        highlight: "قُبلت في أرامكو",
-        text: "ميزة المقابلة التدريبية غيّرت حياتي. كنت أخاف من المقابلات — الآن أدخلها بثقة كاملة.",
-      },
+  smartSend: {
+    badge: "حصري — الإرسال الذكي",
+    title: "أرسل طلباتك تلقائياً",
+    subtitle: "إلى مئات الشركات في دقائق",
+    description: "وصّل بريدك في Gmail، واختر الشركات التي تريدها، وسيرسل النظام رسائل تغطية مخصصة لكل شركة تلقائياً — بلا جهد، بلا تكرار.",
+    steps: [
+      { title: "ربط Gmail بنقرة", desc: "تفويض آمن عبر OAuth — بدون مشاركة كلمة المرور" },
+      { title: "رسالة مخصصة لكل وظيفة", desc: "الذكاء الاصطناعي يكتب رسالة تتناسب مع كل إعلان وظيفي" },
+      { title: "إرسال تلقائي للحملة", desc: "تابع حالة كل إرسال وأوقف أو أعد المحاولة بضغطة زر" },
     ],
+    stats: [
+      { value: "٣×", label: "أكثر ردوداً من الإرسال اليدوي" },
+      { value: "٩٠٪", label: "توفير في وقت التقديم" },
+      { value: "١٠٠+", label: "شركة في حملة واحدة" },
+    ],
+    cta: "ابدأ حملتك الأولى",
+    ctaNote: "مجاناً — لا بطاقة ائتمان",
   },
   finalCta: {
     headline: "وظيفة أحلامك ليست حظاً.",
@@ -328,9 +324,9 @@ const EN: Content = {
         bullets: ["One-click suggestion acceptance", "Preserves your personal voice", "Injects the right keywords"],
       },
       {
-        title: "Custom Cover Letters",
-        desc: "Three tailored styles per job in under 30 seconds.",
-        bullets: ["Customized per employer", "Arabic & English support", "Direct Gmail sending"],
+        title: "Smart Send via Gmail",
+        desc: "Automatically send applications to hundreds of companies — one personalized letter per job.",
+        bullets: ["One-click Gmail connection", "Automated send campaigns", "Real-time reply tracking"],
       },
       {
         title: "AI Interview Training",
@@ -353,32 +349,23 @@ const EN: Content = {
       { metric: "CV preparation time", before: "3 days", after: "35 minutes" },
     ],
   },
-  testimonials: {
-    label: "What They Say",
-    headline: "Our users speak for themselves.",
-    items: [
-      {
-        name: "Sara Al-Ahmad",
-        role: "Digital Marketing Specialist",
-        city: "Riyadh",
-        highlight: "3 interviews in 3 weeks",
-        text: "After 6 months of ATS rejections, I reached the interview stage at 3 major companies in 3 weeks. The difference is unbelievable.",
-      },
-      {
-        name: "Mohammed Al-Qahtani",
-        role: "Technical Project Manager",
-        city: "Jeddah",
-        highlight: "ATS score: 34 → 89",
-        text: "The analysis revealed issues I never expected. Best part: the report explains exactly how to fix each one — not just a list of criticisms.",
-      },
-      {
-        name: "Nora Al-Zahrani",
-        role: "Certified Public Accountant",
-        city: "Dammam",
-        highlight: "Landed at Aramco",
-        text: "The AI interview training changed everything. I used to dread interviews — now I walk in with complete confidence.",
-      },
+  smartSend: {
+    badge: "Exclusive — Smart Send",
+    title: "Send Your Applications Automatically",
+    subtitle: "To hundreds of companies in minutes",
+    description: "Connect your Gmail, choose your target companies, and the system automatically sends a personalized cover letter to each one — effortlessly, without repetition.",
+    steps: [
+      { title: "Connect Gmail in One Click", desc: "Secure OAuth authorization — no password sharing required" },
+      { title: "Custom Letter per Job", desc: "AI writes a tailored cover letter matching each specific job posting" },
+      { title: "Automated Campaign Send", desc: "Track every send status and pause or retry with a single click" },
     ],
+    stats: [
+      { value: "3×", label: "More replies than manual sending" },
+      { value: "90%", label: "Time saved on applications" },
+      { value: "100+", label: "Companies per campaign" },
+    ],
+    cta: "Start Your First Campaign",
+    ctaNote: "Free — no credit card needed",
   },
   finalCta: {
     headline: "Your dream job isn't luck.",
@@ -474,7 +461,7 @@ export default function HomePage() {
       <HowItWorksSection t={t} Arrow={Arrow} />
       <FeaturesSection t={t} />
       <BeforeAfterSection t={t} />
-      <TestimonialsSection t={t} />
+      <SmartSendSection t={t} Arrow={Arrow} />
       <FinalCtaSection t={t} Arrow={Arrow} />
     </div>
   );
@@ -892,7 +879,7 @@ function HowItWorksSection({ t, Arrow }: { t: Content; Arrow: React.ElementType 
 }
 
 /* ─── 6. features ────────────────────────────────────────────────────── */
-const FEAT_ICONS = [BarChart3, Zap, MessageSquare, Brain];
+const FEAT_ICONS = [BarChart3, Zap, Send, Brain];
 const FEAT_COLORS = [
   { icon: "bg-brand-50 text-brand-600", border: "hover:border-brand-200 hover:shadow-brand-50" },
   { icon: "bg-amber-50 text-amber-600", border: "hover:border-amber-200 hover:shadow-amber-50" },
@@ -1016,52 +1003,98 @@ function BeforeAfterSection({ t }: { t: Content }) {
   );
 }
 
-/* ─── 8. testimonials ────────────────────────────────────────────────── */
-function TestimonialsSection({ t }: { t: Content }) {
-  const te = t.testimonials;
-  const colors = ["from-brand-400 to-brand-600", "from-teal to-teal-light", "from-purple-400 to-purple-600"];
+/* ─── 8. smart send ──────────────────────────────────────────────────── */
+const SMART_SEND_ICONS = [Mail, FileText, Send];
+
+function SmartSendSection({ t, Arrow }: { t: Content; Arrow: React.ElementType }) {
+  const ss = t.smartSend;
 
   return (
-    <section className="py-24 bg-slate-950" id="testimonials">
-      <div className="mx-auto max-w-6xl px-6">
-        <div className="text-center mb-14">
-          <p className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-brand-400">{te.label}</p>
-          <h2 className="text-3xl font-black text-white md:text-5xl">{te.headline}</h2>
+    <section className="py-24 bg-slate-950 relative overflow-hidden" id="smart-send">
+      {/* Background effects */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute top-0 left-1/4 h-[500px] w-[500px] rounded-full bg-teal/8 blur-[120px]" />
+        <div className="absolute bottom-0 right-1/4 h-[400px] w-[400px] rounded-full bg-brand-600/10 blur-[100px]" />
+        <svg className="absolute inset-0 h-full w-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="grid3" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="1" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid3)" />
+        </svg>
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-6xl px-6">
+        {/* Header */}
+        <div className="text-center mb-16">
+          <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-teal/30 bg-teal/10 px-4 py-1.5 text-xs font-black uppercase tracking-[0.15em] text-teal">
+            <Sparkles className="h-3 w-3" />
+            {ss.badge}
+          </span>
+          <h2 className="mt-4 text-4xl font-black text-white md:text-6xl leading-tight">
+            {ss.title}
+            <br />
+            <span className="bg-gradient-to-r from-teal to-brand-300 bg-clip-text text-transparent">
+              {ss.subtitle}
+            </span>
+          </h2>
+          <p className="mt-6 mx-auto max-w-2xl text-lg text-slate-400 leading-relaxed">
+            {ss.description}
+          </p>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-3">
-          {te.items.map((item, i) => (
+        {/* 3-step flow */}
+        <div className="relative mb-16">
+          {/* Connector line */}
+          <div
+            aria-hidden
+            className="absolute top-10 left-[16.66%] right-[16.66%] h-0.5 bg-gradient-to-r from-teal/40 via-brand-400/40 to-teal/40 hidden md:block"
+          />
+          <div className="grid gap-6 md:grid-cols-3 relative z-10">
+            {ss.steps.map((step, i) => {
+              const Icon = SMART_SEND_ICONS[i] ?? Send;
+              return (
+                <div key={i} className="group text-center">
+                  <div className="flex justify-center mb-6">
+                    <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-teal/20 to-brand-600/20 border border-teal/20 shadow-[0_8px_30px_rgba(0,168,120,0.15)] transition-all group-hover:scale-105 group-hover:border-teal/40 group-hover:shadow-[0_12px_40px_rgba(0,168,120,0.25)]">
+                      <Icon className="h-8 w-8 text-teal" />
+                      <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-teal text-[11px] font-black text-white shadow-lg">
+                        {i + 1}
+                      </span>
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-black text-white mb-3">{step.title}</h3>
+                  <p className="text-slate-400 text-sm leading-relaxed max-w-xs mx-auto">{step.desc}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-4 mb-14 max-w-2xl mx-auto">
+          {ss.stats.map((stat, i) => (
             <div
-              key={item.name}
-              className="group rounded-3xl border border-white/5 bg-white/5 p-7 backdrop-blur-sm transition-all hover:bg-white/8 hover:-translate-y-1 hover:border-white/10"
+              key={i}
+              className="rounded-2xl border border-white/5 bg-white/5 px-6 py-5 text-center backdrop-blur-sm"
             >
-              {/* Stars */}
-              <div className="flex gap-0.5 mb-5">
-                {Array.from({ length: 5 }).map((_, j) => (
-                  <Star key={j} className="h-4 w-4 fill-amber-400 text-amber-400" />
-                ))}
-              </div>
-
-              {/* Highlight badge */}
-              <span className="mb-4 inline-block rounded-full bg-teal/10 px-3 py-1 text-xs font-bold text-teal">
-                {item.highlight}
-              </span>
-
-              {/* Quote */}
-              <p className="text-slate-300 leading-relaxed text-sm mb-6">{'"'}{item.text}{'"'}</p>
-
-              {/* Author */}
-              <div className="flex items-center gap-3">
-                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${colors[i]} text-sm font-black text-white`}>
-                  {item.name.charAt(0)}
-                </div>
-                <div>
-                  <p className="font-bold text-white text-sm">{item.name}</p>
-                  <p className="text-xs text-slate-400">{item.role} · {item.city}</p>
-                </div>
-              </div>
+              <div className="text-3xl font-black text-teal md:text-4xl">{stat.value}</div>
+              <div className="mt-1.5 text-xs text-slate-400 leading-snug">{stat.label}</div>
             </div>
           ))}
+        </div>
+
+        {/* CTA */}
+        <div className="flex flex-col items-center gap-3">
+          <Link
+            href="/register"
+            className="group inline-flex h-14 items-center gap-2.5 rounded-xl bg-teal px-10 text-base font-bold text-white shadow-[0_0_40px_rgba(0,168,120,0.35)] transition-all hover:bg-teal/90 hover:shadow-[0_0_60px_rgba(0,168,120,0.5)] hover:-translate-y-0.5"
+          >
+            {ss.cta}
+            <Arrow className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+          <p className="text-sm text-slate-500">{ss.ctaNote}</p>
         </div>
       </div>
     </section>
