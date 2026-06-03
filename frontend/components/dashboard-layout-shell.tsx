@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
+import { useBalance } from "@/hooks/use-balance";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { DASHBOARD_NAV_GROUPS } from "@/lib/navigation";
@@ -123,6 +124,7 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isLoading, hasSession, signOut } = useAuth();
+  const { balanceSar, isLoading: balanceLoading } = useBalance();
   const t = useTranslations("nav");
 
   usePageTracking();
@@ -211,6 +213,33 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
             </div>
           ))}
         </nav>
+
+        {/* Balance widget */}
+        <div className="mx-2 mb-2 rounded-xl border border-teal-200 bg-teal-50 px-3 py-2">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-teal-600">
+              {t("balanceWidget.title")}
+            </p>
+            <Link
+              href="/dashboard/billing"
+              className="text-[10px] font-semibold text-teal-700 hover:underline"
+            >
+              {t("balanceWidget.topUp")} →
+            </Link>
+          </div>
+          <div className="mt-1">
+            {balanceLoading ? (
+              <div className="h-5 w-16 animate-pulse rounded bg-teal-200" />
+            ) : (
+              <p className="text-[18px] font-bold leading-none text-teal-900">
+                {(balanceSar ?? 0).toLocaleString()}{" "}
+                <span className="text-[11px] font-semibold text-teal-600">
+                  {t("balanceWidget.unit")}
+                </span>
+              </p>
+            )}
+          </div>
+        </div>
 
         {/* Account footer */}
         <div className="border-t border-slate-100 p-2">
