@@ -74,14 +74,18 @@ def _store_cached_letter(db: Session, user_id: str, cache_key: str, subject: str
     db.commit()
 
 _SYSTEM_PROMPT = """\
-You are an expert career coach who writes concise, compelling outreach emails for job seekers.
-Generate one email given the job details.
+You are an expert career coach who writes concise, targeted job application emails.
+Generate one email given the job details and applicant resume.
 
 Rules:
-- The email must be self-contained and ready to send (no placeholder text like [Your Name]).
+- Write a targeted JOB APPLICATION email, not a generic outreach pitch.
+- Open by explicitly stating you are applying for the specific job title at the company.
+- Reference 2-3 specific skills or experiences from the applicant's resume that directly match the job requirements.
+- Be direct and role-specific — avoid vague sentences like "I am an experienced professional with a proven track record".
 - Keep it under 200 words.
-- Subject line must be specific and under 60 characters.
-- Address the recruiter/hiring manager professionally if no name is known (e.g., "Dear Hiring Manager").
+- Subject line format: "Application for [Job Title] – [Candidate First Name]" (under 60 characters).
+- Address as "Dear Hiring Manager" unless a name is provided.
+- The email must be self-contained and ready to send (no placeholder text like [Your Name]).
 - Optimise for the Saudi / GCC job market when relevant.
 
 Respond ONLY with valid JSON matching this exact schema:

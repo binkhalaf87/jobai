@@ -6,7 +6,9 @@ import base64
 import logging
 import uuid
 from datetime import datetime, timedelta, timezone
+import email.encoders
 from email.header import Header
+from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formataddr
@@ -208,12 +210,27 @@ async def send_email(
     to_name: str | None,
     subject: str,
     body: str,
+    attachment_bytes: bytes | None = None,
+    attachment_filename: str | None = None,
 ) -> None:
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = _format_addr(from_name, from_email)
-    msg["To"] = _format_addr(to_name, to_email)
-    msg.attach(MIMEText(body, "plain", "utf-8"))
+    if attachment_bytes:
+        msg = MIMEMultipart("mixed")
+        msg["Subject"] = subject
+        msg["From"] = _format_addr(from_name, from_email)
+        msg["To"] = _format_addr(to_name, to_email)
+        msg.attach(MIMEText(body, "plain", "utf-8"))
+        part = MIMEBase("application", "octet-stream")
+        part.set_payload(attachment_bytes)
+        email.encoders.encode_base64(part)
+        safe_name = (attachment_filename or "resume.pdf").replace('"', "")
+        part["Content-Disposition"] = f'attachment; filename="{safe_name}"'
+        msg.attach(part)
+    else:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = _format_addr(from_name, from_email)
+        msg["To"] = _format_addr(to_name, to_email)
+        msg.attach(MIMEText(body, "plain", "utf-8"))
 
     raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
     async with httpx.AsyncClient() as client:

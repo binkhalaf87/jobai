@@ -148,6 +148,20 @@ async def _process_campaigns() -> None:
             if user and user.full_name:
                 from_name = user.full_name
 
+            # Load resume attachment once per campaign batch
+            attachment_bytes: bytes | None = None
+            attachment_filename: str | None = None
+            if campaign.resume_id:
+                from app.models.resume import Resume
+                from app.services.storage.factory import get_storage
+                resume = db.get(Resume, campaign.resume_id)
+                if resume and resume.storage_key:
+                    try:
+                        attachment_bytes = get_storage().download(resume.storage_key)
+                        attachment_filename = resume.source_filename or f"resume.{resume.file_type or 'pdf'}"
+                    except Exception as exc:
+                        logger.warning("Campaign %s: could not load resume attachment: %s", campaign.id, exc)
+
             sent_count = 0
             for contact in pending:
                 try:
@@ -159,6 +173,8 @@ async def _process_campaigns() -> None:
                         to_name=contact.recipient_name,
                         subject=campaign.subject,
                         body=campaign.body,
+                        attachment_bytes=attachment_bytes,
+                        attachment_filename=attachment_filename,
                     )
                     contact.status = "sent"
                     contact.sent_at = now

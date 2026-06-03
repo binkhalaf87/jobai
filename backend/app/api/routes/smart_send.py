@@ -16,8 +16,10 @@ from app.models.email_campaign import EmailCampaign
 from app.models.email_campaign_contact import EmailCampaignContact
 from app.models.enums import UserRole
 from app.models.mailing_list import Recipient, RecipientList
+from app.models.resume import Resume
 from app.models.user import User
 from app.models.gmail_connection_request import GmailConnectionRequest
+from app.services.storage.factory import get_storage
 from app.schemas.smart_send import (
     CampaignCreate,
     CampaignResponse,
@@ -205,6 +207,17 @@ async def send_email(
     except InsufficientPointsError as exc:
         raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail=str(exc)) from exc
 
+    attachment_bytes: bytes | None = None
+    attachment_filename: str | None = None
+    if req.resume_id:
+        resume = db.query(Resume).filter(Resume.id == req.resume_id, Resume.user_id == current_user.id).first()
+        if resume and resume.storage_key:
+            try:
+                attachment_bytes = get_storage().download(resume.storage_key)
+                attachment_filename = resume.source_filename or f"resume.{resume.file_type or 'pdf'}"
+            except Exception:
+                pass  # best-effort — send without attachment if file unavailable
+
     try:
         access_token = await gmail_oauth_service.get_valid_access_token(db, current_user.id)
         await gmail_oauth_service.send_email(
@@ -215,6 +228,8 @@ async def send_email(
             to_name=req.recipient_name,
             subject=req.subject,
             body=req.body,
+            attachment_bytes=attachment_bytes,
+            attachment_filename=attachment_filename,
         )
         record = gmail_oauth_service.save_history(
             db=db,
