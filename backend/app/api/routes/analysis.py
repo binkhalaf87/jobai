@@ -43,8 +43,8 @@ from app.services.ai_report_service import (
 from app.services.analysis_scoring import create_scoring_analysis
 from app.services.job_descriptions import create_job_description, list_user_job_descriptions
 from app.services.resume_preview import build_text_preview, get_user_resume
-from app.services.subscription_access_service import JOBSEEKER_REWRITE_FEATURE, JOBSEEKER_AI_REPORT_FEATURE, DEFAULT_JOBSEEKER_POINTS_COSTS
-from app.services.wallet_service import InsufficientPointsError, deduct_points
+from app.models.user_feature_credit import FEATURE_RESUME_ANALYSIS, FEATURE_RESUME_IMPROVEMENT
+from app.services.feature_credit_service import InsufficientFeatureCreditError, deduct_feature_credit
 
 # This router is reserved for analysis preparation, requests, and result retrieval.
 router = APIRouter(prefix="/analysis", tags=["analysis"])
@@ -308,9 +308,9 @@ def generate_resume_rewrite_suggestions(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis not found.")
 
     try:
-        deduct_points(db, current_user.id, DEFAULT_JOBSEEKER_POINTS_COSTS[JOBSEEKER_REWRITE_FEATURE], JOBSEEKER_REWRITE_FEATURE)
+        deduct_feature_credit(db, current_user.id, FEATURE_RESUME_IMPROVEMENT)
         db.commit()
-    except InsufficientPointsError as exc:
+    except InsufficientFeatureCreditError as exc:
         raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail=str(exc)) from exc
 
     try:
@@ -360,9 +360,9 @@ def create_ai_report(
         )
 
     try:
-        deduct_points(db, current_user.id, DEFAULT_JOBSEEKER_POINTS_COSTS[JOBSEEKER_AI_REPORT_FEATURE], JOBSEEKER_AI_REPORT_FEATURE)
+        deduct_feature_credit(db, current_user.id, FEATURE_RESUME_ANALYSIS)
         db.commit()
-    except InsufficientPointsError as exc:
+    except InsufficientFeatureCreditError as exc:
         raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail=str(exc)) from exc
 
     report_type = payload.report_type if payload.report_type in ("analysis", "enhancement") else "analysis"

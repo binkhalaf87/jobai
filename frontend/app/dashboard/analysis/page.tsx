@@ -1149,7 +1149,7 @@ export default function DashboardAnalysisPage() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-amber-900">{tBilling("creditUpsell.title")}</p>
               <p className="mt-0.5 text-xs text-amber-700">{tBilling("creditUpsell.subtitle")}</p>
-              <p className="mt-2 text-xs text-amber-700" dangerouslySetInnerHTML={{ __html: tBilling("creditUpsell.analysisDesc") }} />
+              <p className="mt-2 text-xs text-amber-700">{tBilling.rich("creditUpsell.analysisDesc", { strong: (c) => <strong className="font-bold">{c}</strong> })}</p>
               <Link
                 href="/dashboard/billing"
                 className="mt-3 inline-flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-amber-700"
