@@ -5,6 +5,7 @@ from app.models.email_campaign import EmailCampaign
 from app.models.email_campaign_contact import EmailCampaignContact
 from app.models.gmail_connection import GmailConnection
 from app.models.gmail_connection_request import GmailConnectionRequest
+from app.models.interview import InterviewSession
 from app.models.interview_response import InterviewResponse
 from app.models.job_description import JobDescription
 from app.models.mailing_list import Recipient, RecipientList
@@ -21,6 +22,7 @@ from app.models.saved_job import SavedJob
 from app.models.send_history import SendHistory
 from app.models.smart_send import SendCampaign, SendLog
 from app.models.smart_send_letter_cache import SmartSendLetterCache
+from app.models.smtp_connection import SmtpConnection
 from app.models.subscription import Subscription
 from app.models.usage_log import UsageLog
 from app.models.user_feature_credit import UserFeatureCredit
@@ -39,6 +41,7 @@ __all__ = [
     "GmailConnection",
     "GmailConnectionRequest",
     "InterviewResponse",
+    "InterviewSession",
     "JobDescription",
     "PaymentOrder",
     "PaymentWebhookEvent",
@@ -56,6 +59,7 @@ __all__ = [
     "SendHistory",
     "SendLog",
     "SmartSendLetterCache",
+    "SmtpConnection",
     "Subscription",
     "UsageLog",
     "User",
