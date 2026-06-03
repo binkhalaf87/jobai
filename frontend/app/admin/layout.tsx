@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
-import { LayoutDashboard, Users, LogOut, Shield, ListChecks, Mail, Tag } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, Shield, ListChecks, Mail, Tag, Activity } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
 
 const NAV_ITEMS = [
   { label: "Overview",       href: "/admin",                 icon: LayoutDashboard },
   { label: "Users",          href: "/admin/users",           icon: Users },
+  { label: "Activity",       href: "/admin/activity",        icon: Activity },
   { label: "Lists",          href: "/admin/lists",           icon: ListChecks },
   { label: "Gmail Requests", href: "/admin/gmail-requests",  icon: Mail },
   { label: "Promotions",    href: "/admin/promotions",      icon: Tag },

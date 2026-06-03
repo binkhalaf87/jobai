@@ -64,6 +64,7 @@ export async function getAdminStats(): Promise<AdminStatsResponse> {
 
 export type AdminActivityItem = {
   event_type: string;
+  user_id: string;
   user_name: string | null;
   user_email: string;
   detail: string | null;
@@ -75,11 +76,39 @@ export type AdminActivityResponse = {
   visitors_last_24h: number;
 };
 
+export type AdminActivityFeedResponse = {
+  total: number;
+  items: AdminActivityItem[];
+  event_types: string[];
+};
+
 export async function getAdminActivity(): Promise<AdminActivityResponse> {
   const res = await fetch(`${getApiBaseUrl()}${BASE}/activity`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error(await parseDetail(res, "Failed to load activity"));
+  return res.json();
+}
+
+export async function getAdminActivityFeed(params: {
+  event_type?: string;
+  search?: string;
+  date_from?: string;
+  date_to?: string;
+  page?: number;
+  page_size?: number;
+}): Promise<AdminActivityFeedResponse> {
+  const qs = new URLSearchParams();
+  if (params.event_type) qs.set("event_type", params.event_type);
+  if (params.search) qs.set("search", params.search);
+  if (params.date_from) qs.set("date_from", params.date_from);
+  if (params.date_to) qs.set("date_to", params.date_to);
+  if (params.page) qs.set("page", String(params.page));
+  if (params.page_size) qs.set("page_size", String(params.page_size));
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/activity/feed?${qs}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to load activity feed"));
   return res.json();
 }
 

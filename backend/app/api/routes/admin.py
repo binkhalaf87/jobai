@@ -31,6 +31,7 @@ from app.services.email_service import send_gmail_approval_email, send_gmail_rej
 from app.services.paymob_webhook_service import manually_activate_payment_order
 from app.services.storage import get_storage
 from app.schemas.admin import (
+    AdminActivityFeedResponse,
     AdminAnalyticsResponse,
     AdminContactCreate,
     AdminContactItem,
@@ -93,6 +94,9 @@ def get_stats(
 
 # ── Activity feed ─────────────────────────────────────────────────────────────
 
+_NOISE_EVENTS = {UsageEventType.AUTH_TOKEN_REFRESH, UsageEventType.PAGE_VIEW}
+
+
 @router.get("/activity", response_model=AdminActivityResponse)
 def get_activity(
     _: User = Depends(get_current_admin),
@@ -101,6 +105,7 @@ def get_activity(
     rows = db.execute(
         select(UsageLog, User)
         .join(User, UsageLog.user_id == User.id)
+        .where(UsageLog.event_type.not_in(_NOISE_EVENTS))
         .order_by(UsageLog.created_at.desc())
         .limit(15)
     ).all()
@@ -116,6 +121,7 @@ def get_activity(
     items = [
         AdminActivityItem(
             event_type=log.event_type,
+            user_id=log.user_id,
             user_name=user.full_name,
             user_email=user.email,
             detail=log.detail,
@@ -125,6 +131,78 @@ def get_activity(
     ]
 
     return AdminActivityResponse(recent_activity=items, visitors_last_24h=visitors_last_24h)
+
+
+@router.get("/activity/feed", response_model=AdminActivityFeedResponse)
+def get_activity_feed(
+    event_type: str | None = Query(None),
+    search: str | None = Query(None),
+    date_from: str | None = Query(None),
+    date_to: str | None = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    _: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> AdminActivityFeedResponse:
+    from datetime import date as date_type
+
+    q = (
+        select(UsageLog, User)
+        .join(User, UsageLog.user_id == User.id)
+        .where(UsageLog.event_type.not_in(_NOISE_EVENTS))
+    )
+
+    if event_type:
+        q = q.where(UsageLog.event_type == event_type)
+
+    if search:
+        pattern = f"%{search.lower()}%"
+        q = q.where(
+            func.lower(User.email).like(pattern) | func.lower(func.coalesce(User.full_name, "")).like(pattern)
+        )
+
+    if date_from:
+        try:
+            q = q.where(UsageLog.created_at >= datetime.fromisoformat(date_from).replace(tzinfo=timezone.utc))
+        except ValueError:
+            pass
+
+    if date_to:
+        try:
+            q = q.where(UsageLog.created_at < datetime.fromisoformat(date_to).replace(tzinfo=timezone.utc) + timedelta(days=1))
+        except ValueError:
+            pass
+
+    total = db.scalar(select(func.count()).select_from(q.subquery())) or 0
+
+    rows = db.execute(
+        q.order_by(UsageLog.created_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    ).all()
+
+    # Distinct event types for filter dropdown (excluding noise)
+    event_types = [
+        row[0] for row in db.execute(
+            select(func.distinct(UsageLog.event_type))
+            .where(UsageLog.event_type.not_in(_NOISE_EVENTS))
+            .order_by(UsageLog.event_type)
+        ).all()
+    ]
+
+    items = [
+        AdminActivityItem(
+            event_type=log.event_type,
+            user_id=log.user_id,
+            user_name=user.full_name,
+            user_email=user.email,
+            detail=log.detail,
+            created_at=log.created_at,
+        )
+        for log, user in rows
+    ]
+
+    return AdminActivityFeedResponse(total=total, items=items, event_types=event_types)
 
 
 # ── Analytics ─────────────────────────────────────────────────────────────────

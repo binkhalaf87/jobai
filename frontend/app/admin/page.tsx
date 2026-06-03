@@ -248,6 +248,9 @@ export default function AdminOverviewPage() {
               <p className="text-sm font-bold text-slate-900">Recent Activity</p>
               <p className="text-xs text-slate-500 mt-0.5">Last 15 events across all users</p>
             </div>
+            <Link href="/admin/activity" className="text-xs font-medium text-brand-600 hover:text-brand-700 hover:underline">
+              View all →
+            </Link>
           </div>
           {activity?.recent_activity.length ? (
             <div>

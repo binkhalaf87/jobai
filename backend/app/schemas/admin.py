@@ -108,6 +108,7 @@ class AdminGmailRequestReject(BaseModel):
 
 class AdminActivityItem(BaseModel):
     event_type: str
+    user_id: str
     user_name: str | None
     user_email: str
     detail: str | None
@@ -117,6 +118,12 @@ class AdminActivityItem(BaseModel):
 class AdminActivityResponse(BaseModel):
     recent_activity: list[AdminActivityItem]
     visitors_last_24h: int
+
+
+class AdminActivityFeedResponse(BaseModel):
+    total: int
+    items: list[AdminActivityItem]
+    event_types: list[str]
 
 
 # ── Plans (admin read-only) ───────────────────────────────────────────────────
