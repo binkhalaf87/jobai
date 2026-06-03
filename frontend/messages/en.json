@@ -102,9 +102,14 @@
       "error": "Failed to send. Please try again."
     },
     "balanceWidget": {
-      "title": "Balance",
-      "topUp": "Top up",
-      "unit": "SAR"
+      "title": "My Credits",
+      "topUp": "Buy",
+      "analysis": "CV Analysis",
+      "improvement": "CV Improvement",
+      "interview": "Mock Interview",
+      "contacts": "Smart Send",
+      "contactsUnit": "contacts",
+      "none": "No credits"
     },
     "brandTagline": "Smart hiring platform",
     "descriptions": {

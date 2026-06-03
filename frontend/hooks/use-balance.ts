@@ -3,16 +3,30 @@
 import { useState, useEffect } from "react";
 import { getFeatureCredits } from "@/lib/billing";
 
-const SAR_PER_CONTACT = 100 / 500;
+export type FeatureCredits = {
+  resume_analysis: number;
+  resume_improvement: number;
+  mock_interview: number;
+  smart_send_contacts: number;
+};
 
 export function useBalance() {
-  const [balanceSar, setBalanceSar] = useState<number | null>(null);
+  const [credits, setCredits] = useState<FeatureCredits | null>(null);
 
   useEffect(() => {
     getFeatureCredits()
-      .then((c) => setBalanceSar(Math.round((c["smart_send_contacts"] ?? 0) * SAR_PER_CONTACT)))
-      .catch(() => setBalanceSar(0));
+      .then((c) =>
+        setCredits({
+          resume_analysis: c["resume_analysis"] ?? 0,
+          resume_improvement: c["resume_improvement"] ?? 0,
+          mock_interview: c["mock_interview"] ?? 0,
+          smart_send_contacts: c["smart_send_contacts"] ?? 0,
+        })
+      )
+      .catch(() =>
+        setCredits({ resume_analysis: 0, resume_improvement: 0, mock_interview: 0, smart_send_contacts: 0 })
+      );
   }, []);
 
-  return { balanceSar, isLoading: balanceSar === null };
+  return { credits, isLoading: credits === null };
 }

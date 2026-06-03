@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
-import { useBalance } from "@/hooks/use-balance";
+import { useBalance, type FeatureCredits } from "@/hooks/use-balance";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { DASHBOARD_NAV_GROUPS } from "@/lib/navigation";
@@ -124,7 +124,7 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isLoading, hasSession, signOut } = useAuth();
-  const { balanceSar, isLoading: balanceLoading } = useBalance();
+  const { credits, isLoading: creditsLoading } = useBalance();
   const t = useTranslations("nav");
 
   usePageTracking();
@@ -214,31 +214,43 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
           ))}
         </nav>
 
-        {/* Balance widget */}
-        <div className="mx-2 mb-2 rounded-xl border border-teal-200 bg-teal-50 px-3 py-2">
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-teal-600">
+        {/* Credits widget */}
+        <div className="mx-2 mb-2 rounded-xl border border-brand-200 bg-brand-50 px-3 py-2.5">
+          <div className="flex items-center justify-between mb-1.5">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-brand-600">
               {t("balanceWidget.title")}
             </p>
             <Link
               href="/dashboard/billing"
-              className="text-[10px] font-semibold text-teal-700 hover:underline"
+              className="text-[10px] font-semibold text-brand-700 hover:underline"
             >
               {t("balanceWidget.topUp")} →
             </Link>
           </div>
-          <div className="mt-1">
-            {balanceLoading ? (
-              <div className="h-5 w-16 animate-pulse rounded bg-teal-200" />
-            ) : (
-              <p className="text-[18px] font-bold leading-none text-teal-900">
-                {(balanceSar ?? 0).toLocaleString()}{" "}
-                <span className="text-[11px] font-semibold text-teal-600">
-                  {t("balanceWidget.unit")}
-                </span>
-              </p>
-            )}
-          </div>
+          {creditsLoading ? (
+            <div className="space-y-1.5">
+              {[1,2,3,4].map((i) => <div key={i} className="h-3.5 w-full animate-pulse rounded bg-brand-200" />)}
+            </div>
+          ) : (
+            <ul className="space-y-1">
+              {([
+                ["resume_analysis",    t("balanceWidget.analysis"),    null],
+                ["resume_improvement", t("balanceWidget.improvement"), null],
+                ["mock_interview",     t("balanceWidget.interview"),   null],
+                ["smart_send_contacts",t("balanceWidget.contacts"),    t("balanceWidget.contactsUnit")],
+              ] as [keyof FeatureCredits, string, string | null][]).map(([key, label, unit]) => {
+                const qty = credits?.[key] ?? 0;
+                return (
+                  <li key={key} className="flex items-center justify-between gap-1">
+                    <span className="text-[10.5px] text-brand-700 leading-tight truncate">{label}</span>
+                    <span className={`flex-shrink-0 text-[10.5px] font-bold leading-tight ${qty > 0 ? "text-brand-900" : "text-brand-300"}`}>
+                      {qty}{unit ? ` ${unit}` : ""}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
 
         {/* Account footer */}

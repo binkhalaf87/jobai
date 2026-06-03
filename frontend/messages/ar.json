@@ -102,9 +102,14 @@
       "error": "فشل الإرسال. حاول مجدداً."
     },
     "balanceWidget": {
-      "title": "رصيدي",
-      "topUp": "شحن",
-      "unit": "ريال"
+      "title": "خدماتي",
+      "topUp": "شراء",
+      "analysis": "تحليل السيرة",
+      "improvement": "تحسين السيرة",
+      "interview": "مقابلة ذكية",
+      "contacts": "إرسال ذكي",
+      "contactsUnit": "جهة",
+      "none": "لا يوجد رصيد"
     },
     "brandTagline": "منصة التوظيف الذكي",
     "descriptions": {
