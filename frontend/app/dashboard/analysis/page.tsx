@@ -1035,7 +1035,7 @@ export default function DashboardAnalysisPage() {
         setPaymentRequired(true);
         setPageState("idle");
       } else {
-        setStreamError(tErrors("generic"));
+        setStreamError(e instanceof ApiError ? e.detail : tErrors("generic"));
         setPageState("error");
       }
     }

@@ -1,4 +1,4 @@
-import { api, fetchStream, getApiBaseUrl } from "@/lib/api";
+import { ApiError, api, fetchStream, getApiBaseUrl } from "@/lib/api";
 import type { AIReportFull, AIReportListItem } from "@/types";
 
 function getCsrfToken(): string | null {
@@ -55,7 +55,7 @@ export async function streamAIReport(
 
   if (!res.ok) {
     const payload = (await res.json().catch(() => ({}))) as { detail?: string };
-    throw new Error(payload.detail ?? "Failed to start analysis.");
+    throw new ApiError(res.status, payload.detail ?? "Failed to start analysis.");
   }
 
   const reader = res.body?.getReader();
