@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
-import { LayoutDashboard, Users, LogOut, Shield, ListChecks, Mail, Tag, Activity } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, Shield, ListChecks, Mail, Tag, Activity, CreditCard } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
 
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { label: "Lists",          href: "/admin/lists",           icon: ListChecks },
   { label: "Gmail Requests", href: "/admin/gmail-requests",  icon: Mail },
   { label: "Promotions",    href: "/admin/promotions",      icon: Tag },
+  { label: "Payments",      href: "/admin/payments",        icon: CreditCard },
 ] as const;
 
 function isActive(pathname: string, href: string): boolean {
@@ -116,7 +117,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur px-5 py-3 md:px-6">
           <p className="text-[15px] font-bold tracking-tight text-slate-900">
-            {NAV_ITEMS.find((i) => isActive(pathname, i.href))?.label ?? "Admin"}
+            {[...NAV_ITEMS].find((i) => isActive(pathname, i.href))?.label ?? "Admin"}
           </p>
         </header>
         <main className="flex-1 overflow-y-auto px-5 py-6 md:px-7 md:py-7">{children}</main>

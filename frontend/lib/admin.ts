@@ -458,6 +458,58 @@ export async function grantFeatureCredits(
   return res.json();
 }
 
+// ── Payment Orders ────────────────────────────────────────────────────────────
+
+export type AdminPaymentOrderItem = {
+  id: string;
+  user_id: string;
+  user_email: string;
+  plan_code: string;
+  plan_name: string;
+  order_type: string;
+  status: string;
+  amount_minor: number;
+  currency: string;
+  provider_name: string | null;
+  provider_order_id: string | null;
+  provider_transaction_id: string | null;
+  merchant_reference: string | null;
+  failure_reason: string | null;
+  paid_at: string | null;
+  created_at: string;
+};
+
+export async function listAdminPaymentOrders(
+  params: { status?: string; user_id?: string; limit?: number } = {},
+): Promise<AdminPaymentOrderItem[]> {
+  const qs = new URLSearchParams();
+  if (params.status) qs.set("status", params.status);
+  if (params.user_id) qs.set("user_id", params.user_id);
+  if (params.limit) qs.set("limit", String(params.limit));
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/payment-orders?${qs}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to load payment orders"));
+  return res.json();
+}
+
+export async function activatePaymentOrder(orderId: string): Promise<void> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/payment-orders/${orderId}/activate`, {
+    method: "POST",
+    headers: mutationHeaders(),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to activate order"));
+}
+
+export async function bulkActivatePendingOrders(): Promise<{ activated: string[]; already_paid: string[]; failed: Array<{ id: string; error: string }> }> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/payment-orders/bulk-activate`, {
+    method: "POST",
+    headers: mutationHeaders(),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to bulk activate"));
+  return res.json();
+}
+
 export async function getAdminResumeFileUrl(
   userId: string,
   resumeId: string,
