@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
+import uuid
+from datetime import datetime, timedelta, timezone
 
 from openai import AsyncOpenAI
 from sqlalchemy.orm import Session
@@ -11,8 +14,64 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.core.sanitize import UNTRUSTED_DATA_NOTICE, sanitize_user_input
 from app.models.resume import Resume
+from app.models.smart_send_letter_cache import SmartSendLetterCache
 
 logger = logging.getLogger(__name__)
+
+_CACHE_TTL_DAYS = 30
+
+
+def _make_cache_key(
+    user_id: str,
+    job_title: str,
+    company_name: str | None,
+    job_description: str | None,
+    resume_id: str | None,
+) -> str:
+    raw = "|".join([
+        user_id,
+        job_title.lower().strip(),
+        (company_name or "").lower().strip(),
+        (job_description or "")[:500].strip(),
+        resume_id or "",
+    ])
+    return hashlib.sha256(raw.encode()).hexdigest()
+
+
+def _get_cached_letter(db: Session, user_id: str, cache_key: str) -> dict | None:
+    now = datetime.now(timezone.utc)
+    row = db.query(SmartSendLetterCache).filter(
+        SmartSendLetterCache.user_id == user_id,
+        SmartSendLetterCache.cache_key == cache_key,
+        SmartSendLetterCache.expires_at > now,
+    ).first()
+    if row:
+        return {"subject": row.subject, "body": row.body}
+    return None
+
+
+def _store_cached_letter(db: Session, user_id: str, cache_key: str, subject: str, body: str) -> None:
+    now = datetime.now(timezone.utc)
+    existing = db.query(SmartSendLetterCache).filter(
+        SmartSendLetterCache.user_id == user_id,
+        SmartSendLetterCache.cache_key == cache_key,
+    ).first()
+    if existing:
+        existing.subject = subject
+        existing.body = body
+        existing.created_at = now
+        existing.expires_at = now + timedelta(days=_CACHE_TTL_DAYS)
+    else:
+        db.add(SmartSendLetterCache(
+            id=str(uuid.uuid4()),
+            user_id=user_id,
+            cache_key=cache_key,
+            subject=subject,
+            body=body,
+            created_at=now,
+            expires_at=now + timedelta(days=_CACHE_TTL_DAYS),
+        ))
+    db.commit()
 
 _SYSTEM_PROMPT = """\
 You are an expert career coach who writes concise, compelling outreach emails for job seekers.
@@ -52,7 +111,13 @@ async def generate_cover_letter(
     job_description: str | None,
     resume_id: str | None,
 ) -> dict:
-    """Returns {"subject": str, "body": str}."""
+    """Returns {"subject": str, "body": str}. Checks cache before calling OpenAI."""
+    cache_key = _make_cache_key(user_id, job_title, company_name, job_description, resume_id)
+    cached = _get_cached_letter(db, user_id, cache_key)
+    if cached:
+        logger.debug("Letter cache hit for user %s", user_id)
+        return cached
+
     resume_text = ""
     if resume_id:
         resume_text = _get_resume_text(db, user_id, resume_id)[:3000]
@@ -86,4 +151,6 @@ async def generate_cover_letter(
     if "subject" not in letter or "body" not in letter:
         raise ValueError("AI response missing subject or body")
 
-    return {"subject": letter["subject"], "body": letter["body"]}
+    result = {"subject": letter["subject"], "body": letter["body"]}
+    _store_cached_letter(db, user_id, cache_key, result["subject"], result["body"])
+    return result

@@ -1895,6 +1895,7 @@
       "generating": "جارٍ التوليد…",
       "generateBtn": "توليد الخطاب",
       "generationFailed": "فشل التوليد",
+      "blockedByBalance": "رصيدك غير كافٍ لهذه القائمة — يرجى شراء رصيد أولاً.",
       "letterTitle": "الخطاب المولَّد",
       "subjectLabel": "الموضوع",
       "bodyLabel": "نص الرسالة",

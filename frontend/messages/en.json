@@ -1895,6 +1895,7 @@
       "generating": "Generating…",
       "generateBtn": "Generate Letter",
       "generationFailed": "Generation failed",
+      "blockedByBalance": "Insufficient balance for this list — please top up first.",
       "letterTitle": "Generated Letter",
       "subjectLabel": "Subject",
       "bodyLabel": "Body",

@@ -387,6 +387,8 @@ function ComposePanel({
   const requiredSar = Math.round(requiredContacts * SAR_PER_CONTACT);
   const suggestedTier = PRICING_TIERS.find(([qty]) => qty >= requiredContacts - (contactCredits ?? 0)) ?? PRICING_TIERS[PRICING_TIERS.length - 1];
 
+  const listBlocked = selectedListId !== "" && contactCredits !== null && !canAffordFull;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -397,6 +399,60 @@ function ComposePanel({
         <span className="text-xs text-teal bg-teal-light/20 border border-teal-light px-2 py-1 rounded-full flex-shrink-0">{gmailAddress}</span>
       </div>
 
+      {/* ── Step 1: Select list + balance check (always visible first) ── */}
+      <div className="rounded-xl border border-brand-100 bg-brand-50 p-4 space-y-3">
+        <p className="text-sm font-semibold text-brand-800">{t("campaigns.settings.title")}</p>
+
+        <div>
+          <label className="block text-xs font-medium text-brand-700 mb-1">{t("campaigns.settings.listLabel")}</label>
+          {lists.length === 0 ? (
+            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              {t("campaigns.settings.noLists")}
+            </p>
+          ) : (
+            <select className="w-full border border-brand-200 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" value={selectedListId} onChange={(e) => { setSelectedListId(e.target.value); setLetter(null); }}>
+              <option value="">{t("campaigns.settings.selectList")}</option>
+              {lists.map((l) => (
+                <option key={l.id} value={l.id}>{l.name} ({t("campaigns.settings.contacts", { count: l.total_count })})</option>
+              ))}
+            </select>
+          )}
+        </div>
+
+        {selectedList && contactCredits !== null && (
+          <div className={`rounded-lg border px-3 py-3 space-y-2 text-xs ${canAffordFull ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
+            <p className={`font-semibold text-sm ${canAffordFull ? "text-emerald-700" : "text-amber-700"}`}>
+              {t("campaigns.settings.balanceTitle")}
+            </p>
+            <div className="flex items-center justify-between">
+              <span className={canAffordFull ? "text-emerald-600" : "text-amber-600"}>{t("campaigns.settings.balanceYours")}</span>
+              <span className={`font-semibold ${canAffordFull ? "text-emerald-700" : "text-amber-700"}`}>{t("campaigns.settings.balanceSar", { amount: balanceSar })}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className={canAffordFull ? "text-emerald-600" : "text-amber-600"}>{t("campaigns.settings.balanceRequired")}</span>
+              <span className={`font-semibold ${canAffordFull ? "text-emerald-700" : "text-amber-700"}`}>{t("campaigns.settings.balanceSar", { amount: requiredSar })}</span>
+            </div>
+            {canAffordFull ? (
+              <p className="text-emerald-600 font-medium">{t("campaigns.settings.balanceSufficient")}</p>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-amber-700 font-medium">
+                  {t("campaigns.settings.balanceInsufficient", { count: requiredContacts - (contactCredits ?? 0) })}
+                </p>
+                <Link
+                  href="/dashboard/billing"
+                  className="inline-flex items-center gap-1.5 bg-amber-600 text-white rounded-lg px-3 py-1.5 text-xs font-semibold hover:bg-amber-700"
+                >
+                  {t("campaigns.settings.balanceBuyMore")}
+                  {` — ${suggestedTier[0].toLocaleString()} ${t("campaigns.settings.balanceCompanies")} / ${suggestedTier[1]} ${t("campaigns.settings.balanceCurrency")}`}
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Step 2: Compose letter (blocked if insufficient balance) ── */}
       <form onSubmit={(e) => void handleGenerate(e)} className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -425,12 +481,14 @@ function ComposePanel({
         </div>
 
         {genError && <p className="text-red-600 text-sm">{genError}</p>}
+        {listBlocked && <p className="text-amber-700 text-sm font-medium">{t("compose.blockedByBalance")}</p>}
 
-        <button type="submit" disabled={generating || !form.job_title.trim()} className="w-full bg-brand-800 text-white rounded-lg py-2 text-sm font-medium hover:bg-brand-700 disabled:opacity-50 flex items-center justify-center gap-2">
+        <button type="submit" disabled={generating || !form.job_title.trim() || listBlocked} className="w-full bg-brand-800 text-white rounded-lg py-2 text-sm font-medium hover:bg-brand-700 disabled:opacity-50 flex items-center justify-center gap-2">
           {generating ? (<><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>{t("compose.generating")}</>) : t("compose.generateBtn")}
         </button>
       </form>
 
+      {/* ── Step 3: Review letter + launch ── */}
       {letter && (
         <div className="border-t pt-6 space-y-4">
           <h3 className="text-sm font-semibold text-gray-700">{t("compose.letterTitle")}</h3>
@@ -444,34 +502,12 @@ function ComposePanel({
             <textarea rows={10} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none font-mono" value={letter.body} onChange={(e) => setLetter({ ...letter, body: e.target.value })} />
           </div>
 
-          {/* Campaign settings */}
-          <div className="rounded-xl border border-brand-100 bg-brand-50 p-4 space-y-3">
-            <p className="text-sm font-semibold text-brand-800">{t("campaigns.settings.title")}</p>
-
-            <div>
-              <label className="block text-xs font-medium text-brand-700 mb-1">{t("campaigns.settings.listLabel")}</label>
-              {lists.length === 0 ? (
-                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                  {t("campaigns.settings.noLists")}
-                </p>
-              ) : (
-                <select className="w-full border border-brand-200 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" value={selectedListId} onChange={(e) => setSelectedListId(e.target.value)}>
-                  <option value="">{t("campaigns.settings.selectList")}</option>
-                  {lists.map((l) => (
-                    <option key={l.id} value={l.id}>{l.name} ({t("campaigns.settings.contacts", { count: l.total_count })})</option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-brand-700 mb-1">{t("campaigns.settings.dailyLimitLabel")}</label>
-              <input type="number" min={10} max={500} className="w-full border border-brand-200 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" value={dailyLimit} onChange={(e) => setDailyLimit(Math.max(10, Math.min(500, parseInt(e.target.value) || 100)))} />
-              <p className="text-xs text-brand-600 mt-1">{t("campaigns.settings.dailyLimitHint")}</p>
-            </div>
-
+          <div className="space-y-2">
+            <label className="block text-xs font-medium text-brand-700">{t("campaigns.settings.dailyLimitLabel")}</label>
+            <input type="number" min={10} max={500} className="w-full border border-brand-200 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" value={dailyLimit} onChange={(e) => setDailyLimit(Math.max(10, Math.min(500, parseInt(e.target.value) || 100)))} />
+            <p className="text-xs text-brand-600">{t("campaigns.settings.dailyLimitHint")}</p>
             {selectedList && estimatedDays !== null && (
-              <div className="rounded-lg bg-white border border-brand-100 px-3 py-2 text-xs text-brand-700 flex items-center justify-between">
+              <div className="rounded-lg bg-brand-50 border border-brand-100 px-3 py-2 text-xs text-brand-700 flex items-center justify-between">
                 <span>{t("campaigns.settings.contacts", { count: selectedList.total_count })}</span>
                 <span className="font-semibold">
                   {estimatedDays === 1
@@ -480,54 +516,12 @@ function ComposePanel({
                 </span>
               </div>
             )}
-
-            {selectedList && contactCredits !== null && (
-              <div className={`rounded-lg border px-3 py-3 space-y-2 text-xs ${canAffordFull ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
-                <p className={`font-semibold text-sm ${canAffordFull ? "text-emerald-700" : "text-amber-700"}`}>
-                  {t("campaigns.settings.balanceTitle")}
-                </p>
-                <div className="flex items-center justify-between">
-                  <span className={canAffordFull ? "text-emerald-600" : "text-amber-600"}>
-                    {t("campaigns.settings.balanceYours")}
-                  </span>
-                  <span className={`font-semibold ${canAffordFull ? "text-emerald-700" : "text-amber-700"}`}>
-                    {t("campaigns.settings.balanceSar", { amount: balanceSar })}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className={canAffordFull ? "text-emerald-600" : "text-amber-600"}>
-                    {t("campaigns.settings.balanceRequired")}
-                  </span>
-                  <span className={`font-semibold ${canAffordFull ? "text-emerald-700" : "text-amber-700"}`}>
-                    {t("campaigns.settings.balanceSar", { amount: requiredSar })}
-                  </span>
-                </div>
-                {canAffordFull ? (
-                  <p className="text-emerald-600 font-medium">
-                    {t("campaigns.settings.balanceSufficient")}
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    <p className="text-amber-700 font-medium">
-                      {t("campaigns.settings.balanceInsufficient", { count: requiredContacts - (contactCredits ?? 0) })}
-                    </p>
-                    <Link
-                      href="/dashboard/billing"
-                      className="inline-flex items-center gap-1.5 bg-amber-600 text-white rounded-lg px-3 py-1.5 text-xs font-semibold hover:bg-amber-700"
-                    >
-                      {t("campaigns.settings.balanceBuyMore")}
-                      {` — ${suggestedTier[0].toLocaleString()} ${t("campaigns.settings.balanceCompanies")} / ${suggestedTier[1]} ${t("campaigns.settings.balanceCurrency")}`}
-                    </Link>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
           {launchError && <p className="text-red-600 text-sm">{launchError}</p>}
           {successMsg && <p className="text-teal text-sm font-medium">{successMsg}</p>}
 
-          <button onClick={() => void handleLaunch()} disabled={launching || !selectedListId || (contactCredits !== null && !canAffordFull)} className="w-full bg-teal text-white rounded-lg py-2.5 text-sm font-medium hover:bg-teal/90 disabled:opacity-50 flex items-center justify-center gap-2">
+          <button onClick={() => void handleLaunch()} disabled={launching || !selectedListId || listBlocked} className="w-full bg-teal text-white rounded-lg py-2.5 text-sm font-medium hover:bg-teal/90 disabled:opacity-50 flex items-center justify-center gap-2">
             {launching ? (<><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>{t("campaigns.settings.launching")}</>) : t("campaigns.settings.launch")}
           </button>
         </div>
