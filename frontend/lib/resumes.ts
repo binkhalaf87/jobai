@@ -41,11 +41,8 @@ export async function getResumeFile(resumeId: string, fallbackFilename: string):
   const filename = urlData.filename || fallbackFilename;
 
   if (urlData.url) {
-    // Cloud: fetch the pre-signed URL directly without credentials (S3 CORS requirement)
-    const response = await fetch(urlData.url);
-    if (!response.ok) throw new Error("Unable to load resume file.");
-    const blob = await response.blob();
-    return { blobUrl: URL.createObjectURL(blob), filename };
+    // Cloud: use the pre-signed URL directly — no fetch needed, iframes bypass CORS
+    return { blobUrl: urlData.url, filename };
   }
 
   // Local: stream through the backend with credentials
