@@ -36,32 +36,24 @@ export type ResumeFileResult = { blobUrl: string; filename: string };
 export async function getResumeFile(resumeId: string, fallbackFilename: string): Promise<ResumeFileResult> {
   const baseUrl = getApiBaseUrl();
 
-  // Use redirect:"manual" so credentials are not sent to the cloud storage redirect target (S3 CORS issue)
+  // Get the download URL from the backend (avoids CORS issues with cloud storage redirects)
+  const urlData = await api.get<{ url: string | null; filename: string }>(`/resume/${resumeId}/file-url`);
+  const filename = urlData.filename || fallbackFilename;
+
+  if (urlData.url) {
+    // Cloud: fetch the pre-signed URL directly without credentials (S3 CORS requirement)
+    const response = await fetch(urlData.url);
+    if (!response.ok) throw new Error("Unable to load resume file.");
+    const blob = await response.blob();
+    return { blobUrl: URL.createObjectURL(blob), filename };
+  }
+
+  // Local: stream through the backend with credentials
   const response = await fetch(`${baseUrl}/resume/${resumeId}/file`, {
     credentials: "include",
-    redirect: "manual",
   });
-
-  let finalResponse: Response;
-
-  if (response.type === "opaqueredirect" || (response.status >= 300 && response.status < 400)) {
-    const redirectUrl = response.headers.get("location");
-    if (!redirectUrl) throw new Error("Unable to load resume file.");
-    finalResponse = await fetch(redirectUrl);
-  } else {
-    finalResponse = response;
-  }
-
-  if (!finalResponse.ok) {
-    throw new Error("Unable to load resume file.");
-  }
-
-  // Extract filename from Content-Disposition if present
-  const disposition = finalResponse.headers.get("content-disposition") ?? "";
-  const match = /filename[^;=\n]*=(?:(["'])([^"'\n]*)\1|([^\s;]+))/.exec(disposition);
-  const filename = match?.[2] ?? match?.[3] ?? fallbackFilename;
-
-  const blob = await finalResponse.blob();
+  if (!response.ok) throw new Error("Unable to load resume file.");
+  const blob = await response.blob();
   return { blobUrl: URL.createObjectURL(blob), filename };
 }
 

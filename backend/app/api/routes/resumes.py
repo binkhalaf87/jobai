@@ -84,6 +84,24 @@ def get_resume(
     )
 
 
+@router.get("/{resume_id}/file-url")
+def get_resume_file_url(
+    resume_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """Return a pre-signed download URL for cloud storage, or null for local storage."""
+    resume = get_user_resume(db, current_user.id, resume_id)
+    if not resume:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume not found.")
+
+    storage = get_storage()
+    key = resume.storage_key or ""
+    url = storage.get_download_url(key, expires_in=3600)
+    filename = resume.source_filename or f"{resume_id}.{resume.file_type or 'bin'}"
+    return {"url": url, "filename": filename}
+
+
 @router.get("/{resume_id}/file", response_model=None)
 def get_resume_file(
     resume_id: str,
