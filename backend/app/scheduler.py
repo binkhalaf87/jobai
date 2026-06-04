@@ -225,7 +225,7 @@ async def _cleanup_refresh_tokens() -> None:
 
 
 def start_scheduler() -> None:
-    _scheduler.add_job(_process_campaigns, "cron", minute="0")  # every hour on the hour
+    _scheduler.add_job(_process_campaigns, "interval", minutes=5)  # every 5 minutes
     _scheduler.add_job(_cleanup_refresh_tokens, "cron", hour="3", minute="0")  # daily at 03:00 UTC
     _scheduler.start()
     logger.info("Campaign scheduler started.")
