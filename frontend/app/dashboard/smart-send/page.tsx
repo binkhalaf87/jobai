@@ -370,8 +370,9 @@ function ComposePanel({
       setLetter(null);
       setSelectedListId("");
       onLaunched();
-    } catch {
-      setLaunchError(t("campaigns.settings.launchFailed"));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : t("campaigns.settings.launchFailed");
+      setLaunchError(msg);
     } finally {
       setLaunching(false);
     }
