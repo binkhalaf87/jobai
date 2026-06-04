@@ -8,11 +8,14 @@ import { createCampaign } from "@/lib/smart-send";
 import { getWizard, clearWizard } from "@/lib/wizard";
 import type { WizardState } from "@/lib/wizard";
 
+type Tab = "summary" | "email";
+
 export default function PreviewPage() {
   const router = useRouter();
   const [wizard, setWizard] = useState<Partial<WizardState>>({});
   const [launching, setLaunching] = useState(false);
   const [error, setError] = useState("");
+  const [tab, setTab] = useState<Tab>("email");
 
   useEffect(() => {
     setWizard(getWizard());
@@ -51,70 +54,108 @@ export default function PreviewPage() {
 
       <div>
         <h1 className="text-xl font-bold text-slate-800">مراجعة الحملة</h1>
-        <p className="text-sm text-slate-500 mt-1">راجع جميع التفاصيل قبل إطلاق الحملة</p>
+        <p className="text-sm text-slate-500 mt-1">راجع الرسالة والتفاصيل قبل الإطلاق</p>
       </div>
 
-      <div className="space-y-3">
-        {/* Letter */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-1">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-base">✉️</span>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">الخطاب</p>
+      {/* Tabs */}
+      <div className="flex gap-1 bg-slate-100 rounded-xl p-1">
+        <button onClick={() => setTab("email")} className={`flex-1 text-sm font-semibold py-2 rounded-lg transition-colors ${tab === "email" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
+          معاينة الرسالة
+        </button>
+        <button onClick={() => setTab("summary")} className={`flex-1 text-sm font-semibold py-2 rounded-lg transition-colors ${tab === "summary" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
+          ملخص الحملة
+        </button>
+      </div>
+
+      {/* Email Preview Tab */}
+      {tab === "email" && (
+        <div className="space-y-3">
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            {/* Email header */}
+            <div className="bg-slate-50 border-b border-slate-200 px-4 py-3 space-y-2">
+              <div className="flex items-start gap-2 text-xs">
+                <span className="text-slate-400 w-14 flex-shrink-0 pt-0.5">الموضوع:</span>
+                <span className="font-semibold text-slate-800">{wizard.subject || <span className="text-rose-500 italic">غير محدد</span>}</span>
+              </div>
+              <div className="flex items-start gap-2 text-xs">
+                <span className="text-slate-400 w-14 flex-shrink-0">إلى:</span>
+                <span className="text-slate-600 italic">
+                  {wizard.list_name
+                    ? <>{wizard.list_name} — <span className="text-brand-600 font-medium">{(wizard.list_count ?? 0).toLocaleString("ar")} مستلم</span></>
+                    : <span className="text-rose-500">لم تُحدد قائمة</span>}
+                </span>
+              </div>
+              {wizard.resume_name && (
+                <div className="flex items-start gap-2 text-xs">
+                  <span className="text-slate-400 w-14 flex-shrink-0">مرفق:</span>
+                  <span className="text-slate-600 flex items-center gap-1">
+                    <span>📎</span> {wizard.resume_name}
+                  </span>
+                </div>
+              )}
+            </div>
+            {/* Email body */}
+            <div className="px-4 py-4">
+              {wizard.body ? (
+                <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{wizard.body}</p>
+              ) : (
+                <p className="text-sm text-rose-400 italic">لم يُحدد نص الخطاب</p>
+              )}
+            </div>
           </div>
-          <p className="text-sm font-semibold text-slate-800">{wizard.subject || <span className="text-rose-500">غير محدد</span>}</p>
-          {wizard.job_title && (
-            <p className="text-xs text-slate-500">
-              {wizard.job_title}{wizard.company_name ? ` — ${wizard.company_name}` : ""}
+          <div className="flex gap-2 text-xs">
+            <Link href="/dashboard/smart-send/letter" className="text-brand-600 hover:underline">تعديل الخطاب</Link>
+            <span className="text-slate-300">·</span>
+            <Link href="/dashboard/smart-send/list" className="text-brand-600 hover:underline">تعديل القائمة</Link>
+            <span className="text-slate-300">·</span>
+            <Link href="/dashboard/smart-send/resume" className="text-brand-600 hover:underline">تعديل المرفق</Link>
+          </div>
+        </div>
+      )}
+
+      {/* Summary Tab */}
+      {tab === "summary" && (
+        <div className="space-y-3">
+          <div className="bg-white border border-slate-200 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span>📄</span>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">السيرة الذاتية</p>
+            </div>
+            <p className="text-sm font-semibold text-slate-800">
+              {wizard.resume_name || (wizard.resume_id ? "سيرة ذاتية محددة" : <span className="text-amber-600">لم تُحدد سيرة ذاتية</span>)}
             </p>
-          )}
-          {wizard.body && (
-            <p className="text-xs text-slate-400 mt-1 line-clamp-2 whitespace-pre-wrap">{wizard.body}</p>
-          )}
-          <Link href="/dashboard/smart-send/letter" className="text-xs text-brand-600 hover:underline mt-1 inline-block">تعديل</Link>
-        </div>
-
-        {/* Resume */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-base">📄</span>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">السيرة الذاتية</p>
+            <Link href="/dashboard/smart-send/resume" className="text-xs text-brand-600 hover:underline mt-1 inline-block">تعديل</Link>
           </div>
-          <p className="text-sm font-semibold text-slate-800">
-            {wizard.resume_name || (wizard.resume_id ? "سيرة ذاتية محددة" : <span className="text-amber-600">لم تُحدد سيرة ذاتية</span>)}
-          </p>
-          <Link href="/dashboard/smart-send/resume" className="text-xs text-brand-600 hover:underline mt-1 inline-block">تعديل</Link>
-        </div>
 
-        {/* List */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-base">👥</span>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">قائمة الإرسال</p>
+          <div className="bg-white border border-slate-200 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span>👥</span>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">قائمة الإرسال</p>
+            </div>
+            <p className="text-sm font-semibold text-slate-800">{wizard.list_name || <span className="text-rose-500">غير محدد</span>}</p>
+            {wizard.list_count !== undefined && (
+              <p className="text-xs text-brand-600 font-medium mt-0.5">{wizard.list_count.toLocaleString("ar")} جهة اتصال</p>
+            )}
+            <Link href="/dashboard/smart-send/list" className="text-xs text-brand-600 hover:underline mt-1 inline-block">تعديل</Link>
           </div>
-          <p className="text-sm font-semibold text-slate-800">{wizard.list_name || <span className="text-rose-500">غير محدد</span>}</p>
-          {wizard.list_count !== undefined && (
-            <p className="text-xs text-brand-600 font-medium mt-0.5">{wizard.list_count.toLocaleString("ar")} جهة اتصال</p>
-          )}
-          <Link href="/dashboard/smart-send/list" className="text-xs text-brand-600 hover:underline mt-1 inline-block">تعديل</Link>
-        </div>
 
-        {/* Settings */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-base">⚙️</span>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">إعدادات الإرسال</p>
+          <div className="bg-white border border-slate-200 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span>⚙️</span>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">إعدادات الإرسال</p>
+            </div>
+            <p className="text-sm font-semibold text-slate-800">{wizard.daily_limit ?? 50} رسالة/يوم</p>
+            {estimatedDays && (
+              <p className="text-xs text-slate-500 mt-0.5">مدة تقديرية: {estimatedDays} {estimatedDays === 1 ? "يوم" : "أيام"}</p>
+            )}
+            <Link href="/dashboard/smart-send/settings" className="text-xs text-brand-600 hover:underline mt-1 inline-block">تعديل</Link>
           </div>
-          <p className="text-sm font-semibold text-slate-800">{wizard.daily_limit ?? 50} رسالة/يوم</p>
-          {estimatedDays && (
-            <p className="text-xs text-slate-500 mt-0.5">مدة تقديرية: {estimatedDays} {estimatedDays === 1 ? "يوم" : "أيام"}</p>
-          )}
-          <Link href="/dashboard/smart-send/settings" className="text-xs text-brand-600 hover:underline mt-1 inline-block">تعديل</Link>
         </div>
-      </div>
+      )}
 
       {!wizard.resume_id && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-          ⚠️ لم تختر سيرة ذاتية — سيتم الإرسال بدون مرفق. يُنصح بإرفاق سيرتك الذاتية.
+          ⚠️ لم تختر سيرة ذاتية — سيتم الإرسال بدون مرفق.
         </div>
       )}
 

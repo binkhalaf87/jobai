@@ -26,16 +26,16 @@ export default function ResumePage() {
   function handleNext() {
     const resume = resumes.find((r) => r.id === selectedId);
     saveWizard({ resume_id: selectedId, resume_name: resume?.source_filename ?? resume?.file_type ?? "سيرة ذاتية" });
-    router.push("/dashboard/smart-send/list");
+    router.push("/dashboard/smart-send/letter");
   }
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8 space-y-6" dir="rtl">
-      <StepBar current={2} />
+      <StepBar current={1} />
 
       <div>
         <h1 className="text-xl font-bold text-slate-800">اختر السيرة الذاتية</h1>
-        <p className="text-sm text-slate-500 mt-1">ستُرفق السيرة الذاتية مع كل رسالة في الحملة</p>
+        <p className="text-sm text-slate-500 mt-1">ستُبنى عليها خطاب التقديم وترفق مع كل رسالة في الحملة</p>
       </div>
 
       {loading ? (
@@ -73,8 +73,14 @@ export default function ResumePage() {
         </div>
       )}
 
+      {selectedId && (
+        <div className="rounded-xl border border-teal-light bg-teal-light/10 p-3 text-xs text-teal">
+          ✓ سيتم توليد الخطاب بناءً على هذه السيرة الذاتية وإرفاقها مع كل رسالة
+        </div>
+      )}
+
       <div className="flex items-center justify-between pt-2">
-        <Link href="/dashboard/smart-send/letter" className="text-sm text-slate-500 hover:text-slate-700">← العودة</Link>
+        <Link href="/dashboard/smart-send" className="text-sm text-slate-500 hover:text-slate-700">← العودة</Link>
         <button
           onClick={handleNext}
           disabled={!selectedId}

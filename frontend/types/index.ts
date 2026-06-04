@@ -361,6 +361,15 @@ export type GenerateLetterResponse = {
   body: string;
 };
 
+export type UserLetter = {
+  id: string;
+  subject: string;
+  body: string;
+  job_title: string | null;
+  company_name: string | null;
+  created_at: string;
+};
+
 export type SendHistoryItem = {
   id: string;
   job_title: string;

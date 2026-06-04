@@ -236,7 +236,7 @@ export default function SmartSendPage() {
       {gmailStatus.is_connected && (
         <div className="grid grid-cols-1 gap-4">
           <ActionCard
-            href="/dashboard/smart-send/letter"
+            href="/dashboard/smart-send/resume"
             icon="✉️"
             title="بدء حملة جديدة"
             description="أنشئ خطاباً وأرسله لمئات الشركات في 6 خطوات بسيطة"

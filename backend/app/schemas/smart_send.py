@@ -54,6 +54,26 @@ class GenerateLetterResponse(BaseModel):
     body: str
 
 
+# ── User Letters ───────────────────────────────────────────────────────────────
+
+class SaveLetterRequest(BaseModel):
+    subject: str
+    body: str
+    job_title: str | None = None
+    company_name: str | None = None
+
+
+class UserLetterItem(BaseModel):
+    id: str
+    subject: str
+    body: str
+    job_title: str | None
+    company_name: str | None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 # ── Send ───────────────────────────────────────────────────────────────────────
 
 class SendRequest(BaseModel):

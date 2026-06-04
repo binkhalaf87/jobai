@@ -69,6 +69,21 @@ export async function getHistory(): Promise<SendHistoryItem[]> {
   return api.get<SendHistoryItem[]>(`${BASE}/history`);
 }
 
+// ── User Letters ──────────────────────────────────────────────────────────────
+
+export async function getLetters(): Promise<import("@/types").UserLetter[]> {
+  return api.get<import("@/types").UserLetter[]>(`${BASE}/letters`);
+}
+
+export async function saveLetter(data: {
+  subject: string;
+  body: string;
+  job_title?: string;
+  company_name?: string;
+}): Promise<import("@/types").UserLetter> {
+  return api.post<import("@/types").UserLetter>(`${BASE}/letters`, data);
+}
+
 // ── Recipient Lists ───────────────────────────────────────────────────────────
 
 export async function getRecipientLists(): Promise<import("@/types").RecipientList[]> {

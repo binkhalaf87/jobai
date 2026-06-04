@@ -29,9 +29,11 @@ from app.schemas.smart_send import (
     GmailRequestCreate,
     GmailStatusResponse,
     RecipientListItem,
+    SaveLetterRequest,
     SendHistoryItem,
     SendRequest,
     SendResponse,
+    UserLetterItem,
 )
 from app.services import cover_letter_service, gmail_oauth_service
 from app.services.subscription_access_service import JOBSEEKER_SMART_SEND_FEATURE, DEFAULT_JOBSEEKER_POINTS_COSTS
@@ -187,6 +189,48 @@ async def generate_letter(
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     return GenerateLetterResponse(**letter)
+
+
+# ── User Letters (saved/generated) ────────────────────────────────────────────
+
+@router.get("/letters", response_model=list[UserLetterItem])
+def list_letters(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    from app.models.user_letter import UserLetter
+    from sqlalchemy import select, desc
+    rows = db.scalars(
+        select(UserLetter)
+        .where(UserLetter.user_id == current_user.id)
+        .order_by(desc(UserLetter.created_at))
+        .limit(30)
+    ).all()
+    return rows
+
+
+@router.post("/letters", response_model=UserLetterItem, status_code=status.HTTP_201_CREATED)
+def save_letter(
+    req: SaveLetterRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    import uuid
+    from datetime import datetime, timezone
+    from app.models.user_letter import UserLetter
+    letter = UserLetter(
+        id=str(uuid.uuid4()),
+        user_id=current_user.id,
+        subject=req.subject,
+        body=req.body,
+        job_title=req.job_title,
+        company_name=req.company_name,
+        created_at=datetime.now(timezone.utc),
+    )
+    db.add(letter)
+    db.commit()
+    db.refresh(letter)
+    return letter
 
 
 # ── Send ───────────────────────────────────────────────────────────────────────

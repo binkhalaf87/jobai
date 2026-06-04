@@ -75,7 +75,7 @@ export default function ListPage() {
       )}
 
       <div className="flex items-center justify-between pt-2">
-        <Link href="/dashboard/smart-send/resume" className="text-sm text-slate-500 hover:text-slate-700">← العودة</Link>
+        <Link href="/dashboard/smart-send/letter" className="text-sm text-slate-500 hover:text-slate-700">← العودة</Link>
         <button
           onClick={handleNext}
           disabled={!selectedId}

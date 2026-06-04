@@ -4,21 +4,21 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { StepBar } from "@/components/smart-send/StepBar";
-import { generateLetter, getHistory } from "@/lib/smart-send";
+import { generateLetter, getLetters, saveLetter } from "@/lib/smart-send";
 import { getWizard, saveWizard } from "@/lib/wizard";
-import type { SendHistoryItem } from "@/types";
+import type { UserLetter } from "@/types";
 
 type Mode = "targeted" | "general";
 
 export default function LetterPage() {
   const router = useRouter();
-  const [history, setHistory] = useState<SendHistoryItem[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(true);
+  const [letters, setLetters] = useState<UserLetter[]>([]);
+  const [loadingLetters, setLoadingLetters] = useState(true);
+  const [resumeName, setResumeName] = useState<string>("");
+  const [resumeId, setResumeId] = useState<string>("");
 
-  // Selected letter (from history or generated)
-  const [selected, setSelected] = useState<{ subject: string; body: string; job_title: string; company_name: string } | null>(null);
+  const [selected, setSelected] = useState<UserLetter | null>(null);
 
-  // New letter form
   const [showForm, setShowForm] = useState(false);
   const [mode, setMode] = useState<Mode>("general");
   const [jobTitle, setJobTitle] = useState("");
@@ -28,16 +28,17 @@ export default function LetterPage() {
   const [generated, setGenerated] = useState<{ subject: string; body: string } | null>(null);
   const [genError, setGenError] = useState("");
 
-  // Load history and restore wizard state
   useEffect(() => {
-    getHistory()
-      .then(setHistory)
-      .catch(() => {})
-      .finally(() => setLoadingHistory(false));
     const w = getWizard();
+    setResumeId(w.resume_id ?? "");
+    setResumeName(w.resume_name ?? "");
     if (w.subject && w.body) {
-      setSelected({ subject: w.subject, body: w.body, job_title: w.job_title ?? "", company_name: w.company_name ?? "" });
+      setSelected({ id: "", subject: w.subject, body: w.body, job_title: w.job_title ?? null, company_name: w.company_name ?? null, created_at: "" });
     }
+    getLetters()
+      .then(setLetters)
+      .catch(() => {})
+      .finally(() => setLoadingLetters(false));
   }, []);
 
   async function handleGenerate() {
@@ -48,6 +49,7 @@ export default function LetterPage() {
         job_title: mode === "general" ? undefined : jobTitle,
         company_name: companyName || undefined,
         job_description: jobDescription || undefined,
+        resume_id: resumeId || undefined,
       });
       setGenerated(res);
     } catch (err: unknown) {
@@ -57,25 +59,43 @@ export default function LetterPage() {
     }
   }
 
-  function handleSelectGenerated() {
+  async function handleSelectGenerated() {
     if (!generated) return;
-    setSelected({ subject: generated.subject, body: generated.body, job_title: jobTitle, company_name: companyName });
+    try {
+      const saved = await saveLetter({
+        subject: generated.subject,
+        body: generated.body,
+        job_title: mode === "targeted" ? jobTitle : undefined,
+        company_name: companyName || undefined,
+      });
+      setSelected(saved);
+      setLetters((prev) => [saved, ...prev]);
+    } catch {
+      // Save failed — still allow selection without backend save
+      setSelected({ id: "", subject: generated.subject, body: generated.body, job_title: jobTitle || null, company_name: companyName || null, created_at: "" });
+    }
     setShowForm(false);
+  }
+
+  function handleSelectFromHistory(letter: UserLetter) {
+    setSelected(letter);
   }
 
   function handleNext() {
     if (!selected) return;
-    saveWizard({ subject: selected.subject, body: selected.body, job_title: selected.job_title, company_name: selected.company_name });
-    router.push("/dashboard/smart-send/resume");
+    saveWizard({ subject: selected.subject, body: selected.body, job_title: selected.job_title ?? "", company_name: selected.company_name ?? "" });
+    router.push("/dashboard/smart-send/list");
   }
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8 space-y-6" dir="rtl">
-      <StepBar current={1} />
+      <StepBar current={2} />
 
       <div>
         <h1 className="text-xl font-bold text-slate-800">اختر الخطاب</h1>
-        <p className="text-sm text-slate-500 mt-1">اختر خطاباً من سجلك السابق أو أنشئ خطاباً جديداً</p>
+        <p className="text-sm text-slate-500 mt-1">
+          {resumeName ? <>سيُولَّد الخطاب بناءً على سيرتك: <span className="font-medium text-brand-700">{resumeName}</span></> : "اختر خطاباً أو أنشئ خطاباً جديداً"}
+        </p>
       </div>
 
       {/* New letter form toggle */}
@@ -96,10 +116,16 @@ export default function LetterPage() {
             <button onClick={() => { setShowForm(false); setGenerated(null); setGenError(""); }} className="text-slate-400 hover:text-slate-600 text-lg leading-none">×</button>
           </div>
 
-          {/* Mode selector */}
+          {resumeName && (
+            <div className="rounded-lg bg-teal-light/20 border border-teal-light px-3 py-2 text-xs text-teal flex items-center gap-2">
+              <span>📄</span>
+              <span>سيُراعي الخطاب محتوى سيرتك: <strong>{resumeName}</strong></span>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-2">
             <button onClick={() => setMode("general")} className={`rounded-lg border py-2.5 text-xs font-semibold transition-colors ${mode === "general" ? "bg-brand-800 text-white border-brand-800" : "bg-white text-slate-600 border-slate-200 hover:border-brand-300"}`}>
-              خطاب عام
+              تسويق شخصي عام
             </button>
             <button onClick={() => setMode("targeted")} className={`rounded-lg border py-2.5 text-xs font-semibold transition-colors ${mode === "targeted" ? "bg-brand-800 text-white border-brand-800" : "bg-white text-slate-600 border-slate-200 hover:border-brand-300"}`}>
               موجّه لوظيفة
@@ -125,7 +151,7 @@ export default function LetterPage() {
 
           {mode === "general" && (
             <div className="rounded-lg bg-white border border-brand-100 px-3 py-2 text-xs text-slate-500">
-              سيتم توليد خطاب تقديم عام مناسب للإرسال لأي شركة
+              رسالة تسويق شخصي تبرز مهاراتك وإنجازاتك من سيرتك الذاتية — بدون ذكر وظيفة بعينها
             </div>
           )}
 
@@ -143,10 +169,10 @@ export default function LetterPage() {
                 <p className="text-xs font-semibold text-slate-700">الموضوع:</p>
                 <p className="text-sm text-slate-800">{generated.subject}</p>
                 <p className="text-xs font-semibold text-slate-700 mt-2">نص الخطاب:</p>
-                <p className="text-sm text-slate-600 whitespace-pre-wrap line-clamp-4">{generated.body}</p>
+                <p className="text-sm text-slate-600 whitespace-pre-wrap line-clamp-5">{generated.body}</p>
               </div>
               <div className="flex gap-2">
-                <button onClick={handleSelectGenerated} className="flex-1 bg-teal text-white rounded-lg py-2 text-sm font-semibold hover:bg-teal/90">
+                <button onClick={() => void handleSelectGenerated()} className="flex-1 bg-teal text-white rounded-lg py-2 text-sm font-semibold hover:bg-teal/90">
                   اختر هذا الخطاب
                 </button>
                 <button onClick={handleGenerate} disabled={generating} className="flex-1 border border-brand-200 text-brand-700 rounded-lg py-2 text-sm font-semibold hover:bg-brand-50 disabled:opacity-50">
@@ -158,34 +184,35 @@ export default function LetterPage() {
         </div>
       )}
 
-      {/* History */}
-      {loadingHistory ? (
+      {/* Saved letters */}
+      {loadingLetters ? (
         <div className="space-y-3">
           {[1, 2].map((i) => <div key={i} className="h-20 bg-slate-100 rounded-xl animate-pulse" />)}
         </div>
-      ) : history.length > 0 ? (
+      ) : letters.length > 0 ? (
         <div className="space-y-2">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">خطابات سابقة</p>
-          {history.map((item) => {
-            const isSelected = selected?.subject === item.subject && selected?.body === item.body;
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">خطاباتك المحفوظة</p>
+          {letters.map((letter) => {
+            const isSelected = selected?.id === letter.id;
             return (
               <button
-                key={item.id}
-                onClick={() => setSelected({ subject: item.subject, body: item.body, job_title: item.job_title ?? "", company_name: item.company_name ?? "" })}
+                key={letter.id}
+                onClick={() => handleSelectFromHistory(letter)}
                 className={`w-full text-right rounded-xl border p-4 transition-all hover:shadow-sm ${isSelected ? "border-brand-500 bg-brand-50 ring-2 ring-brand-300" : "border-slate-200 bg-white hover:border-brand-200"}`}
               >
-                <p className="text-sm font-semibold text-slate-800 truncate">{item.subject}</p>
+                <p className="text-sm font-semibold text-slate-800 truncate">{letter.subject}</p>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  {item.job_title && <span>{item.job_title}</span>}
-                  {item.job_title && item.company_name && <span> — </span>}
-                  {item.company_name && <span>{item.company_name}</span>}
+                  {letter.job_title && <span>{letter.job_title}</span>}
+                  {letter.job_title && letter.company_name && <span> — </span>}
+                  {letter.company_name && <span>{letter.company_name}</span>}
+                  {!letter.job_title && !letter.company_name && <span className="italic">تسويق شخصي عام</span>}
                 </p>
               </button>
             );
           })}
         </div>
       ) : !showForm ? (
-        <p className="text-center text-sm text-slate-400 py-4">لا توجد خطابات سابقة — أنشئ خطاباً جديداً أعلاه</p>
+        <p className="text-center text-sm text-slate-400 py-4">لا توجد خطابات محفوظة — أنشئ خطاباً جديداً أعلاه</p>
       ) : null}
 
       {/* Selected preview */}
@@ -199,9 +226,8 @@ export default function LetterPage() {
         </div>
       )}
 
-      {/* Navigation */}
       <div className="flex items-center justify-between pt-2">
-        <Link href="/dashboard/smart-send" className="text-sm text-slate-500 hover:text-slate-700">← العودة</Link>
+        <Link href="/dashboard/smart-send/resume" className="text-sm text-slate-500 hover:text-slate-700">← العودة</Link>
         <button
           onClick={handleNext}
           disabled={!selected}

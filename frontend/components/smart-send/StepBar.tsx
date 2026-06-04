@@ -1,6 +1,6 @@
 "use client";
 
-const STEPS_AR = ["الخطاب", "السيرة الذاتية", "القائمة", "الإعدادات", "المراجعة", "الإطلاق"];
+const STEPS_AR = ["السيرة الذاتية", "الخطاب", "القائمة", "الإعدادات", "المراجعة", "الإطلاق"];
 
 export function StepBar({ current }: { current: number }) {
   const total = STEPS_AR.length;
