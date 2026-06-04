@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { StepBar } from "@/components/smart-send/StepBar";
 import { createCampaign } from "@/lib/smart-send";
 import { getWizard, saveWizard, clearWizard } from "@/lib/wizard";
@@ -12,6 +13,7 @@ type Tab = "summary" | "email";
 
 export default function PreviewPage() {
   const router = useRouter();
+  const t = useTranslations("smartSendPage");
   const [wizard, setWizard] = useState<Partial<WizardState>>({});
   const [launching, setLaunching] = useState(false);
   const [error, setError] = useState("");
@@ -54,7 +56,7 @@ export default function PreviewPage() {
 
   async function handleLaunch() {
     if (!wizard.list_id || !wizard.subject || !wizard.body) {
-      setError("البيانات غير مكتملة. ارجع وتحقق من الخطوات السابقة.");
+      setError(t("previewStep.incompleteError"));
       return;
     }
     setLaunching(true); setError("");
@@ -69,7 +71,7 @@ export default function PreviewPage() {
       clearWizard();
       router.push(`/dashboard/smart-send/launch?campaign_id=${campaign.id}`);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "فشل إطلاق الحملة. حاول مرة أخرى.");
+      setError(err instanceof Error ? err.message : t("previewStep.launchFailed"));
     } finally {
       setLaunching(false);
     }
@@ -80,17 +82,17 @@ export default function PreviewPage() {
       <StepBar current={5} />
 
       <div>
-        <h1 className="text-xl font-bold text-slate-800">مراجعة الحملة</h1>
-        <p className="text-sm text-slate-500 mt-1">راجع الرسالة والتفاصيل قبل الإطلاق</p>
+        <h1 className="text-xl font-bold text-slate-800">{t("previewStep.title")}</h1>
+        <p className="text-sm text-slate-500 mt-1">{t("previewStep.description")}</p>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1 bg-slate-100 rounded-xl p-1">
         <button onClick={() => setTab("email")} className={`flex-1 text-sm font-semibold py-2 rounded-lg transition-colors ${tab === "email" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
-          معاينة الرسالة
+          {t("previewStep.tabEmail")}
         </button>
         <button onClick={() => setTab("summary")} className={`flex-1 text-sm font-semibold py-2 rounded-lg transition-colors ${tab === "summary" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
-          ملخص الحملة
+          {t("previewStep.tabSummary")}
         </button>
       </div>
 
@@ -102,7 +104,7 @@ export default function PreviewPage() {
             <div className="bg-slate-50 border-b border-slate-200 px-4 py-3 space-y-2">
               {/* Subject row */}
               <div className="flex items-start gap-2 text-xs">
-                <span className="text-slate-400 w-14 flex-shrink-0 pt-0.5">الموضوع:</span>
+                <span className="text-slate-400 w-14 flex-shrink-0 pt-0.5">{t("previewStep.subjectLabel")}</span>
                 {editing ? (
                   <input
                     value={editSubject}
@@ -111,24 +113,24 @@ export default function PreviewPage() {
                     dir="auto"
                   />
                 ) : (
-                  <span className="font-semibold text-slate-800">{wizard.subject || <span className="text-rose-500 italic">غير محدد</span>}</span>
+                  <span className="font-semibold text-slate-800">{wizard.subject || <span className="text-rose-500 italic">{t("previewStep.noSubject")}</span>}</span>
                 )}
               </div>
 
               {/* To row */}
               <div className="flex items-start gap-2 text-xs">
-                <span className="text-slate-400 w-14 flex-shrink-0">إلى:</span>
+                <span className="text-slate-400 w-14 flex-shrink-0">{t("previewStep.toLabel")}</span>
                 <span className="text-slate-600 italic">
                   {wizard.list_name
-                    ? <>{wizard.list_name} — <span className="text-brand-600 font-medium">{(wizard.list_count ?? 0).toLocaleString("ar")} مستلم</span></>
-                    : <span className="text-rose-500">لم تُحدد قائمة</span>}
+                    ? <>{wizard.list_name} — <span className="text-brand-600 font-medium">{t("previewStep.recipients", { name: "", count: (wizard.list_count ?? 0).toLocaleString("ar") }).replace(" — ", "")}</span></>
+                    : <span className="text-rose-500">{t("previewStep.noList")}</span>}
                 </span>
               </div>
 
               {/* Attachment row */}
               {wizard.resume_name && (
                 <div className="flex items-start gap-2 text-xs">
-                  <span className="text-slate-400 w-14 flex-shrink-0">مرفق:</span>
+                  <span className="text-slate-400 w-14 flex-shrink-0">{t("previewStep.attachmentLabel")}</span>
                   <span className="text-slate-600 flex items-center gap-1">
                     <span>📎</span> {wizard.resume_name}
                   </span>
@@ -149,7 +151,7 @@ export default function PreviewPage() {
               ) : wizard.body ? (
                 <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{wizard.body}</p>
               ) : (
-                <p className="text-sm text-rose-400 italic">لم يُحدد نص الخطاب</p>
+                <p className="text-sm text-rose-400 italic">{t("previewStep.noBody")}</p>
               )}
             </div>
           </div>
@@ -162,30 +164,30 @@ export default function PreviewPage() {
                 disabled={!editSubject.trim() || !editBody.trim()}
                 className="flex-1 bg-brand-800 text-white rounded-lg py-2 text-sm font-semibold hover:bg-brand-700 disabled:opacity-40"
               >
-                حفظ التعديلات
+                {t("previewStep.saveEdit")}
               </button>
               <button
                 onClick={handleCancelEdit}
                 className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm font-semibold hover:bg-slate-50"
               >
-                إلغاء
+                {t("previewStep.cancelEdit")}
               </button>
             </div>
           ) : (
             <div className="flex items-center justify-between">
               <div className="flex gap-2 text-xs">
-                <Link href="/dashboard/smart-send/letter" className="text-brand-600 hover:underline">تغيير الخطاب</Link>
+                <Link href="/dashboard/smart-send/letter" className="text-brand-600 hover:underline">{t("previewStep.changeLetter")}</Link>
                 <span className="text-slate-300">·</span>
-                <Link href="/dashboard/smart-send/list" className="text-brand-600 hover:underline">تعديل القائمة</Link>
+                <Link href="/dashboard/smart-send/list" className="text-brand-600 hover:underline">{t("previewStep.changeList")}</Link>
                 <span className="text-slate-300">·</span>
-                <Link href="/dashboard/smart-send/resume" className="text-brand-600 hover:underline">تعديل المرفق</Link>
+                <Link href="/dashboard/smart-send/resume" className="text-brand-600 hover:underline">{t("previewStep.changeAttachment")}</Link>
               </div>
               <button
                 onClick={handleStartEdit}
                 className="text-xs border border-slate-200 text-slate-600 rounded-lg px-3 py-1.5 hover:bg-slate-50 flex items-center gap-1.5"
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
-                تعديل يدوي
+                {t("previewStep.editBtn")}
               </button>
             </div>
           )}
@@ -198,43 +200,45 @@ export default function PreviewPage() {
           <div className="bg-white border border-slate-200 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <span>📄</span>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">السيرة الذاتية</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t("previewStep.resumeSection")}</p>
             </div>
             <p className="text-sm font-semibold text-slate-800">
-              {wizard.resume_name || (wizard.resume_id ? "سيرة ذاتية محددة" : <span className="text-amber-600">لم تُحدد سيرة ذاتية</span>)}
+              {wizard.resume_name || (wizard.resume_id ? t("previewStep.noResumeSelected") : <span className="text-amber-600">{t("previewStep.noResumeSelected")}</span>)}
             </p>
-            <Link href="/dashboard/smart-send/resume" className="text-xs text-brand-600 hover:underline mt-1 inline-block">تعديل</Link>
+            <Link href="/dashboard/smart-send/resume" className="text-xs text-brand-600 hover:underline mt-1 inline-block">{t("previewStep.editLabel")}</Link>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <span>👥</span>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">قائمة الإرسال</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t("previewStep.listSection")}</p>
             </div>
-            <p className="text-sm font-semibold text-slate-800">{wizard.list_name || <span className="text-rose-500">غير محدد</span>}</p>
+            <p className="text-sm font-semibold text-slate-800">{wizard.list_name || <span className="text-rose-500">{t("previewStep.noSubject")}</span>}</p>
             {wizard.list_count !== undefined && (
-              <p className="text-xs text-brand-600 font-medium mt-0.5">{wizard.list_count.toLocaleString("ar")} جهة اتصال</p>
+              <p className="text-xs text-brand-600 font-medium mt-0.5">{t("previewStep.contactsCount", { count: wizard.list_count.toLocaleString("ar") })}</p>
             )}
-            <Link href="/dashboard/smart-send/list" className="text-xs text-brand-600 hover:underline mt-1 inline-block">تعديل</Link>
+            <Link href="/dashboard/smart-send/list" className="text-xs text-brand-600 hover:underline mt-1 inline-block">{t("previewStep.editLabel")}</Link>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <span>⚙️</span>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">إعدادات الإرسال</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t("previewStep.settingsSection")}</p>
             </div>
-            <p className="text-sm font-semibold text-slate-800">{wizard.daily_limit ?? 50} رسالة/يوم</p>
+            <p className="text-sm font-semibold text-slate-800">{t("previewStep.dailyLimitValue", { limit: wizard.daily_limit ?? 50 })}</p>
             {estimatedDays && (
-              <p className="text-xs text-slate-500 mt-0.5">مدة تقديرية: {estimatedDays} {estimatedDays === 1 ? "يوم" : "أيام"}</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {t("previewStep.estimatedDays", { days: estimatedDays, unit: estimatedDays === 1 ? t("settingsStep.day") : t("settingsStep.days") })}
+              </p>
             )}
-            <Link href="/dashboard/smart-send/settings" className="text-xs text-brand-600 hover:underline mt-1 inline-block">تعديل</Link>
+            <Link href="/dashboard/smart-send/settings" className="text-xs text-brand-600 hover:underline mt-1 inline-block">{t("previewStep.editLabel")}</Link>
           </div>
         </div>
       )}
 
       {!wizard.resume_id && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-          ⚠️ لم تختر سيرة ذاتية — سيتم الإرسال بدون مرفق.
+          {t("previewStep.noResumeWarning")}
         </div>
       )}
 
@@ -243,15 +247,15 @@ export default function PreviewPage() {
       )}
 
       <div className="flex items-center justify-between pt-2">
-        <Link href="/dashboard/smart-send/settings" className="text-sm text-slate-500 hover:text-slate-700">← العودة</Link>
+        <Link href="/dashboard/smart-send/settings" className="text-sm text-slate-500 hover:text-slate-700">{t("wizard.back")}</Link>
         <button
           onClick={handleLaunch}
           disabled={launching || editing || !wizard.list_id || !wizard.subject}
           className="bg-brand-800 text-white rounded-xl px-6 py-2.5 text-sm font-semibold hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
         >
           {launching ? (
-            <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />جارٍ الإطلاق...</>
-          ) : "إطلاق الحملة 🚀"}
+            <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{t("previewStep.launching")}</>
+          ) : t("previewStep.launchBtn")}
         </button>
       </div>
     </main>

@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { getHistory } from "@/lib/smart-send";
 import type { SendHistoryItem } from "@/types";
 
 export default function HistoryPage() {
+  const t = useTranslations("smartSendPage");
   const [history, setHistory] = useState<SendHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,11 +25,11 @@ export default function HistoryPage() {
     <main className="max-w-2xl mx-auto px-4 py-8 space-y-6" dir="rtl">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-brand-700 mb-1">Smart Send</p>
-          <h1 className="text-xl font-bold text-slate-800">سجل الإرسال</h1>
+          <p className="text-xs font-semibold uppercase tracking-widest text-brand-700 mb-1">{t("historyPage.eyebrow")}</p>
+          <h1 className="text-xl font-bold text-slate-800">{t("historyPage.title")}</h1>
         </div>
         <Link href="/dashboard/smart-send" className="text-xs border border-slate-200 text-slate-500 rounded-lg px-3 py-1.5 hover:bg-slate-50">
-          العودة
+          {t("historyPage.backBtn")}
         </Link>
       </div>
 
@@ -36,15 +38,15 @@ export default function HistoryPage() {
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-white border border-slate-200 rounded-xl p-3 text-center">
             <p className="text-xl font-bold text-slate-800">{history.length}</p>
-            <p className="text-xs text-slate-500 mt-0.5">إجمالي</p>
+            <p className="text-xs text-slate-500 mt-0.5">{t("historyPage.totalLabel")}</p>
           </div>
           <div className="bg-white border border-teal-light rounded-xl p-3 text-center">
             <p className="text-xl font-bold text-teal">{sentCount}</p>
-            <p className="text-xs text-slate-500 mt-0.5">مُرسل</p>
+            <p className="text-xs text-slate-500 mt-0.5">{t("historyPage.sentLabel")}</p>
           </div>
           <div className="bg-white border border-rose-100 rounded-xl p-3 text-center">
             <p className="text-xl font-bold text-rose-600">{failedCount}</p>
-            <p className="text-xs text-slate-500 mt-0.5">فشل</p>
+            <p className="text-xs text-slate-500 mt-0.5">{t("historyPage.failedLabel")}</p>
           </div>
         </div>
       )}
@@ -56,9 +58,9 @@ export default function HistoryPage() {
       ) : history.length === 0 ? (
         <div className="text-center py-12 space-y-3">
           <p className="text-4xl">📭</p>
-          <p className="text-sm text-slate-500">لا يوجد سجل إرسال حتى الآن</p>
+          <p className="text-sm text-slate-500">{t("historyPage.noHistory")}</p>
           <Link href="/dashboard/smart-send/letter" className="inline-block bg-brand-800 text-white rounded-xl px-5 py-2.5 text-sm font-semibold hover:bg-brand-700">
-            بدء حملة جديدة
+            {t("historyPage.startCampaignBtn")}
           </Link>
         </div>
       ) : (

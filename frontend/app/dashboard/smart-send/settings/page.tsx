@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { StepBar } from "@/components/smart-send/StepBar";
 import { getWizard, saveWizard } from "@/lib/wizard";
 
@@ -10,6 +11,7 @@ const LIMIT_OPTIONS = [10, 20, 50, 100, 200];
 
 export default function SettingsPage() {
   const router = useRouter();
+  const t = useTranslations("smartSendPage");
   const [dailyLimit, setDailyLimit] = useState(50);
   const [listCount, setListCount] = useState(0);
 
@@ -31,13 +33,13 @@ export default function SettingsPage() {
       <StepBar current={4} />
 
       <div>
-        <h1 className="text-xl font-bold text-slate-800">إعدادات الإرسال</h1>
-        <p className="text-sm text-slate-500 mt-1">حدد عدد الرسائل التي تريد إرسالها يومياً</p>
+        <h1 className="text-xl font-bold text-slate-800">{t("settingsStep.title")}</h1>
+        <p className="text-sm text-slate-500 mt-1">{t("settingsStep.description")}</p>
       </div>
 
       <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-5">
         <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-3">الحد اليومي للإرسال</label>
+          <label className="block text-sm font-semibold text-slate-700 mb-3">{t("settingsStep.dailyLimitLabel")}</label>
           <div className="grid grid-cols-5 gap-2">
             {LIMIT_OPTIONS.map((opt) => (
               <button
@@ -50,7 +52,7 @@ export default function SettingsPage() {
             ))}
           </div>
           <div className="mt-3 space-y-1">
-            <label className="block text-xs text-slate-500">أو أدخل عدداً مخصصاً (1 – 500)</label>
+            <label className="block text-xs text-slate-500">{t("settingsStep.customLimitHint")}</label>
             <input
               type="number"
               min={1}
@@ -67,28 +69,28 @@ export default function SettingsPage() {
             <div className="text-2xl">📅</div>
             <div>
               <p className="text-sm font-semibold text-brand-800">
-                تقدير مدة الحملة: <span className="text-brand-600">{estimatedDays} {estimatedDays === 1 ? "يوم" : "أيام"}</span>
+                {t("settingsStep.estimateTitle", { days: estimatedDays, unit: estimatedDays === 1 ? t("settingsStep.day") : t("settingsStep.days") })}
               </p>
               <p className="text-xs text-brand-700 mt-0.5">
-                {listCount.toLocaleString("ar")} جهة اتصال ÷ {dailyLimit} رسالة/يوم
+                {t("settingsStep.estimateDesc", { total: listCount.toLocaleString("ar"), limit: dailyLimit })}
               </p>
             </div>
           </div>
         )}
 
         <div className="rounded-xl bg-amber-50 border border-amber-100 p-3 text-xs text-amber-700 space-y-1">
-          <p className="font-semibold">تنبيه بشأن حدود Gmail</p>
-          <p>يوصى بعدم تجاوز 100–200 رسالة/يوم تجنباً لتقييد حسابك من Google.</p>
+          <p className="font-semibold">{t("settingsStep.warningTitle")}</p>
+          <p>{t("settingsStep.warningDesc")}</p>
         </div>
       </div>
 
       <div className="flex items-center justify-between pt-2">
-        <Link href="/dashboard/smart-send/list" className="text-sm text-slate-500 hover:text-slate-700">← العودة</Link>
+        <Link href="/dashboard/smart-send/list" className="text-sm text-slate-500 hover:text-slate-700">{t("wizard.back")}</Link>
         <button
           onClick={handleNext}
           className="bg-brand-800 text-white rounded-xl px-6 py-2.5 text-sm font-semibold hover:bg-brand-700"
         >
-          التالي ←
+          {t("wizard.next")}
         </button>
       </div>
     </main>

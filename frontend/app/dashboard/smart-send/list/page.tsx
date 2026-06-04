@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { StepBar } from "@/components/smart-send/StepBar";
 import { getRecipientLists } from "@/lib/smart-send";
 import { getWizard, saveWizard } from "@/lib/wizard";
@@ -10,6 +11,7 @@ import type { RecipientList } from "@/types";
 
 export default function ListPage() {
   const router = useRouter();
+  const t = useTranslations("smartSendPage");
   const [lists, setLists] = useState<RecipientList[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string>("");
@@ -34,8 +36,8 @@ export default function ListPage() {
       <StepBar current={3} />
 
       <div>
-        <h1 className="text-xl font-bold text-slate-800">اختر قائمة الإرسال</h1>
-        <p className="text-sm text-slate-500 mt-1">سيتم إرسال الخطاب لجميع جهات الاتصال في القائمة المختارة</p>
+        <h1 className="text-xl font-bold text-slate-800">{t("listStep.title")}</h1>
+        <p className="text-sm text-slate-500 mt-1">{t("listStep.description")}</p>
       </div>
 
       {loading ? (
@@ -44,10 +46,10 @@ export default function ListPage() {
         </div>
       ) : lists.length === 0 ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-center space-y-3">
-          <p className="text-sm text-amber-800 font-semibold">لا توجد قوائم إرسال</p>
-          <p className="text-xs text-amber-700">أنشئ قائمة جهات اتصال أولاً</p>
+          <p className="text-sm text-amber-800 font-semibold">{t("listStep.noLists")}</p>
+          <p className="text-xs text-amber-700">{t("listStep.noListsDesc")}</p>
           <Link href="/dashboard/contacts" className="inline-block bg-brand-800 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-brand-700">
-            إدارة جهات الاتصال
+            {t("listStep.manageContactsBtn")}
           </Link>
         </div>
       ) : (
@@ -64,7 +66,7 @@ export default function ListPage() {
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-slate-800">{list.name}</p>
                 {list.description && <p className="text-xs text-slate-500 mt-0.5 truncate">{list.description}</p>}
-                <p className="text-xs text-brand-600 font-medium mt-0.5">{list.total_count.toLocaleString("ar")} جهة اتصال</p>
+                <p className="text-xs text-brand-600 font-medium mt-0.5">{t("listStep.contacts", { count: list.total_count.toLocaleString("ar") })}</p>
               </div>
               {selectedId === list.id && (
                 <div className="w-5 h-5 bg-brand-800 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">✓</div>
@@ -75,13 +77,13 @@ export default function ListPage() {
       )}
 
       <div className="flex items-center justify-between pt-2">
-        <Link href="/dashboard/smart-send/letter" className="text-sm text-slate-500 hover:text-slate-700">← العودة</Link>
+        <Link href="/dashboard/smart-send/letter" className="text-sm text-slate-500 hover:text-slate-700">{t("wizard.back")}</Link>
         <button
           onClick={handleNext}
           disabled={!selectedId}
           className="bg-brand-800 text-white rounded-xl px-6 py-2.5 text-sm font-semibold hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          التالي ←
+          {t("wizard.next")}
         </button>
       </div>
     </main>

@@ -238,13 +238,13 @@ export default function SmartSendPage() {
           <ActionCard
             href="/dashboard/smart-send/resume"
             icon="✉️"
-            title="بدء حملة جديدة"
-            description="أنشئ خطاباً وأرسله لمئات الشركات في 6 خطوات بسيطة"
+            title={t("wizard.newCampaign")}
+            description={t("wizard.newCampaignDesc")}
             primary
           />
           <div className="grid grid-cols-2 gap-4">
-            <ActionCard href="/dashboard/smart-send/campaigns" icon="📊" title="الحملات النشطة" description="تابع حالة الإرسال وأوقف أو استأنف الحملات" />
-            <ActionCard href="/dashboard/smart-send/history" icon="📋" title="سجل الإرسال" description="جميع الرسائل المُرسلة عبر Smart Send" />
+            <ActionCard href="/dashboard/smart-send/campaigns" icon="📊" title={t("wizard.activeCampaigns")} description={t("wizard.activeCampaignsDesc")} />
+            <ActionCard href="/dashboard/smart-send/history" icon="📋" title={t("wizard.sendHistory")} description={t("wizard.sendHistoryDesc")} />
           </div>
         </div>
       )}

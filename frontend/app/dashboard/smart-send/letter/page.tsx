@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { StepBar } from "@/components/smart-send/StepBar";
 import { generateLetter, getLetters, saveLetter } from "@/lib/smart-send";
 import { getWizard, saveWizard } from "@/lib/wizard";
@@ -12,6 +13,7 @@ type Mode = "targeted" | "general";
 
 export default function LetterPage() {
   const router = useRouter();
+  const t = useTranslations("smartSendPage");
   const [letters, setLetters] = useState<UserLetter[]>([]);
   const [loadingLetters, setLoadingLetters] = useState(true);
   const [resumeName, setResumeName] = useState<string>("");
@@ -42,7 +44,7 @@ export default function LetterPage() {
   }, []);
 
   async function handleGenerate() {
-    if (mode === "targeted" && !jobTitle.trim()) { setGenError("يرجى إدخال المسمى الوظيفي"); return; }
+    if (mode === "targeted" && !jobTitle.trim()) { setGenError(t("letterStep.jobTitleRequired")); return; }
     setGenerating(true); setGenError(""); setGenerated(null);
     try {
       const res = await generateLetter({
@@ -53,7 +55,7 @@ export default function LetterPage() {
       });
       setGenerated(res);
     } catch (err: unknown) {
-      setGenError(err instanceof Error ? err.message : "فشل توليد الخطاب");
+      setGenError(err instanceof Error ? err.message : t("letterStep.generateFailed"));
     } finally {
       setGenerating(false);
     }
@@ -92,9 +94,9 @@ export default function LetterPage() {
       <StepBar current={2} />
 
       <div>
-        <h1 className="text-xl font-bold text-slate-800">اختر الخطاب</h1>
+        <h1 className="text-xl font-bold text-slate-800">{t("letterStep.title")}</h1>
         <p className="text-sm text-slate-500 mt-1">
-          {resumeName ? <>سيُولَّد الخطاب بناءً على سيرتك: <span className="font-medium text-brand-700">{resumeName}</span></> : "اختر خطاباً أو أنشئ خطاباً جديداً"}
+          {resumeName ? t("letterStep.descriptionWithResume", { resumeName }) : t("letterStep.descriptionGeneric")}
         </p>
       </div>
 
@@ -104,7 +106,7 @@ export default function LetterPage() {
           onClick={() => setShowForm(true)}
           className="w-full border-2 border-dashed border-brand-300 rounded-xl py-4 text-sm font-semibold text-brand-700 hover:bg-brand-50 transition-colors flex items-center justify-center gap-2"
         >
-          <span className="text-lg">+</span> توليد خطاب جديد
+          {t("letterStep.newLetterBtn")}
         </button>
       )}
 
@@ -112,46 +114,46 @@ export default function LetterPage() {
       {showForm && (
         <div className="border border-brand-200 rounded-xl p-5 bg-brand-50 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-brand-800">توليد خطاب جديد</h3>
+            <h3 className="text-sm font-semibold text-brand-800">{t("letterStep.formTitle")}</h3>
             <button onClick={() => { setShowForm(false); setGenerated(null); setGenError(""); }} className="text-slate-400 hover:text-slate-600 text-lg leading-none">×</button>
           </div>
 
           {resumeName && (
             <div className="rounded-lg bg-teal-light/20 border border-teal-light px-3 py-2 text-xs text-teal flex items-center gap-2">
               <span>📄</span>
-              <span>سيُراعي الخطاب محتوى سيرتك: <strong>{resumeName}</strong></span>
+              <span>{t("letterStep.resumeHint", { resumeName })}</span>
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-2">
             <button onClick={() => setMode("general")} className={`rounded-lg border py-2.5 text-xs font-semibold transition-colors ${mode === "general" ? "bg-brand-800 text-white border-brand-800" : "bg-white text-slate-600 border-slate-200 hover:border-brand-300"}`}>
-              تسويق شخصي عام
+              {t("letterStep.modeGeneral")}
             </button>
             <button onClick={() => setMode("targeted")} className={`rounded-lg border py-2.5 text-xs font-semibold transition-colors ${mode === "targeted" ? "bg-brand-800 text-white border-brand-800" : "bg-white text-slate-600 border-slate-200 hover:border-brand-300"}`}>
-              موجّه لوظيفة
+              {t("letterStep.modeTargeted")}
             </button>
           </div>
 
           {mode === "targeted" && (
             <>
               <div className="space-y-1">
-                <label className="block text-xs font-medium text-brand-700">المسمى الوظيفي <span className="text-rose-500">*</span></label>
+                <label className="block text-xs font-medium text-brand-700">{t("letterStep.jobTitle")} <span className="text-rose-500">*</span></label>
                 <input value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} placeholder="مثال: مهندس برمجيات" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
               </div>
               <div className="space-y-1">
-                <label className="block text-xs font-medium text-brand-700">اسم الشركة <span className="text-slate-400 font-normal">(اختياري)</span></label>
+                <label className="block text-xs font-medium text-brand-700">{t("letterStep.companyName")} <span className="text-slate-400 font-normal">{t("letterStep.optional")}</span></label>
                 <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="مثال: شركة أرامكو" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
               </div>
               <div className="space-y-1">
-                <label className="block text-xs font-medium text-brand-700">وصف الوظيفة <span className="text-slate-400 font-normal">(اختياري)</span></label>
-                <textarea value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} placeholder="الصق وصف الوظيفة هنا..." rows={3} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none" />
+                <label className="block text-xs font-medium text-brand-700">{t("letterStep.jobDescription")} <span className="text-slate-400 font-normal">{t("letterStep.optional")}</span></label>
+                <textarea value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} placeholder={t("letterStep.jobDescPlaceholder")} rows={3} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none" />
               </div>
             </>
           )}
 
           {mode === "general" && (
             <div className="rounded-lg bg-white border border-brand-100 px-3 py-2 text-xs text-slate-500">
-              رسالة تسويق شخصي تبرز مهاراتك وإنجازاتك من سيرتك الذاتية — بدون ذكر وظيفة بعينها
+              {t("letterStep.generalHint")}
             </div>
           )}
 
@@ -160,23 +162,23 @@ export default function LetterPage() {
           {!generated ? (
             <button onClick={handleGenerate} disabled={generating} className="w-full bg-brand-800 text-white rounded-lg py-2.5 text-sm font-semibold hover:bg-brand-700 disabled:opacity-50 flex items-center justify-center gap-2">
               {generating ? (
-                <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />جارٍ التوليد...</>
-              ) : "توليد الخطاب"}
+                <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{t("letterStep.generating")}</>
+              ) : t("letterStep.generateBtn")}
             </button>
           ) : (
             <div className="space-y-3">
               <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-2">
-                <p className="text-xs font-semibold text-slate-700">الموضوع:</p>
+                <p className="text-xs font-semibold text-slate-700">{t("letterStep.subjectLabel")}</p>
                 <p className="text-sm text-slate-800">{generated.subject}</p>
-                <p className="text-xs font-semibold text-slate-700 mt-2">نص الخطاب:</p>
+                <p className="text-xs font-semibold text-slate-700 mt-2">{t("letterStep.bodyLabel")}</p>
                 <p className="text-sm text-slate-600 whitespace-pre-wrap line-clamp-5">{generated.body}</p>
               </div>
               <div className="flex gap-2">
                 <button onClick={() => void handleSelectGenerated()} className="flex-1 bg-teal text-white rounded-lg py-2 text-sm font-semibold hover:bg-teal/90">
-                  اختر هذا الخطاب
+                  {t("letterStep.selectThis")}
                 </button>
                 <button onClick={handleGenerate} disabled={generating} className="flex-1 border border-brand-200 text-brand-700 rounded-lg py-2 text-sm font-semibold hover:bg-brand-50 disabled:opacity-50">
-                  {generating ? "جارٍ إعادة التوليد..." : "توليد مرة أخرى"}
+                  {generating ? t("letterStep.regenerating") : t("letterStep.regenerate")}
                 </button>
               </div>
             </div>
@@ -191,7 +193,7 @@ export default function LetterPage() {
         </div>
       ) : letters.length > 0 ? (
         <div className="space-y-2">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">خطاباتك المحفوظة</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t("letterStep.savedLetters")}</p>
           {letters.map((letter) => {
             const isSelected = selected?.id === letter.id;
             return (
@@ -205,14 +207,14 @@ export default function LetterPage() {
                   {letter.job_title && <span>{letter.job_title}</span>}
                   {letter.job_title && letter.company_name && <span> — </span>}
                   {letter.company_name && <span>{letter.company_name}</span>}
-                  {!letter.job_title && !letter.company_name && <span className="italic">تسويق شخصي عام</span>}
+                  {!letter.job_title && !letter.company_name && <span className="italic">{t("letterStep.generalTag")}</span>}
                 </p>
               </button>
             );
           })}
         </div>
       ) : !showForm ? (
-        <p className="text-center text-sm text-slate-400 py-4">لا توجد خطابات محفوظة — أنشئ خطاباً جديداً أعلاه</p>
+        <p className="text-center text-sm text-slate-400 py-4">{t("letterStep.noSavedLetters")}</p>
       ) : null}
 
       {/* Selected preview */}
@@ -220,20 +222,20 @@ export default function LetterPage() {
         <div className="rounded-xl border border-teal-light bg-teal-light/10 p-4 flex items-start gap-3">
           <div className="w-5 h-5 bg-teal rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 mt-0.5">✓</div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-teal">تم اختيار الخطاب</p>
+            <p className="text-sm font-semibold text-teal">{t("letterStep.selectedTitle")}</p>
             <p className="text-xs text-slate-600 truncate mt-0.5">{selected.subject}</p>
           </div>
         </div>
       )}
 
       <div className="flex items-center justify-between pt-2">
-        <Link href="/dashboard/smart-send/resume" className="text-sm text-slate-500 hover:text-slate-700">← العودة</Link>
+        <Link href="/dashboard/smart-send/resume" className="text-sm text-slate-500 hover:text-slate-700">{t("wizard.back")}</Link>
         <button
           onClick={handleNext}
           disabled={!selected}
           className="bg-brand-800 text-white rounded-xl px-6 py-2.5 text-sm font-semibold hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          التالي ←
+          {t("wizard.next")}
         </button>
       </div>
     </main>

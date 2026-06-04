@@ -1,13 +1,15 @@
 "use client";
 
-const STEPS_AR = ["السيرة الذاتية", "الخطاب", "القائمة", "الإعدادات", "المراجعة", "الإطلاق"];
+import { useTranslations } from "next-intl";
 
 export function StepBar({ current }: { current: number }) {
-  const total = STEPS_AR.length;
+  const t = useTranslations("smartSendPage");
+  const steps = t.raw("wizard.steps") as string[];
+  const total = steps.length;
   return (
     <div className="mb-8">
       <div className="flex items-center gap-1 mb-3">
-        {STEPS_AR.map((_, i) => (
+        {steps.map((_, i) => (
           <div key={i} className="flex items-center gap-1">
             <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0 ${
               i + 1 < current ? "bg-teal text-white" :
@@ -23,8 +25,8 @@ export function StepBar({ current }: { current: number }) {
         ))}
       </div>
       <p className="text-xs text-slate-500">
-        الخطوة {current} من {total}{" "}
-        <span className="font-semibold text-slate-700">— {STEPS_AR[current - 1]}</span>
+        {t("wizard.stepOf", { current, total })}{" "}
+        <span className="font-semibold text-slate-700">— {steps[current - 1]}</span>
       </p>
     </div>
   );

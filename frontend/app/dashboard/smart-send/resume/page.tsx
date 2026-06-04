@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { StepBar } from "@/components/smart-send/StepBar";
 import { listResumes } from "@/lib/resumes";
 import { getWizard, saveWizard } from "@/lib/wizard";
@@ -10,6 +11,7 @@ import type { ResumeListItem } from "@/types";
 
 export default function ResumePage() {
   const router = useRouter();
+  const t = useTranslations("smartSendPage");
   const [resumes, setResumes] = useState<ResumeListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string>("");
@@ -34,8 +36,8 @@ export default function ResumePage() {
       <StepBar current={1} />
 
       <div>
-        <h1 className="text-xl font-bold text-slate-800">اختر السيرة الذاتية</h1>
-        <p className="text-sm text-slate-500 mt-1">ستُبنى عليها خطاب التقديم وترفق مع كل رسالة في الحملة</p>
+        <h1 className="text-xl font-bold text-slate-800">{t("resumeStep.title")}</h1>
+        <p className="text-sm text-slate-500 mt-1">{t("resumeStep.description")}</p>
       </div>
 
       {loading ? (
@@ -44,10 +46,10 @@ export default function ResumePage() {
         </div>
       ) : resumes.length === 0 ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-center space-y-3">
-          <p className="text-sm text-amber-800 font-semibold">لا توجد سيرة ذاتية مرفوعة</p>
-          <p className="text-xs text-amber-700">يجب رفع سيرة ذاتية قبل إطلاق الحملة</p>
+          <p className="text-sm text-amber-800 font-semibold">{t("resumeStep.noResumes")}</p>
+          <p className="text-xs text-amber-700">{t("resumeStep.noResumesDesc")}</p>
           <Link href="/dashboard/resume" className="inline-block bg-brand-800 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-brand-700">
-            رفع سيرة ذاتية
+            {t("resumeStep.uploadBtn")}
           </Link>
         </div>
       ) : (
@@ -75,18 +77,18 @@ export default function ResumePage() {
 
       {selectedId && (
         <div className="rounded-xl border border-teal-light bg-teal-light/10 p-3 text-xs text-teal">
-          ✓ سيتم توليد الخطاب بناءً على هذه السيرة الذاتية وإرفاقها مع كل رسالة
+          {t("resumeStep.selectedHint")}
         </div>
       )}
 
       <div className="flex items-center justify-between pt-2">
-        <Link href="/dashboard/smart-send" className="text-sm text-slate-500 hover:text-slate-700">← العودة</Link>
+        <Link href="/dashboard/smart-send" className="text-sm text-slate-500 hover:text-slate-700">{t("wizard.back")}</Link>
         <button
           onClick={handleNext}
           disabled={!selectedId}
           className="bg-brand-800 text-white rounded-xl px-6 py-2.5 text-sm font-semibold hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          التالي ←
+          {t("wizard.next")}
         </button>
       </div>
     </main>
