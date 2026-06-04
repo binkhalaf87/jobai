@@ -133,7 +133,7 @@ def get_unread_count(
     return UnreadCountResponse(count=count)
 
 
-@router.post("/tickets/{ticket_id}/read", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/tickets/{ticket_id}/read", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 def mark_read(
     ticket_id: str,
     current_user: User = Depends(get_current_user),
