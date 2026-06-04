@@ -219,11 +219,15 @@ async def send_email(
         msg["From"] = _format_addr(from_name, from_email)
         msg["To"] = _format_addr(to_name, to_email)
         msg.attach(MIMEText(body, "plain", "utf-8"))
-        part = MIMEBase("application", "octet-stream")
+        safe_name = (attachment_filename or "resume.pdf")
+        ext = safe_name.rsplit(".", 1)[-1].lower() if "." in safe_name else ""
+        mime_type = {"pdf": "application/pdf", "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "doc": "application/msword"}.get(ext, "application/octet-stream")
+        main_type, sub_type = mime_type.split("/", 1)
+        part = MIMEBase(main_type, sub_type)
         part.set_payload(attachment_bytes)
         email.encoders.encode_base64(part)
-        safe_name = (attachment_filename or "resume.pdf").replace('"', "")
-        part["Content-Disposition"] = f'attachment; filename="{safe_name}"'
+        # RFC 2231 encoding handles Arabic and other non-ASCII filenames correctly
+        part.add_header("Content-Disposition", "attachment", filename=("utf-8", "", safe_name))
         msg.attach(part)
     else:
         msg = MIMEMultipart("alternative")
