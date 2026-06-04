@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import random
 from datetime import datetime, timedelta, timezone
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -173,7 +175,7 @@ async def _process_campaigns() -> None:
                     continue
 
             sent_count = 0
-            for contact in pending:
+            for i, contact in enumerate(pending):
                 try:
                     await gmail_oauth_service.send_email(
                         access_token=access_token,
@@ -204,6 +206,12 @@ async def _process_campaigns() -> None:
                     )
 
                 db.commit()
+
+                # 2-3 minute delay between emails to avoid Gmail rate limits
+                if i < len(pending) - 1:
+                    delay = random.uniform(120, 180)
+                    logger.debug("Campaign %s: waiting %.0fs before next email.", campaign.id, delay)
+                    await asyncio.sleep(delay)
 
             if sent_count > 0:
                 logger.info("Campaign %s: sent %d emails this run.", campaign.id, sent_count)
