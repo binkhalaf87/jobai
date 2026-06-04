@@ -23,14 +23,14 @@ _CACHE_TTL_DAYS = 30
 
 def _make_cache_key(
     user_id: str,
-    job_title: str,
+    job_title: str | None,
     company_name: str | None,
     job_description: str | None,
     resume_id: str | None,
 ) -> str:
     raw = "|".join([
         user_id,
-        job_title.lower().strip(),
+        (job_title or "").lower().strip(),
         (company_name or "").lower().strip(),
         (job_description or "")[:500].strip(),
         resume_id or "",
@@ -73,12 +73,12 @@ def _store_cached_letter(db: Session, user_id: str, cache_key: str, subject: str
         ))
     db.commit()
 
-_SYSTEM_PROMPT = """\
+_SYSTEM_PROMPT_TARGETED = """\
 You are an expert career coach who writes concise, targeted job application emails.
 Generate one email given the job details and applicant resume.
 
 Rules:
-- Write a targeted JOB APPLICATION email, not a generic outreach pitch.
+- Write a targeted JOB APPLICATION email for the specific role.
 - Open by explicitly stating you are applying for the specific job title at the company.
 - Reference 2-3 specific skills or experiences from the applicant's resume that directly match the job requirements.
 - Be direct and role-specific — avoid vague sentences like "I am an experienced professional with a proven track record".
@@ -91,6 +91,29 @@ Rules:
 Respond ONLY with valid JSON matching this exact schema:
 {"subject": "...", "body": "..."}
 """ + UNTRUSTED_DATA_NOTICE
+
+_SYSTEM_PROMPT_GENERAL = """\
+You are an expert career coach who writes compelling personal-brand outreach emails.
+Generate a self-marketing email based ONLY on the applicant's resume — NO specific job title, NO specific company.
+
+Rules:
+- This is a PERSONAL MARKETING email to introduce the candidate proactively to any company.
+- Do NOT mention any job title, open position, or application — the candidate is marketing themselves, not applying for a specific role.
+- Highlight the candidate's most impressive skills, achievements, and experience from their resume.
+- Use a confident, professional tone that sparks interest in speaking with the candidate.
+- Keep it under 180 words.
+- Subject line: brief and intriguing, focused on the candidate's value (e.g., "Experienced Data Engineer – Open to New Opportunities"). Under 60 characters.
+- Address as "Dear Hiring Manager".
+- The email must be self-contained and ready to send (no placeholder text like [Your Name]).
+- Optimise for the Saudi / GCC job market when relevant.
+- If no resume is provided, write a polished general self-introduction without fabricating any specific details.
+
+Respond ONLY with valid JSON matching this exact schema:
+{"subject": "...", "body": "..."}
+""" + UNTRUSTED_DATA_NOTICE
+
+# Keep backward-compatible alias
+_SYSTEM_PROMPT = _SYSTEM_PROMPT_TARGETED
 
 
 def get_openai_client() -> AsyncOpenAI:
@@ -110,13 +133,16 @@ def _get_resume_text(db: Session, user_id: str, resume_id: str) -> str:
 async def generate_cover_letter(
     db: Session,
     user_id: str,
-    job_title: str,
+    job_title: str | None,
     company_name: str | None,
     job_description: str | None,
     resume_id: str | None,
 ) -> dict:
     """Returns {"subject": str, "body": str}. Checks cache before calling OpenAI."""
-    cache_key = _make_cache_key(user_id, job_title, company_name, job_description, resume_id)
+    is_general = not job_title or not job_title.strip()
+    effective_title = job_title.strip() if not is_general else ""
+
+    cache_key = _make_cache_key(user_id, effective_title, company_name, job_description, resume_id)
     cached = _get_cached_letter(db, user_id, cache_key)
     if cached:
         logger.debug("Letter cache hit for user %s", user_id)
@@ -126,13 +152,22 @@ async def generate_cover_letter(
     if resume_id:
         resume_text = _get_resume_text(db, user_id, resume_id)[:3000]
 
-    parts = [f"Job Title: {sanitize_user_input(job_title)}"]
-    if company_name:
-        parts.append(f"Company: {sanitize_user_input(company_name)}")
-    if job_description:
-        parts.append(f"\nJob Description:\n{sanitize_user_input(job_description, max_length=2000)}")
-    if resume_text:
-        parts.append(f"\nApplicant Resume (for context):\n{sanitize_user_input(resume_text, max_length=3000)}")
+    if is_general:
+        system_prompt = _SYSTEM_PROMPT_GENERAL
+        parts = ["Generate a personal marketing email based on the applicant's resume below."]
+        if resume_text:
+            parts.append(f"\nApplicant Resume:\n{sanitize_user_input(resume_text, max_length=3000)}")
+        else:
+            parts.append("No resume provided — write a polished general self-introduction.")
+    else:
+        system_prompt = _SYSTEM_PROMPT_TARGETED
+        parts = [f"Job Title: {sanitize_user_input(effective_title)}"]
+        if company_name:
+            parts.append(f"Company: {sanitize_user_input(company_name)}")
+        if job_description:
+            parts.append(f"\nJob Description:\n{sanitize_user_input(job_description, max_length=2000)}")
+        if resume_text:
+            parts.append(f"\nApplicant Resume (for context):\n{sanitize_user_input(resume_text, max_length=3000)}")
 
     client = get_openai_client()
     response = await client.chat.completions.create(
@@ -140,7 +175,7 @@ async def generate_cover_letter(
         temperature=0.7,
         response_format={"type": "json_object"},
         messages=[
-            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": "\n".join(parts)},
         ],
     )

@@ -45,7 +45,7 @@ export default function LetterPage() {
     setGenerating(true); setGenError(""); setGenerated(null);
     try {
       const res = await generateLetter({
-        job_title: jobTitle || "وظيفة عامة",
+        job_title: mode === "general" ? undefined : jobTitle,
         company_name: companyName || undefined,
         job_description: jobDescription || undefined,
       });

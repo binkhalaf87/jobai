@@ -41,7 +41,7 @@ export async function testGmailSend(): Promise<{ detail: string }> {
 // ── Generate Letter ───────────────────────────────────────────────────────────
 
 export async function generateLetter(data: {
-  job_title: string;
+  job_title?: string;
   company_name?: string;
   job_description?: string;
   resume_id?: string;

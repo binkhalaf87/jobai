@@ -43,7 +43,7 @@ class GmailConnectionRequestResponse(BaseModel):
 # ── Generate Cover Letter ──────────────────────────────────────────────────────
 
 class GenerateLetterRequest(BaseModel):
-    job_title: str
+    job_title: str | None = None
     company_name: str | None = None
     job_description: str | None = None
     resume_id: str | None = None
