@@ -87,6 +87,7 @@ class SendHistoryItem(BaseModel):
     job_title: str
     company_name: str | None
     subject: str
+    body: str
     recipient_email: str
     recipient_name: str | None
     status: str

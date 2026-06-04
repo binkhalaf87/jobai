@@ -366,6 +366,7 @@ export type SendHistoryItem = {
   job_title: string;
   company_name: string | null;
   subject: string;
+  body: string;
   recipient_email: string;
   recipient_name: string | null;
   status: "sent" | "failed";
