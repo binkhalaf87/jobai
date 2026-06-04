@@ -253,3 +253,40 @@ def send_password_reset_email(to_email: str, token: str, name: str | None = None
     display_name = name or "there"
     url = f"{settings.frontend_url}/reset-password?token={token}"
     return _send(to_email, "Reset your JobAI24 password", _password_reset_html(reset_url=url, name=display_name))
+
+
+def send_ticket_reply_email(
+    to_email: str,
+    name: str | None,
+    ticket_subject: str,
+    admin_reply_body: str,
+    ticket_url: str,
+) -> EmailSendResult:
+    display_name = name or "عزيزي المستخدم"
+    return _send(
+        to_email,
+        f"رد جديد على تذكرة الدعم: {ticket_subject}",
+        _ticket_reply_html(display_name, ticket_subject, admin_reply_body, ticket_url),
+    )
+
+
+def _ticket_reply_html(name: str, subject: str, reply_body: str, ticket_url: str) -> str:
+    return f"""<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="font-family:sans-serif;background:#f8fafc;margin:0;padding:32px;direction:rtl">
+  <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:16px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,.08)">
+    <h2 style="color:#0f172a;margin-top:0">💬 رد جديد على تذكرتك</h2>
+    <p style="color:#475569">مرحباً {name}،</p>
+    <p style="color:#475569">تم الرد على تذكرة الدعم الخاصة بك: <strong>{subject}</strong></p>
+    <div style="background:#f1f5f9;border-radius:12px;padding:20px;margin:24px 0;border-right:4px solid #1e40af">
+      <p style="color:#334155;margin:0;white-space:pre-line">{reply_body}</p>
+    </div>
+    <a href="{ticket_url}" style="display:inline-block;margin:24px 0;padding:14px 28px;background:#1e40af;color:#fff;border-radius:10px;text-decoration:none;font-weight:600">
+      عرض التذكرة والرد
+    </a>
+    <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">
+    <p style="color:#94a3b8;font-size:12px">JobAI24 &mdash; منصة المسار المهني بالذكاء الاصطناعي</p>
+  </div>
+</body>
+</html>"""

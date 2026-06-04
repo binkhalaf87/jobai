@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
-import { LayoutDashboard, Users, LogOut, Shield, ListChecks, Mail, Tag, Activity, CreditCard } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import { LayoutDashboard, Users, LogOut, Shield, ListChecks, Mail, Tag, Activity, CreditCard, HeadphonesIcon } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
+import { adminGetUnreadCount } from "@/lib/support";
 
 const NAV_ITEMS = [
   { label: "Overview",       href: "/admin",                 icon: LayoutDashboard },
@@ -15,6 +16,7 @@ const NAV_ITEMS = [
   { label: "Gmail Requests", href: "/admin/gmail-requests",  icon: Mail },
   { label: "Promotions",    href: "/admin/promotions",      icon: Tag },
   { label: "Payments",      href: "/admin/payments",        icon: CreditCard },
+  { label: "Support",       href: "/admin/support",         icon: HeadphonesIcon },
 ] as const;
 
 function isActive(pathname: string, href: string): boolean {
@@ -26,10 +28,25 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isLoading, hasSession, signOut } = useAuth();
+  const [supportUnread, setSupportUnread] = useState(0);
 
   useEffect(() => {
     if (!isLoading && !hasSession) router.replace("/login");
   }, [hasSession, isLoading, router]);
+
+  useEffect(() => {
+    if (!user || user.role !== "admin") return;
+    let cancelled = false;
+    async function fetchUnread() {
+      try {
+        const { count } = await adminGetUnreadCount();
+        if (!cancelled) setSupportUnread(count);
+      } catch { /* ignore */ }
+    }
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30_000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [user]);
 
   if (isLoading) {
     return (
@@ -84,6 +101,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                   >
                     <Icon size={13} />
                     <span className="flex-1 leading-none">{item.label}</span>
+                    {item.href === "/admin/support" && supportUnread > 0 && (
+                      <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-teal-600 px-1 text-[9px] font-bold text-white">
+                        {supportUnread > 9 ? "9+" : supportUnread}
+                      </span>
+                    )}
                   </Link>
                 </li>
               );

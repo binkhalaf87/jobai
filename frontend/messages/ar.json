@@ -70,7 +70,8 @@
     "groups": {
       "workspace": "مساحة العمل",
       "actions": "الأدوات",
-      "account": "الحساب"
+      "account": "الحساب",
+      "help": "المساعدة"
     },
     "items": {
       "dashboard": "لوحة التحكم",
@@ -82,7 +83,8 @@
       "send": "الإرسال الذكي",
       "billing": "الاشتراك والفوترة",
       "points": "رصيد النقاط",
-      "profile": "الملف الشخصي"
+      "profile": "الملف الشخصي",
+      "support": "الدعم"
     },
     "user": {
       "signOut": "تسجيل الخروج",
@@ -2182,6 +2184,65 @@
       "failedLabel": "فشل",
       "noHistory": "لا يوجد سجل إرسال حتى الآن",
       "startCampaignBtn": "بدء حملة جديدة"
+    }
+  },
+  "support": {
+    "nav": "الدعم",
+    "title": "تذاكر الدعم",
+    "newTicket": "تذكرة جديدة",
+    "allTickets": "كل التذاكر",
+    "ticket": "تذكرة",
+    "reply": "رد",
+    "send": "إرسال",
+    "close": "إغلاق التذكرة",
+    "markResolved": "تعليم كـ محلولة",
+    "noTickets": "لا توجد تذاكر دعم بعد",
+    "noTicketsDesc": "أرسل تذكرة وسيرد عليك فريقنا في أقرب وقت.",
+    "typeMessage": "اكتب رسالتك…",
+    "categories": {
+      "technical": "مشكلة تقنية",
+      "inquiry": "استفسار",
+      "billing": "الفواتير والمدفوعات",
+      "feature_request": "طلب ميزة"
+    },
+    "status": {
+      "open": "مفتوحة",
+      "in_progress": "قيد المعالجة",
+      "resolved": "محلولة",
+      "closed": "مغلقة"
+    },
+    "fields": {
+      "subject": "الموضوع",
+      "subjectPlaceholder": "اشرح مشكلتك باختصار",
+      "category": "الفئة",
+      "message": "الرسالة",
+      "messagePlaceholder": "اشرح مشكلتك بالتفصيل…"
+    },
+    "actions": {
+      "submit": "إرسال التذكرة",
+      "submitting": "جارٍ الإرسال…",
+      "sending": "جارٍ الإرسال…"
+    },
+    "modal": {
+      "title": "تذكرة دعم جديدة",
+      "success": "تم إرسال التذكرة بنجاح"
+    },
+    "errors": {
+      "load": "فشل في تحميل التذاكر",
+      "send": "فشل في إرسال الرسالة",
+      "submit": "فشل في إرسال التذكرة"
+    },
+    "admin": {
+      "title": "تذاكر الدعم",
+      "filterAll": "الكل",
+      "filterOpen": "مفتوحة",
+      "filterInProgress": "قيد المعالجة",
+      "filterResolved": "محلولة",
+      "filterClosed": "مغلقة",
+      "searchPlaceholder": "بحث بالموضوع أو البريد…",
+      "user": "المستخدم",
+      "messages": "رسائل",
+      "updateStatus": "تحديث الحالة"
     }
   }
 }

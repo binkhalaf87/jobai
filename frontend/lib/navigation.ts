@@ -42,6 +42,13 @@ export const DASHBOARD_NAV_GROUPS: DashboardNavGroup[] = [
       { label: "Profile", key: "profile", href: "/dashboard/profile", icon: "user" },
     ],
   },
+  {
+    label: "Help",
+    key: "help",
+    items: [
+      { label: "Support", key: "support", href: "/dashboard/support", icon: "support" },
+    ],
+  },
 ];
 
 // Flat list for components that need all dashboard links without grouping.

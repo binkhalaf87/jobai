@@ -24,6 +24,7 @@ from app.models.smart_send import SendCampaign, SendLog
 from app.models.smart_send_letter_cache import SmartSendLetterCache
 from app.models.smtp_connection import SmtpConnection
 from app.models.subscription import Subscription
+from app.models.support_ticket import SupportTicket, TicketMessage
 from app.models.usage_log import UsageLog
 from app.models.user_feature_credit import UserFeatureCredit
 from app.models.user_wallet import UserWallet
@@ -61,6 +62,8 @@ __all__ = [
     "SmartSendLetterCache",
     "SmtpConnection",
     "Subscription",
+    "SupportTicket",
+    "TicketMessage",
     "UsageLog",
     "User",
     "UserFeatureCredit",

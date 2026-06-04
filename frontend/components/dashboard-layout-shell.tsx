@@ -6,7 +6,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import {
   LayoutDashboard, FileText, BarChart3, Sparkles, Mic,
-  Search, Send, Star, CreditCard, UserCircle, ChevronDown, LogOut,
+  Search, Send, Star, CreditCard, UserCircle, ChevronDown, LogOut, HeadphonesIcon,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -15,6 +15,7 @@ import { usePageTracking } from "@/hooks/usePageTracking";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { DASHBOARD_NAV_GROUPS } from "@/lib/navigation";
 import { resendVerification } from "@/lib/auth";
+import { getUnreadCount } from "@/lib/support";
 
 /* ── icon + color config per nav item ── */
 type IconCfg = {
@@ -77,6 +78,11 @@ const NAV_ICON_CFG: Record<string, IconCfg> = {
     iconBg: "bg-slate-100", iconText: "text-slate-500",
     activeIconBg: "bg-slate-600", activeBg: "bg-slate-100", activeText: "text-slate-700",
   },
+  support: {
+    icon: <HeadphonesIcon size={13} />,
+    iconBg: "bg-teal-100", iconText: "text-teal-600",
+    activeIconBg: "bg-teal-600", activeBg: "bg-teal-50", activeText: "text-teal-700",
+  },
 };
 
 function isActive(pathname: string, href: string): boolean {
@@ -129,6 +135,20 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
 
   usePageTracking();
   const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const [supportUnread, setSupportUnread] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchUnread() {
+      try {
+        const { count } = await getUnreadCount();
+        if (!cancelled) setSupportUnread(count);
+      } catch { /* ignore */ }
+    }
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30_000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, []);
   const allItems = DASHBOARD_NAV_GROUPS.flatMap((g) => g.items);
   const currentItem = allItems.find((item) => isActive(pathname, item.href));
   const currentLabel = currentItem ? t(`items.${currentItem.key}`) : t("items.dashboard");
@@ -205,6 +225,11 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
                           {cfg.icon}
                         </span>
                         <span className="flex-1 leading-none">{t(`items.${item.key}`)}</span>
+                        {item.key === "support" && supportUnread > 0 && (
+                          <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-teal-600 px-1 text-[9px] font-bold text-white">
+                            {supportUnread > 9 ? "9+" : supportUnread}
+                          </span>
+                        )}
                       </Link>
                     </li>
                   );

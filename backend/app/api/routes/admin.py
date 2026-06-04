@@ -12,7 +12,17 @@ from sqlalchemy.orm import Session
 
 from app.api.deps.auth import get_current_admin
 from app.api.deps.db import get_db
-from app.models.enums import UserRole, UsageEventType, WalletTransactionDirection, WalletTransactionStatus, WalletTransactionType
+from app.models.enums import UserRole, UsageEventType, WalletTransactionDirection, WalletTransactionStatus, WalletTransactionType, TicketStatus
+from app.models.support_ticket import SupportTicket, TicketMessage
+from app.schemas.support_ticket import (
+    AdminTicketResponse,
+    MessageResponse,
+    TicketDetailResponse,
+    TicketMessageCreate,
+    TicketStatusUpdate,
+    UnreadCountResponse,
+)
+from app.services import support_ticket_service as svc
 from app.models.usage_log import UsageLog
 from app.services.audit_log import emit as audit_emit
 from app.models.interview import InterviewSession
@@ -1136,3 +1146,140 @@ def admin_bulk_activate_payment_orders(
         "failed": failed,
         "total_pending": len(pending_orders),
     }
+
+
+# ── Support Tickets (Admin) ────────────────────────────────────────────────────
+
+def _admin_ticket_response(db: Session, ticket: SupportTicket, user: User) -> AdminTicketResponse:
+    msg_count = db.scalar(
+        select(func.count()).select_from(TicketMessage).where(TicketMessage.ticket_id == ticket.id)
+    ) or 0
+    return AdminTicketResponse(
+        id=ticket.id,
+        category=ticket.category,
+        subject=ticket.subject,
+        status=ticket.status,
+        unread_by_admin=ticket.unread_by_admin,
+        user_email=user.email,
+        user_name=user.full_name,
+        message_count=msg_count,
+        created_at=ticket.created_at,
+        updated_at=ticket.updated_at,
+    )
+
+
+def _message_response(msg: TicketMessage) -> MessageResponse:
+    sender_name = msg.sender.full_name if msg.sender else None
+    return MessageResponse(
+        id=msg.id,
+        body=msg.body,
+        is_admin_message=msg.is_admin_message,
+        sender_name=sender_name,
+        created_at=msg.created_at,
+    )
+
+
+@router.get("/support/tickets", response_model=list[AdminTicketResponse])
+def admin_list_tickets(
+    ticket_status: str | None = Query(None, alias="status"),
+    category: str | None = Query(None),
+    search: str | None = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> list[AdminTicketResponse]:
+    q = select(SupportTicket, User).join(User, SupportTicket.user_id == User.id)
+    if ticket_status:
+        q = q.where(SupportTicket.status == ticket_status)
+    if category:
+        q = q.where(SupportTicket.category == category)
+    if search:
+        pattern = f"%{search}%"
+        q = q.where(
+            SupportTicket.subject.ilike(pattern) | User.email.ilike(pattern) | User.full_name.ilike(pattern)
+        )
+    q = q.order_by(SupportTicket.updated_at.desc()).offset((page - 1) * page_size).limit(page_size)
+    rows = db.execute(q).all()
+    return [_admin_ticket_response(db, ticket, user) for ticket, user in rows]
+
+
+@router.get("/support/tickets/{ticket_id}", response_model=TicketDetailResponse)
+def admin_get_ticket(
+    ticket_id: str,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> TicketDetailResponse:
+    ticket = db.get(SupportTicket, ticket_id)
+    if not ticket:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found.")
+
+    svc.mark_ticket_read(db, ticket, by_admin=True)
+
+    return TicketDetailResponse(
+        id=ticket.id,
+        category=ticket.category,
+        subject=ticket.subject,
+        status=ticket.status,
+        unread_by_user=ticket.unread_by_user,
+        created_at=ticket.created_at,
+        updated_at=ticket.updated_at,
+        messages=[_message_response(m) for m in ticket.messages],
+    )
+
+
+@router.post("/support/tickets/{ticket_id}/messages", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
+def admin_reply_ticket(
+    ticket_id: str,
+    data: TicketMessageCreate,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> MessageResponse:
+    ticket = db.get(SupportTicket, ticket_id)
+    if not ticket:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found.")
+    if ticket.status == TicketStatus.CLOSED:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot reply to a closed ticket.")
+
+    if ticket.status == TicketStatus.OPEN:
+        ticket.status = TicketStatus.IN_PROGRESS
+        db.flush()
+
+    msg = svc.add_message(db, ticket, sender_id=admin.id, body=data.body, is_admin=True)
+    audit_emit(db, user_id=admin.id, event_type=UsageEventType.TICKET_MESSAGE_SENT, detail=f"ticket={ticket_id}")
+    return _message_response(msg)
+
+
+@router.patch("/support/tickets/{ticket_id}/status", response_model=AdminTicketResponse)
+def admin_update_ticket_status(
+    ticket_id: str,
+    data: TicketStatusUpdate,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> AdminTicketResponse:
+    ticket = db.get(SupportTicket, ticket_id)
+    if not ticket:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found.")
+
+    ticket.status = data.status
+    db.commit()
+    db.refresh(ticket)
+
+    audit_emit(
+        db,
+        user_id=admin.id,
+        event_type=UsageEventType.TICKET_STATUS_UPDATED,
+        detail=f"ticket={ticket_id} status={data.status}",
+    )
+
+    user = db.get(User, ticket.user_id)
+    return _admin_ticket_response(db, ticket, user)
+
+
+@router.get("/support/unread-count", response_model=UnreadCountResponse)
+def admin_unread_count(
+    _: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> UnreadCountResponse:
+    count = svc.get_admin_unread_count(db)
+    return UnreadCountResponse(count=count)

@@ -70,7 +70,8 @@
     "groups": {
       "workspace": "Workspace",
       "actions": "Tools",
-      "account": "Account"
+      "account": "Account",
+      "help": "Help"
     },
     "items": {
       "dashboard": "Dashboard",
@@ -82,7 +83,8 @@
       "send": "Smart Send",
       "billing": "Billing",
       "points": "Points",
-      "profile": "Profile"
+      "profile": "Profile",
+      "support": "Support"
     },
     "user": {
       "signOut": "Sign out",
@@ -2182,6 +2184,65 @@
       "failedLabel": "Failed",
       "noHistory": "No send history yet",
       "startCampaignBtn": "Start New Campaign"
+    }
+  },
+  "support": {
+    "nav": "Support",
+    "title": "Support Tickets",
+    "newTicket": "New Ticket",
+    "allTickets": "All Tickets",
+    "ticket": "Ticket",
+    "reply": "Reply",
+    "send": "Send",
+    "close": "Close Ticket",
+    "markResolved": "Mark as Resolved",
+    "noTickets": "No support tickets yet",
+    "noTicketsDesc": "Submit a ticket and our team will get back to you shortly.",
+    "typeMessage": "Type your message…",
+    "categories": {
+      "technical": "Technical Issue",
+      "inquiry": "Inquiry",
+      "billing": "Billing",
+      "feature_request": "Feature Request"
+    },
+    "status": {
+      "open": "Open",
+      "in_progress": "In Progress",
+      "resolved": "Resolved",
+      "closed": "Closed"
+    },
+    "fields": {
+      "subject": "Subject",
+      "subjectPlaceholder": "Describe your issue briefly",
+      "category": "Category",
+      "message": "Message",
+      "messagePlaceholder": "Describe your issue in detail…"
+    },
+    "actions": {
+      "submit": "Submit Ticket",
+      "submitting": "Submitting…",
+      "sending": "Sending…"
+    },
+    "modal": {
+      "title": "New Support Ticket",
+      "success": "Ticket submitted successfully"
+    },
+    "errors": {
+      "load": "Failed to load tickets",
+      "send": "Failed to send message",
+      "submit": "Failed to submit ticket"
+    },
+    "admin": {
+      "title": "Support Tickets",
+      "filterAll": "All",
+      "filterOpen": "Open",
+      "filterInProgress": "In Progress",
+      "filterResolved": "Resolved",
+      "filterClosed": "Closed",
+      "searchPlaceholder": "Search by subject or email…",
+      "user": "User",
+      "messages": "Messages",
+      "updateStatus": "Update Status"
     }
   }
 }

@@ -78,6 +78,9 @@ class UsageEventType(str, Enum):
     ADMIN_PAYMENT_ACTIVATED = "admin_payment_activated"
     BILLING_PROMO_APPLIED = "billing_promo_applied"
     PAGE_VIEW = "page_view"
+    TICKET_CREATED = "ticket_created"
+    TICKET_MESSAGE_SENT = "ticket_message_sent"
+    TICKET_STATUS_UPDATED = "ticket_status_updated"
 
 
 class UserRole(str, Enum):
@@ -185,3 +188,21 @@ class PromoApplicableTo(str, Enum):
     ALL = "all"
     JOBSEEKER = "jobseeker"
     RECRUITER = "recruiter"
+
+
+class TicketCategory(str, Enum):
+    """Category of a support ticket submitted by a user."""
+
+    TECHNICAL = "technical"
+    INQUIRY = "inquiry"
+    BILLING = "billing"
+    FEATURE_REQUEST = "feature_request"
+
+
+class TicketStatus(str, Enum):
+    """Lifecycle status of a support ticket."""
+
+    OPEN = "open"
+    IN_PROGRESS = "in_progress"
+    RESOLVED = "resolved"
+    CLOSED = "closed"

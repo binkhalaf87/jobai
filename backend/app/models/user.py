@@ -48,3 +48,4 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     promo_codes_created = relationship("PromoCode", foreign_keys="PromoCode.created_by_id", back_populates="created_by")
     promo_code_usages = relationship("PromoCodeUsage", back_populates="user", cascade="all, delete-orphan")
     feature_credits = relationship("UserFeatureCredit", back_populates="user", cascade="all, delete-orphan")
+    support_tickets = relationship("SupportTicket", back_populates="user", cascade="all, delete-orphan")
