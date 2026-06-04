@@ -160,7 +160,17 @@ async def _process_campaigns() -> None:
                         attachment_bytes = get_storage().download(resume.storage_key)
                         attachment_filename = resume.source_filename or f"resume.{resume.file_type or 'pdf'}"
                     except Exception as exc:
-                        logger.warning("Campaign %s: could not load resume attachment: %s", campaign.id, exc)
+                        campaign.status = "error"
+                        campaign.error_message = "تعذّر تحميل ملف السيرة الذاتية من التخزين. تحقق من ملف السيرة الذاتية وأعد تشغيل الحملة."
+                        db.commit()
+                        logger.error("Campaign %s: could not load resume attachment — halting: %s", campaign.id, exc)
+                        continue
+                else:
+                    campaign.status = "error"
+                    campaign.error_message = "ملف السيرة الذاتية المرتبط بالحملة غير موجود. أعد إنشاء الحملة واختر سيرة ذاتية."
+                    db.commit()
+                    logger.error("Campaign %s: resume_id set but resume/storage_key missing.", campaign.id)
+                    continue
 
             sent_count = 0
             for contact in pending:

@@ -383,6 +383,7 @@ function ComposePanel({
     : null;
   const requiredContacts = selectedList?.total_count ?? 0;
   const canAffordFull = contactCredits !== null && contactCredits >= requiredContacts;
+  const noResumeWarning = resumes.length > 0 && !form.resume_id;
   const balanceSar = contactCredits !== null ? Math.round(contactCredits * SAR_PER_CONTACT) : 0;
   const requiredSar = Math.round(requiredContacts * SAR_PER_CONTACT);
   const suggestedTier = PRICING_TIERS.find(([qty]) => qty >= requiredContacts - (contactCredits ?? 0)) ?? PRICING_TIERS[PRICING_TIERS.length - 1];
@@ -465,15 +466,31 @@ function ComposePanel({
           </div>
         </div>
 
-        {resumes.length > 0 && (
-          <div>
-            <label className="block text-sm font-medium mb-1">{t("compose.resumeLabel")} <span className="text-gray-400 font-normal">{t("compose.resumeOptional")}</span></label>
-            <select className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" value={form.resume_id} onChange={(e) => setForm({ ...form, resume_id: e.target.value })}>
-              <option value="">{t("compose.noResume")}</option>
-              {resumes.map((r) => <option key={r.id} value={r.id}>{r.source_filename ?? r.title}</option>)}
-            </select>
-          </div>
-        )}
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            {t("compose.resumeLabel")}
+            {resumes.length > 0 && <span className="text-rose-500 mr-1">*</span>}
+          </label>
+          {resumes.length === 0 ? (
+            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              {t("compose.noResumesUploaded")}
+            </p>
+          ) : (
+            <>
+              <select
+                className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 ${noResumeWarning ? "border-amber-400" : ""}`}
+                value={form.resume_id}
+                onChange={(e) => setForm({ ...form, resume_id: e.target.value })}
+              >
+                <option value="">{t("compose.selectResume")}</option>
+                {resumes.map((r) => <option key={r.id} value={r.id}>{r.source_filename ?? r.title}</option>)}
+              </select>
+              {noResumeWarning && (
+                <p className="text-xs text-amber-700 mt-1">{t("compose.resumeRequiredForCampaign")}</p>
+              )}
+            </>
+          )}
+        </div>
 
         <div>
           <label className="block text-sm font-medium mb-1">{t("compose.jobDescription")}</label>
@@ -521,7 +538,7 @@ function ComposePanel({
           {launchError && <p className="text-red-600 text-sm">{launchError}</p>}
           {successMsg && <p className="text-teal text-sm font-medium">{successMsg}</p>}
 
-          <button onClick={() => void handleLaunch()} disabled={launching || !selectedListId || listBlocked} className="w-full bg-teal text-white rounded-lg py-2.5 text-sm font-medium hover:bg-teal/90 disabled:opacity-50 flex items-center justify-center gap-2">
+          <button onClick={() => void handleLaunch()} disabled={launching || !selectedListId || listBlocked || noResumeWarning} className="w-full bg-teal text-white rounded-lg py-2.5 text-sm font-medium hover:bg-teal/90 disabled:opacity-50 flex items-center justify-center gap-2">
             {launching ? (<><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>{t("campaigns.settings.launching")}</>) : t("campaigns.settings.launch")}
           </button>
         </div>
