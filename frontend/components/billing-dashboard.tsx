@@ -191,7 +191,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
     const featureCodes = ["resume_analysis", "resume_improvement", "mock_interview_10sar"];
     const smartSendCodes = ["smart_send_500", "smart_send_1500", "smart_send_3000"];
     return {
-      subscriptionPlans: plans.filter((p) => p.kind === "subscription"),
+      subscriptionPlans: audience === "jobseeker" ? [] : plans.filter((p) => p.kind === "subscription"),
       pointsPlans: plans.filter((p) => p.kind === "points_pack" &&
         !featureCodes.some((c) => p.code.includes(c)) &&
         !smartSendCodes.some((c) => p.code.includes(c))
@@ -203,7 +203,7 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
       )),
       smartSendPlans: plans.filter((p) => p.kind === "points_pack" && p.code.includes("smart_send")),
     };
-  }, [plans]);
+  }, [plans, audience]);
 
   const cartTotal = cart.reduce((sum, item) => sum + (item.plan.price_amount_minor ?? 0) * item.quantity, 0);
   const cartCurrency = cart[0]?.plan.currency ?? "SAR";
