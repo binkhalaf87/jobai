@@ -1,1160 +1,448 @@
 "use client";
 
-import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
 import { useLocale } from "next-intl";
-import {
-  ArrowLeft, ArrowRight, CheckCircle2, Sparkles, Target, Zap,
-  BarChart3, Star, Mail, FileText, Send,
-  Brain, Award, TrendingUp, Upload, Clock,
-  Play, Rocket,
-} from "lucide-react";
+import { HeroSection } from "@/components/marketing/hero-section";
+import { ProblemSection } from "@/components/marketing/problem-section";
+import { HowItWorksSection } from "@/components/marketing/how-it-works-section";
+import { FeaturesSection } from "@/components/marketing/features-section";
+import { SmartMarketingSection } from "@/components/marketing/smart-marketing-section";
+import { BenefitsSection } from "@/components/marketing/benefits-section";
+import { TestimonialsSection } from "@/components/marketing/testimonials-section";
+import { FinalCTASection } from "@/components/marketing/final-cta-section";
 
-/* ─── types ──────────────────────────────────────────────────────────── */
-type Content = {
-  nav: { cta: string; login: string };
+/* ─────────────────────────────────────────────────────────────────────────── */
+/*  Arabic content                                                             */
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+const AR = {
   hero: {
-    badge: string;
-    h1: [string, string];
-    sub: string;
-    cta: string;
-    ctaAlt: string;
-    trust: [string, string, string];
-    rating: string;
-    ratingNote: string;
-  };
-  stats: { num: string; label: string }[];
-  demo: {
-    label: string;
-    headline: string;
-    sub: string;
-    tabs: { id: string; label: string }[];
-    ats: { score: string; label: string; matched: string[]; missing: string[]; tips: string[] };
-    rewrite: { before: string; after: string; scoreB: string; scoreA: string };
-    interview: { q: string; score: string; tags: string[] };
-  };
-  benefits: {
-    label: string;
-    headline: string;
-    sub: string;
-    items: { icon: string; title: string; stat: string; desc: string }[];
-  };
-  howItWorks: {
-    label: string;
-    headline: string;
-    steps: { num: string; title: string; desc: string }[];
-  };
-  features: {
-    label: string;
-    headline: string;
-    sub: string;
-    items: { title: string; desc: string; bullets: string[] }[];
-  };
-  beforeAfter: {
-    label: string;
-    headline: string;
-    sub: string;
-    scoreBefore: string;
-    scoreAfter: string;
-    labelBefore: string;
-    labelAfter: string;
-    rows: { metric: string; before: string; after: string }[];
-  };
-  ui: {
-    matched: string;
-    missing: string;
-    topFixes: string;
-    before: string;
-    afterRewrite: string;
-    question: string;
-    yourAnswer: string;
-    aiEval: string;
-    score: string;
-    atsScore: string;
-    rejectedBy: string;
-    passes: string;
-    avatarInitials: string[];
-  };
-  smartSend: {
-    badge: string;
-    title: string;
-    subtitle: string;
-    description: string;
-    steps: { title: string; desc: string }[];
-    stats: { value: string; label: string }[];
-    cta: string;
-    ctaNote: string;
-  };
-  finalCta: {
-    headline: string;
-    sub: string;
-    cta: string;
-    trust: [string, string, string];
-  };
-};
+    badge: "منصة مهنية بالذكاء الاصطناعي · السعودية والخليج",
+    sub: "ارفع سيرتك الذاتية وخلال ثوانٍ يكشف لك JobAI24 سبب رفضها — ويعيد كتابتها لتحصل على مقابلات أكثر.",
+    cta1: "ارفع سيرتك مجاناً",
+    cta2: "كيف يعمل؟",
+    trust: ["بدون بطاقة ائتمانية", "نتائج خلال ٣٠ ثانية", "بدون تثبيت برامج"],
+  },
 
-/* ─── bilingual content ──────────────────────────────────────────────── */
-const AR: Content = {
-  nav: { cta: "ابدأ مجاناً", login: "الدخول" },
+  problem: {
+    badge: "المشكلة الحقيقية",
+    h2: "هل هذا مألوف لك؟",
+    sub: "يمرّ بها آلاف الباحثين عن عمل في الخليج كل يوم",
+    items: [
+      {
+        icon: "x",
+        title: "سيرتك تُرفض آلياً قبل أن يراها أحد",
+        desc: "أكثر من ٧٥٪ من السير الذاتية تُصفّى بواسطة أنظمة ATS قبل أن تصل لأي مسؤول توظيف.",
+      },
+      {
+        icon: "x",
+        title: "لا تعرف ما يبحث عنه صاحب العمل",
+        desc: "كل إعلان وظيفة يتضمن كلمات مفتاحية محددة — إذا غابت عن سيرتك، غابت فرصتك معها.",
+      },
+      {
+        icon: "x",
+        title: "تتقدم كثيراً ولا ترى رداً",
+        desc: "ساعات تذهب في إرسال طلبات لا يعود منها إلا الصمت — بلا تغذية راجعة ولا توجيه.",
+      },
+      {
+        icon: "x",
+        title: "خطابات التقديم تستنزف وقتك",
+        desc: "كتابة خطاب احترافي مخصص لكل وظيفة مهمة مرهقة وتستغرق وقتاً لا يتناسب مع حجم الفرصة.",
+      },
+    ],
+    bridge: "حتى جاء JobAI24",
+    bridgeSub: "الأداة التي تحل كل هذه المشاكل في خطوة واحدة",
+  },
+
+  how: {
+    badge: "بسيط وسريع",
+    h2: "ثلاث خطوات إلى مقابلتك",
+    sub: "من رفع السيرة إلى التقديم بثقة — في أقل من خمس دقائق",
+    steps: [
+      {
+        num: "١",
+        title: "ارفع سيرتك الذاتية",
+        desc: "ارفع ملف PDF أو Word. لا يلزم إنشاء حساب للبدء وستحصل على نتائجك فوراً.",
+      },
+      {
+        num: "٢",
+        title: "احصل على تحليل فوري بالذكاء الاصطناعي",
+        desc: "يحلّل JobAI24 سيرتك ويكشف نقاط الضعف والكلمات المفتاحية المفقودة في ثوانٍ معدودة.",
+      },
+      {
+        num: "٣",
+        title: "قدّم بثقة وانتظر المقابلة",
+        desc: "احصل على سيرة محسّنة وخطاب تقديم مخصص وابدأ تلقّي دعوات المقابلة.",
+      },
+    ],
+  },
+
+  features: {
+    badge: "ما تحصل عليه",
+    h2: "كل ما تحتاجه في مكان واحد",
+    sub: "أدوات متكاملة صُممت خصيصاً لسوق العمل في الخليج",
+    items: [
+      {
+        icon: "target",
+        title: "تحليل ATS الذكي",
+        sub: "اعرف بالضبط لماذا تُرفض سيرتك",
+        desc: "تحليل شامل وفق أكثر من ٥٠ معياراً لأنظمة تتبع المتقدمين مع درجة توافق دقيقة وتوصيات قابلة للتنفيذ.",
+        bullets: ["درجة توافق دقيقة", "كشف الكلمات المفتاحية المفقودة", "توصيات فورية"],
+      },
+      {
+        icon: "sparkles",
+        title: "تحسين السيرة بالذكاء الاصطناعي",
+        sub: "سيرة تستحق أن تُقرأ",
+        desc: "إعادة كتابة احترافية تبرز مهاراتك وإنجازاتك بلغة تجذب أصحاب العمل وتتجاوز المنافسة.",
+        bullets: ["صياغة احترافية ومقنعة", "تنسيق متوافق مع ATS", "قابل للتحميل والاستخدام"],
+      },
+      {
+        icon: "mail",
+        title: "مولّد خطاب التقديم",
+        sub: "خطاب مخصص لكل وظيفة في ثوانٍ",
+        desc: "خطابات تقديم مكتوبة بذكاء ومصممة بحسب كل وظيفة وشركة مستهدفة.",
+        bullets: ["مخصص لكل طلب وظيفي", "دعم ثنائي اللغة", "احترافي ومقنع"],
+      },
+      {
+        icon: "brain",
+        title: "التحضير للمقابلة",
+        sub: "اجتاز المقابلة بثقة حقيقية",
+        desc: "أسئلة مقابلة مُولَّدة من سيرتك والوظيفة المستهدفة، مع تقييم إجاباتك وتوصيات للتحسين.",
+        bullets: ["أسئلة مخصصة حسب الوظيفة", "تقييم الإجابات بالذكاء الاصطناعي", "تدريب متكرر وقابل للتطوير"],
+      },
+      {
+        icon: "trending",
+        title: "رؤى مهنية",
+        sub: "افهم ما يطلبه سوق العمل منك",
+        desc: "قارن مهاراتك بمتطلبات السوق الفعلية واحصل على خارطة طريق واضحة لسد الفجوات.",
+        bullets: ["تحليل فجوات المهارات", "اتجاهات سوق العمل", "خطة تطوير مهني واضحة"],
+      },
+    ],
+  },
+
+  smart: {
+    badge: "ميزة حصرية",
+    h2: "التسويق الذكي للسيرة الذاتية",
+    sub: "لا تنتظر إعلان الوظيفة — وصل لأصحاب العمل مباشرة",
+    desc: "بدلاً من انتظار الإعلانات، يطلق JobAI24 حملة تواصل ذكية توصّل سيرتك إلى أصحاب العمل المناسبين تلقائياً.",
+    steps: [
+      { num: "١", title: "ارفع سيرتك وحدد الوظيفة المستهدفة" },
+      { num: "٢", title: "يحدّد JobAI24 أصحاب العمل الأنسب لملفك" },
+      { num: "٣", title: "تُطلَق حملة تواصل احترافية ومخصصة باسمك" },
+    ],
+    benefits: [
+      "وصول لمئات أصحاب العمل المناسبين",
+      "توفير ساعات من التقديم اليدوي المرهق",
+      "رسائل تواصل شخصية واحترافية",
+      "متابعة نتائج حملتك بشكل مستمر",
+      "زيادة حقيقية في فرص الحصول على مقابلات",
+    ],
+    cta: "ابدأ حملتك المجانية",
+    ctaNote: "متاح مع الحساب المجاني — بدون بطاقة ائتمانية",
+  },
+
+  benefits: {
+    badge: "لماذا JobAI24",
+    h2: "ما الذي ستكسبه فعلاً",
+    sub: "نتائج ملموسة لباحثي العمل في الخليج العربي",
+    items: [
+      {
+        icon: "clock",
+        title: "وفّر وقتك",
+        desc: "ما كان يأخذ ساعات أصبح يأخذ دقائق. ركّز وقتك على الفرص التي تستحق.",
+      },
+      {
+        icon: "trending",
+        title: "قدّم بذكاء",
+        desc: "استهدف الوظائف المناسبة بسيرة وخطاب تقديم مُحسَّنَين لكل فرصة على حدة.",
+      },
+      {
+        icon: "shield",
+        title: "ابنِ ثقتك",
+        desc: "اعرف نقاط قوتك وكيفية إبرازها — وادخل المقابلة بثقة مبنية على أساس حقيقي.",
+      },
+      {
+        icon: "star",
+        title: "سيرة تتميز",
+        desc: "تصميم وصياغة احترافية تضعك في مقدمة المتقدمين وتجذب انتباه أصحاب العمل.",
+      },
+      {
+        icon: "users",
+        title: "شبكة اتصالات أوسع",
+        desc: "التسويق الذكي يُوصلك لأصحاب عمل لن تجدهم في إعلانات الوظائف التقليدية.",
+      },
+      {
+        icon: "rocket",
+        title: "تطور مهني مستمر",
+        desc: "رؤى دورية عن متطلبات السوق تساعدك على البقاء في المقدمة وتطوير مهاراتك.",
+      },
+    ],
+  },
+
+  testimonials: {
+    badge: "قالوا عنا",
+    h2: "تجارب حقيقية من الخليج العربي",
+    sub: "ما يقوله باحثو العمل الذين جربوا JobAI24",
+    items: [
+      {
+        initials: "ف.ع",
+        name: "فاطمة العمري",
+        role: "تسويق رقمي",
+        city: "الرياض",
+        text: "كنت أتقدم لوظائف لأشهر دون أي رد. بعد JobAI24 اكتشفت أن سيرتي كانت تُرفض آلياً من البداية. بعد التحسين حصلت على مقابلتين خلال أسبوع واحد.",
+      },
+      {
+        initials: "أ.خ",
+        name: "أحمد الخالدي",
+        role: "هندسة برمجيات",
+        city: "دبي",
+        text: "التحليل كشف لي مهارات أساسية كانت غائبة عن سيرتي تماماً. التوصيات كانت دقيقة ومنطقية، وليست إضافات عشوائية. الفرق واضح في الردود التي أتلقاها الآن.",
+      },
+      {
+        initials: "س.ر",
+        name: "سارة الراشد",
+        role: "محاسبة ومالية",
+        city: "جدة",
+        text: "كتابة خطاب تقديم احترافي لكل وظيفة كانت تأخذ مني ساعة كاملة. الآن خلال خمس دقائق أمتلك خطاباً مخصصاً واحترافياً. الوقت الذي وفّرته لا يُصدَّق.",
+      },
+    ],
+  },
+
+  cta: {
+    badge: "ابدأ مجاناً الآن",
+    h2: "لا تدع سيرتك الذاتية تضيع بين مئات المتقدمين",
+    sub: "ارفع سيرتك في ثوانٍ وابدأ رحلتك نحو وظيفتك القادمة.",
+    cta1: "ارفع سيرتي الآن",
+    cta2: "إنشاء حساب مجاني",
+    trust: ["بدون بطاقة ائتمانية", "نتائج فورية", "آمن ومشفّر"],
+  },
+} as const;
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/*  English content                                                            */
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+const EN = {
   hero: {
-    badge: "الذكاء الاصطناعي لسوق العمل الخليجي",
-    h1: ["احصل على مقابلة.", "ليس على رفض آخر."],
-    sub: "JobAI يحلّل سيرتك، يكشف لماذا تُرفض، ويعيد كتابتها لتتجاوز أنظمة ATS وتصل لمكتب المدير مباشرةً.",
-    cta: "حلّل سيرتي مجاناً",
-    ctaAlt: "شاهد كيف يعمل",
-    trust: ["بدون بطاقة ائتمانية", "نتائج في ٣٠ ثانية", "+٥٠٠٠ محترف وثق بنا"],
-    rating: "٤.٩/٥",
-    ratingNote: "+٥٠٠ تقييم موثّق",
+    badge: "AI Career Platform · Saudi Arabia & GCC",
+    sub: "Upload your resume and within seconds JobAI24 shows you exactly why you're being overlooked — and fixes it so you land more interviews.",
+    cta1: "Upload Your Resume — Free",
+    cta2: "See How It Works",
+    trust: ["No credit card required", "Results in 30 seconds", "No software to install"],
   },
-  stats: [
-    { num: "+٥٠٠٠", label: "محترف وشركة" },
-    { num: "٩٢٪", label: "يصلون للمقابلة" },
-    { num: "٣٠ث", label: "وقت التحليل" },
-    { num: "+٥٠", label: "معيار ATS" },
-  ],
-  demo: {
-    label: "معاينة المنتج",
-    headline: "شاهد JobAI في العمل",
-    sub: "تجربة حقيقية داخل المنصة — من رفع السيرة إلى الحصول على المقابلة.",
-    tabs: [
-      { id: "ats", label: "تحليل ATS" },
-      { id: "rewrite", label: "إعادة الكتابة" },
-      { id: "interview", label: "تدريب المقابلة" },
-    ],
-    ats: {
-      score: "٨٥",
-      label: "درجة التوافق",
-      matched: ["إدارة المشاريع", "Python", "العمل الجماعي", "تطوير البرمجيات"],
-      missing: ["Agile", "AWS", "REST APIs", "DevOps"],
-      tips: ["أضف قسم المهارات التقنية", "اذكر نتائج قابلة للقياس", "أضف Agile و Scrum"],
-    },
-    rewrite: {
-      before: "عملت في مجال تطوير البرمجيات لعدة سنوات وكنت أساعد الفريق في إنجاز المهام.",
-      after: "قدت فريق مكوّن من ٥ مطورين لإطلاق منتج SaaS خدم ٥٠٠,٠٠٠ مستخدم، مع تحسين أداء النظام بنسبة ٤٠٪.",
-      scoreB: "٣٤",
-      scoreA: "٨٩",
-    },
-    interview: {
-      q: "صف تجربتك في قيادة فريق في ظروف ضاغطة.",
-      score: "٨٨",
-      tags: ["وضوح ممتاز", "ثقة عالية", "أضف أمثلة بأرقام"],
-    },
-  },
-  benefits: {
-    label: "لماذا JobAI",
-    headline: "نتائج، لا وعود.",
-    sub: "كل ميزة مبنية بهدف واحد: المقابلة.",
+
+  problem: {
+    badge: "The Real Problem",
+    h2: "Does this sound familiar?",
+    sub: "Thousands of GCC job seekers face this every single day",
     items: [
-      { icon: "filter", title: "تجاوز أنظمة ATS", stat: "٧٥٪", desc: "من السير تُرفض قبل أن يراها بشر. نحن نضمن أنك لن تكون منهم." },
-      { icon: "trending", title: "ضاعف فرصك", stat: "٨٧٪", desc: "من مستخدمينا يصلون لمرحلة المقابلة بعد تحسين سيرتهم." },
-      { icon: "clock", title: "وفّر وقتك", stat: "٣٥د", desc: "متوسط الوقت لإعداد سيرة ذاتية احترافية ومحسّنة بالكامل." },
-      { icon: "rocket", title: "قدّم بذكاء", stat: "٣×", desc: "أسرع في الحصول على عروض العمل مقارنة بالتقديم التقليدي." },
+      {
+        icon: "x",
+        title: "Your resume is rejected before anyone reads it",
+        desc: "Over 75% of resumes are filtered out by ATS software before they ever reach a human recruiter.",
+      },
+      {
+        icon: "x",
+        title: "You don't know what employers are looking for",
+        desc: "Every job post contains specific keywords. If they're missing from your resume, so is your chance.",
+      },
+      {
+        icon: "x",
+        title: "You apply everywhere and hear back from nowhere",
+        desc: "Hours spent sending applications into silence — no feedback, no direction, no idea what went wrong.",
+      },
+      {
+        icon: "x",
+        title: "Cover letters eat up your time",
+        desc: "Writing a strong, tailored cover letter for each job is exhausting and takes time you could spend elsewhere.",
+      },
     ],
+    bridge: "Then came JobAI24",
+    bridgeSub: "The tool that solves all of this in one step",
   },
-  howItWorks: {
-    label: "كيف يعمل",
-    headline: "ثلاث خطوات. نتائج تراها.",
+
+  how: {
+    badge: "Simple & Fast",
+    h2: "Three steps to your next interview",
+    sub: "From resume upload to confident application — in under five minutes",
     steps: [
-      { num: "١", title: "ارفع سيرتك الذاتية", desc: "PDF أو Word — يستخرج JobAI بياناتك ومؤهلاتك في ثوانٍ." },
-      { num: "٢", title: "احصل على توصيات AI", desc: "تقرير شامل بـ +٥٠ معيار، كلمات مفتاحية ناقصة، وخطة تحسين واضحة." },
-      { num: "٣", title: "قدّم بثقة", desc: "سيرة محسّنة + Cover Letter مخصصة + تدريب على المقابلة." },
+      {
+        num: "1",
+        title: "Upload Your Resume",
+        desc: "Upload a PDF or Word file. No account needed to get started and your results arrive instantly.",
+      },
+      {
+        num: "2",
+        title: "Get Instant AI Analysis",
+        desc: "JobAI24 scans your resume, flags weaknesses, and pinpoints every missing keyword in seconds.",
+      },
+      {
+        num: "3",
+        title: "Apply With Confidence",
+        desc: "Receive an enhanced resume, a tailored cover letter, and start getting interview invitations.",
+      },
     ],
   },
+
   features: {
-    label: "أبرز المميزات",
-    headline: "كل ما تحتاجه للحصول على الوظيفة.",
-    sub: "أدوات ذكاء اصطناعي متكاملة لكل مرحلة من مراحل بحثك.",
+    badge: "What You Get",
+    h2: "Everything you need, in one place",
+    sub: "A complete toolkit built for the GCC job market",
     items: [
       {
-        title: "تحليل ATS بـ +٥٠ معياراً",
-        desc: "اعرف بالضبط لماذا تُرفض سيرتك — وكيف تُصلحها.",
-        bullets: ["تقرير نقاط مفصّل", "مقارنة بالوظيفة المستهدفة", "أولويات التحسين واضحة"],
+        icon: "target",
+        title: "ATS Resume Analysis",
+        sub: "Know exactly why you're being rejected",
+        desc: "Comprehensive analysis against 50+ ATS criteria with a precise match score and recommendations you can act on today.",
+        bullets: ["Precise match score", "Keyword gap detection", "Instant recommendations"],
       },
       {
-        title: "إعادة كتابة بالذكاء الاصطناعي",
-        desc: "سيرتك تتحول في ثوانٍ لتنافس كبار المتقدمين.",
-        bullets: ["اقتراحات جاهزة بنقرة واحدة", "يحافظ على أسلوبك", "يُضخّ الكلمات المفتاحية"],
+        icon: "sparkles",
+        title: "AI Resume Enhancement",
+        sub: "A resume worth reading",
+        desc: "Professional rewriting that highlights your skills and achievements in language that attracts employers and outshines competition.",
+        bullets: ["Professional, compelling language", "ATS-friendly formatting", "Download-ready output"],
       },
       {
-        title: "الإرسال الذكي عبر Gmail",
-        desc: "أرسل طلباتك تلقائياً إلى مئات الشركات — رسالة مخصصة لكل وظيفة.",
-        bullets: ["ربط Gmail بنقرة واحدة", "حملات إرسال تلقائي", "تتبع الردود في الوقت الفعلي"],
+        icon: "mail",
+        title: "Cover Letter Generator",
+        sub: "A tailored letter for every job in seconds",
+        desc: "Intelligent cover letters crafted specifically for each role and company you target.",
+        bullets: ["Job-specific tailoring", "Bilingual support", "Professional & persuasive"],
       },
       {
-        title: "تدريب تفاعلي على المقابلة",
-        desc: "تدرّب على أسئلة مخصصة لوظيفتك قبل المقابلة.",
-        bullets: ["أسئلة من CV والوظيفة", "تقييم فوري مع ملاحظات", "دعم عربي وإنجليزي"],
+        icon: "brain",
+        title: "Interview Preparation",
+        sub: "Walk in ready to impress",
+        desc: "Interview questions generated from your resume and target role, with AI-powered answer evaluation and improvement tips.",
+        bullets: ["Personalized questions", "AI answer scoring", "Repeated practice mode"],
+      },
+      {
+        icon: "trending",
+        title: "Career Insights",
+        sub: "Understand what the market wants from you",
+        desc: "Compare your current skills against real market demand and get a clear roadmap to close the gaps and grow your career.",
+        bullets: ["Skill gap analysis", "Market trend data", "Clear development roadmap"],
       },
     ],
   },
-  beforeAfter: {
-    label: "التحول الحقيقي",
-    headline: "من رفض متكرر إلى ٣ عروض في ٣ أسابيع.",
-    sub: "أحمد، مهندس برمجيات بخبرة ٥ سنوات، كان يتقدم لشهور دون ردود.",
-    scoreBefore: "٣٤",
-    scoreAfter: "٨٩",
-    labelBefore: "قبل JobAI",
-    labelAfter: "بعد JobAI",
-    rows: [
-      { metric: "معدل فتح الطلب", before: "٨٪", after: "٦٧٪" },
-      { metric: "ردود خلال ٧ أيام", before: "٠", after: "٤ ردود" },
-      { metric: "وقت إعداد CV", before: "٣ أيام", after: "٣٥ دقيقة" },
-    ],
-  },
-  smartSend: {
-    badge: "حصري — الإرسال الذكي",
-    title: "أرسل طلباتك تلقائياً",
-    subtitle: "إلى مئات الشركات في دقائق",
-    description: "وصّل بريدك في Gmail، واختر الشركات التي تريدها، وسيرسل النظام رسائل تغطية مخصصة لكل شركة تلقائياً — بلا جهد، بلا تكرار.",
-    steps: [
-      { title: "ربط Gmail بنقرة", desc: "تفويض آمن عبر OAuth — بدون مشاركة كلمة المرور" },
-      { title: "رسالة مخصصة لكل وظيفة", desc: "الذكاء الاصطناعي يكتب رسالة تتناسب مع كل إعلان وظيفي" },
-      { title: "إرسال تلقائي للحملة", desc: "تابع حالة كل إرسال وأوقف أو أعد المحاولة بضغطة زر" },
-    ],
-    stats: [
-      { value: "٣×", label: "أكثر ردوداً من الإرسال اليدوي" },
-      { value: "٩٠٪", label: "توفير في وقت التقديم" },
-      { value: "١٠٠+", label: "شركة في حملة واحدة" },
-    ],
-    cta: "ابدأ حملتك الأولى",
-    ctaNote: "مجاناً — لا بطاقة ائتمان",
-  },
-  finalCta: {
-    headline: "وظيفة أحلامك ليست حظاً.",
-    sub: "أكثر من ٥٠٠٠ محترف سعودي وخليجي حوّلوا مسيرتهم مع JobAI. أنت التالي.",
-    cta: "حلّل سيرتي مجاناً الآن",
-    trust: ["بدون بطاقة ائتمانية", "إلغاء في أي وقت", "نتائج في ٣٠ ثانية"],
-  },
-  ui: {
-    matched: "✓ متطابق",
-    missing: "✗ مفقود",
-    topFixes: "أهم الإصلاحات",
-    before: "قبل",
-    afterRewrite: "بعد إعادة الكتابة بالذكاء الاصطناعي",
-    question: "السؤال",
-    yourAnswer: "إجابتك (مسجلة)",
-    aiEval: "تقييم الذكاء الاصطناعي",
-    score: "النتيجة",
-    atsScore: "درجة ATS",
-    rejectedBy: "مرفوض من ٩٢٪ من أنظمة ATS",
-    passes: "يتجاوز ٩٥٪ من أنظمة ATS ✓",
-    avatarInitials: ["م", "س", "أ", "ف", "ر"],
-  },
-};
 
-const EN: Content = {
-  nav: { cta: "Start Free", login: "Sign In" },
-  hero: {
-    badge: "AI-Powered Career Platform for Saudi Arabia & GCC",
-    h1: ["Get More Interviews.", "Not More Rejections."],
-    sub: "JobAI analyzes your resume in 30 seconds, reveals why it's being rejected, and rewrites it to pass every ATS filter — landing it on the hiring manager's desk.",
-    cta: "Analyze My Resume — Free",
-    ctaAlt: "Watch Demo",
-    trust: ["No credit card required", "Results in 30 seconds", "5,000+ professionals trust us"],
-    rating: "4.9/5",
-    ratingNote: "500+ verified reviews",
-  },
-  stats: [
-    { num: "5,000+", label: "Professionals & companies" },
-    { num: "92%", label: "Reach interview stage" },
-    { num: "30s", label: "Analysis time" },
-    { num: "50+", label: "ATS criteria" },
-  ],
-  demo: {
-    label: "Product Preview",
-    headline: "See JobAI in Action",
-    sub: "A real look at the platform — from uploading your resume to landing the interview.",
-    tabs: [
-      { id: "ats", label: "ATS Analysis" },
-      { id: "rewrite", label: "AI Rewrite" },
-      { id: "interview", label: "Interview Training" },
+  smart: {
+    badge: "Exclusive Feature",
+    h2: "Smart CV Marketing",
+    sub: "Stop waiting for job postings — reach employers directly",
+    desc: "Instead of waiting for the right listing, JobAI24 launches a targeted outreach campaign that connects your resume with the right employers automatically.",
+    steps: [
+      { num: "1", title: "Upload your CV and select your target role" },
+      { num: "2", title: "JobAI24 identifies the right employers for your profile" },
+      { num: "3", title: "A professional, personalized outreach campaign launches in your name" },
     ],
-    ats: {
-      score: "85",
-      label: "Match Score",
-      matched: ["Project Management", "Python", "Team Leadership", "Software Development"],
-      missing: ["Agile", "AWS", "REST APIs", "DevOps"],
-      tips: ["Add a technical skills section", "Add measurable results with numbers", "Include Agile / Scrum experience"],
-    },
-    rewrite: {
-      before: "Worked in software development for several years and helped the team complete tasks.",
-      after: "Led a 5-person engineering team to ship a SaaS product serving 500,000 users, improving system performance by 40%.",
-      scoreB: "34",
-      scoreA: "89",
-    },
-    interview: {
-      q: "Describe your experience leading a team under high-pressure conditions.",
-      score: "88",
-      tags: ["Excellent clarity", "High confidence", "Tip: add quantified examples"],
-    },
+    benefits: [
+      "Reach hundreds of relevant employers",
+      "Save hours of manual applications",
+      "Personalized, professional outreach messages",
+      "Track your campaign performance in real time",
+      "Meaningfully increase your interview opportunities",
+    ],
+    cta: "Start Your Free Campaign",
+    ctaNote: "Available with a free account — no credit card required",
   },
+
   benefits: {
-    label: "Why JobAI",
-    headline: "Outcomes, not promises.",
-    sub: "Every feature is built for one purpose: getting you the interview.",
-    items: [
-      { icon: "filter", title: "Pass ATS Filters", stat: "75%", desc: "of resumes are rejected before a human sees them. We make sure you're not one of them." },
-      { icon: "trending", title: "Double Your Chances", stat: "87%", desc: "of our users reach the interview stage after improving their resume with JobAI." },
-      { icon: "clock", title: "Save Hours", stat: "35m", desc: "Average time to prepare a fully optimized, professional resume with JobAI." },
-      { icon: "rocket", title: "Apply Smarter", stat: "3×", desc: "faster at landing job offers compared to the traditional application process." },
-    ],
-  },
-  howItWorks: {
-    label: "How It Works",
-    headline: "Three steps. Real results.",
-    steps: [
-      { num: "1", title: "Upload Your Resume", desc: "PDF or Word — JobAI instantly extracts your data, qualifications, and experience in seconds." },
-      { num: "2", title: "Get AI Recommendations", desc: "A comprehensive 50+ criteria report, missing keyword identification, and a clear improvement plan." },
-      { num: "3", title: "Apply With Confidence", desc: "Optimized resume + custom cover letter + interview practice all ready to go." },
-    ],
-  },
-  features: {
-    label: "Top Features",
-    headline: "Everything you need to land the job.",
-    sub: "Integrated AI tools for every stage of your job search journey.",
+    badge: "Why JobAI24",
+    h2: "What you'll actually gain",
+    sub: "Real outcomes for GCC job seekers",
     items: [
       {
-        title: "ATS Analysis: 50+ Criteria",
-        desc: "Know exactly why your resume is rejected — and exactly how to fix it.",
-        bullets: ["Comprehensive scoring breakdown", "Target job comparison", "Prioritized action items"],
+        icon: "clock",
+        title: "Save Time",
+        desc: "What used to take hours now takes minutes. Spend your time on opportunities that deserve it.",
       },
       {
-        title: "AI-Powered Rewrite",
-        desc: "Your resume transforms in seconds to compete with top candidates.",
-        bullets: ["One-click suggestion acceptance", "Preserves your personal voice", "Injects the right keywords"],
+        icon: "trending",
+        title: "Apply Smarter",
+        desc: "Target the right roles with a resume and cover letter optimized for each specific opportunity.",
       },
       {
-        title: "Smart Send via Gmail",
-        desc: "Automatically send applications to hundreds of companies — one personalized letter per job.",
-        bullets: ["One-click Gmail connection", "Automated send campaigns", "Real-time reply tracking"],
+        icon: "shield",
+        title: "Build Confidence",
+        desc: "Understand your strengths and how to articulate them. Walk into interviews grounded and prepared.",
       },
       {
-        title: "AI Interview Training",
-        desc: "Practice with questions tailored to your exact role before the real interview.",
-        bullets: ["Questions from your CV + job", "Real-time answer evaluation", "Arabic & English support"],
+        icon: "star",
+        title: "Stand Out",
+        desc: "Professional design and copy that places you at the top of the pile and gets attention.",
+      },
+      {
+        icon: "users",
+        title: "Wider Reach",
+        desc: "Smart Marketing connects you with employers you'd never discover on traditional job boards.",
+      },
+      {
+        icon: "rocket",
+        title: "Keep Growing",
+        desc: "Continuous career insights to help you stay ahead of the market and develop the right skills.",
       },
     ],
   },
-  beforeAfter: {
-    label: "Real Transformation",
-    headline: "From 6 months of silence to 3 job offers in 3 weeks.",
-    sub: "Ahmed, a software engineer with 5 years of experience, applied for months with zero responses.",
-    scoreBefore: "34",
-    scoreAfter: "89",
-    labelBefore: "Before JobAI",
-    labelAfter: "After JobAI",
-    rows: [
-      { metric: "Application open rate", before: "8%", after: "67%" },
-      { metric: "Responses within 7 days", before: "0", after: "4 responses" },
-      { metric: "CV preparation time", before: "3 days", after: "35 minutes" },
-    ],
-  },
-  smartSend: {
-    badge: "Exclusive — Smart Send",
-    title: "Send Your Applications Automatically",
-    subtitle: "To hundreds of companies in minutes",
-    description: "Connect your Gmail, choose your target companies, and the system automatically sends a personalized cover letter to each one — effortlessly, without repetition.",
-    steps: [
-      { title: "Connect Gmail in One Click", desc: "Secure OAuth authorization — no password sharing required" },
-      { title: "Custom Letter per Job", desc: "AI writes a tailored cover letter matching each specific job posting" },
-      { title: "Automated Campaign Send", desc: "Track every send status and pause or retry with a single click" },
-    ],
-    stats: [
-      { value: "3×", label: "More replies than manual sending" },
-      { value: "90%", label: "Time saved on applications" },
-      { value: "100+", label: "Companies per campaign" },
-    ],
-    cta: "Start Your First Campaign",
-    ctaNote: "Free — no credit card needed",
-  },
-  finalCta: {
-    headline: "Your dream job isn't luck.",
-    sub: "Over 5,000 Saudi and Gulf professionals have transformed their careers with JobAI. You're next.",
-    cta: "Analyze My Resume — Free",
-    trust: ["No credit card required", "Cancel anytime", "Results in 30 seconds"],
-  },
-  ui: {
-    matched: "✓ Matched",
-    missing: "✗ Missing",
-    topFixes: "Top Fixes",
-    before: "Before",
-    afterRewrite: "After AI Rewrite",
-    question: "Question",
-    yourAnswer: "Your Answer (recorded)",
-    aiEval: "AI Evaluation",
-    score: "Score",
-    atsScore: "ATS Score",
-    rejectedBy: "Rejected by 92% of ATS systems",
-    passes: "Passes 95% of ATS systems ✓",
-    avatarInitials: ["S", "A", "N", "F", "R"],
-  },
-};
 
-/* ─── animated counter ───────────────────────────────────────────────── */
-function useCountUp(target: string, duration = 1500) {
-  const [display, setDisplay] = useState("0");
-  const ref = useRef<HTMLDivElement>(null);
-  const started = useRef(false);
-
-  useEffect(() => {
-    const raw = target.replace(/[^\d.]/g, "");
-    const num = parseFloat(raw);
-    if (isNaN(num)) { setDisplay(target); return; }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !started.current) {
-          started.current = true;
-          const start = performance.now();
-          const tick = (now: number) => {
-            const progress = Math.min((now - start) / duration, 1);
-            const eased = 1 - Math.pow(1 - progress, 3);
-            const current = Math.round(eased * num);
-            setDisplay(target.replace(raw, current.toString()));
-            if (progress < 1) requestAnimationFrame(tick);
-          };
-          requestAnimationFrame(tick);
-        }
+  testimonials: {
+    badge: "What People Say",
+    h2: "Real stories from GCC job seekers",
+    sub: "From people who used JobAI24 to land their next role",
+    items: [
+      {
+        initials: "F.A",
+        name: "Fatima Al-Omari",
+        role: "Digital Marketing",
+        city: "Riyadh",
+        text: "I had been applying for months with no response. JobAI24 showed me my resume was being filtered out automatically. After the improvements, I got two interview invitations in under a week.",
       },
-      { threshold: 0.3 }
-    );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [target, duration]);
+      {
+        initials: "A.K",
+        name: "Ahmed Al-Khalidi",
+        role: "Software Engineering",
+        city: "Dubai",
+        text: "The analysis flagged critical skills that were completely absent from my resume. The recommendations were precise and logical — not just random additions. The difference in responses I get now is real.",
+      },
+      {
+        initials: "S.R",
+        name: "Sarah Al-Rashid",
+        role: "Accounting & Finance",
+        city: "Jeddah",
+        text: "Writing a proper cover letter used to take me an hour per application. Now I have a tailored, professional letter in five minutes. The time I've saved is hard to overstate.",
+      },
+    ],
+  },
 
-  return { display, ref };
-}
+  cta: {
+    badge: "Start Free Today",
+    h2: "Don't let your resume get lost in the pile",
+    sub: "Upload your resume in seconds and take the first step toward your next opportunity.",
+    cta1: "Upload My Resume Now",
+    cta2: "Create Free Account",
+    trust: ["No credit card required", "Instant results", "Secure & encrypted"],
+  },
+} as const;
 
-/* ─── score ring ─────────────────────────────────────────────────────── */
-function ScoreRing({ score, size = 120, color = "#1A468C", label }: { score: number; size?: number; color?: string; label?: string }) {
-  const r = (size - 16) / 2;
-  const circ = 2 * Math.PI * r;
-  const dash = (score / 100) * circ;
-  return (
-    <div className="flex flex-col items-center gap-2">
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#E2E8F0" strokeWidth={8} />
-        <circle
-          cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={8}
-          strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
-          style={{ transition: "stroke-dasharray 1.2s cubic-bezier(0.34,1.56,0.64,1)" }}
-        />
-      </svg>
-      {label && <span className="text-xs font-semibold text-slate-500">{label}</span>}
-    </div>
-  );
-}
+/* ─────────────────────────────────────────────────────────────────────────── */
+/*  Page                                                                       */
+/* ─────────────────────────────────────────────────────────────────────────── */
 
-/* ─── main ───────────────────────────────────────────────────────────── */
 export default function HomePage() {
   const locale = useLocale();
-  const t = locale === "ar" ? AR : EN;
   const isAr = locale === "ar";
-  const Arrow = isAr ? ArrowLeft : ArrowRight;
+  const t = isAr ? AR : EN;
 
   return (
-    <div className="overflow-x-hidden bg-white">
-      <HeroSection t={t} Arrow={Arrow} />
-      <StatsSection t={t} />
-      <DemoSection t={t} />
-      <BenefitsSection t={t} />
-      <HowItWorksSection t={t} Arrow={Arrow} />
-      <FeaturesSection t={t} />
-      <BeforeAfterSection t={t} />
-      <SmartSendSection t={t} Arrow={Arrow} />
-      <FinalCtaSection t={t} Arrow={Arrow} />
-    </div>
-  );
-}
-
-/* ─── 1. hero ────────────────────────────────────────────────────────── */
-function HeroSection({ t, Arrow }: { t: Content; Arrow: React.ElementType }) {
-  const h = t.hero;
-  return (
-    <section className="relative isolate overflow-hidden bg-slate-950 pb-28 pt-16 md:pt-24 md:pb-40">
-      {/* Background glows */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-40 left-1/2 h-[700px] w-[700px] -translate-x-1/2 rounded-full bg-brand-600/20 blur-[120px]" />
-        <div className="absolute top-1/2 right-0 h-[400px] w-[400px] -translate-y-1/2 rounded-full bg-teal/10 blur-[100px]" />
-        <div className="absolute bottom-0 left-0 h-[300px] w-[300px] rounded-full bg-brand-800/30 blur-[80px]" />
-        {/* Grid pattern */}
-        <svg className="absolute inset-0 h-full w-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="1" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
-        </svg>
-      </div>
-
-      <div className="mx-auto max-w-5xl px-6 text-center">
-        {/* Badge */}
-        <div className="mb-8 flex justify-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-semibold text-slate-300 backdrop-blur-sm">
-            <Sparkles className="h-3 w-3 text-brand-400" />
-            {h.badge}
-          </span>
-        </div>
-
-        {/* Headline */}
-        <h1 className="text-[2.8rem] font-black leading-[1.05] tracking-tight text-white md:text-[5.5rem] lg:text-[6.5rem]">
-          <span className="block">{h.h1[0]}</span>
-          <span className="block bg-gradient-to-r from-brand-300 via-teal to-brand-400 bg-clip-text text-transparent">
-            {h.h1[1]}
-          </span>
-        </h1>
-
-        {/* Sub */}
-        <p className="mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-slate-400 md:text-xl">
-          {h.sub}
-        </p>
-
-        {/* CTAs */}
-        <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-          <Link
-            href="/register"
-            className="group inline-flex h-14 items-center gap-2.5 rounded-xl bg-brand-500 px-8 text-base font-bold text-white shadow-[0_0_40px_rgba(26,70,140,0.4)] transition-all hover:bg-brand-400 hover:shadow-[0_0_60px_rgba(26,70,140,0.5)] hover:-translate-y-0.5"
-          >
-            {h.cta}
-            <Arrow className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-          </Link>
-          <button className="inline-flex h-14 items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 px-8 text-base font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/10 hover:border-white/20">
-            <Play className="h-4 w-4 text-teal" />
-            {h.ctaAlt}
-          </button>
-        </div>
-
-        {/* Trust row */}
-        <div className="mt-8 flex flex-wrap justify-center gap-5 text-sm text-slate-500">
-          {h.trust.map((item) => (
-            <span key={item} className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-4 w-4 text-teal" />
-              {item}
-            </span>
-          ))}
-        </div>
-
-        {/* Avatar + rating */}
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-          <div className="flex -space-x-2.5 rtl:space-x-reverse">
-            {t.ui.avatarInitials.map((l, i) => (
-              <div
-                key={i}
-                className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-slate-900 text-xs font-black text-white shadow-md"
-                style={{ background: `hsl(${210 + i * 15}, 60%, 45%)` }}
-              >
-                {l}
-              </div>
-            ))}
-          </div>
-          <div className="text-start">
-            <div className="flex gap-0.5">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-              ))}
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              <span className="font-bold text-slate-300">{h.rating}</span> — {h.ratingNote}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom fade */}
-      <div aria-hidden className="pointer-events-none absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-white to-transparent" />
-    </section>
-  );
-}
-
-/* ─── 2. stats ───────────────────────────────────────────────────────── */
-function StatItem({ num, label }: { num: string; label: string }) {
-  const { display, ref } = useCountUp(num);
-  return (
-    <div ref={ref} className="text-center">
-      <div className="text-4xl font-black tabular-nums text-brand-600 md:text-5xl">{display}</div>
-      <div className="mt-1.5 text-sm text-slate-500 leading-snug">{label}</div>
-    </div>
-  );
-}
-
-function StatsSection({ t }: { t: Content }) {
-  return (
-    <div className="border-b border-slate-100 py-10">
-      <div className="mx-auto max-w-5xl px-6">
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-          {t.stats.map((s) => <StatItem key={s.label} {...s} />)}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── 3. product demo ────────────────────────────────────────────────── */
-function DemoSection({ t }: { t: Content }) {
-  const [active, setActive] = useState(t.demo.tabs[0].id);
-  const d = t.demo;
-
-  return (
-    <section className="py-24 bg-white" id="demo">
-      <div className="mx-auto max-w-6xl px-6">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <p className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-brand-600">{d.label}</p>
-          <h2 className="text-3xl font-black text-slate-900 md:text-5xl">{d.headline}</h2>
-          <p className="mt-4 text-lg text-slate-500 max-w-xl mx-auto">{d.sub}</p>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex justify-center gap-2 mb-8 flex-wrap">
-          {d.tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActive(tab.id)}
-              className={`rounded-xl px-5 py-2.5 text-sm font-bold transition-all ${
-                active === tab.id
-                  ? "bg-brand-600 text-white shadow-lg shadow-brand-200/50"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Panel */}
-        <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 shadow-[0_30px_80px_-20px_rgba(15,23,42,0.12)]">
-          {/* Browser chrome */}
-          <div className="flex items-center gap-2 border-b border-slate-200 bg-white px-5 py-3.5">
-            <div className="flex gap-1.5">
-              {["bg-red-400", "bg-amber-400", "bg-green-400"].map((c, i) => (
-                <div key={i} className={`h-2.5 w-2.5 rounded-full ${c}`} />
-              ))}
-            </div>
-            <div className="flex-1 rounded-lg bg-slate-100 px-4 py-1 text-center text-xs text-slate-400 max-w-[300px] mx-auto">
-              app.jobai.sa
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="p-6 md:p-10">
-            {active === "ats" && <AtsPanel d={d} ui={t.ui} />}
-            {active === "rewrite" && <RewritePanel d={d} ui={t.ui} />}
-            {active === "interview" && <InterviewPanel d={d} ui={t.ui} />}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function AtsPanel({ d, ui }: { d: Content["demo"]; ui: Content["ui"] }) {
-  const a = d.ats;
-  const score = parseInt(a.score.replace(/[^\d]/g, ""), 10) || 85;
-  return (
-    <div className="grid gap-6 md:grid-cols-3">
-      {/* Score */}
-      <div className="flex flex-col items-center justify-center rounded-2xl bg-white p-6 border border-slate-100 shadow-sm">
-        <div className="relative flex items-center justify-center">
-          <ScoreRing score={score} size={130} color="#1A468C" />
-          <div className="absolute flex flex-col items-center">
-            <span className="text-3xl font-black text-brand-600">{a.score}</span>
-            <span className="text-[10px] font-semibold text-slate-400 mt-0.5">{a.label}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Keywords */}
-      <div className="space-y-4">
-        <div className="rounded-2xl bg-white p-5 border border-slate-100 shadow-sm">
-          <p className="text-xs font-black uppercase tracking-wider text-teal mb-3">{ui.matched}</p>
-          <div className="flex flex-wrap gap-1.5">
-            {a.matched.map((kw) => (
-              <span key={kw} className="rounded-full bg-teal-light/60 px-2.5 py-1 text-xs font-semibold text-teal">{kw}</span>
-            ))}
-          </div>
-        </div>
-        <div className="rounded-2xl bg-white p-5 border border-slate-100 shadow-sm">
-          <p className="text-xs font-black uppercase tracking-wider text-red-500 mb-3">{ui.missing}</p>
-          <div className="flex flex-wrap gap-1.5">
-            {a.missing.map((kw) => (
-              <span key={kw} className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-500">{kw}</span>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Tips */}
-      <div className="rounded-2xl bg-white p-5 border border-slate-100 shadow-sm">
-        <p className="text-xs font-black uppercase tracking-wider text-brand-600 mb-3">{ui.topFixes}</p>
-        <ul className="space-y-3">
-          {a.tips.map((tip, i) => (
-            <li key={i} className="flex items-start gap-2.5">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-600 text-[10px] font-black text-white">{i + 1}</span>
-              <span className="text-sm text-slate-600 leading-snug">{tip}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
-}
-
-function RewritePanel({ d, ui }: { d: Content["demo"]; ui: Content["ui"] }) {
-  const r = d.rewrite;
-  const scoreB = parseInt(r.scoreB.replace(/[^\d]/g, ""), 10) || 34;
-  const scoreA = parseInt(r.scoreA.replace(/[^\d]/g, ""), 10) || 89;
-  return (
-    <div className="grid gap-6 md:grid-cols-2">
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-black uppercase tracking-wider text-red-500">{ui.before}</p>
-          <span className="rounded-full bg-red-50 px-3 py-1 text-sm font-black text-red-500">{r.scoreB}</span>
-        </div>
-        <div className="rounded-2xl border border-red-100 bg-red-50/50 p-5">
-          <p className="text-sm text-slate-500 leading-relaxed italic">{'"'}{r.before}{'"'}</p>
-        </div>
-        <div className="flex justify-center">
-          <ScoreRing score={scoreB} size={80} color="#ef4444" label={r.scoreB} />
-        </div>
-      </div>
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-black uppercase tracking-wider text-teal">{ui.afterRewrite}</p>
-          <span className="rounded-full bg-teal-light/60 px-3 py-1 text-sm font-black text-teal">{r.scoreA}</span>
-        </div>
-        <div className="rounded-2xl border border-teal-light bg-teal-light/30 p-5">
-          <p className="text-sm text-slate-700 leading-relaxed font-medium">{'"'}{r.after}{'"'}</p>
-        </div>
-        <div className="flex justify-center">
-          <ScoreRing score={scoreA} size={80} color="#00A878" label={r.scoreA} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function InterviewPanel({ d, ui }: { d: Content["demo"]; ui: Content["ui"] }) {
-  const iv = d.interview;
-  const score = parseInt(iv.score.replace(/[^\d]/g, ""), 10) || 88;
-  return (
-    <div className="grid gap-6 md:grid-cols-2">
-      <div className="space-y-4">
-        <div className="rounded-2xl bg-white border border-slate-100 shadow-sm p-5">
-          <p className="text-xs font-black uppercase tracking-wider text-slate-400 mb-2">{ui.question}</p>
-          <p className="text-base font-semibold text-slate-800 leading-relaxed">{'"'}{iv.q}{'"'}</p>
-        </div>
-        <div className="rounded-2xl bg-brand-600 p-5">
-          <p className="text-xs font-bold uppercase tracking-wider text-brand-200 mb-2">{ui.yourAnswer}</p>
-          <div className="flex items-center gap-3">
-            <div className="h-2 flex-1 rounded-full bg-brand-500">
-              <div className="h-2 w-[72%] rounded-full bg-white/70" />
-            </div>
-            <span className="text-xs text-brand-200">0:42</span>
-          </div>
-        </div>
-      </div>
-      <div className="flex flex-col items-center justify-center rounded-2xl bg-white border border-slate-100 shadow-sm p-6 gap-4">
-        <p className="text-xs font-black uppercase tracking-wider text-slate-400">{ui.aiEval}</p>
-        <div className="relative flex items-center justify-center">
-          <ScoreRing score={score} size={110} color="#00A878" />
-          <div className="absolute flex flex-col items-center">
-            <span className="text-2xl font-black text-teal">{iv.score}</span>
-            <span className="text-[10px] text-slate-400">{ui.score}</span>
-          </div>
-        </div>
-        <div className="flex flex-wrap justify-center gap-1.5">
-          {iv.tags.map((tag) => (
-            <span key={tag} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{tag}</span>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── 4. benefits ────────────────────────────────────────────────────── */
-const BENEFIT_ICONS: Record<string, React.ElementType> = {
-  filter: Target,
-  trending: TrendingUp,
-  clock: Clock,
-  rocket: Rocket,
-};
-
-const BENEFIT_COLORS = [
-  { bg: "bg-brand-50", text: "text-brand-600", stat: "text-brand-600", border: "border-brand-100" },
-  { bg: "bg-teal-light/50", text: "text-teal", stat: "text-teal", border: "border-teal-light" },
-  { bg: "bg-amber-50", text: "text-amber-600", stat: "text-amber-600", border: "border-amber-100" },
-  { bg: "bg-purple-50", text: "text-purple-600", stat: "text-purple-600", border: "border-purple-100" },
-];
-
-function BenefitsSection({ t }: { t: Content }) {
-  const b = t.benefits;
-  return (
-    <section className="py-24 bg-slate-950" id="benefits">
-      <div className="mx-auto max-w-6xl px-6">
-        <div className="text-center mb-14">
-          <p className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-brand-400">{b.label}</p>
-          <h2 className="text-3xl font-black text-white md:text-5xl">{b.headline}</h2>
-          <p className="mt-4 text-lg text-slate-400 max-w-md mx-auto">{b.sub}</p>
-        </div>
-
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-          {b.items.map((item, i) => {
-            const Icon = BENEFIT_ICONS[item.icon] ?? Zap;
-            const c = BENEFIT_COLORS[i];
-            return (
-              <div
-                key={item.title}
-                className="group rounded-3xl border border-white/5 bg-white/5 p-7 backdrop-blur-sm transition-all hover:bg-white/8 hover:-translate-y-1 hover:border-white/10"
-              >
-                <div className={`mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl ${c.bg}`}>
-                  <Icon className={`h-6 w-6 ${c.text}`} />
-                </div>
-                <div className={`text-4xl font-black ${c.stat} mb-2`}>{item.stat}</div>
-                <h3 className="font-black text-white text-lg mb-2">{item.title}</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">{item.desc}</p>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── 5. how it works ────────────────────────────────────────────────── */
-const HOW_ICONS = [Upload, BarChart3, Award];
-
-function HowItWorksSection({ t, Arrow }: { t: Content; Arrow: React.ElementType }) {
-  const h = t.howItWorks;
-  return (
-    <section className="py-24 bg-white" id="how-it-works">
-      <div className="mx-auto max-w-5xl px-6">
-        <div className="text-center mb-16">
-          <p className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-brand-600">{h.label}</p>
-          <h2 className="text-3xl font-black text-slate-900 md:text-5xl">{h.headline}</h2>
-        </div>
-
-        <div className="relative">
-          {/* Connector line */}
-          <div
-            aria-hidden
-            className="absolute top-10 left-10 right-10 h-0.5 bg-gradient-to-r from-brand-200 via-teal-light to-brand-200 hidden md:block"
-          />
-
-          <div className="grid gap-6 md:grid-cols-3 relative z-10">
-            {h.steps.map((step, i) => {
-              const Icon = HOW_ICONS[i] ?? Zap;
-              return (
-                <div key={step.num} className="group text-center">
-                  <div className="flex justify-center mb-6">
-                    <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-brand-600 shadow-[0_8px_30px_rgba(26,70,140,0.3)] transition-all group-hover:scale-105 group-hover:shadow-[0_12px_40px_rgba(26,70,140,0.4)]">
-                      <Icon className="h-8 w-8 text-white" />
-                      <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-teal text-[11px] font-black text-white">
-                        {step.num}
-                      </span>
-                    </div>
-                  </div>
-                  <h3 className="text-xl font-black text-slate-900 mb-3">{step.title}</h3>
-                  <p className="text-slate-500 leading-relaxed text-sm max-w-xs mx-auto">{step.desc}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="mt-14 flex justify-center">
-          <Link
-            href="/register"
-            className="group inline-flex h-14 items-center gap-2.5 rounded-xl bg-brand-600 px-10 text-base font-bold text-white shadow-xl shadow-brand-200/50 transition-all hover:bg-brand-700 hover:-translate-y-0.5"
-          >
-            {t.finalCta.cta}
-            <Arrow className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── 6. features ────────────────────────────────────────────────────── */
-const FEAT_ICONS = [BarChart3, Zap, Send, Brain];
-const FEAT_COLORS = [
-  { icon: "bg-brand-50 text-brand-600", border: "hover:border-brand-200 hover:shadow-brand-50" },
-  { icon: "bg-amber-50 text-amber-600", border: "hover:border-amber-200 hover:shadow-amber-50" },
-  { icon: "bg-teal-light/50 text-teal", border: "hover:border-teal-light hover:shadow-teal-light/30" },
-  { icon: "bg-purple-50 text-purple-600", border: "hover:border-purple-200 hover:shadow-purple-50" },
-];
-
-function FeaturesSection({ t }: { t: Content }) {
-  const f = t.features;
-  return (
-    <section className="py-24 bg-slate-50" id="features">
-      <div className="mx-auto max-w-6xl px-6">
-        <div className="text-center mb-14">
-          <p className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-brand-600">{f.label}</p>
-          <h2 className="text-3xl font-black text-slate-900 md:text-5xl">{f.headline}</h2>
-          <p className="mt-4 text-lg text-slate-500 max-w-xl mx-auto">{f.sub}</p>
-        </div>
-
-        <div className="grid gap-5 md:grid-cols-2">
-          {f.items.map((item, i) => {
-            const Icon = FEAT_ICONS[i] ?? Zap;
-            const c = FEAT_COLORS[i];
-            return (
-              <div
-                key={item.title}
-                className={`group rounded-3xl border border-slate-200 bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${c.border}`}
-              >
-                <div className={`mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl ${c.icon}`}>
-                  <Icon className="h-6 w-6" />
-                </div>
-                <h3 className="text-xl font-black text-slate-900 mb-2">{item.title}</h3>
-                <p className="text-slate-500 text-sm mb-5 leading-relaxed">{item.desc}</p>
-                <ul className="space-y-2">
-                  {item.bullets.map((b) => (
-                    <li key={b} className="flex items-center gap-2.5 text-sm text-slate-600">
-                      <CheckCircle2 className="h-4 w-4 shrink-0 text-teal" />
-                      {b}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── 7. before / after ──────────────────────────────────────────────── */
-function BeforeAfterSection({ t }: { t: Content }) {
-  const ba = t.beforeAfter;
-  const scoreB = parseInt(ba.scoreBefore.replace(/[^\d]/g, ""), 10) || 34;
-  const scoreA = parseInt(ba.scoreAfter.replace(/[^\d]/g, ""), 10) || 89;
-
-  return (
-    <section className="py-24 bg-white" id="results">
-      <div className="mx-auto max-w-5xl px-6">
-        <div className="text-center mb-12">
-          <p className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-brand-600">{ba.label}</p>
-          <h2 className="text-3xl font-black text-slate-900 md:text-5xl max-w-2xl mx-auto leading-tight">
-            {ba.headline}
-          </h2>
-          <p className="mt-4 text-slate-500 max-w-lg mx-auto">{ba.sub}</p>
-        </div>
-
-        <div className="rounded-3xl border border-slate-100 bg-slate-50 overflow-hidden shadow-[0_20px_60px_-15px_rgba(15,23,42,0.1)]">
-          {/* Score comparison */}
-          <div className="grid md:grid-cols-2">
-            {/* Before */}
-            <div className="flex flex-col items-center gap-5 p-10 border-b md:border-b-0 md:border-r border-slate-200">
-              <span className="rounded-full bg-red-50 border border-red-100 px-3 py-1 text-xs font-black text-red-500 uppercase tracking-wider">
-                {ba.labelBefore}
-              </span>
-              <div className="relative flex items-center justify-center">
-                <ScoreRing score={scoreB} size={150} color="#ef4444" />
-                <div className="absolute flex flex-col items-center">
-                  <span className="text-4xl font-black text-red-500">{ba.scoreBefore}</span>
-                  <span className="text-xs text-slate-400 font-medium">{t.ui.atsScore}</span>
-                </div>
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-slate-400">{t.ui.rejectedBy}</p>
-              </div>
-            </div>
-
-            {/* After */}
-            <div className="flex flex-col items-center gap-5 p-10 bg-gradient-to-br from-white to-teal-light/10">
-              <span className="rounded-full bg-teal-light/60 border border-teal-light px-3 py-1 text-xs font-black text-teal uppercase tracking-wider">
-                {ba.labelAfter}
-              </span>
-              <div className="relative flex items-center justify-center">
-                <ScoreRing score={scoreA} size={150} color="#00A878" />
-                <div className="absolute flex flex-col items-center">
-                  <span className="text-4xl font-black text-teal">{ba.scoreAfter}</span>
-                  <span className="text-xs text-slate-400 font-medium">{t.ui.atsScore}</span>
-                </div>
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-teal font-semibold">{t.ui.passes}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Metrics table */}
-          <div className="border-t border-slate-200">
-            {ba.rows.map((row, i) => (
-              <div
-                key={row.metric}
-                className={`grid grid-cols-3 items-center px-8 py-4 text-sm ${i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`}
-              >
-                <span className="font-semibold text-slate-600">{row.metric}</span>
-                <span className="text-center font-bold text-red-400">{row.before}</span>
-                <span className="text-center font-black text-teal">{row.after}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── 8. smart send ──────────────────────────────────────────────────── */
-const SMART_SEND_ICONS = [Mail, FileText, Send];
-
-function SmartSendSection({ t, Arrow }: { t: Content; Arrow: React.ElementType }) {
-  const ss = t.smartSend;
-
-  return (
-    <section className="py-24 bg-slate-950 relative overflow-hidden" id="smart-send">
-      {/* Background effects */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute top-0 left-1/4 h-[500px] w-[500px] rounded-full bg-teal/8 blur-[120px]" />
-        <div className="absolute bottom-0 right-1/4 h-[400px] w-[400px] rounded-full bg-brand-600/10 blur-[100px]" />
-        <svg className="absolute inset-0 h-full w-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="grid3" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="1" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid3)" />
-        </svg>
-      </div>
-
-      <div className="relative z-10 mx-auto max-w-6xl px-6">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-teal/30 bg-teal/10 px-4 py-1.5 text-xs font-black uppercase tracking-[0.15em] text-teal">
-            <Sparkles className="h-3 w-3" />
-            {ss.badge}
-          </span>
-          <h2 className="mt-4 text-4xl font-black text-white md:text-6xl leading-tight">
-            {ss.title}
-            <br />
-            <span className="bg-gradient-to-r from-teal to-brand-300 bg-clip-text text-transparent">
-              {ss.subtitle}
-            </span>
-          </h2>
-          <p className="mt-6 mx-auto max-w-2xl text-lg text-slate-400 leading-relaxed">
-            {ss.description}
-          </p>
-        </div>
-
-        {/* 3-step flow */}
-        <div className="relative mb-16">
-          {/* Connector line */}
-          <div
-            aria-hidden
-            className="absolute top-10 left-[16.66%] right-[16.66%] h-0.5 bg-gradient-to-r from-teal/40 via-brand-400/40 to-teal/40 hidden md:block"
-          />
-          <div className="grid gap-6 md:grid-cols-3 relative z-10">
-            {ss.steps.map((step, i) => {
-              const Icon = SMART_SEND_ICONS[i] ?? Send;
-              return (
-                <div key={i} className="group text-center">
-                  <div className="flex justify-center mb-6">
-                    <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-teal/20 to-brand-600/20 border border-teal/20 shadow-[0_8px_30px_rgba(0,168,120,0.15)] transition-all group-hover:scale-105 group-hover:border-teal/40 group-hover:shadow-[0_12px_40px_rgba(0,168,120,0.25)]">
-                      <Icon className="h-8 w-8 text-teal" />
-                      <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-teal text-[11px] font-black text-white shadow-lg">
-                        {i + 1}
-                      </span>
-                    </div>
-                  </div>
-                  <h3 className="text-xl font-black text-white mb-3">{step.title}</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed max-w-xs mx-auto">{step.desc}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Stats row */}
-        <div className="grid grid-cols-3 gap-4 mb-14 max-w-2xl mx-auto">
-          {ss.stats.map((stat, i) => (
-            <div
-              key={i}
-              className="rounded-2xl border border-white/5 bg-white/5 px-6 py-5 text-center backdrop-blur-sm"
-            >
-              <div className="text-3xl font-black text-teal md:text-4xl">{stat.value}</div>
-              <div className="mt-1.5 text-xs text-slate-400 leading-snug">{stat.label}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* CTA */}
-        <div className="flex flex-col items-center gap-3">
-          <Link
-            href="/register"
-            className="group inline-flex h-14 items-center gap-2.5 rounded-xl bg-teal px-10 text-base font-bold text-white shadow-[0_0_40px_rgba(0,168,120,0.35)] transition-all hover:bg-teal/90 hover:shadow-[0_0_60px_rgba(0,168,120,0.5)] hover:-translate-y-0.5"
-          >
-            {ss.cta}
-            <Arrow className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-          </Link>
-          <p className="text-sm text-slate-500">{ss.ctaNote}</p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── faq (mini) ─────────────────────────────────────────────────────── */
-
-/* ─── 9. final cta ───────────────────────────────────────────────────── */
-function FinalCtaSection({ t, Arrow }: { t: Content; Arrow: React.ElementType }) {
-  const c = t.finalCta;
-  return (
-    <section className="py-16 px-6 pb-24 bg-white">
-      <div className="mx-auto max-w-5xl">
-        <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-slate-950 via-brand-900 to-brand-700 px-8 py-20 text-center text-white shadow-2xl">
-          {/* Glows */}
-          <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-[2.5rem]">
-            <div className="absolute -top-20 right-0 h-64 w-64 rounded-full bg-teal/15 blur-3xl" />
-            <div className="absolute -bottom-10 left-0 h-48 w-48 rounded-full bg-brand-400/20 blur-3xl" />
-            <svg className="absolute inset-0 h-full w-full opacity-[0.04]" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <pattern id="grid2" width="40" height="40" patternUnits="userSpaceOnUse">
-                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="1" />
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#grid2)" />
-            </svg>
-          </div>
-
-          <div className="relative z-10">
-            <h2 className="text-4xl font-black md:text-6xl leading-tight mb-5">
-              {c.headline}
-              <br />
-              <span className="bg-gradient-to-r from-teal to-brand-300 bg-clip-text text-transparent">
-                {t.finalCta.sub.split(".")[0]}.
-              </span>
-            </h2>
-            <p className="mx-auto max-w-xl text-slate-300 text-lg mb-10 leading-relaxed">
-              {c.sub}
-            </p>
-
-            <Link
-              href="/register"
-              className="group inline-flex h-16 items-center gap-3 rounded-2xl bg-white px-14 text-lg font-black text-brand-700 shadow-2xl transition-all hover:scale-[1.03] hover:bg-brand-50 active:scale-[0.98]"
-            >
-              {c.cta}
-              <Arrow className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
-            </Link>
-
-            <div className="mt-8 flex flex-wrap justify-center gap-6 text-slate-400 text-sm">
-              {c.trust.map((item) => (
-                <span key={item} className="flex items-center gap-1.5">
-                  <CheckCircle2 className="h-4 w-4 text-teal" />
-                  {item}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+    <>
+      <HeroSection t={t.hero} isAr={isAr} />
+      <ProblemSection t={t.problem} isAr={isAr} />
+      <HowItWorksSection t={t.how} isAr={isAr} />
+      <FeaturesSection t={t.features} isAr={isAr} />
+      <SmartMarketingSection t={t.smart} isAr={isAr} />
+      <BenefitsSection t={t.benefits} isAr={isAr} />
+      <TestimonialsSection t={t.testimonials} isAr={isAr} />
+      <FinalCTASection t={t.cta} isAr={isAr} />
+    </>
   );
 }
