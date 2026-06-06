@@ -325,28 +325,62 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
       {/* Section 1 — Current plan */}
       <Panel className="p-8 md:p-10">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
+          <div className="flex-1">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">
               {audience === "recruiter" ? t("eyebrowRecruiter") : t("eyebrow")}
             </p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
-              {sub?.plan_name ?? t("noActivePlan")}
-            </h1>
-            {sub ? (
-              <div className="mt-3 flex flex-wrap items-center gap-3">
-                <StatusBadge status={sub.status} t={t} />
-                <span className="text-sm text-slate-500">
-                  {formatDate(sub.current_period_start)} – {formatDate(sub.current_period_end)}
-                </span>
-              </div>
+
+            {audience === "jobseeker" ? (
+              <>
+                <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
+                  {t("balanceTitle")}
+                </h1>
+                {wallet ? (
+                  <p className="mt-3 text-sm text-slate-600">
+                    {t("pointsBalanceLabel")} <span className="font-semibold text-slate-950">{wallet.balance_points}</span>
+                  </p>
+                ) : null}
+                {Object.keys(featureCredits).some((k) => featureCredits[k] > 0) && (
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    {[
+                      { key: "resume_analysis", label: t("store.credits.resumeAnalysis") },
+                      { key: "resume_improvement", label: t("store.credits.resumeImprovement") },
+                      { key: "mock_interview", label: t("store.credits.mockInterview") },
+                      { key: "smart_send_contacts", label: t("store.credits.smartSend") },
+                    ].map(({ key, label }) => {
+                      const balance = featureCredits[key] ?? 0;
+                      if (balance === 0) return null;
+                      return (
+                        <div key={key} className="rounded-2xl border border-teal-200 bg-teal-50 px-4 py-3">
+                          <p className="text-xs font-semibold text-teal-700 uppercase tracking-wide">{label}</p>
+                          <p className="mt-1 text-2xl font-bold text-teal-900">{balance}</p>
+                          <p className="text-xs text-teal-600">{key === "smart_send_contacts" ? t("store.credits.smartSendUnit") : t("store.credits.usageUnit")}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {sub && resolveStatusKey(sub.status) === "active" ? (
+                  <p className="mt-4 text-sm text-slate-500">{t("subscriptionActiveNote")}</p>
+                ) : null}
+              </>
             ) : (
-              <p className="mt-3 text-sm text-slate-500">{t("choosePlanHint")}</p>
+              <>
+                <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
+                  {sub?.plan_name ?? t("noActivePlan")}
+                </h1>
+                {sub ? (
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <StatusBadge status={sub.status} t={t} />
+                    <span className="text-sm text-slate-500">
+                      {formatDate(sub.current_period_start)} – {formatDate(sub.current_period_end)}
+                    </span>
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-slate-500">{t("choosePlanHint")}</p>
+                )}
+              </>
             )}
-            {audience === "jobseeker" && wallet ? (
-              <p className="mt-4 text-sm text-slate-600">
-                {t("pointsBalanceLabel")} <span className="font-semibold text-slate-950">{wallet.balance_points}</span>
-              </p>
-            ) : null}
           </div>
           <button
             type="button"

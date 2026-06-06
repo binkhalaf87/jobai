@@ -304,13 +304,15 @@
     "posted": "نُشرت {date}"
   },
   "billing": {
-    "eyebrow": "الاشتراك والفوترة",
+    "eyebrow": "الفوترة",
     "eyebrowRecruiter": "فوترة المسؤول",
     "title": "الباقات والفوترة",
     "currentPlan": "الباقة الحالية",
     "noActivePlan": "لا توجد باقة نشطة",
     "choosePlanHint": "اختر باقة أدناه للبدء.",
     "pointsBalanceLabel": "رصيد النقاط:",
+    "balanceTitle": "رصيدك",
+    "subscriptionActiveNote": "لديك اشتراك نشط — لا إجراء مطلوب.",
     "refresh": "تحديث",
     "paymentSuccess": "تمّ الدفع بنجاح! سيتم تحديث حسابك خلال ثوانٍ…",
     "paymentFailed": "لم تكتمل عملية الدفع. يرجى المحاولة مجدداً.",

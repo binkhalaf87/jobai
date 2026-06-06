@@ -311,6 +311,8 @@
     "noActivePlan": "No active plan",
     "choosePlanHint": "Choose a plan below to get started.",
     "pointsBalanceLabel": "Points balance:",
+    "balanceTitle": "Your Balance",
+    "subscriptionActiveNote": "You have an active subscription — no action needed.",
     "refresh": "Refresh",
     "paymentSuccess": "Payment successful! Your account will be updated in a few seconds…",
     "paymentFailed": "Payment was not completed. Please try again.",
