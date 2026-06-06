@@ -43,6 +43,13 @@ export async function getJobAIInsights(params: {
   return api.post<JobAIInsights>("/jobs/ai-insights", params);
 }
 
+/** Store a job description in sessionStorage so the Enhancement page can pre-fill it. */
+export function prefillEnhancementWithJob(jobTitle: string, jobDescription: string): void {
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem("jobai_prefill_jd", jobDescription);
+  sessionStorage.setItem("jobai_prefill_jd_title", jobTitle);
+}
+
 /** Store a job description in sessionStorage so the Analysis page can pre-fill it. */
 export function prefillAnalysisWithJob(jobTitle: string, jobDescription: string): void {
   if (typeof window === "undefined") return;

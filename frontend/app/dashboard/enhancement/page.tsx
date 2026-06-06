@@ -77,6 +77,17 @@ export default function DashboardEnhancementPage() {
 
   useEffect(() => { void loadData(); }, [loadData]);
 
+  // Pre-fill job description from job search page
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const jd = sessionStorage.getItem("jobai_prefill_jd");
+    if (jd) {
+      setJobDescription(jd);
+      sessionStorage.removeItem("jobai_prefill_jd");
+      sessionStorage.removeItem("jobai_prefill_jd_title");
+    }
+  }, []);
+
   // Sync editText when streaming finishes
   useEffect(() => {
     if (pageState === "done") setEditText(streamText);

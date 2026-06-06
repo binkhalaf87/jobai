@@ -10,7 +10,7 @@ import {
   getJobAIInsights,
   getSavedJobs,
   prefillAnalysisWithJob,
-  prefillSmartSendWithJob,
+  prefillEnhancementWithJob,
   saveJob,
   searchJobs,
   unsaveJobByExternalId,
@@ -101,7 +101,7 @@ function JobCard({
   onSave,
   onUnsave,
   onAnalyze,
-  onSmartSend,
+  onImprove,
   onPracticeInterview,
 }: {
   job: JobResult;
@@ -110,7 +110,7 @@ function JobCard({
   onSave: (job: JobResult) => void;
   onUnsave: (jobId: string) => void;
   onAnalyze: (job: JobResult) => void;
-  onSmartSend: (job: JobResult) => void;
+  onImprove: (job: JobResult) => void;
   onPracticeInterview: (job: JobResult) => void;
 }) {
   const t = useTranslations("jobSearchPage");
@@ -288,10 +288,10 @@ function JobCard({
         {job.job_description ? (
           <button
             type="button"
-            onClick={() => onSmartSend(job)}
+            onClick={() => onImprove(job)}
             className="rounded-xl border border-teal-light bg-teal-light/20 px-3 py-2 text-xs font-semibold text-teal transition hover:bg-teal-light/40"
           >
-            {t("jobCard.addToSmartSend")}
+            {t("jobCard.improveForRole")}
           </button>
         ) : (
           <div className="rounded-xl border border-dashed border-slate-200 px-3 py-2 text-center text-xs text-slate-400">
@@ -333,14 +333,14 @@ function SavedJobCard({
   removingId,
   onRemove,
   onAnalyze,
-  onSmartSend,
+  onImprove,
   onPracticeInterview,
 }: {
   job: SavedJob;
   removingId: string | null;
   onRemove: (id: string) => void;
   onAnalyze: (job: SavedJob) => void;
-  onSmartSend: (job: SavedJob) => void;
+  onImprove: (job: SavedJob) => void;
   onPracticeInterview: (job: SavedJob) => void;
 }) {
   const t = useTranslations("jobSearchPage");
@@ -394,10 +394,10 @@ function SavedJobCard({
         {job.job_description ? (
           <button
             type="button"
-            onClick={() => onSmartSend(job)}
+            onClick={() => onImprove(job)}
             className="rounded-xl border border-teal-light bg-teal-light/20 px-3 py-2 text-xs font-semibold text-teal transition hover:bg-teal-light/40"
           >
-            {t("jobCard.addToSmartSend")}
+            {t("jobCard.improveForRole")}
           </button>
         ) : (
           <div className="rounded-xl border border-dashed border-slate-200 px-3 py-2 text-center text-xs text-slate-400">
@@ -566,13 +566,10 @@ export default function DashboardJobSearchPage() {
     router.push("/dashboard/analysis");
   }
 
-  function handleSmartSend(job: { job_title: string; company_name: string; job_description: string | null }) {
-    prefillSmartSendWithJob({
-      job_title: job.job_title,
-      company_name: job.company_name,
-      job_description: job.job_description,
-    });
-    router.push("/dashboard/smart-send");
+  function handleImprove(job: { job_title: string; job_description: string | null }) {
+    if (!job.job_description) return;
+    prefillEnhancementWithJob(job.job_title, job.job_description);
+    router.push("/dashboard/enhancement");
   }
 
   function handlePracticeInterview(job: { job_title: string; job_description: string | null }) {
@@ -749,7 +746,7 @@ export default function DashboardJobSearchPage() {
                     onSave={handleSave}
                     onUnsave={handleUnsave}
                     onAnalyze={handleAnalyze}
-                    onSmartSend={handleSmartSend}
+                    onImprove={handleImprove}
                     onPracticeInterview={handlePracticeInterview}
                   />
                 ))}
@@ -799,7 +796,7 @@ export default function DashboardJobSearchPage() {
                     removingId={removingId}
                     onRemove={handleRemoveSaved}
                     onAnalyze={handleAnalyze}
-                    onSmartSend={handleSmartSend}
+                    onImprove={handleImprove}
                     onPracticeInterview={handlePracticeInterview}
                   />
                 ))}

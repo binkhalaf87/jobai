@@ -1810,6 +1810,7 @@
       "analyzeAgainstCv": "Analyze against CV",
       "noJdAvailable": "No job description available",
       "addToSmartSend": "Add to SmartSend",
+      "improveForRole": "Improve CV for this role",
       "smartSendNeedsContext": "SmartSend needs job context",
       "practiceInterview": "Practice interview",
       "interviewPrepNeedsContext": "Interview prep needs job context",
