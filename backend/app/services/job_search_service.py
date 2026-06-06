@@ -13,8 +13,9 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.models.resume import Resume
 from app.models.saved_job import SavedJob
-from app.schemas.job_search import JobResult
+from app.schemas.job_search import JobAIInsightsResponse, JobResult
 from app.services.analysis_matching import compute_match_result
+from app.services.gpt_matching_service import gpt_match_resume_to_job
 
 logger = logging.getLogger(__name__)
 
@@ -153,6 +154,39 @@ def attach_fit_scores(
             logger.debug("Fit score failed for job %s", job.job_id, exc_info=True)
 
     return jobs
+
+
+# ─── On-demand GPT insights ───────────────────────────────────────────────────
+
+def get_ai_insights_for_job(
+    db: Session,
+    user_id: str,
+    resume_id: str,
+    job_id: str,
+    job_title: str,
+    job_description: str,
+) -> JobAIInsightsResponse:
+    """Use GPT to compute detailed AI insights for a single job vs a resume."""
+    resume: Resume | None = db.scalar(
+        select(Resume).where(Resume.id == resume_id, Resume.user_id == user_id)
+    )
+    if not resume or not resume.raw_text:
+        raise ValueError("Resume not found or has no extracted text.")
+
+    result = gpt_match_resume_to_job(
+        job_text=job_description,
+        resume_text=resume.raw_text,
+    )
+    return JobAIInsightsResponse(
+        job_id=job_id,
+        fit_score=result.match_score,
+        matching_keywords=result.matching_keywords,
+        missing_keywords=result.missing_keywords,
+        strengths=result.strengths,
+        gaps=result.gaps,
+        recommendation=result.recommendation,
+        hiring_suggestion=result.hiring_suggestion,
+    )
 
 
 # ─── Saved-job CRUD ───────────────────────────────────────────────────────────

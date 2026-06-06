@@ -1,5 +1,5 @@
 ﻿import { api } from "@/lib/api";
-import type { JobResult, JobSearchResponse, SavedJob } from "@/types";
+import type { JobAIInsights, JobResult, JobSearchResponse, SavedJob } from "@/types";
 
 export type JobSearchParams = {
   q: string;
@@ -32,6 +32,15 @@ export async function unsaveJobByExternalId(jobId: string): Promise<void> {
 
 export async function getSavedJobs(): Promise<SavedJob[]> {
   return api.get<SavedJob[]>("/jobs/saved");
+}
+
+export async function getJobAIInsights(params: {
+  job_id: string;
+  job_title: string;
+  job_description: string;
+  resume_id: string;
+}): Promise<JobAIInsights> {
+  return api.post<JobAIInsights>("/jobs/ai-insights", params);
 }
 
 /** Store a job description in sessionStorage so the Analysis page can pre-fill it. */

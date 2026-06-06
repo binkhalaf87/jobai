@@ -8,6 +8,7 @@ import { Panel } from "@/components/panel";
 import { ApiError } from "@/lib/api";
 import { buildJobMatchInsights } from "@/lib/product-insights";
 import {
+  getJobAIInsights,
   getSavedJobs,
   prefillAnalysisWithJob,
   prefillSmartSendWithJob,
@@ -16,7 +17,7 @@ import {
   unsaveJobByExternalId,
 } from "@/lib/jobs";
 import { listResumes } from "@/lib/resumes";
-import type { JobResult, ResumeListItem, SavedJob } from "@/types";
+import type { JobAIInsights, JobResult, ResumeListItem, SavedJob } from "@/types";
 
 const DATE_VALUES = ["all", "today", "3days", "week", "month"] as const;
 type DateValue = (typeof DATE_VALUES)[number];
@@ -76,8 +77,27 @@ function EmploymentBadge({ type }: { type: string | null }) {
   );
 }
 
+function hiringLabel(suggestion: JobAIInsights["hiring_suggestion"]): string {
+  switch (suggestion) {
+    case "shortlist": return "Strong fit — shortlist";
+    case "interview": return "Good fit — worth interviewing";
+    case "needs_review": return "Partial fit — review gaps";
+    case "reject": return "Low fit for this role";
+  }
+}
+
+function hiringLabelColor(suggestion: JobAIInsights["hiring_suggestion"]): string {
+  switch (suggestion) {
+    case "shortlist": return "text-teal";
+    case "interview": return "text-teal";
+    case "needs_review": return "text-amber-700";
+    case "reject": return "text-rose-700";
+  }
+}
+
 function JobCard({
   job,
+  resumeId,
   savingId,
   onSave,
   onUnsave,
@@ -86,6 +106,7 @@ function JobCard({
   onPracticeInterview,
 }: {
   job: JobResult;
+  resumeId: string | null;
   savingId: string | null;
   onSave: (job: JobResult) => void;
   onUnsave: (jobId: string) => void;
@@ -96,7 +117,31 @@ function JobCard({
   const t = useTranslations("jobSearchPage");
   const salary = formatSalary(job.salary_min, job.salary_max, job.salary_currency);
   const isBusy = savingId === job.job_id;
-  const insights = buildJobMatchInsights(job);
+  const [aiInsights, setAiInsights] = useState<JobAIInsights | null>(null);
+  const [loadingInsights, setLoadingInsights] = useState(false);
+  const [insightsError, setInsightsError] = useState<string | null>(null);
+
+  const displayScore = aiInsights ? aiInsights.fit_score : job.fit_score;
+  const staticInsights = buildJobMatchInsights({ ...job, fit_score: displayScore });
+
+  async function handleGetInsights() {
+    if (!resumeId || !job.job_description) return;
+    setLoadingInsights(true);
+    setInsightsError(null);
+    try {
+      const result = await getJobAIInsights({
+        job_id: job.job_id,
+        job_title: job.job_title,
+        job_description: job.job_description,
+        resume_id: resumeId,
+      });
+      setAiInsights(result);
+    } catch {
+      setInsightsError("Could not load AI insights. Please try again.");
+    } finally {
+      setLoadingInsights(false);
+    }
+  }
 
   return (
     <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-brand-200 hover:shadow-md">
@@ -104,7 +149,7 @@ function JobCard({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="truncate text-sm font-semibold text-slate-950">{job.job_title}</p>
-            <FitBadge score={job.fit_score} />
+            <FitBadge score={displayScore} />
           </div>
           <p className="mt-1 truncate text-xs text-slate-500">{job.company_name}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
@@ -136,27 +181,95 @@ function JobCard({
         )}
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{insights.headline}</p>
-        <div className="mt-3 grid gap-3 md:grid-cols-2">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-teal">{t("jobCard.whyItMatches")}</p>
-            <ul className="mt-2 space-y-1.5 text-xs leading-5 text-slate-600">
-              {insights.reasons.map((reason) => (
-                <li key={reason}>- {reason}</li>
-              ))}
-            </ul>
+      {/* AI Insights Panel */}
+      {aiInsights ? (
+        <div className="rounded-2xl border border-brand-200 bg-brand-50 p-4">
+          <div className="flex items-center justify-between">
+            <p className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${hiringLabelColor(aiInsights.hiring_suggestion)}`}>
+              {hiringLabel(aiInsights.hiring_suggestion)}
+            </p>
+            <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-semibold text-brand-700">AI</span>
           </div>
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700">{t("jobCard.howToImprove")}</p>
-            <ul className="mt-2 space-y-1.5 text-xs leading-5 text-slate-600">
-              {insights.suggestions.map((suggestion) => (
-                <li key={suggestion}>- {suggestion}</li>
-              ))}
-            </ul>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-teal">{t("jobCard.whyItMatches")}</p>
+              <ul className="mt-2 space-y-1.5 text-xs leading-5 text-slate-600">
+                {aiInsights.strengths.slice(0, 3).map((s) => (
+                  <li key={s}>- {s}</li>
+                ))}
+                {aiInsights.matching_keywords.length > 0 && (
+                  <li className="text-slate-500">
+                    Keywords: {aiInsights.matching_keywords.slice(0, 5).join(", ")}
+                  </li>
+                )}
+              </ul>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700">{t("jobCard.howToImprove")}</p>
+              <ul className="mt-2 space-y-1.5 text-xs leading-5 text-slate-600">
+                {aiInsights.gaps.slice(0, 3).map((g) => (
+                  <li key={g}>- {g}</li>
+                ))}
+                {aiInsights.missing_keywords.length > 0 && (
+                  <li className="text-slate-500">
+                    Add to CV: {aiInsights.missing_keywords.slice(0, 4).join(", ")}
+                  </li>
+                )}
+              </ul>
+            </div>
           </div>
+          {aiInsights.recommendation && (
+            <p className="mt-3 border-t border-brand-200 pt-3 text-xs leading-5 text-slate-600 italic">
+              {aiInsights.recommendation}
+            </p>
+          )}
         </div>
-      </div>
+      ) : (
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{staticInsights.headline}</p>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-teal">{t("jobCard.whyItMatches")}</p>
+              <ul className="mt-2 space-y-1.5 text-xs leading-5 text-slate-600">
+                {staticInsights.reasons.map((reason) => (
+                  <li key={reason}>- {reason}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700">{t("jobCard.howToImprove")}</p>
+              <ul className="mt-2 space-y-1.5 text-xs leading-5 text-slate-600">
+                {staticInsights.suggestions.map((suggestion) => (
+                  <li key={suggestion}>- {suggestion}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          {resumeId && job.job_description && (
+            <div className="mt-3 border-t border-slate-200 pt-3">
+              {insightsError && <p className="mb-2 text-[11px] text-rose-600">{insightsError}</p>}
+              <button
+                type="button"
+                disabled={loadingInsights}
+                onClick={handleGetInsights}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-brand-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-brand-700 transition hover:bg-brand-50 disabled:opacity-50"
+              >
+                {loadingInsights ? (
+                  <>
+                    <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Analyzing…
+                  </>
+                ) : (
+                  <>✦ Get AI Insights</>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {job.source && <p className="text-[10px] text-slate-400">{t("jobCard.source", { source: job.source })}</p>}
 
@@ -647,6 +760,7 @@ export default function DashboardJobSearchPage() {
                   <JobCard
                     key={job.job_id}
                     job={job}
+                    resumeId={resumeId || null}
                     savingId={savingId}
                     onSave={handleSave}
                     onUnsave={handleUnsave}

@@ -283,6 +283,17 @@ export type InterviewCompleteResponse = InterviewSessionResponse & {
 
 // ─── Job Search ───────────────────────────────────────────────────────────────
 
+export type JobAIInsights = {
+  job_id: string;
+  fit_score: number;
+  matching_keywords: string[];
+  missing_keywords: string[];
+  strengths: string[];
+  gaps: string[];
+  recommendation: string;
+  hiring_suggestion: "shortlist" | "interview" | "needs_review" | "reject";
+};
+
 export type JobResult = {
   job_id: string;
   job_title: string;

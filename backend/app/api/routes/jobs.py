@@ -1,16 +1,23 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from app.api.deps.auth import get_current_user
 from app.api.deps.db import get_db
 from app.models.user import User
 from app.schemas.job_search import (
+    JobAIInsightsRequest,
+    JobAIInsightsResponse,
     JobSearchResponse,
     SaveJobRequest,
     SavedJobResponse,
 )
 from app.services.job_search_service import (
     attach_fit_scores,
+    get_ai_insights_for_job,
     get_saved_job_ids,
     list_saved_jobs,
     save_job,
@@ -76,6 +83,37 @@ def search_job_listings(
         total_found=total,
         results=jobs,
     )
+
+
+@router.post("/ai-insights", response_model=JobAIInsightsResponse)
+def compute_job_ai_insights(
+    payload: JobAIInsightsRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> JobAIInsightsResponse:
+    """
+    Use GPT-4o-mini to compute detailed AI fit insights for a single job vs a resume.
+    Returns match score, matched/missing keywords, strengths, gaps, and recommendation.
+    """
+    if not payload.job_description.strip():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Job description is required.")
+    try:
+        return get_ai_insights_for_job(
+            db=db,
+            user_id=current_user.id,
+            resume_id=payload.resume_id,
+            job_id=payload.job_id,
+            job_title=payload.job_title,
+            job_description=payload.job_description,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.exception("AI insights failed for job %s", payload.job_id)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="AI insights service is currently unavailable. Please try again.",
+        ) from exc
 
 
 @router.post("/saved", response_model=SavedJobResponse, status_code=status.HTTP_201_CREATED)

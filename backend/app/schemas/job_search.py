@@ -57,6 +57,24 @@ class SaveJobRequest(BaseModel):
     posted_at: str | None = None
 
 
+class JobAIInsightsRequest(BaseModel):
+    job_id: str
+    job_title: str
+    job_description: str
+    resume_id: str
+
+
+class JobAIInsightsResponse(BaseModel):
+    job_id: str
+    fit_score: float
+    matching_keywords: list[str]
+    missing_keywords: list[str]
+    strengths: list[str]
+    gaps: list[str]
+    recommendation: str
+    hiring_suggestion: str  # shortlist | interview | needs_review | reject
+
+
 class SavedJobResponse(ORMBaseSchema):
     id: str
     job_id: str
