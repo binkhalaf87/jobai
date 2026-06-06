@@ -136,8 +136,8 @@ const AR = {
       "متابعة نتائج حملتك بشكل مستمر",
       "زيادة حقيقية في فرص الحصول على مقابلات",
     ],
-    cta: "ابدأ حملتك المجانية",
-    ctaNote: "متاح مع الحساب المجاني — بدون بطاقة ائتمانية",
+    cta: "ابدأ حملتك الآن",
+    ctaNote: "سجّل حسابك وابدأ في دقائق",
   },
 
   benefits: {
@@ -340,8 +340,8 @@ const EN = {
       "Track your campaign performance in real time",
       "Meaningfully increase your interview opportunities",
     ],
-    cta: "Start Your Free Campaign",
-    ctaNote: "Available with a free account — no credit card required",
+    cta: "Start Your Campaign",
+    ctaNote: "Create an account and launch in minutes",
   },
 
   benefits: {
