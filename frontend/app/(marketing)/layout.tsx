@@ -9,7 +9,7 @@ async function SiteFooter() {
   const isAr = locale === "ar";
 
   const t = {
-    tagline: isAr ? "منصة التوظيف الذكي رقم ١ في الخليج العربي" : "The #1 AI-Powered Hiring Platform for Saudi Arabia & GCC",
+    tagline: isAr ? "ذكاء اصطناعي يحوّل سيرتك إلى بوابة فرصك" : "AI-powered tools that turn your resume into your biggest career advantage",
     product: {
       label: isAr ? "المنتج" : "Product",
       links: isAr

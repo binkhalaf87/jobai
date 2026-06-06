@@ -16,7 +16,7 @@ import { FinalCTASection } from "@/components/marketing/final-cta-section";
 
 const AR = {
   hero: {
-    badge: "منصة مهنية بالذكاء الاصطناعي · السعودية والخليج",
+    badge: "منصة مهنية بالذكاء الاصطناعي · أدواتك نحو فرصتك",
     sub: "ارفع سيرتك الذاتية وخلال ثوانٍ يكشف لك JobAI24 سبب رفضها — ويعيد كتابتها لتحصل على مقابلات أكثر.",
     cta1: "ارفع سيرتك مجاناً",
     cta2: "كيف يعمل؟",
@@ -26,7 +26,7 @@ const AR = {
   problem: {
     badge: "المشكلة الحقيقية",
     h2: "هل هذا مألوف لك؟",
-    sub: "يمرّ بها آلاف الباحثين عن عمل في الخليج كل يوم",
+    sub: "يمرّ بها آلاف الباحثين عن عمل كل يوم",
     items: [
       {
         icon: "x",
@@ -143,7 +143,7 @@ const AR = {
   benefits: {
     badge: "لماذا JobAI24",
     h2: "ما الذي ستكسبه فعلاً",
-    sub: "نتائج ملموسة لباحثي العمل في الخليج العربي",
+    sub: "نتائج ملموسة لمن يريد أن يتقدم بذكاء",
     items: [
       {
         icon: "clock",
@@ -180,28 +180,25 @@ const AR = {
 
   testimonials: {
     badge: "قالوا عنا",
-    h2: "تجارب حقيقية من الخليج العربي",
+    h2: "تجارب حقيقية من مستخدمي JobAI24",
     sub: "ما يقوله باحثو العمل الذين جربوا JobAI24",
     items: [
       {
         initials: "ف.ع",
         name: "فاطمة العمري",
         role: "تسويق رقمي",
-        city: "الرياض",
         text: "كنت أتقدم لوظائف لأشهر دون أي رد. بعد JobAI24 اكتشفت أن سيرتي كانت تُرفض آلياً من البداية. بعد التحسين حصلت على مقابلتين خلال أسبوع واحد.",
       },
       {
         initials: "أ.خ",
         name: "أحمد الخالدي",
         role: "هندسة برمجيات",
-        city: "دبي",
         text: "التحليل كشف لي مهارات أساسية كانت غائبة عن سيرتي تماماً. التوصيات كانت دقيقة ومنطقية، وليست إضافات عشوائية. الفرق واضح في الردود التي أتلقاها الآن.",
       },
       {
         initials: "س.ر",
         name: "سارة الراشد",
         role: "محاسبة ومالية",
-        city: "جدة",
         text: "كتابة خطاب تقديم احترافي لكل وظيفة كانت تأخذ مني ساعة كاملة. الآن خلال خمس دقائق أمتلك خطاباً مخصصاً واحترافياً. الوقت الذي وفّرته لا يُصدَّق.",
       },
     ],
@@ -223,7 +220,7 @@ const AR = {
 
 const EN = {
   hero: {
-    badge: "AI Career Platform · Saudi Arabia & GCC",
+    badge: "AI Career Platform · Built for Ambitious Job Seekers",
     sub: "Upload your resume and within seconds JobAI24 shows you exactly why you're being overlooked — and fixes it so you land more interviews.",
     cta1: "Upload Your Resume — Free",
     cta2: "See How It Works",
@@ -233,7 +230,7 @@ const EN = {
   problem: {
     badge: "The Real Problem",
     h2: "Does this sound familiar?",
-    sub: "Thousands of GCC job seekers face this every single day",
+    sub: "Thousands of job seekers face this every single day",
     items: [
       {
         icon: "x",
@@ -286,7 +283,7 @@ const EN = {
   features: {
     badge: "What You Get",
     h2: "Everything you need, in one place",
-    sub: "A complete toolkit built for the GCC job market",
+    sub: "A complete toolkit built to get you hired faster",
     items: [
       {
         icon: "target",
@@ -350,7 +347,7 @@ const EN = {
   benefits: {
     badge: "Why JobAI24",
     h2: "What you'll actually gain",
-    sub: "Real outcomes for GCC job seekers",
+    sub: "Real outcomes for ambitious job seekers",
     items: [
       {
         icon: "clock",
@@ -387,28 +384,25 @@ const EN = {
 
   testimonials: {
     badge: "What People Say",
-    h2: "Real stories from GCC job seekers",
+    h2: "Real stories from JobAI24 users",
     sub: "From people who used JobAI24 to land their next role",
     items: [
       {
         initials: "F.A",
         name: "Fatima Al-Omari",
         role: "Digital Marketing",
-        city: "Riyadh",
         text: "I had been applying for months with no response. JobAI24 showed me my resume was being filtered out automatically. After the improvements, I got two interview invitations in under a week.",
       },
       {
         initials: "A.K",
         name: "Ahmed Al-Khalidi",
         role: "Software Engineering",
-        city: "Dubai",
         text: "The analysis flagged critical skills that were completely absent from my resume. The recommendations were precise and logical — not just random additions. The difference in responses I get now is real.",
       },
       {
         initials: "S.R",
         name: "Sarah Al-Rashid",
         role: "Accounting & Finance",
-        city: "Jeddah",
         text: "Writing a proper cover letter used to take me an hour per application. Now I have a tailored, professional letter in five minutes. The time I've saved is hard to overstate.",
       },
     ],

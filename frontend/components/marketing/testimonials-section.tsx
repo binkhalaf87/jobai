@@ -8,7 +8,6 @@ type TestimonialItem = {
   initials: string;
   name: string;
   role: string;
-  city: string;
   text: string;
 };
 
@@ -78,9 +77,7 @@ export function TestimonialsSection({ t, isAr }: { t: TestimonialsT; isAr: boole
                   </div>
                   <div className={isAr ? "text-right" : ""}>
                     <p className="text-sm font-bold text-slate-900">{item.name}</p>
-                    <p className="text-xs text-slate-500">
-                      {item.role} &middot; {item.city}
-                    </p>
+                    <p className="text-xs text-slate-500">{item.role}</p>
                   </div>
                 </div>
               </div>
