@@ -6,7 +6,6 @@ import { useTranslations } from "next-intl";
 
 import { Panel } from "@/components/panel";
 import { ApiError } from "@/lib/api";
-import { buildJobMatchInsights } from "@/lib/product-insights";
 import {
   getJobAIInsights,
   getSavedJobs,
@@ -122,7 +121,6 @@ function JobCard({
   const [insightsError, setInsightsError] = useState<string | null>(null);
 
   const displayScore = aiInsights ? aiInsights.fit_score : job.fit_score;
-  const staticInsights = buildJobMatchInsights({ ...job, fit_score: displayScore });
 
   async function handleGetInsights() {
     if (!resumeId || !job.job_description) return;
@@ -224,50 +222,36 @@ function JobCard({
             </p>
           )}
         </div>
-      ) : (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{staticInsights.headline}</p>
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-teal">{t("jobCard.whyItMatches")}</p>
-              <ul className="mt-2 space-y-1.5 text-xs leading-5 text-slate-600">
-                {staticInsights.reasons.map((reason) => (
-                  <li key={reason}>- {reason}</li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700">{t("jobCard.howToImprove")}</p>
-              <ul className="mt-2 space-y-1.5 text-xs leading-5 text-slate-600">
-                {staticInsights.suggestions.map((suggestion) => (
-                  <li key={suggestion}>- {suggestion}</li>
-                ))}
-              </ul>
-            </div>
+      ) : resumeId && job.job_description ? (
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-dashed border-brand-200 bg-brand-50/40 p-4">
+          <p className="text-xs text-slate-500">Run AI analysis to see how well this role fits your resume.</p>
+          <div className="shrink-0">
+            {insightsError && <p className="mb-1 text-[11px] text-rose-600">{insightsError}</p>}
+            <button
+              type="button"
+              disabled={loadingInsights}
+              onClick={handleGetInsights}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-brand-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-brand-700 transition hover:bg-brand-50 disabled:opacity-50"
+            >
+              {loadingInsights ? (
+                <>
+                  <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Analyzing…
+                </>
+              ) : (
+                <>✦ Get AI Insights</>
+              )}
+            </button>
           </div>
-          {resumeId && job.job_description && (
-            <div className="mt-3 border-t border-slate-200 pt-3">
-              {insightsError && <p className="mb-2 text-[11px] text-rose-600">{insightsError}</p>}
-              <button
-                type="button"
-                disabled={loadingInsights}
-                onClick={handleGetInsights}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-brand-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-brand-700 transition hover:bg-brand-50 disabled:opacity-50"
-              >
-                {loadingInsights ? (
-                  <>
-                    <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Analyzing…
-                  </>
-                ) : (
-                  <>✦ Get AI Insights</>
-                )}
-              </button>
-            </div>
-          )}
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4">
+          <p className="text-xs text-slate-500">
+            {!resumeId ? "Select a resume above to enable AI fit scoring." : "No job description available for analysis."}
+          </p>
         </div>
       )}
 
