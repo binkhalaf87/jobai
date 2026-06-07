@@ -309,6 +309,8 @@ async def handle_paymob_webhook(
     db: Session = Depends(get_db),
     hmac_header: str | None = Header(default=None, alias="hmac"),
     x_hmac_header: str | None = Header(default=None, alias="x-hmac"),
+    x_paymob_hmac: str | None = Header(default=None, alias="x-paymob-hmac"),
+    x_paymob_signature: str | None = Header(default=None, alias="x-paymob-signature"),
 ) -> BillingWebhookResponse:
     """Verify and reconcile a Paymob webhook callback."""
     raw_body = await request.body()
@@ -320,10 +322,20 @@ async def handle_paymob_webhook(
     if not isinstance(payload, dict):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Webhook payload must be a JSON object.")
 
-    # Accept HMAC from the official Paymob header only.
-    # Query-param and payload-embedded HMACs are rejected to prevent forgery.
-    provided_hmac = hmac_header or x_hmac_header
+    # Accept HMAC from any known Paymob header variant.
+    provided_hmac = hmac_header or x_hmac_header or x_paymob_hmac or x_paymob_signature
     if not provided_hmac:
+        # Log all headers so we can identify which header name Paymob KSA actually uses.
+        safe_headers = {
+            k: (v[:20] + "…" if len(v) > 20 else v)
+            for k, v in request.headers.items()
+            if k.lower() not in ("cookie", "authorization")
+        }
+        logger.error(
+            "WEBHOOK_MISSING_HMAC: no hmac header found. All headers: %s | body_snippet=%s",
+            safe_headers,
+            raw_body[:200],
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing HMAC signature header.",

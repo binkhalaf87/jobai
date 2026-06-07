@@ -294,49 +294,65 @@ def _extract_paymob_error(response: httpx.Response) -> str:
 
 
 def query_paymob_transaction(transaction_id: str) -> dict[str, Any]:
-    """Query a single Paymob transaction by its ID."""
-    with httpx.Client(base_url=PAYMOB_BASE_URL, timeout=PAYMOB_TIMEOUT) as client:
-        response = client.get(
-            f"/api/acceptance/transactions/{transaction_id}",
-            headers=_paymob_headers(),
-        )
-    try:
-        response.raise_for_status()
-    except httpx.HTTPStatusError as exc:
-        raise RuntimeError(
-            f"Paymob transaction query failed with status {response.status_code}: "
-            f"{_extract_paymob_error(response)}"
-        ) from exc
+    """Query a single Paymob transaction by its ID.
 
-    result = response.json()
-    if not isinstance(result, dict):
-        raise RuntimeError("Paymob transaction query did not return a JSON object.")
-    return cast(dict[str, Any], result)
+    Tries /v1/transactions/{id}/ first (KSA unified API), then falls back to
+    /api/acceptance/transactions/{id} (legacy Egypt API).
+    """
+    import logging as _log
+    _logger = _log.getLogger(__name__)
+    paths = [f"/v1/transactions/{transaction_id}/", f"/api/acceptance/transactions/{transaction_id}"]
+    last_error: str = ""
+    with httpx.Client(base_url=PAYMOB_BASE_URL, timeout=PAYMOB_TIMEOUT) as client:
+        for path in paths:
+            response = client.get(path, headers=_paymob_headers())
+            if response.status_code == 404:
+                _logger.debug("Paymob tx path %s → 404, trying next", path)
+                last_error = f"404 on {path}"
+                continue
+            try:
+                response.raise_for_status()
+            except httpx.HTTPStatusError as exc:
+                raise RuntimeError(
+                    f"Paymob transaction query failed with status {response.status_code}: "
+                    f"{_extract_paymob_error(response)}"
+                ) from exc
+            result = response.json()
+            if not isinstance(result, dict):
+                raise RuntimeError("Paymob transaction query did not return a JSON object.")
+            return cast(dict[str, Any], result)
+    raise RuntimeError(f"Paymob transaction {transaction_id} not found on any known endpoint. Last: {last_error}")
 
 
 def _fetch_paymob_transactions(params: dict[str, Any]) -> list[dict[str, Any]]:
-    """Internal helper: query Paymob transaction list with arbitrary filter params."""
+    """Internal helper: query Paymob transaction list with arbitrary filter params.
+
+    Tries /v1/transactions/ first (KSA unified API), falls back to
+    /api/acceptance/transactions/ (legacy Egypt API).
+    """
     import logging as _log
     _logger = _log.getLogger(__name__)
+    paths = ["/v1/transactions/", "/api/acceptance/transactions/"]
     with httpx.Client(base_url=PAYMOB_BASE_URL, timeout=PAYMOB_TIMEOUT) as client:
-        response = client.get(
-            "/api/acceptance/transactions/",
-            headers=_paymob_headers(),
-            params=params,
-        )
-    _logger.debug("Paymob tx query params=%s status=%s body=%s", params, response.status_code, response.text[:500])
-    try:
-        response.raise_for_status()
-    except httpx.HTTPStatusError as exc:
-        raise RuntimeError(
-            f"Paymob transactions query failed ({response.status_code}): {_extract_paymob_error(response)}"
-        ) from exc
-    result = response.json()
-    if isinstance(result, list):
-        return result
-    if isinstance(result, dict):
-        return result.get("results") or []
-    return []
+        for path in paths:
+            response = client.get(path, headers=_paymob_headers(), params=params)
+            _logger.debug("Paymob tx list path=%s params=%s status=%s body=%s", path, params, response.status_code, response.text[:500])
+            if response.status_code == 404:
+                _logger.debug("Paymob tx list %s → 404, trying next", path)
+                continue
+            try:
+                response.raise_for_status()
+            except httpx.HTTPStatusError as exc:
+                raise RuntimeError(
+                    f"Paymob transactions query failed ({response.status_code}): {_extract_paymob_error(response)}"
+                ) from exc
+            result = response.json()
+            if isinstance(result, list):
+                return result
+            if isinstance(result, dict):
+                return result.get("results") or result.get("data") or []
+            return []
+    raise RuntimeError("Paymob transactions query failed (404) on all known endpoints.")
 
 
 def query_paymob_transactions_by_order(
