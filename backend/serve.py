@@ -23,10 +23,33 @@ logger = logging.getLogger("jobai.bootstrap")
 
 def run_database_migrations() -> None:
     """Run Alembic migrations from the copied backend root inside the container."""
+    import sqlalchemy as _sa
+
     alembic_config = AlembicConfig(str(PROJECT_ROOT / "alembic.ini"))
     alembic_config.set_main_option("script_location", str(PROJECT_ROOT / "alembic"))
     alembic_config.set_main_option("prepend_sys_path", str(PROJECT_ROOT))
-    command.upgrade(alembic_config, "head")
+    try:
+        command.upgrade(alembic_config, "head")
+    except _sa.exc.ProgrammingError as exc:
+        # DuplicateObject means the type/table already exists in the DB.  This
+        # happens when a previous container created the schema but crashed before
+        # Alembic could commit the version number.  The schema is already correct,
+        # so we force-advance the version and let startup continue.
+        cause = str(exc.orig) if exc.orig else str(exc)
+        if "already exists" in cause or "DuplicateObject" in type(exc.orig).__name__ if exc.orig else False:
+            logger.warning(
+                "Migration hit 'already exists' — schema is up-to-date but version "
+                "table was stale.  Forcing alembic_version to 'head'.\n%s",
+                cause,
+            )
+            _force_alembic_head(alembic_config)
+        else:
+            raise
+
+
+def _force_alembic_head(alembic_config: AlembicConfig) -> None:
+    """Stamp alembic_version to 'head' without running any DDL."""
+    command.stamp(alembic_config, "head")
 
 
 def build_application():
