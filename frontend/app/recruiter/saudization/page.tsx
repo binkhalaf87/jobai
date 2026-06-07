@@ -427,7 +427,7 @@ function AnalysisDashboard({ analysis, onRequestAI }: { analysis: Analysis; onRe
         ) : analysis.ai_status === "failed" ? (
           <p className="text-sm text-rose-500">فشل توليد التوصيات. حاول مجدداً.</p>
         ) : (
-          <p className="text-sm text-slate-400">اضغط على "توليد التوصيات" للحصول على تحليل تفصيلي من الذكاء الاصطناعي.</p>
+          <p className="text-sm text-slate-400">اضغط على &quot;توليد التوصيات&quot; للحصول على تحليل تفصيلي من الذكاء الاصطناعي.</p>
         )}
       </div>
     </div>
@@ -700,7 +700,7 @@ export default function SaudizationPage() {
             </div>
             {companies.length === 0 && (
               <p className="mt-2 text-[12px] text-amber-600">
-                أضف شركة أولاً من خلال زر "الشركات" في الأعلى
+                أضف شركة أولاً من خلال زر &quot;الشركات&quot; في الأعلى
               </p>
             )}
           </div>
