@@ -192,10 +192,8 @@ export default function DashboardEnhancementPage() {
 
   function exportPdf() {
     const title = viewReport?.resume_title ?? resumes.find((r) => r.id === selectedResume)?.title ?? "resume";
-    const win = window.open("", "_blank");
-    if (!win) return;
     const html = outputRef.current?.innerHTML ?? editText;
-    win.document.write(`<!DOCTYPE html><html><head>
+    const fullHtml = `<!DOCTYPE html><html><head>
       <meta charset="utf-8"/>
       <title>${title} — Enhanced Resume</title>
       <style>
@@ -206,10 +204,21 @@ export default function DashboardEnhancementPage() {
         ul { margin: 0.3em 0 0.3em 1.5em; } li { margin-bottom: 0.2em; }
         p  { margin: 0.3em 0; }
       </style>
-    </head><body>${html}</body></html>`);
-    win.document.close();
-    win.focus();
-    win.print();
+    </head><body>${html}</body></html>`;
+
+    // Use a hidden same-origin iframe to avoid cross-origin SecurityError on Mobile Safari
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = "position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0;border:0";
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument ?? iframe.contentWindow?.document;
+    if (!doc) { document.body.removeChild(iframe); return; }
+    doc.open();
+    doc.write(fullHtml);
+    doc.close();
+    setTimeout(() => {
+      iframe.contentWindow?.print();
+      setTimeout(() => { if (document.body.contains(iframe)) document.body.removeChild(iframe); }, 1000);
+    }, 300);
   }
 
   async function saveEdits() {
