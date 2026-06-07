@@ -8,11 +8,14 @@ import {
   getAdminUserProfile,
   getAdminResumeFileUrl,
   grantFeatureCredits,
+  listAdminPaymentOrders,
+  activatePaymentOrder,
   type AdminUserProfileResponse,
   type AdminUserActivityItem,
   type AdminUserResumeItem,
   type AdminUserServiceSummaryItem,
   type AdminUserPageViewItem,
+  type AdminPaymentOrderItem,
 } from "@/lib/admin";
 
 const ROLE_COLORS: Record<string, string> = {
@@ -594,7 +597,152 @@ function GrantCreditsModal({
   );
 }
 
-type Tab = "activity" | "services" | "pages" | "files";
+const STATUS_CLS: Record<string, string> = {
+  PENDING:            "bg-amber-50 text-amber-700 border-amber-200",
+  PAYMENT_KEY_ISSUED: "bg-orange-50 text-orange-700 border-orange-200",
+  PAID:               "bg-teal-50 text-teal-700 border-teal-200",
+  FAILED:             "bg-rose-50 text-rose-700 border-rose-200",
+  CANCELED:           "bg-slate-100 text-slate-500 border-slate-200",
+  REFUNDED:           "bg-purple-50 text-purple-700 border-purple-200",
+};
+
+const STATUS_AR: Record<string, string> = {
+  PENDING:            "معلق",
+  PAYMENT_KEY_ISSUED: "مفتاح صادر",
+  PAID:               "مدفوع",
+  FAILED:             "فشل",
+  CANCELED:           "ملغي",
+  REFUNDED:           "مسترجع",
+};
+
+function fmtAmount(minor: number, currency: string) {
+  return `${(minor / 100).toFixed(2)} ${currency}`;
+}
+
+function PaymentsTab({ userId }: { userId: string }) {
+  const [orders, setOrders]     = useState<AdminPaymentOrderItem[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [activating, setActivating] = useState<string | null>(null);
+  const [toast, setToast]       = useState("");
+
+  useEffect(() => {
+    setLoading(true);
+    listAdminPaymentOrders({ user_id: userId, limit: 100 })
+      .then(setOrders)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [userId]);
+
+  function showToast(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(""), 4000);
+  }
+
+  async function handleActivate(orderId: string) {
+    setActivating(orderId);
+    try {
+      await activatePaymentOrder(orderId);
+      showToast("✅ تم تفعيل الدفعة وإضافة الرصيد");
+      const data = await listAdminPaymentOrders({ user_id: userId, limit: 100 });
+      setOrders(data);
+    } catch (e) {
+      showToast(`❌ ${e instanceof Error ? e.message : "فشل التفعيل"}`);
+    } finally {
+      setActivating(null);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-10">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-slate-600" />
+      </div>
+    );
+  }
+
+  if (orders.length === 0) {
+    return <p className="py-10 text-center text-sm text-slate-400">لا توجد مدفوعات لهذا المستخدم.</p>;
+  }
+
+  const totalPaid = orders
+    .filter((o) => o.status === "PAID")
+    .reduce((sum, o) => sum + o.amount_minor, 0);
+
+  return (
+    <div className="space-y-4">
+      {toast && (
+        <div className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">{toast}</div>
+      )}
+
+      {/* Summary */}
+      <div className="flex flex-wrap gap-3">
+        <div className="rounded-xl border border-teal-100 bg-teal-50 px-4 py-3 text-center">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-teal-500">إجمالي المدفوع</p>
+          <p className="text-[15px] font-bold text-teal-800">{fmtAmount(totalPaid, orders[0]?.currency ?? "SAR")}</p>
+        </div>
+        <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-center">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">عدد الطلبات</p>
+          <p className="text-[15px] font-bold text-slate-800">{orders.length}</p>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-slate-100 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              <th className="px-3 py-2 text-right">الخطة</th>
+              <th className="px-3 py-2 text-right">المبلغ</th>
+              <th className="px-3 py-2 text-right">الحالة</th>
+              <th className="px-3 py-2 text-right">تاريخ الإنشاء</th>
+              <th className="px-3 py-2 text-right">تاريخ الدفع</th>
+              <th className="px-3 py-2 text-right">إجراء</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-50">
+            {orders.map((o) => (
+              <tr key={o.id} className="hover:bg-slate-50/50">
+                <td className="px-3 py-2.5">
+                  <p className="text-[13px] font-semibold text-slate-800">{o.plan_name}</p>
+                  <p className="text-[10px] text-slate-400">{o.order_type}</p>
+                </td>
+                <td className="px-3 py-2.5 text-[13px] font-bold text-slate-900">
+                  {fmtAmount(o.amount_minor, o.currency)}
+                </td>
+                <td className="px-3 py-2.5">
+                  <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${STATUS_CLS[o.status] ?? "bg-slate-100 text-slate-600 border-slate-200"}`}>
+                    {STATUS_AR[o.status] ?? o.status}
+                  </span>
+                  {o.failure_reason && (
+                    <p className="mt-0.5 text-[10px] text-rose-500 truncate max-w-[120px]">{o.failure_reason}</p>
+                  )}
+                </td>
+                <td className="px-3 py-2.5 text-[11px] text-slate-400">{formatDateTime(o.created_at)}</td>
+                <td className="px-3 py-2.5 text-[11px] text-slate-400">
+                  {o.paid_at ? formatDateTime(o.paid_at) : "—"}
+                </td>
+                <td className="px-3 py-2.5">
+                  {(o.status === "PENDING" || o.status === "PAYMENT_KEY_ISSUED") && (
+                    <button
+                      type="button"
+                      disabled={activating === o.id}
+                      onClick={() => void handleActivate(o.id)}
+                      className="rounded-lg border border-teal-300 bg-teal-50 px-2.5 py-1 text-[11px] font-semibold text-teal-700 transition hover:bg-teal-100 disabled:opacity-50"
+                    >
+                      {activating === o.id ? "…" : "تفعيل"}
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+type Tab = "activity" | "services" | "pages" | "payments" | "files";
 
 export default function AdminUserProfilePage() {
   const { userId } = useParams<{ userId: string }>();
@@ -640,10 +788,11 @@ export default function AdminUserProfilePage() {
   }
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: "activity", label: "النشاط" },
-    { key: "services", label: "الخدمات" },
-    { key: "pages", label: `الصفحات (${profile.pages_total})` },
-    { key: "files", label: `الملفات (${profile.resumes.length})` },
+    { key: "activity",  label: "النشاط" },
+    { key: "services",  label: "الخدمات" },
+    { key: "payments",  label: "المدفوعات" },
+    { key: "pages",     label: `الصفحات (${profile.pages_total})` },
+    { key: "files",     label: `الملفات (${profile.resumes.length})` },
   ];
 
   return (
@@ -755,8 +904,9 @@ export default function AdminUserProfilePage() {
               onPageChange={handlePageChange}
             />
           )}
-          {tab === "services" && <ServicesTab summary={profile.services_summary} />}
-          {tab === "pages" && <PagesTab items={profile.pages_visited} total={profile.pages_total} />}
+          {tab === "services"  && <ServicesTab summary={profile.services_summary} />}
+          {tab === "payments"  && <PaymentsTab userId={profile.id} />}
+          {tab === "pages"     && <PagesTab items={profile.pages_visited} total={profile.pages_total} />}
           {tab === "files" && <FilesTab resumes={profile.resumes} userId={profile.id} />}
         </div>
       </div>
