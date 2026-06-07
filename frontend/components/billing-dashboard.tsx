@@ -11,6 +11,7 @@ import {
   getBillingSnapshot,
   getFeatureCredits,
   getWalletTransactions,
+  verifyAllPending,
   verifyPayment,
 } from "@/lib/billing";
 import type {
@@ -188,22 +189,12 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
     setIsVerifying(true);
     setVerifyBanner(null);
     try {
-      const pendingOrders = (snapshot?.recent_orders ?? []).filter(
-        (o) => o.status === "payment_key_issued" || o.status === "pending",
-      );
-      let anyActivated = false;
-      await Promise.allSettled(
-        pendingOrders.map(async (o) => {
-          try {
-            const result = await verifyPayment({ paymentOrderId: o.id });
-            if (result.activated) anyActivated = true;
-          } catch {
-            // ignore per-order errors, proceed with others
-          }
-        }),
-      );
+      const result = await verifyAllPending();
       await loadBillingState();
-      setVerifyBanner(anyActivated ? "activated" : "none");
+      setVerifyBanner(result.activated > 0 ? "activated" : "none");
+    } catch {
+      await loadBillingState();
+      setVerifyBanner("none");
     } finally {
       setIsVerifying(false);
     }

@@ -46,7 +46,11 @@ from app.services.billing_service import (
     list_wallet_transactions_for_user,
 )
 from app.services.feature_credit_service import get_all_feature_balances
-from app.services.paymob_webhook_service import process_paymob_webhook, verify_and_activate_payment_order
+from app.services.paymob_webhook_service import (
+    process_paymob_webhook,
+    verify_all_pending_for_user,
+    verify_and_activate_payment_order,
+)
 
 router = APIRouter(prefix="/billing", tags=["billing"])
 
@@ -344,6 +348,16 @@ async def handle_paymob_webhook(
         status=result.status,
         duplicate=result.duplicate,
     )
+
+
+@router.post("/verify-all-pending", response_model=dict)
+def verify_all_pending(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """Check all pending payment orders for the current user against Paymob and activate any confirmed paid."""
+    activated = verify_all_pending_for_user(db, str(current_user.id))
+    return {"activated": activated}
 
 
 @router.post("/promo/validate", response_model=BillingPromoValidateResponse)

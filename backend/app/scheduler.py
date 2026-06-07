@@ -223,7 +223,7 @@ async def _process_campaigns() -> None:
 
 
 async def _poll_pending_payments() -> None:
-    """Poll Paymob for PAYMENT_KEY_ISSUED orders older than 5 minutes and activate if paid."""
+    """Poll Paymob for pending orders older than 5 minutes and activate if paid."""
     from app.models.enums import PaymentOrderStatus
     from app.models.payment_order import PaymentOrder
     from app.services.paymob_webhook_service import verify_and_activate_payment_order
@@ -233,8 +233,10 @@ async def _poll_pending_payments() -> None:
         cutoff = datetime.now(timezone.utc) - timedelta(minutes=5)
         pending_orders = db.scalars(
             select(PaymentOrder).where(
-                PaymentOrder.status == PaymentOrderStatus.PAYMENT_KEY_ISSUED,
-                PaymentOrder.provider_transaction_id.isnot(None),
+                PaymentOrder.status.in_([
+                    PaymentOrderStatus.PAYMENT_KEY_ISSUED,
+                    PaymentOrderStatus.PENDING,
+                ]),
                 PaymentOrder.created_at < cutoff,
             )
         ).all()
@@ -249,14 +251,13 @@ async def _poll_pending_payments() -> None:
                     db,
                     payment_order_id=str(order.id),
                     user_id=str(order.user_id),
-                    paymob_transaction_id=order.provider_transaction_id,
                 )
                 if result == PaymentOrderStatus.PAID:
                     logger.info("Payment poller: activated order %s for user %s.", order.id, order.user_id)
                 else:
                     logger.debug("Payment poller: order %s still %s.", order.id, result.value)
             except Exception as exc:
-                logger.warning("Payment poller: error processing order %s: %s", order.id, exc)
+                logger.debug("Payment poller: order %s skipped: %s", order.id, exc)
     except Exception as exc:
         logger.exception("Payment poller error: %s", exc)
     finally:

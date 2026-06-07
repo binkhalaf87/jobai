@@ -673,7 +673,16 @@ def verify_and_activate_payment_order(
 
     tx_id = paymob_transaction_id or order.provider_transaction_id
     if not tx_id:
-        raise ValueError("No Paymob transaction ID available to verify — wait for webhook.")
+        # Fall back to merchant_reference lookup — finds the transaction even without a stored tx ID
+        from app.services.paymob_service import query_paymob_transactions_by_merchant_ref as _query_by_ref
+        try:
+            txns = _query_by_ref(order.merchant_reference)
+        except Exception:
+            txns = []
+        successful = [t for t in txns if t.get("success") and not t.get("pending")]
+        if not successful:
+            return order.status  # not paid at Paymob — nothing to activate
+        tx_id = str(successful[0]["id"])
 
     tx_data = _query_tx(tx_id)
 
@@ -695,6 +704,35 @@ def verify_and_activate_payment_order(
     )
     _send_invoice_email(db, order)
     return PaymentOrderStatus.PAID
+
+
+def verify_all_pending_for_user(db: Session, user_id: str) -> int:
+    """Check all pending payment orders for a user against Paymob and activate any confirmed paid.
+
+    Returns the number of orders newly activated.
+    """
+    pending_orders = db.scalars(
+        select(PaymentOrder)
+        .options(selectinload(PaymentOrder.plan), selectinload(PaymentOrder.subscription))
+        .where(
+            PaymentOrder.user_id == user_id,
+            PaymentOrder.status.in_([PaymentOrderStatus.PAYMENT_KEY_ISSUED, PaymentOrderStatus.PENDING]),
+        )
+    ).all()
+
+    activated = 0
+    for order in pending_orders:
+        try:
+            result = verify_and_activate_payment_order(
+                db,
+                payment_order_id=str(order.id),
+                user_id=user_id,
+            )
+            if result == PaymentOrderStatus.PAID:
+                activated += 1
+        except Exception as exc:
+            logger.debug("verify_all_pending: order %s skipped: %s", order.id, exc)
+    return activated
 
 
 def process_paymob_webhook(

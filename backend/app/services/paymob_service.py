@@ -314,6 +314,29 @@ def query_paymob_transaction(transaction_id: str) -> dict[str, Any]:
     return cast(dict[str, Any], result)
 
 
+def query_paymob_transactions_by_merchant_ref(merchant_reference: str) -> list[dict[str, Any]]:
+    """Return all Paymob transactions for a given merchant_order_id (our merchant_reference)."""
+    with httpx.Client(base_url=PAYMOB_BASE_URL, timeout=PAYMOB_TIMEOUT) as client:
+        response = client.get(
+            "/api/acceptance/transactions/",
+            headers=_paymob_headers(),
+            params={"merchant_order_id": merchant_reference},
+        )
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        raise RuntimeError(
+            f"Paymob transactions query failed ({response.status_code}): {_extract_paymob_error(response)}"
+        ) from exc
+
+    result = response.json()
+    if isinstance(result, list):
+        return result
+    if isinstance(result, dict):
+        return result.get("results") or []
+    return []
+
+
 def _post_intention(payload: dict[str, Any]) -> dict[str, Any]:
     with httpx.Client(base_url=PAYMOB_BASE_URL, timeout=PAYMOB_TIMEOUT) as client:
         response = client.post(PAYMOB_INTENTION_PATH, headers=_paymob_headers(), json=payload)
