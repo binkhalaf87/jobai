@@ -130,37 +130,72 @@ def _compute_hmac_sha256(event_payload: dict[str, Any], hmac_secret: str) -> str
     ).hexdigest()
 
 
-def verify_paymob_webhook_hmac(event_payload: dict[str, Any], provided_hmac: str | None) -> bool:
-    """Verify a Paymob callback HMAC using timing-safe comparison."""
+def verify_paymob_webhook_hmac(
+    event_payload: dict[str, Any],
+    provided_hmac: str | None,
+    *,
+    raw_body: bytes | None = None,
+) -> bool:
+    """Verify a Paymob callback HMAC using timing-safe comparison.
+
+    Tries multiple strategies in order:
+    1. SHA-512 HMAC of 20 transaction fields (Paymob Egypt standard)
+    2. SHA-256 HMAC of 20 transaction fields
+    3. SHA-512 HMAC of the raw request body (Paymob KSA unified checkout)
+    4. SHA-256 HMAC of the raw request body
+    """
     if not provided_hmac:
         return False
 
     secret = get_paymob_hmac_secret()
+    provided = provided_hmac.strip().lower()
+
+    # Strategy 1 & 2: 20 specific transaction fields
     signature_source = "".join(
         _normalize_hmac_value(_get_nested_value(event_payload, field_name))
         for field_name in PAYMOB_TRANSACTION_HMAC_FIELDS
     )
-    provided = provided_hmac.strip().lower()
+    src_bytes = signature_source.encode("utf-8")
+    key_bytes = secret.encode("utf-8")
 
-    # Try SHA-512 (standard Paymob Egypt format)
-    sha512_result = hmac.new(secret.encode("utf-8"), signature_source.encode("utf-8"), hashlib.sha512).hexdigest()
-    if hmac.compare_digest(sha512_result, provided):
+    sha512_fields = hmac.new(key_bytes, src_bytes, hashlib.sha512).hexdigest()
+    if hmac.compare_digest(sha512_fields, provided):
         return True
 
-    # Try SHA-256 (some Paymob KSA unified checkout integrations use SHA-256)
-    sha256_result = hmac.new(secret.encode("utf-8"), signature_source.encode("utf-8"), hashlib.sha256).hexdigest()
-    if hmac.compare_digest(sha256_result, provided):
-        logger.info("WEBHOOK_HMAC_MATCHED_SHA256: switching algorithm detected")
+    sha256_fields = hmac.new(key_bytes, src_bytes, hashlib.sha256).hexdigest()
+    if hmac.compare_digest(sha256_fields, provided):
+        logger.info("WEBHOOK_HMAC_MATCHED_FIELDS_SHA256")
         return True
 
-    # Log diagnostic info (non-secret: only field values and first 16 chars of hashes)
-    logger.warning(
-        "WEBHOOK_HMAC_MISMATCH_DETAIL: "
-        "sig_source_preview=%r sig_source_len=%d "
-        "sha512_prefix=%s sha256_prefix=%s provided_prefix=%s",
-        signature_source[:120], len(signature_source),
-        sha512_result[:16], sha256_result[:16], provided[:16],
-    )
+    # Strategy 3 & 4: raw request body (Paymob KSA may sign entire body)
+    if raw_body:
+        sha512_body = hmac.new(key_bytes, raw_body, hashlib.sha512).hexdigest()
+        if hmac.compare_digest(sha512_body, provided):
+            logger.info("WEBHOOK_HMAC_MATCHED_BODY_SHA512")
+            return True
+
+        sha256_body = hmac.new(key_bytes, raw_body, hashlib.sha256).hexdigest()
+        if hmac.compare_digest(sha256_body, provided):
+            logger.info("WEBHOOK_HMAC_MATCHED_BODY_SHA256")
+            return True
+
+        logger.warning(
+            "WEBHOOK_HMAC_MISMATCH_DETAIL: "
+            "sig_source_preview=%r sig_source_len=%d "
+            "sha512_fields=%s sha256_fields=%s "
+            "sha512_body=%s sha256_body=%s provided=%s",
+            signature_source[:120], len(signature_source),
+            sha512_fields[:16], sha256_fields[:16],
+            sha512_body[:16], sha256_body[:16], provided[:16],
+        )
+    else:
+        logger.warning(
+            "WEBHOOK_HMAC_MISMATCH_DETAIL: "
+            "sig_source_preview=%r sig_source_len=%d "
+            "sha512_prefix=%s sha256_prefix=%s provided_prefix=%s",
+            signature_source[:120], len(signature_source),
+            sha512_fields[:16], sha256_fields[:16], provided[:16],
+        )
     return False
 
 
@@ -940,6 +975,7 @@ def process_paymob_webhook(
     payload: dict[str, Any],
     *,
     provided_hmac: str | None,
+    raw_body: bytes | None = None,
 ) -> PaymobWebhookProcessResult:
     """Verify, persist, and reconcile a Paymob transaction callback."""
     event_object = _extract_event_object(payload)
@@ -964,7 +1000,7 @@ def process_paymob_webhook(
         payload=payload,
     )
 
-    signature_valid = verify_paymob_webhook_hmac(event_object, provided_hmac)
+    signature_valid = verify_paymob_webhook_hmac(event_object, provided_hmac, raw_body=raw_body)
     webhook_event.signature_valid = signature_valid
     if not signature_valid:
         expected_prefix = compute_paymob_transaction_hmac(event_object)[:12]

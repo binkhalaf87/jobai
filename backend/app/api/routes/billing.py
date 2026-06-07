@@ -358,6 +358,7 @@ async def handle_paymob_webhook(
             db,
             payload,
             provided_hmac=str(provided_hmac) if provided_hmac else None,
+            raw_body=raw_body,
         )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
