@@ -44,6 +44,8 @@ class AdminStatsResponse(BaseModel):
     total_resumes: int
     total_interviews: int
     total_sends: int
+    total_revenue_sar: float
+    total_paid_orders: int
 
 
 # ── Recipient Lists ────────────────────────────────────────────────────────────
@@ -118,6 +120,9 @@ class AdminActivityItem(BaseModel):
 class AdminActivityResponse(BaseModel):
     recent_activity: list[AdminActivityItem]
     visitors_last_24h: int
+    visitors_today: int
+    visitors_this_month: int
+    visitors_this_year: int
 
 
 class AdminActivityFeedResponse(BaseModel):

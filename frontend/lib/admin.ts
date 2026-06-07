@@ -52,6 +52,8 @@ export type AdminStatsResponse = {
   total_resumes: number;
   total_interviews: number;
   total_sends: number;
+  total_revenue_sar: number;
+  total_paid_orders: number;
 };
 
 export async function getAdminStats(): Promise<AdminStatsResponse> {
@@ -74,6 +76,9 @@ export type AdminActivityItem = {
 export type AdminActivityResponse = {
   recent_activity: AdminActivityItem[];
   visitors_last_24h: number;
+  visitors_today: number;
+  visitors_this_month: number;
+  visitors_this_year: number;
 };
 
 export type AdminActivityFeedResponse = {

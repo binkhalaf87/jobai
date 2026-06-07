@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps.auth import get_current_admin
 from app.api.deps.db import get_db
-from app.models.enums import UserRole, UsageEventType, WalletTransactionDirection, WalletTransactionStatus, WalletTransactionType, TicketStatus
+from app.models.enums import UserRole, UsageEventType, WalletTransactionDirection, WalletTransactionStatus, WalletTransactionType, TicketStatus, PaymentOrderStatus
 from app.models.support_ticket import SupportTicket, TicketMessage
 from app.schemas.support_ticket import (
     AdminTicketResponse,
@@ -91,6 +91,16 @@ def get_stats(
     total_interviews = db.scalar(select(func.count()).select_from(InterviewSession)) or 0
     total_sends = db.scalar(select(func.count()).select_from(SendHistory).where(SendHistory.status == "sent")) or 0
 
+    total_paid_orders = db.scalar(
+        select(func.count()).select_from(PaymentOrder)
+        .where(PaymentOrder.status == PaymentOrderStatus.PAID)
+    ) or 0
+    total_revenue_minor = db.scalar(
+        select(func.coalesce(func.sum(PaymentOrder.amount_minor), 0))
+        .where(PaymentOrder.status == PaymentOrderStatus.PAID)
+    ) or 0
+    total_revenue_sar = total_revenue_minor / 100.0
+
     return AdminStatsResponse(
         total_users=total_users,
         active_users=active_users,
@@ -100,6 +110,8 @@ def get_stats(
         total_resumes=total_resumes,
         total_interviews=total_interviews,
         total_sends=total_sends,
+        total_revenue_sar=total_revenue_sar,
+        total_paid_orders=total_paid_orders,
     )
 
 
@@ -121,13 +133,24 @@ def get_activity(
         .limit(15)
     ).all()
 
-    since = datetime.now(timezone.utc) - timedelta(hours=24)
-    visitors_last_24h = db.scalar(
-        select(func.count(func.distinct(UsageLog.user_id))).where(
-            UsageLog.event_type == UsageEventType.AUTH_LOGIN,
-            UsageLog.created_at >= since,
-        )
-    ) or 0
+    now = datetime.now(timezone.utc)
+    since_24h = now - timedelta(hours=24)
+    start_of_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    start_of_year = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    def _visitor_count(since: datetime) -> int:
+        return db.scalar(
+            select(func.count(func.distinct(UsageLog.user_id))).where(
+                UsageLog.event_type == UsageEventType.AUTH_LOGIN,
+                UsageLog.created_at >= since,
+            )
+        ) or 0
+
+    visitors_last_24h = _visitor_count(since_24h)
+    visitors_today = _visitor_count(start_of_today)
+    visitors_this_month = _visitor_count(start_of_month)
+    visitors_this_year = _visitor_count(start_of_year)
 
     items = [
         AdminActivityItem(
@@ -141,7 +164,13 @@ def get_activity(
         for log, user in rows
     ]
 
-    return AdminActivityResponse(recent_activity=items, visitors_last_24h=visitors_last_24h)
+    return AdminActivityResponse(
+        recent_activity=items,
+        visitors_last_24h=visitors_last_24h,
+        visitors_today=visitors_today,
+        visitors_this_month=visitors_this_month,
+        visitors_this_year=visitors_this_year,
+    )
 
 
 @router.get("/activity/feed", response_model=AdminActivityFeedResponse)
