@@ -201,6 +201,7 @@ class PaymentVerifyRequest(BaseModel):
     payment_order_id: str | None = None
     merchant_reference: str | None = None
     paymob_transaction_id: str | None = None
+    redirect_params: dict[str, str] | None = None
 
 
 class PaymentVerifyResponse(BaseModel):

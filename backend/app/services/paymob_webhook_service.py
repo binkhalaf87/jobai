@@ -640,6 +640,38 @@ def manually_activate_payment_order(db: Session, payment_order_id: str) -> None:
     _send_invoice_email(db, order)
 
 
+def _build_event_object_from_redirect_params(params: dict[str, str]) -> dict[str, Any]:
+    """Build a transaction event_object from Paymob redirect URL query params."""
+    return {
+        "id": params.get("id"),
+        "amount_cents": params.get("amount_cents"),
+        "created_at": params.get("created_at"),
+        "currency": params.get("currency"),
+        "error_occured": params.get("error_occured"),
+        "has_parent_transaction": params.get("has_parent_transaction"),
+        "integration_id": params.get("integration_id"),
+        "is_3d_secure": params.get("is_3d_secure"),
+        "is_auth": params.get("is_auth"),
+        "is_capture": params.get("is_capture"),
+        "is_refunded": params.get("is_refunded"),
+        "is_standalone_payment": params.get("is_standalone_payment"),
+        "is_voided": params.get("is_voided"),
+        "order": {"id": params.get("order")},
+        "owner": params.get("owner"),
+        "pending": params.get("pending"),
+        "source_data": {
+            "pan": params.get("source_data.pan"),
+            "sub_type": params.get("source_data.sub_type"),
+            "type": params.get("source_data.type"),
+        },
+        "success": params.get("success"),
+    }
+
+
+def _is_redirect_payment_successful(params: dict[str, str]) -> bool:
+    return params.get("success", "").lower() == "true" and params.get("pending", "").lower() != "true"
+
+
 def verify_and_activate_payment_order(
     db: Session,
     *,
@@ -647,6 +679,7 @@ def verify_and_activate_payment_order(
     merchant_reference: str | None = None,
     user_id: str,
     paymob_transaction_id: str | None = None,
+    redirect_params: dict[str, str] | None = None,
 ) -> PaymentOrderStatus:
     """Verify a payment with Paymob and activate the order if confirmed successful.
 
@@ -675,6 +708,44 @@ def verify_and_activate_payment_order(
 
     if order.status == PaymentOrderStatus.PAID:
         return order.status
+
+    # ── Fast path: verify redirect HMAC locally — zero Paymob API calls needed ──
+    # When Paymob redirects the browser after payment it appends all 20 HMAC
+    # fields plus ?hmac=... to the callback URL.  We re-compute the HMAC on
+    # those flat string values; if it matches we trust the result immediately.
+    if redirect_params and redirect_params.get("hmac"):
+        rp_hmac = redirect_params["hmac"]
+        rp_event_obj = _build_event_object_from_redirect_params(redirect_params)
+        if verify_paymob_webhook_hmac(rp_event_obj, rp_hmac):
+            if _is_redirect_payment_successful(redirect_params):
+                _finalize_paid_order(
+                    db, order, rp_event_obj,
+                    {"source": "redirect_verify", "redirect_hmac_valid": True},
+                )
+                db.commit()
+                logger.info(
+                    "REDIRECT_VERIFY_ACTIVATED: order_id=%s user_id=%s tx_id=%s",
+                    order.id, order.user_id, redirect_params.get("id"),
+                )
+                _send_invoice_email(db, order)
+                return PaymentOrderStatus.PAID
+            else:
+                # HMAC is valid but payment was not successful — map to failure status
+                mapped = _map_unsuccessful_order_status(rp_event_obj)
+                if mapped and order.status != mapped:
+                    order.status = mapped
+                    order.provider_transaction_id = redirect_params.get("id") or order.provider_transaction_id
+                    db.commit()
+                logger.info(
+                    "REDIRECT_VERIFY_FAILED: order_id=%s user_id=%s success=%s pending=%s",
+                    order.id, order.user_id, redirect_params.get("success"), redirect_params.get("pending"),
+                )
+                return order.status
+        else:
+            logger.warning(
+                "REDIRECT_HMAC_INVALID: order_id=%s provided_prefix=%s — falling back to API lookup",
+                order.id, rp_hmac[:12],
+            )
 
     from app.services.paymob_service import query_paymob_transactions_by_order as _query_by_order
 

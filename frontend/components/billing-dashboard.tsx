@@ -122,6 +122,11 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
     const isSuccess = params.get("is_success");
     const paymobTxId = params.get("id") ?? undefined;
 
+    // Capture ALL redirect params to send for HMAC-based local verification.
+    // Paymob KSA includes all 20 HMAC fields + ?hmac=... in the callback URL.
+    const redirectParams: Record<string, string> = {};
+    params.forEach((val, key) => { if (val) redirectParams[key] = val; });
+
     if (success === "true" || isSuccess === "1") {
       setReturnBanner("success");
       const paymentOrderId = localStorage.getItem("pending_payment_order_id") ?? undefined;
@@ -129,10 +134,16 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
       localStorage.removeItem("pending_payment_order_id");
       localStorage.removeItem("pending_merchant_reference");
 
-      if (paymentOrderId || merchantReference || paymobTxId) {
-        // Try immediate verify, then always refresh UI.
-        // If verify-payment fails, trigger verify-all-pending as a second attempt.
-        void verifyPayment({ paymentOrderId, merchantReference, paymobTransactionId: paymobTxId })
+      const hasRedirectHmac = Boolean(redirectParams["hmac"]);
+      if (paymentOrderId || merchantReference || paymobTxId || hasRedirectHmac) {
+        // Send redirect params for HMAC verification (bypasses broken Paymob list API).
+        // Fall back to verify-all-pending if this fails.
+        void verifyPayment({
+          paymentOrderId,
+          merchantReference,
+          paymobTransactionId: paymobTxId,
+          redirectParams: hasRedirectHmac ? redirectParams : undefined,
+        })
           .catch(() => verifyAllPending().catch(() => null))
           .finally(() => void loadBillingState());
       } else {

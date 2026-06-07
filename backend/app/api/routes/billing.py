@@ -288,6 +288,7 @@ def verify_payment(
             merchant_reference=payload.merchant_reference,
             user_id=current_user.id,
             paymob_transaction_id=payload.paymob_transaction_id,
+            redirect_params=payload.redirect_params,
         )
     except LookupError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc

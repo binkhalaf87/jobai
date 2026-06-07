@@ -419,7 +419,10 @@ def query_paymob_intention_transactions(intention_id: str) -> list[dict[str, Any
             f"/v1/intention/{intention_id}/",
             headers=_paymob_headers(),
         )
-    _logger.debug("Paymob intention endpoint %s → status=%s body=%s", intention_id, response.status_code, response.text[:800])
+    _logger.info(
+        "Paymob intention endpoint %s → status=%s body=%s",
+        intention_id, response.status_code, response.text[:1200],
+    )
     if not response.is_success:
         return []
     data = response.json()
@@ -427,11 +430,17 @@ def query_paymob_intention_transactions(intention_id: str) -> list[dict[str, Any
         return []
     # The intention response may contain transactions directly or nested
     txns = data.get("transactions") or data.get("payment_methods") or []
-    if isinstance(txns, list):
+    if isinstance(txns, list) and txns:
         return txns
-    # Or it may be a single transaction-like object
+    # Top-level success field means the intention itself is the transaction record
     if data.get("success") is not None:
         return [data]
+    # Extract status from any known KSA confirmation structure
+    confirmation = data.get("confirmation") or data.get("payment_attempts")
+    if isinstance(confirmation, list) and confirmation:
+        return confirmation
+    if isinstance(confirmation, dict):
+        return [confirmation]
     return []
 
 

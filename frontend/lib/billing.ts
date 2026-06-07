@@ -41,10 +41,12 @@ export async function verifyPayment(params: {
   paymentOrderId?: string;
   merchantReference?: string;
   paymobTransactionId?: string;
+  redirectParams?: Record<string, string>;
 }): Promise<{ status: string; activated: boolean }> {
   return api.post<{ status: string; activated: boolean }>("/billing/verify-payment", {
     payment_order_id: params.paymentOrderId,
     merchant_reference: params.merchantReference,
     paymob_transaction_id: params.paymobTransactionId,
+    redirect_params: params.redirectParams,
   });
 }
