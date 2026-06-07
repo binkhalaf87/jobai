@@ -29,7 +29,7 @@ class SaudizationReport(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     summary: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     processing_status: Mapped[SaudizationProcessingStatus] = mapped_column(
-        SqlEnum(SaudizationProcessingStatus, name="saudization_processing_status", values_callable=lambda e: [m.value for m in e]),
+        SqlEnum(SaudizationProcessingStatus, name="saudization_processing_status", create_type=False, values_callable=lambda e: [m.value for m in e]),
         nullable=False,
         default=SaudizationProcessingStatus.UPLOADED,
         server_default=SaudizationProcessingStatus.UPLOADED.value,

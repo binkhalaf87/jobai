@@ -26,7 +26,7 @@ class SaudizationAnalysis(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     ai_recommendations: Mapped[str | None] = mapped_column(Text, nullable=True)
     ai_status: Mapped[SaudizationAIStatus] = mapped_column(
-        SqlEnum(SaudizationAIStatus, name="saudization_ai_status", values_callable=lambda e: [m.value for m in e]),
+        SqlEnum(SaudizationAIStatus, name="saudization_ai_status", create_type=False, values_callable=lambda e: [m.value for m in e]),
         nullable=False,
         default=SaudizationAIStatus.PENDING,
         server_default=SaudizationAIStatus.PENDING.value,

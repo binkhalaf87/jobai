@@ -24,14 +24,22 @@ def upgrade() -> None:
     )
     op.create_index("ix_recruiter_companies_user_id", "recruiter_companies", ["user_id"])
 
-    op.execute(
-        "CREATE TYPE saudization_processing_status AS ENUM "
-        "('uploaded', 'processing', 'extracted', 'failed')"
-    )
-    op.execute(
-        "CREATE TYPE saudization_ai_status AS ENUM "
-        "('pending', 'completed', 'failed')"
-    )
+    op.execute("""
+        DO $$
+        BEGIN
+            CREATE TYPE saudization_processing_status AS ENUM
+                ('uploaded', 'processing', 'extracted', 'failed');
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END $$;
+    """)
+    op.execute("""
+        DO $$
+        BEGIN
+            CREATE TYPE saudization_ai_status AS ENUM
+                ('pending', 'completed', 'failed');
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END $$;
+    """)
 
     op.create_table(
         "saudization_decisions",

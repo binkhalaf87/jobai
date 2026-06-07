@@ -1,4 +1,8 @@
 from app.db.base_class import Base
+from app.models.recruiter_company import RecruiterCompany
+from app.models.saudization_analysis import SaudizationAnalysis
+from app.models.saudization_decision import SaudizationDecision
+from app.models.saudization_report import SaudizationReport
 from app.models.ai_report import AIAnalysisReport
 from app.models.analysis import Analysis
 from app.models.email_campaign import EmailCampaign
@@ -34,6 +38,10 @@ from app.models.wallet_transaction import WalletTransaction
 # Importing models here registers them with SQLAlchemy metadata for Alembic migrations.
 
 __all__ = [
+    "RecruiterCompany",
+    "SaudizationAnalysis",
+    "SaudizationDecision",
+    "SaudizationReport",
     "AIAnalysisReport",
     "Analysis",
     "Base",
