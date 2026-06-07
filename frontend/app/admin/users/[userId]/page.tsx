@@ -12,6 +12,7 @@ import {
   type AdminUserActivityItem,
   type AdminUserResumeItem,
   type AdminUserServiceSummaryItem,
+  type AdminUserPageViewItem,
 } from "@/lib/admin";
 
 const ROLE_COLORS: Record<string, string> = {
@@ -175,6 +176,77 @@ function ActivityTab({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+const PAGE_LABELS: Record<string, string> = {
+  "/dashboard": "الرئيسية",
+  "/dashboard/resumes": "السير الذاتية",
+  "/dashboard/analysis": "تحليل السيرة",
+  "/dashboard/enhancement": "تحسين السيرة",
+  "/dashboard/cover-letter": "خطاب التقديم",
+  "/dashboard/mock-interview": "تدريب المقابلة",
+  "/dashboard/jobs": "البحث عن وظائف",
+  "/dashboard/smart-send": "الإرسال الذكي",
+  "/dashboard/billing": "الفواتير",
+  "/dashboard/profile": "الملف الشخصي",
+  "/dashboard/support": "الدعم",
+};
+
+function PagesTab({ items, total }: { items: AdminUserPageViewItem[]; total: number }) {
+  if (items.length === 0) {
+    return <p className="py-10 text-center text-sm text-slate-400">لم يتم تسجيل أي زيارات للصفحات.</p>;
+  }
+
+  // Group by path with counts for summary, keep raw list below
+  const counts: Record<string, number> = {};
+  for (const item of items) {
+    counts[item.path] = (counts[item.path] ?? 0) + 1;
+  }
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+
+  return (
+    <div className="space-y-5">
+      {/* Summary grid */}
+      <div>
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">الصفحات الأكثر زيارة</p>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {sorted.slice(0, 9).map(([path, count]) => (
+            <div key={path} className="flex items-center justify-between gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+              <div className="min-w-0">
+                <p className="truncate text-[12px] font-semibold text-slate-700">
+                  {PAGE_LABELS[path] ?? (path.replace("/dashboard/", "").replace("/", " / ") || "الرئيسية")}
+                </p>
+                <p className="truncate text-[10px] text-slate-400">{path}</p>
+              </div>
+              <span className="shrink-0 rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-bold text-white">{count}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Recent visits list */}
+      <div>
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+          آخر الزيارات ({total} إجمالي)
+        </p>
+        <div className="space-y-0.5">
+          {items.slice(0, 50).map((item, i) => (
+            // eslint-disable-next-line react/no-array-index-key
+            <div key={i} className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-slate-50">
+              <span className="text-sm">🔗</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-semibold text-slate-800">
+                  {PAGE_LABELS[item.path] ?? item.path}
+                </p>
+                <p className="text-[10px] text-slate-400">{item.path}</p>
+              </div>
+              <p className="shrink-0 text-[11px] text-slate-400">{formatDateTime(item.created_at)}</p>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -522,7 +594,7 @@ function GrantCreditsModal({
   );
 }
 
-type Tab = "activity" | "services" | "files";
+type Tab = "activity" | "services" | "pages" | "files";
 
 export default function AdminUserProfilePage() {
   const { userId } = useParams<{ userId: string }>();
@@ -570,6 +642,7 @@ export default function AdminUserProfilePage() {
   const tabs: { key: Tab; label: string }[] = [
     { key: "activity", label: "النشاط" },
     { key: "services", label: "الخدمات" },
+    { key: "pages", label: `الصفحات (${profile.pages_total})` },
     { key: "files", label: `الملفات (${profile.resumes.length})` },
   ];
 
@@ -683,6 +756,7 @@ export default function AdminUserProfilePage() {
             />
           )}
           {tab === "services" && <ServicesTab summary={profile.services_summary} />}
+          {tab === "pages" && <PagesTab items={profile.pages_visited} total={profile.pages_total} />}
           {tab === "files" && <FilesTab resumes={profile.resumes} userId={profile.id} />}
         </div>
       </div>

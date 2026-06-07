@@ -221,6 +221,11 @@ class AdminUserServiceSummaryItem(BaseModel):
     count: int
 
 
+class AdminUserPageViewItem(BaseModel):
+    path: str
+    created_at: datetime
+
+
 # ── Payment Orders ────────────────────────────────────────────────────────────
 
 class AdminPaymentOrderItem(BaseModel):
@@ -282,3 +287,5 @@ class AdminUserProfileResponse(BaseModel):
     activity_total: int
     resumes: list[AdminUserResumeItem]
     services_summary: list[AdminUserServiceSummaryItem]
+    pages_visited: list[AdminUserPageViewItem]
+    pages_total: int

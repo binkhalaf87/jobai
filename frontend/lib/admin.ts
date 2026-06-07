@@ -428,6 +428,11 @@ export type AdminUserServiceSummaryItem = {
   count: number;
 };
 
+export type AdminUserPageViewItem = {
+  path: string;
+  created_at: string;
+};
+
 export type AdminUserProfileResponse = {
   id: string;
   email: string;
@@ -443,6 +448,8 @@ export type AdminUserProfileResponse = {
   activity_total: number;
   resumes: AdminUserResumeItem[];
   services_summary: AdminUserServiceSummaryItem[];
+  pages_visited: AdminUserPageViewItem[];
+  pages_total: number;
 };
 
 export async function grantFeatureCredits(

@@ -483,6 +483,19 @@ def get_user_profile(
         .order_by(func.count().desc())
     ).all()
 
+    pages_q = (
+        select(UsageLog)
+        .where(
+            UsageLog.user_id == user_id,
+            UsageLog.event_type == UsageEventType.PAGE_VIEW,
+        )
+        .order_by(UsageLog.created_at.desc())
+    )
+    pages_total = db.scalar(select(func.count()).select_from(pages_q.subquery())) or 0
+    page_logs = db.scalars(pages_q.limit(100)).all()
+
+    from app.schemas.admin import AdminUserPageViewItem
+
     return AdminUserProfileResponse(
         id=user.id,
         email=user.email,
@@ -510,6 +523,11 @@ def get_user_profile(
             AdminUserServiceSummaryItem(event_type=row.event_type, count=row.count)
             for row in summary_rows
         ],
+        pages_visited=[
+            AdminUserPageViewItem(path=log.detail or "/", created_at=log.created_at)
+            for log in page_logs
+        ],
+        pages_total=pages_total,
     )
 
 
