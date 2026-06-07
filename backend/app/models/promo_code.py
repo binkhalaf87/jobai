@@ -4,6 +4,7 @@ from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy import Enum as SqlEnum
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
@@ -31,7 +32,7 @@ class PromoCode(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         server_default="all",
     )
     plan_id: Mapped[str | None] = mapped_column(
-        String(36), ForeignKey("plans.id", ondelete="SET NULL"), nullable=True, index=True
+        UUID(as_uuid=False), ForeignKey("plans.id", ondelete="SET NULL"), nullable=True, index=True
     )
     max_uses: Mapped[int | None] = mapped_column(Integer, nullable=True)
     uses_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
@@ -40,7 +41,7 @@ class PromoCode(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     valid_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true", index=True)
     created_by_id: Mapped[str | None] = mapped_column(
-        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+        UUID(as_uuid=False), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
     )
 
     plan = relationship("Plan")

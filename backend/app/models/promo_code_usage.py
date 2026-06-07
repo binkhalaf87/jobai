@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, func
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
@@ -15,13 +16,13 @@ class PromoCodeUsage(UUIDPrimaryKeyMixin, Base):
     __tablename__ = "promo_code_usages"
 
     promo_code_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("promo_codes.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=False), ForeignKey("promo_codes.id", ondelete="CASCADE"), nullable=False, index=True
     )
     user_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=False), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     payment_order_id: Mapped[str | None] = mapped_column(
-        String(36), ForeignKey("payment_orders.id", ondelete="SET NULL"), nullable=True, index=True
+        UUID(as_uuid=False), ForeignKey("payment_orders.id", ondelete="SET NULL"), nullable=True, index=True
     )
     discount_applied_minor: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
