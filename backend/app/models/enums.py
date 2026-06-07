@@ -206,3 +206,20 @@ class TicketStatus(str, Enum):
     IN_PROGRESS = "in_progress"
     RESOLVED = "resolved"
     CLOSED = "closed"
+
+
+class SaudizationProcessingStatus(str, Enum):
+    """Processing lifecycle for saudization PDF decisions and GOSI Excel reports."""
+
+    UPLOADED = "uploaded"
+    PROCESSING = "processing"
+    EXTRACTED = "extracted"
+    FAILED = "failed"
+
+
+class SaudizationAIStatus(str, Enum):
+    """AI recommendation generation status for a saudization analysis."""
+
+    PENDING = "pending"
+    COMPLETED = "completed"
+    FAILED = "failed"

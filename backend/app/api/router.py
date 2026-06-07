@@ -13,6 +13,7 @@ from app.api.routes.recruiter.interviews import router as recruiter_interviews_r
 from app.api.routes.recruiter.jobs import router as recruiter_jobs_router
 from app.api.routes.recruiter.reports import router as recruiter_reports_router
 from app.api.routes.recruiter.screening import router as recruiter_screening_router
+from app.api.routes.recruiter.saudization import router as recruiter_saudization_router
 from app.api.routes.recruiter.talent_fit import router as recruiter_talent_fit_router
 from app.api.routes.resumes import router as resumes_router
 from app.api.routes.smart_send import router as smart_send_router
@@ -36,6 +37,7 @@ api_router.include_router(recruiter_interviews_router)
 api_router.include_router(recruiter_jobs_router)
 api_router.include_router(recruiter_reports_router)
 api_router.include_router(recruiter_screening_router)
+api_router.include_router(recruiter_saudization_router)
 api_router.include_router(recruiter_talent_fit_router)
 api_router.include_router(smart_send_router)
 api_router.include_router(support_router)

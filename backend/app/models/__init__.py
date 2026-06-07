@@ -1,3 +1,7 @@
+from app.models.recruiter_company import RecruiterCompany
+from app.models.saudization_analysis import SaudizationAnalysis
+from app.models.saudization_decision import SaudizationDecision
+from app.models.saudization_report import SaudizationReport
 from app.models.refresh_token import RefreshToken
 from app.models.gmail_connection_request import GmailConnectionRequest
 from app.models.ai_report import AIAnalysisReport
@@ -32,6 +36,10 @@ from app.models.user_wallet import UserWallet
 from app.models.wallet_transaction import WalletTransaction
 
 __all__ = [
+    "RecruiterCompany",
+    "SaudizationAnalysis",
+    "SaudizationDecision",
+    "SaudizationReport",
     "AIAnalysisReport",
     "EmailCampaign",
     "EmailCampaignContact",

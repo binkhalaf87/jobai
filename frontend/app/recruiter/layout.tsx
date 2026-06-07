@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import {
   LayoutDashboard, Users, Briefcase, Layers, Mic,
-  CreditCard, UserCircle, Star, ChevronDown, LogOut, FileText,
+  CreditCard, UserCircle, Star, ChevronDown, LogOut, FileText, BarChart3,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -19,6 +19,7 @@ const NAV_ITEMS = [
   { label: "AI Analysis",  href: "/recruiter/ai-screening", icon: "layers" },
   { label: "Reports",      href: "/recruiter/reports",      icon: "file-text" },
   { label: "AI Interview", href: "/recruiter/ai-interview", icon: "mic" },
+  { label: "التوطين",      href: "/recruiter/saudization",  icon: "saudization" },
   { label: "Billing",      href: "/recruiter/billing",      icon: "credit-card" },
 ] as const;
 
@@ -65,6 +66,11 @@ const NAV_ICON_CFG: Record<string, IconCfg> = {
     icon: <Mic size={13} />,
     iconBg: "bg-rose-100", iconText: "text-rose-600",
     activeIconBg: "bg-rose-600", activeBg: "bg-rose-50", activeText: "text-rose-700",
+  },
+  saudization: {
+    icon: <BarChart3 size={13} />,
+    iconBg: "bg-indigo-100", iconText: "text-indigo-600",
+    activeIconBg: "bg-indigo-600", activeBg: "bg-indigo-50", activeText: "text-indigo-700",
   },
   "credit-card": {
     icon: <CreditCard size={13} />,
