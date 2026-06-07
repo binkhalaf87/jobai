@@ -130,11 +130,16 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
       localStorage.removeItem("pending_merchant_reference");
 
       if (paymentOrderId || merchantReference || paymobTxId) {
+        // Try immediate verify, then always refresh UI.
+        // If verify-payment fails, trigger verify-all-pending as a second attempt.
         void verifyPayment({ paymentOrderId, merchantReference, paymobTransactionId: paymobTxId })
-          .catch(() => null)
+          .catch(() => verifyAllPending().catch(() => null))
           .finally(() => void loadBillingState());
       } else {
-        const timer = setTimeout(() => void loadBillingState(), 3000);
+        // No identifiers available — poll verify-all-pending after a short delay.
+        const timer = setTimeout(() => {
+          void verifyAllPending().catch(() => null).finally(() => void loadBillingState());
+        }, 3000);
         return () => clearTimeout(timer);
       }
     } else if (success === "false" || isSuccess === "0") {
@@ -420,6 +425,11 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
         {verifyBanner === "none" && (
           <div className="mt-4 rounded-2xl bg-slate-50 px-5 py-3 text-sm text-slate-600">
             {t("verifyNoPending")}
+            {snapshot.recent_orders.some((o) => o.status === "payment_key_issued" || o.status === "pending") && (
+              <p className="mt-1 text-xs text-amber-700">
+                {t("verifyPendingHint")}
+              </p>
+            )}
           </div>
         )}
       </Panel>

@@ -676,28 +676,45 @@ def verify_and_activate_payment_order(
     if order.status == PaymentOrderStatus.PAID:
         return order.status
 
+    from app.services.paymob_service import query_paymob_transactions_by_order as _query_by_order
+
     tx_id = paymob_transaction_id or order.provider_transaction_id
-    if not tx_id:
-        # Fall back to Paymob order lookup using provider_order_id and merchant_reference
-        from app.services.paymob_service import query_paymob_transactions_by_order as _query_by_order
+    tx_data: dict[str, Any] | None = None
+
+    # Attempt direct transaction lookup first (fast path: tx_id from redirect URL).
+    if tx_id:
+        try:
+            tx_data = _query_tx(tx_id)
+        except RuntimeError as exc:
+            logger.warning(
+                "Direct Paymob tx lookup failed for tx_id=%s order=%s: %s — falling back to order lookup",
+                tx_id, order.id, exc,
+            )
+
+    # Fall back to order-based lookup when tx_id is absent or the direct call failed.
+    if tx_data is None:
         try:
             txns = _query_by_order(
                 merchant_reference=order.merchant_reference,
                 paymob_order_id=order.provider_order_id,
             )
         except Exception as exc:
-            logger.warning("Paymob fallback lookup failed for order %s: %s", order.id, exc)
+            logger.warning("Paymob order lookup failed for order %s: %s", order.id, exc)
             txns = []
         logger.info(
-            "Paymob fallback lookup: order_id=%s merchant_ref=%s paymob_order_id=%s → %d txn(s)",
+            "Paymob order lookup: order_id=%s merchant_ref=%s paymob_order_id=%s → %d txn(s)",
             order.id, order.merchant_reference, order.provider_order_id, len(txns),
         )
         successful = [t for t in txns if t.get("success") and not t.get("pending")]
         if not successful:
-            return order.status  # not paid at Paymob — nothing to activate
-        tx_id = str(successful[0]["id"])
-
-    tx_data = _query_tx(tx_id)
+            return order.status  # not confirmed paid at Paymob yet
+        best = successful[0]
+        # Try to get full transaction details; use the list entry as fallback.
+        try:
+            tx_data = _query_tx(str(best.get("id", "")))
+        except RuntimeError:
+            tx_data = best
+        tx_id = str(best.get("id", tx_id or ""))
 
     if not _is_successful_payment(tx_data):
         mapped_status = _map_unsuccessful_order_status(tx_data)
@@ -783,13 +800,20 @@ def verify_all_pending_for_user(db: Session, user_id: str) -> dict:
 
 
 def _extract_ksa_payment_order_id(payload: dict[str, Any]) -> str | None:
-    """Extract our internal payment_order_id from Paymob KSA intention extras."""
+    """Extract our internal payment_order_id from Paymob KSA intention extras.
+
+    Paymob KSA may return extras either nested under creation_extras or flat.
+    """
     intention = payload.get("intention")
     if not isinstance(intention, dict):
         return None
     extras = intention.get("extras") or {}
+    # Nested structure: intention.extras.creation_extras.payment_order_id
     creation_extras = extras.get("creation_extras") or {}
     po_id = creation_extras.get("payment_order_id")
+    if not po_id:
+        # Flat structure: intention.extras.payment_order_id
+        po_id = extras.get("payment_order_id")
     return str(po_id) if po_id else None
 
 

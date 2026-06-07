@@ -382,6 +382,81 @@ def verify_all_pending(
     return verify_all_pending_for_user(db, str(current_user.id))
 
 
+@router.get("/webhook-events", response_model=list)
+def get_webhook_events(
+    limit: int = 10,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list:
+    """Return recent Paymob webhook events for the current user's orders (diagnostic)."""
+    from app.models.payment_webhook_event import PaymentWebhookEvent as _PWE
+
+    bounded_limit = max(1, min(limit, 50))
+    events = db.scalars(
+        select(_PWE)
+        .where(_PWE.user_id == str(current_user.id))
+        .order_by(_PWE.received_at.desc())
+        .limit(bounded_limit)
+    ).all()
+    return [
+        {
+            "event_id": str(e.id),
+            "status": e.status.value,
+            "signature_valid": e.signature_valid,
+            "event_type": e.event_type,
+            "payment_order_id": str(e.payment_order_id) if e.payment_order_id else None,
+            "provider_transaction_id": e.provider_transaction_id,
+            "processing_error": e.processing_error,
+            "retry_count": e.retry_count,
+            "received_at": e.received_at.isoformat() if e.received_at else None,
+            "processed_at": e.processed_at.isoformat() if e.processed_at else None,
+        }
+        for e in events
+    ]
+
+
+@router.post("/admin/force-activate", response_model=dict)
+def admin_force_activate_order(
+    body: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """Admin-only: force-activate a payment order that Paymob confirmed but the webhook missed.
+
+    Accepts JSON body with one of:
+    - { "payment_order_id": "..." }
+    - { "user_email": "...", "payment_order_id": "..." }
+    """
+    from app.models.enums import UserRole as _Role
+    from app.models.user import User as _User
+    from app.services.paymob_webhook_service import manually_activate_payment_order
+
+    if current_user.role != _Role.ADMIN:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required.")
+
+    payment_order_id = (body.get("payment_order_id") or "").strip()
+    if not payment_order_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="payment_order_id is required.")
+
+    # Optionally resolve by user email for cross-checking
+    user_email = (body.get("user_email") or "").strip()
+    if user_email:
+        target_user = db.scalar(select(_User).where(_User.email == user_email))
+        if not target_user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User {user_email} not found.")
+
+    try:
+        manually_activate_payment_order(db, payment_order_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
+
+    return {"activated": True, "payment_order_id": payment_order_id}
+
+
 @router.get("/debug-pending", response_model=list)
 def debug_pending_orders(
     db: Session = Depends(get_db),

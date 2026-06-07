@@ -398,8 +398,9 @@ def query_paymob_transactions_by_order(
         except Exception as exc:
             _logger.warning("Paymob intention_id lookup failed: %s", exc)
 
-    # Strategy 5: query the intention itself via /v1/intention/{id}/ endpoint
-    if not txns and paymob_order_id and paymob_order_id.startswith("pi_"):
+    # Strategy 5: query the intention itself via /v1/intention/{id}/ endpoint.
+    # Works for any intention ID format — KSA uses numeric IDs, not just "pi_*".
+    if not txns and paymob_order_id:
         try:
             txns = query_paymob_intention_transactions(paymob_order_id)
             _logger.info("Paymob intention endpoint lookup %s → %d txn(s)", paymob_order_id, len(txns))
