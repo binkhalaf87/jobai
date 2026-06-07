@@ -598,21 +598,21 @@ function GrantCreditsModal({
 }
 
 const STATUS_CLS: Record<string, string> = {
-  PENDING:            "bg-amber-50 text-amber-700 border-amber-200",
-  PAYMENT_KEY_ISSUED: "bg-orange-50 text-orange-700 border-orange-200",
-  PAID:               "bg-teal-50 text-teal-700 border-teal-200",
-  FAILED:             "bg-rose-50 text-rose-700 border-rose-200",
-  CANCELED:           "bg-slate-100 text-slate-500 border-slate-200",
-  REFUNDED:           "bg-purple-50 text-purple-700 border-purple-200",
+  pending:            "bg-amber-50 text-amber-700 border-amber-200",
+  payment_key_issued: "bg-orange-50 text-orange-700 border-orange-200",
+  paid:               "bg-teal-50 text-teal-700 border-teal-200",
+  failed:             "bg-rose-50 text-rose-700 border-rose-200",
+  canceled:           "bg-slate-100 text-slate-500 border-slate-200",
+  refunded:           "bg-purple-50 text-purple-700 border-purple-200",
 };
 
 const STATUS_AR: Record<string, string> = {
-  PENDING:            "معلق",
-  PAYMENT_KEY_ISSUED: "مفتاح صادر",
-  PAID:               "مدفوع",
-  FAILED:             "فشل",
-  CANCELED:           "ملغي",
-  REFUNDED:           "مسترجع",
+  pending:            "معلق",
+  payment_key_issued: "مفتاح صادر",
+  paid:               "مدفوع",
+  failed:             "فشل",
+  canceled:           "ملغي",
+  refunded:           "مسترجع",
 };
 
 function fmtAmount(minor: number, currency: string) {
@@ -665,7 +665,7 @@ function PaymentsTab({ userId }: { userId: string }) {
   }
 
   const totalPaid = orders
-    .filter((o) => o.status === "PAID")
+    .filter((o) => o.status === "paid")
     .reduce((sum, o) => sum + o.amount_minor, 0);
 
   return (
@@ -722,7 +722,7 @@ function PaymentsTab({ userId }: { userId: string }) {
                   {o.paid_at ? formatDateTime(o.paid_at) : "—"}
                 </td>
                 <td className="px-3 py-2.5">
-                  {(o.status === "PENDING" || o.status === "PAYMENT_KEY_ISSUED") && (
+                  {(o.status === "pending" || o.status === "payment_key_issued") && (
                     <button
                       type="button"
                       disabled={activating === o.id}

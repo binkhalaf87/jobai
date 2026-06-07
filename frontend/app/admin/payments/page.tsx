@@ -18,19 +18,28 @@ function fmtAmount(minor: number, currency: string) {
 }
 
 const STATUS_CLS: Record<string, string> = {
-  PENDING:            "bg-amber-50 text-amber-700 border-amber-200",
-  PAYMENT_KEY_ISSUED: "bg-orange-50 text-orange-700 border-orange-200",
-  PAID:               "bg-teal-50 text-teal-700 border-teal-200",
-  FAILED:             "bg-rose-50 text-rose-700 border-rose-200",
-  CANCELED:           "bg-slate-100 text-slate-500 border-slate-200",
-  REFUNDED:           "bg-purple-50 text-purple-700 border-purple-200",
+  pending:            "bg-amber-50 text-amber-700 border-amber-200",
+  payment_key_issued: "bg-orange-50 text-orange-700 border-orange-200",
+  paid:               "bg-teal-50 text-teal-700 border-teal-200",
+  failed:             "bg-rose-50 text-rose-700 border-rose-200",
+  canceled:           "bg-slate-100 text-slate-500 border-slate-200",
+  refunded:           "bg-purple-50 text-purple-700 border-purple-200",
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  pending:            "PENDING",
+  payment_key_issued: "Key Issued",
+  paid:               "PAID",
+  failed:             "FAILED",
+  canceled:           "CANCELED",
+  refunded:           "REFUNDED",
 };
 
 export default function AdminPaymentsPage() {
   const [orders, setOrders]           = useState<AdminPaymentOrderItem[]>([]);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState("");
-  const [statusFilter, setStatusFilter] = useState("PENDING");
+  const [statusFilter, setStatusFilter] = useState("pending");
   const [activating, setActivating]   = useState<string | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
   const [toast, setToast]             = useState("");
@@ -82,7 +91,7 @@ export default function AdminPaymentsPage() {
     }
   }
 
-  const pendingCount = orders.filter((o) => o.status === "PENDING" || o.status === "PAYMENT_KEY_ISSUED").length;
+  const pendingCount = orders.filter((o) => o.status === "pending" || o.status === "payment_key_issued").length;
 
   return (
     <div className="space-y-6">
@@ -101,7 +110,7 @@ export default function AdminPaymentsPage() {
             الطلبات المعلقة تعني أن Webhook لم يصل — فعّل يدوياً بعد تأكيد الخصم البنكي
           </p>
         </div>
-        {pendingCount > 0 && (statusFilter === "PENDING" || statusFilter === "PAYMENT_KEY_ISSUED" || statusFilter === "") && (
+        {pendingCount > 0 && (statusFilter === "pending" || statusFilter === "payment_key_issued" || statusFilter === "") && (
           <button
             type="button"
             disabled={bulkLoading}
@@ -116,7 +125,7 @@ export default function AdminPaymentsPage() {
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4">
         <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">الحالة</span>
-        {["", "PENDING", "PAYMENT_KEY_ISSUED", "PAID", "FAILED", "CANCELED"].map((s) => (
+        {["", "pending", "payment_key_issued", "paid", "failed", "canceled"].map((s) => (
           <button
             key={s}
             type="button"
@@ -127,7 +136,7 @@ export default function AdminPaymentsPage() {
                 : "border-slate-200 bg-slate-50 text-slate-600 hover:border-brand-300"
             }`}
           >
-            {s === "PAYMENT_KEY_ISSUED" ? "Key Issued" : s || "الكل"}
+            {s ? STATUS_LABEL[s] : "الكل"}
           </button>
         ))}
         <button
@@ -175,8 +184,8 @@ export default function AdminPaymentsPage() {
                       {fmtAmount(o.amount_minor, o.currency)}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_CLS[o.status] ?? STATUS_CLS.CANCELED}`}>
-                        {o.status}
+                      <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_CLS[o.status] ?? STATUS_CLS.canceled}`}>
+                        {STATUS_LABEL[o.status] ?? o.status}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-slate-500 text-xs">
@@ -184,7 +193,7 @@ export default function AdminPaymentsPage() {
                       {o.paid_at && <p className="text-teal-600">دُفع: {fmt(o.paid_at)}</p>}
                     </td>
                     <td className="px-4 py-3">
-                      {(o.status === "PENDING" || o.status === "PAYMENT_KEY_ISSUED") && (
+                      {(o.status === "pending" || o.status === "payment_key_issued") && (
                         <button
                           type="button"
                           disabled={activating === o.id}

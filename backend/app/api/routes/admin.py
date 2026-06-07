@@ -1062,7 +1062,7 @@ def list_payment_orders(
     if user_id:
         q = q.where(PaymentOrder.user_id == user_id)
     if status_filter:
-        q = q.where(PaymentOrder.status == status_filter)
+        q = q.where(PaymentOrder.status == status_filter.lower())
     rows = db.execute(q).all()
     return [
         AdminPaymentOrderItem(
