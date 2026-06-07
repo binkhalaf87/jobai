@@ -374,6 +374,14 @@ def query_paymob_transactions_by_order(
         except Exception as exc:
             _logger.warning("Paymob special_reference lookup failed: %s", exc)
 
+    # Strategy 4: intention_id (Paymob unified checkout stores this separately)
+    if not txns and paymob_order_id:
+        try:
+            txns = _fetch_paymob_transactions({"intention_id": paymob_order_id})
+            _logger.info("Paymob lookup by intention_id=%s → %d txn(s)", paymob_order_id, len(txns))
+        except Exception as exc:
+            _logger.warning("Paymob intention_id lookup failed: %s", exc)
+
     return txns
 
 

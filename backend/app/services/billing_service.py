@@ -226,6 +226,11 @@ def _extract_provider_order_id(response_payload: dict | None) -> str | None:
         if nested_value:
             return str(nested_value)
 
+    # Paymob unified checkout returns the intention ID as top-level "id"
+    top_id = response_payload.get("id")
+    if top_id:
+        return str(top_id)
+
     return None
 
 

@@ -727,10 +727,19 @@ def verify_all_pending_for_user(db: Session, user_id: str) -> dict:
         )
     ).all()
 
+    from app.services.billing_service import _extract_provider_order_id as _extract_oid
+
     activated = 0
     diagnostics = []
 
     for order in pending_orders:
+        # Retroactively fix missing provider_order_id from stored response_payload
+        if not order.provider_order_id and isinstance(order.response_payload, dict):
+            recovered_id = _extract_oid(order.response_payload)
+            if recovered_id:
+                order.provider_order_id = recovered_id
+                db.flush()
+                logger.info("Recovered provider_order_id=%s for order %s", recovered_id, order.id)
         diag: dict = {
             "order_id": str(order.id),
             "status": order.status.value,
