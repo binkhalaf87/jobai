@@ -374,7 +374,7 @@ def query_paymob_transactions_by_order(
         except Exception as exc:
             _logger.warning("Paymob special_reference lookup failed: %s", exc)
 
-    # Strategy 4: intention_id (Paymob unified checkout stores this separately)
+    # Strategy 4: intention_id query parameter
     if not txns and paymob_order_id:
         try:
             txns = _fetch_paymob_transactions({"intention_id": paymob_order_id})
@@ -382,7 +382,40 @@ def query_paymob_transactions_by_order(
         except Exception as exc:
             _logger.warning("Paymob intention_id lookup failed: %s", exc)
 
+    # Strategy 5: query the intention itself via /v1/intention/{id}/ endpoint
+    if not txns and paymob_order_id and paymob_order_id.startswith("pi_"):
+        try:
+            txns = query_paymob_intention_transactions(paymob_order_id)
+            _logger.info("Paymob intention endpoint lookup %s → %d txn(s)", paymob_order_id, len(txns))
+        except Exception as exc:
+            _logger.warning("Paymob intention endpoint lookup failed: %s", exc)
+
     return txns
+
+
+def query_paymob_intention_transactions(intention_id: str) -> list[dict[str, Any]]:
+    """Query the Paymob intention endpoint and extract its transactions."""
+    import logging as _log
+    _logger = _log.getLogger(__name__)
+    with httpx.Client(base_url=PAYMOB_BASE_URL, timeout=PAYMOB_TIMEOUT) as client:
+        response = client.get(
+            f"/v1/intention/{intention_id}/",
+            headers=_paymob_headers(),
+        )
+    _logger.debug("Paymob intention endpoint %s → status=%s body=%s", intention_id, response.status_code, response.text[:800])
+    if not response.is_success:
+        return []
+    data = response.json()
+    if not isinstance(data, dict):
+        return []
+    # The intention response may contain transactions directly or nested
+    txns = data.get("transactions") or data.get("payment_methods") or []
+    if isinstance(txns, list):
+        return txns
+    # Or it may be a single transaction-like object
+    if data.get("success") is not None:
+        return [data]
+    return []
 
 
 # Keep old name for backwards compat

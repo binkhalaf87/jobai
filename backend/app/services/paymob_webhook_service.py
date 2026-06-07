@@ -752,9 +752,11 @@ def verify_all_pending_for_user(db: Session, user_id: str) -> dict:
             txns = _q(merchant_reference=order.merchant_reference, paymob_order_id=order.provider_order_id)
             diag["paymob_txns_found"] = len(txns)
             diag["paymob_successful"] = len([t for t in txns if t.get("success") and not t.get("pending")])
+            diag["paymob_raw_first"] = txns[0] if txns else None
         except Exception as exc:
             diag["paymob_txns_found"] = 0
             diag["paymob_error"] = str(exc)
+            diag["paymob_raw_first"] = None
 
         try:
             result = verify_and_activate_payment_order(
