@@ -492,12 +492,14 @@ export type AdminPaymentOrderItem = {
 };
 
 export async function listAdminPaymentOrders(
-  params: { status?: string; user_id?: string; limit?: number } = {},
+  params: { status?: string; user_id?: string; limit?: number; date_from?: string; date_to?: string } = {},
 ): Promise<AdminPaymentOrderItem[]> {
   const qs = new URLSearchParams();
   if (params.status) qs.set("status", params.status);
   if (params.user_id) qs.set("user_id", params.user_id);
   if (params.limit) qs.set("limit", String(params.limit));
+  if (params.date_from) qs.set("date_from", params.date_from);
+  if (params.date_to) qs.set("date_to", params.date_to);
   const res = await fetch(`${getApiBaseUrl()}${BASE}/payment-orders?${qs}`, {
     headers: authHeaders(),
   });

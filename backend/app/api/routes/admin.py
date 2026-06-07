@@ -1047,11 +1047,13 @@ def list_promo_code_usages(
 def list_payment_orders(
     user_id: str | None = Query(None),
     status_filter: str | None = Query(None, alias="status"),
+    date_from: str | None = Query(None),
+    date_to: str | None = Query(None),
     limit: int = Query(50, ge=1, le=200),
     _: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> list[AdminPaymentOrderItem]:
-    """List payment orders with optional filters. Use status=PENDING to find stuck orders."""
+    """List payment orders with optional filters."""
     q = (
         select(PaymentOrder, User, Plan)
         .join(User, PaymentOrder.user_id == User.id)
@@ -1063,6 +1065,10 @@ def list_payment_orders(
         q = q.where(PaymentOrder.user_id == user_id)
     if status_filter:
         q = q.where(PaymentOrder.status == status_filter.lower())
+    if date_from:
+        q = q.where(PaymentOrder.created_at >= datetime.fromisoformat(date_from).replace(tzinfo=timezone.utc))
+    if date_to:
+        q = q.where(PaymentOrder.created_at <= datetime.fromisoformat(date_to).replace(hour=23, minute=59, second=59, tzinfo=timezone.utc))
     rows = db.execute(q).all()
     return [
         AdminPaymentOrderItem(

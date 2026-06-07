@@ -35,27 +35,64 @@ const STATUS_LABEL: Record<string, string> = {
   refunded:           "REFUNDED",
 };
 
+// Quick date-range presets
+function currentMonthRange() {
+  const now = new Date();
+  const from = new Date(now.getFullYear(), now.getMonth(), 1);
+  const to   = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  return { from: from.toISOString().slice(0, 10), to: to.toISOString().slice(0, 10) };
+}
+
+function lastMonthRange() {
+  const now = new Date();
+  const from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const to   = new Date(now.getFullYear(), now.getMonth(), 0);
+  return { from: from.toISOString().slice(0, 10), to: to.toISOString().slice(0, 10) };
+}
+
+function currentYearRange() {
+  const y = new Date().getFullYear();
+  return { from: `${y}-01-01`, to: `${y}-12-31` };
+}
+
 export default function AdminPaymentsPage() {
-  const [orders, setOrders]           = useState<AdminPaymentOrderItem[]>([]);
-  const [loading, setLoading]         = useState(true);
-  const [error, setError]             = useState("");
+  const [orders, setOrders]             = useState<AdminPaymentOrderItem[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState("");
   const [statusFilter, setStatusFilter] = useState("pending");
-  const [activating, setActivating]   = useState<string | null>(null);
-  const [bulkLoading, setBulkLoading] = useState(false);
-  const [toast, setToast]             = useState("");
+  const [dateFrom, setDateFrom]         = useState("");
+  const [dateTo, setDateTo]             = useState("");
+  const [activating, setActivating]     = useState<string | null>(null);
+  const [bulkLoading, setBulkLoading]   = useState(false);
+  const [toast, setToast]               = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const data = await listAdminPaymentOrders({ status: statusFilter || undefined, limit: 100 });
+      const data = await listAdminPaymentOrders({
+        status:    statusFilter || undefined,
+        date_from: dateFrom || undefined,
+        date_to:   dateTo   || undefined,
+        limit: 200,
+      });
       setOrders(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error loading orders");
     } finally {
       setLoading(false);
     }
-  }, [statusFilter]);
+  }, [statusFilter, dateFrom, dateTo]);
+
+  function applyPreset(preset: { from: string; to: string }) {
+    setDateFrom(preset.from);
+    setDateTo(preset.to);
+  }
+
+  function clearDates() {
+    setDateFrom("");
+    setDateTo("");
+  }
 
   useEffect(() => { void load(); }, [load]);
 
@@ -123,30 +160,102 @@ export default function AdminPaymentsPage() {
       </div>
 
       {/* Filter bar */}
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4">
-        <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">الحالة</span>
-        {["", "pending", "payment_key_issued", "paid", "failed", "canceled"].map((s) => (
+      <div className="space-y-3 rounded-2xl border border-slate-200 bg-white px-5 py-4">
+        {/* Status row */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">الحالة</span>
+          {["", "pending", "payment_key_issued", "paid", "failed", "canceled"].map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setStatusFilter(s)}
+              className={`rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${
+                statusFilter === s
+                  ? "border-brand-800 bg-brand-800 text-white"
+                  : "border-slate-200 bg-slate-50 text-slate-600 hover:border-brand-300"
+              }`}
+            >
+              {s ? STATUS_LABEL[s] : "الكل"}
+            </button>
+          ))}
           <button
-            key={s}
             type="button"
-            onClick={() => setStatusFilter(s)}
-            className={`rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${
-              statusFilter === s
-                ? "border-brand-800 bg-brand-800 text-white"
-                : "border-slate-200 bg-slate-50 text-slate-600 hover:border-brand-300"
-            }`}
+            onClick={() => void load()}
+            className="mr-auto rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-brand-300 transition"
           >
-            {s ? STATUS_LABEL[s] : "الكل"}
+            ↻ تحديث
           </button>
-        ))}
-        <button
-          type="button"
-          onClick={() => void load()}
-          className="ml-auto rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-brand-300 transition"
-        >
-          ↻ تحديث
-        </button>
+        </div>
+
+        {/* Date row */}
+        <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+          <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">التاريخ</span>
+
+          {/* Presets */}
+          <button type="button" onClick={() => applyPreset(currentMonthRange())}
+            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-brand-300 transition">
+            هذا الشهر
+          </button>
+          <button type="button" onClick={() => applyPreset(lastMonthRange())}
+            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-brand-300 transition">
+            الشهر الماضي
+          </button>
+          <button type="button" onClick={() => applyPreset(currentYearRange())}
+            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-brand-300 transition">
+            هذا العام
+          </button>
+
+          {/* Custom range */}
+          <div className="flex items-center gap-1.5">
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 outline-none focus:border-brand-400"
+            />
+            <span className="text-xs text-slate-400">—</span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 outline-none focus:border-brand-400"
+            />
+          </div>
+
+          {(dateFrom || dateTo) && (
+            <button type="button" onClick={clearDates}
+              className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-100 transition">
+              ✕ مسح التاريخ
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Revenue summary for current filter */}
+      {!loading && orders.length > 0 && (
+        <div className="flex flex-wrap gap-3">
+          {(() => {
+            const paid = orders.filter((o) => o.status === "paid");
+            const total = paid.reduce((s, o) => s + o.amount_minor, 0) / 100;
+            return (
+              <>
+                <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-5 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-500">إجمالي المدفوع</p>
+                  <p className="text-xl font-extrabold tabular-nums text-emerald-800">{total.toFixed(2)} SAR</p>
+                </div>
+                <div className="rounded-2xl border border-slate-100 bg-slate-50 px-5 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">الطلبات الظاهرة</p>
+                  <p className="text-xl font-extrabold tabular-nums text-slate-800">{orders.length}</p>
+                </div>
+                <div className="rounded-2xl border border-teal-100 bg-teal-50 px-5 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-teal-500">الطلبات المدفوعة</p>
+                  <p className="text-xl font-extrabold tabular-nums text-teal-800">{paid.length}</p>
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      )}
 
       {/* Table */}
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
