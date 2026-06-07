@@ -104,6 +104,8 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
   const [featureCredits, setFeatureCredits] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verifyBanner, setVerifyBanner] = useState<"activated" | "none" | null>(null);
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [contact, setContact] = useState(DEFAULT_CONTACT);
@@ -179,6 +181,31 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
       setError(t("loadError"));
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function refreshAndVerify() {
+    setIsVerifying(true);
+    setVerifyBanner(null);
+    try {
+      const pendingOrders = (snapshot?.recent_orders ?? []).filter(
+        (o) => o.status === "payment_key_issued" || o.status === "pending",
+      );
+      let anyActivated = false;
+      await Promise.allSettled(
+        pendingOrders.map(async (o) => {
+          try {
+            const result = await verifyPayment({ paymentOrderId: o.id });
+            if (result.activated) anyActivated = true;
+          } catch {
+            // ignore per-order errors, proceed with others
+          }
+        }),
+      );
+      await loadBillingState();
+      setVerifyBanner(anyActivated ? "activated" : "none");
+    } finally {
+      setIsVerifying(false);
     }
   }
 
@@ -384,12 +411,23 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
           </div>
           <button
             type="button"
-            onClick={() => void loadBillingState()}
-            className="self-start rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+            onClick={() => void refreshAndVerify()}
+            disabled={isVerifying}
+            className="self-start rounded-full bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:opacity-60"
           >
-            {t("refresh")}
+            {isVerifying ? t("verifying") : t("refresh")}
           </button>
         </div>
+        {verifyBanner === "activated" && (
+          <div className="mt-4 rounded-2xl bg-teal-50 px-5 py-3 text-sm font-medium text-teal-800">
+            {t("verifyActivated")}
+          </div>
+        )}
+        {verifyBanner === "none" && (
+          <div className="mt-4 rounded-2xl bg-slate-50 px-5 py-3 text-sm text-slate-600">
+            {t("verifyNoPending")}
+          </div>
+        )}
       </Panel>
 
       {/* Section 2 — Store (feature plans + smart send) */}
