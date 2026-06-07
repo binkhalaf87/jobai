@@ -121,12 +121,12 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
 
     if (success === "true" || isSuccess === "1") {
       setReturnBanner("success");
-      const paymentOrderId = sessionStorage.getItem("pending_payment_order_id") ?? undefined;
-      const merchantReference = sessionStorage.getItem("pending_merchant_reference") ?? undefined;
-      sessionStorage.removeItem("pending_payment_order_id");
-      sessionStorage.removeItem("pending_merchant_reference");
+      const paymentOrderId = localStorage.getItem("pending_payment_order_id") ?? undefined;
+      const merchantReference = localStorage.getItem("pending_merchant_reference") ?? undefined;
+      localStorage.removeItem("pending_payment_order_id");
+      localStorage.removeItem("pending_merchant_reference");
 
-      if (paymentOrderId || merchantReference) {
+      if (paymentOrderId || merchantReference || paymobTxId) {
         void verifyPayment({ paymentOrderId, merchantReference, paymobTransactionId: paymobTxId })
           .catch(() => null)
           .finally(() => void loadBillingState());
@@ -264,8 +264,8 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
         },
       };
       const response = await createCartCheckoutIntention(payload);
-      sessionStorage.setItem("pending_payment_order_id", response.payment_order_id);
-      sessionStorage.setItem("pending_merchant_reference", response.merchant_reference);
+      localStorage.setItem("pending_payment_order_id", response.payment_order_id);
+      localStorage.setItem("pending_merchant_reference", response.merchant_reference);
       window.location.href = buildCheckoutUrl(
         response.checkout.public_key,
         response.checkout.client_secret,

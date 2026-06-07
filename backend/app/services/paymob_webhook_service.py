@@ -660,8 +660,10 @@ def verify_and_activate_payment_order(
         order = db.scalar(query.where(PaymentOrder.id == payment_order_id))
     elif merchant_reference:
         order = db.scalar(query.where(PaymentOrder.merchant_reference == merchant_reference))
+    elif paymob_transaction_id:
+        order = db.scalar(query.where(PaymentOrder.provider_transaction_id == paymob_transaction_id))
     else:
-        raise ValueError("Provide payment_order_id or merchant_reference.")
+        raise ValueError("Provide payment_order_id, merchant_reference, or paymob_transaction_id.")
 
     if not order:
         raise LookupError("Payment order not found.")

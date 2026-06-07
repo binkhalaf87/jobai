@@ -222,6 +222,47 @@ async def _process_campaigns() -> None:
         db.close()
 
 
+async def _poll_pending_payments() -> None:
+    """Poll Paymob for PAYMENT_KEY_ISSUED orders older than 5 minutes and activate if paid."""
+    from app.models.enums import PaymentOrderStatus
+    from app.models.payment_order import PaymentOrder
+    from app.services.paymob_webhook_service import verify_and_activate_payment_order
+
+    db = SessionLocal()
+    try:
+        cutoff = datetime.now(timezone.utc) - timedelta(minutes=5)
+        pending_orders = db.scalars(
+            select(PaymentOrder).where(
+                PaymentOrder.status == PaymentOrderStatus.PAYMENT_KEY_ISSUED,
+                PaymentOrder.provider_transaction_id.isnot(None),
+                PaymentOrder.created_at < cutoff,
+            )
+        ).all()
+
+        if not pending_orders:
+            return
+
+        logger.info("Payment poller: checking %d pending order(s).", len(pending_orders))
+        for order in pending_orders:
+            try:
+                result = verify_and_activate_payment_order(
+                    db,
+                    payment_order_id=str(order.id),
+                    user_id=str(order.user_id),
+                    paymob_transaction_id=order.provider_transaction_id,
+                )
+                if result == PaymentOrderStatus.PAID:
+                    logger.info("Payment poller: activated order %s for user %s.", order.id, order.user_id)
+                else:
+                    logger.debug("Payment poller: order %s still %s.", order.id, result.value)
+            except Exception as exc:
+                logger.warning("Payment poller: error processing order %s: %s", order.id, exc)
+    except Exception as exc:
+        logger.exception("Payment poller error: %s", exc)
+    finally:
+        db.close()
+
+
 async def _cleanup_refresh_tokens() -> None:
     """Delete expired or revoked refresh tokens older than 37 days."""
     cutoff = datetime.now(timezone.utc) - timedelta(days=37)
@@ -244,6 +285,7 @@ async def _cleanup_refresh_tokens() -> None:
 
 def start_scheduler() -> None:
     _scheduler.add_job(_process_campaigns, "interval", minutes=5)  # every 5 minutes
+    _scheduler.add_job(_poll_pending_payments, "interval", minutes=10)  # every 10 minutes
     _scheduler.add_job(_cleanup_refresh_tokens, "cron", hour="3", minute="0")  # daily at 03:00 UTC
     _scheduler.start()
     logger.info("Campaign scheduler started.")

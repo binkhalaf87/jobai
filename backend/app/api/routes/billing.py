@@ -272,10 +272,10 @@ def verify_payment(
     current_user: User = Depends(get_current_user),
 ) -> PaymentVerifyResponse:
     """Verify a payment with Paymob after redirect and activate the order if confirmed paid."""
-    if not payload.payment_order_id and not payload.merchant_reference:
+    if not payload.payment_order_id and not payload.merchant_reference and not payload.paymob_transaction_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Provide payment_order_id or merchant_reference.",
+            detail="Provide payment_order_id, merchant_reference, or paymob_transaction_id.",
         )
     try:
         final_status = verify_and_activate_payment_order(
