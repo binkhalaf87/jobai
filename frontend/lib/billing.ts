@@ -33,8 +33,8 @@ export async function createCartCheckoutIntention(payload: CartCheckoutPayload):
   return api.post<CartCheckoutResponse>("/billing/cart/checkout", payload);
 }
 
-export async function verifyAllPending(): Promise<{ activated: number }> {
-  return api.post<{ activated: number }>("/billing/verify-all-pending", {});
+export async function verifyAllPending(): Promise<{ activated: number; checked: number; details: object[] }> {
+  return api.post<{ activated: number; checked: number; details: object[] }>("/billing/verify-all-pending", {});
 }
 
 export async function verifyPayment(params: {

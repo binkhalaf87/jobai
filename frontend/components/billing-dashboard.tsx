@@ -190,9 +190,12 @@ export function BillingDashboard({ audience }: { audience: "jobseeker" | "recrui
     setVerifyBanner(null);
     try {
       const result = await verifyAllPending();
+      // Log diagnostic details to browser console for debugging
+      console.log("[JobAI] verify-all-pending result:", result);
       await loadBillingState();
       setVerifyBanner(result.activated > 0 ? "activated" : "none");
-    } catch {
+    } catch (err) {
+      console.error("[JobAI] verify-all-pending error:", err);
       await loadBillingState();
       setVerifyBanner("none");
     } finally {

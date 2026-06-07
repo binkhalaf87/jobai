@@ -714,11 +714,10 @@ def verify_and_activate_payment_order(
     return PaymentOrderStatus.PAID
 
 
-def verify_all_pending_for_user(db: Session, user_id: str) -> int:
-    """Check all pending payment orders for a user against Paymob and activate any confirmed paid.
+def verify_all_pending_for_user(db: Session, user_id: str) -> dict:
+    """Check all pending payment orders for a user against Paymob and activate any confirmed paid."""
+    from app.services.paymob_service import query_paymob_transactions_by_order as _q
 
-    Returns the number of orders newly activated.
-    """
     pending_orders = db.scalars(
         select(PaymentOrder)
         .options(selectinload(PaymentOrder.plan), selectinload(PaymentOrder.subscription))
@@ -729,18 +728,42 @@ def verify_all_pending_for_user(db: Session, user_id: str) -> int:
     ).all()
 
     activated = 0
+    diagnostics = []
+
     for order in pending_orders:
+        diag: dict = {
+            "order_id": str(order.id),
+            "status": order.status.value,
+            "amount_sar": order.amount_minor / 100,
+            "merchant_reference": order.merchant_reference,
+            "provider_order_id": order.provider_order_id,
+            "provider_transaction_id": order.provider_transaction_id,
+        }
+        try:
+            txns = _q(merchant_reference=order.merchant_reference, paymob_order_id=order.provider_order_id)
+            diag["paymob_txns_found"] = len(txns)
+            diag["paymob_successful"] = len([t for t in txns if t.get("success") and not t.get("pending")])
+        except Exception as exc:
+            diag["paymob_txns_found"] = 0
+            diag["paymob_error"] = str(exc)
+
         try:
             result = verify_and_activate_payment_order(
                 db,
                 payment_order_id=str(order.id),
                 user_id=user_id,
             )
+            diag["result"] = result.value
             if result == PaymentOrderStatus.PAID:
                 activated += 1
         except Exception as exc:
-            logger.debug("verify_all_pending: order %s skipped: %s", order.id, exc)
-    return activated
+            diag["result"] = f"error: {exc}"
+            logger.warning("verify_all_pending: order %s error: %s", order.id, exc)
+
+        diagnostics.append(diag)
+        logger.info("verify_all_pending diag: %s", diag)
+
+    return {"activated": activated, "checked": len(pending_orders), "details": diagnostics}
 
 
 def process_paymob_webhook(
