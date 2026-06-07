@@ -117,13 +117,51 @@ def compute_paymob_transaction_hmac(event_payload: dict[str, Any], hmac_secret: 
     ).hexdigest()
 
 
+def _compute_hmac_sha256(event_payload: dict[str, Any], hmac_secret: str) -> str:
+    secret = hmac_secret
+    signature_source = "".join(
+        _normalize_hmac_value(_get_nested_value(event_payload, field_name))
+        for field_name in PAYMOB_TRANSACTION_HMAC_FIELDS
+    )
+    return hmac.new(
+        secret.encode("utf-8"),
+        signature_source.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+
+
 def verify_paymob_webhook_hmac(event_payload: dict[str, Any], provided_hmac: str | None) -> bool:
     """Verify a Paymob callback HMAC using timing-safe comparison."""
     if not provided_hmac:
         return False
 
-    expected_hmac = compute_paymob_transaction_hmac(event_payload)
-    return hmac.compare_digest(expected_hmac.lower(), provided_hmac.strip().lower())
+    secret = get_paymob_hmac_secret()
+    signature_source = "".join(
+        _normalize_hmac_value(_get_nested_value(event_payload, field_name))
+        for field_name in PAYMOB_TRANSACTION_HMAC_FIELDS
+    )
+    provided = provided_hmac.strip().lower()
+
+    # Try SHA-512 (standard Paymob Egypt format)
+    sha512_result = hmac.new(secret.encode("utf-8"), signature_source.encode("utf-8"), hashlib.sha512).hexdigest()
+    if hmac.compare_digest(sha512_result, provided):
+        return True
+
+    # Try SHA-256 (some Paymob KSA unified checkout integrations use SHA-256)
+    sha256_result = hmac.new(secret.encode("utf-8"), signature_source.encode("utf-8"), hashlib.sha256).hexdigest()
+    if hmac.compare_digest(sha256_result, provided):
+        logger.info("WEBHOOK_HMAC_MATCHED_SHA256: switching algorithm detected")
+        return True
+
+    # Log diagnostic info (non-secret: only field values and first 16 chars of hashes)
+    logger.warning(
+        "WEBHOOK_HMAC_MISMATCH_DETAIL: "
+        "sig_source_preview=%r sig_source_len=%d "
+        "sha512_prefix=%s sha256_prefix=%s provided_prefix=%s",
+        signature_source[:120], len(signature_source),
+        sha512_result[:16], sha256_result[:16], provided[:16],
+    )
+    return False
 
 
 def _extract_event_object(payload: dict[str, Any]) -> dict[str, Any]:
