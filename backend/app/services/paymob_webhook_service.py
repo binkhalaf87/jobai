@@ -620,7 +620,7 @@ def manually_activate_payment_order(db: Session, payment_order_id: str) -> None:
         "pending": False,
         "amount_cents": order.amount_minor,
         "currency": order.currency,
-        "id": order.provider_transaction_id or "manual",
+        "id": order.provider_transaction_id or f"manual-{order.id}",
         "created_at": processed_at.isoformat(),
     }
     fake_payload: dict[str, Any] = {"manual_activation": True}
