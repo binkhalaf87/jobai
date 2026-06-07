@@ -127,6 +127,11 @@ def verify_paymob_webhook_hmac(event_payload: dict[str, Any], provided_hmac: str
 
 
 def _extract_event_object(payload: dict[str, Any]) -> dict[str, Any]:
+    # Paymob KSA (unified checkout) sends transaction data under "transaction" key.
+    nested_transaction = payload.get("transaction")
+    if isinstance(nested_transaction, dict):
+        return nested_transaction
+    # Legacy Paymob Egypt API sends under "obj" key.
     nested_object = payload.get("obj")
     if isinstance(nested_object, dict):
         return nested_object
@@ -777,6 +782,26 @@ def verify_all_pending_for_user(db: Session, user_id: str) -> dict:
     return {"activated": activated, "checked": len(pending_orders), "details": diagnostics}
 
 
+def _extract_ksa_payment_order_id(payload: dict[str, Any]) -> str | None:
+    """Extract our internal payment_order_id from Paymob KSA intention extras."""
+    intention = payload.get("intention")
+    if not isinstance(intention, dict):
+        return None
+    extras = intention.get("extras") or {}
+    creation_extras = extras.get("creation_extras") or {}
+    po_id = creation_extras.get("payment_order_id")
+    return str(po_id) if po_id else None
+
+
+def _extract_ksa_merchant_reference(payload: dict[str, Any]) -> str | None:
+    """Extract merchant reference from Paymob KSA intention special_reference."""
+    intention = payload.get("intention")
+    if not isinstance(intention, dict):
+        return None
+    special_ref = intention.get("special_reference") or intention.get("merchant_order_id")
+    return str(special_ref) if special_ref else None
+
+
 def process_paymob_webhook(
     db: Session,
     payload: dict[str, Any],
@@ -789,6 +814,13 @@ def process_paymob_webhook(
     provider_order_id = _extract_provider_order_id(event_object)
     merchant_reference = _extract_merchant_reference(event_object)
     event_type = _extract_event_type(payload, event_object)
+
+    # Paymob KSA (unified checkout) stores merchant_reference in intention.special_reference.
+    if not merchant_reference:
+        merchant_reference = _extract_ksa_merchant_reference(payload)
+
+    # Also capture our internal payment_order_id stored in intention extras.
+    ksa_payment_order_id = _extract_ksa_payment_order_id(payload)
 
     webhook_event, was_duplicate_record = _get_or_create_webhook_event(
         db,
@@ -834,12 +866,27 @@ def process_paymob_webhook(
         merchant_reference=merchant_reference,
         provider_order_id=provider_order_id,
     )
+    # Paymob KSA fallback: look up directly by our internal payment_order_id from extras.
+    if not payment_order and ksa_payment_order_id:
+        payment_order = db.scalar(
+            select(PaymentOrder)
+            .options(selectinload(PaymentOrder.plan), selectinload(PaymentOrder.subscription))
+            .where(PaymentOrder.id == ksa_payment_order_id)
+            .with_for_update()
+        )
+        if payment_order:
+            logger.info(
+                "WEBHOOK_ORDER_FOUND_VIA_EXTRAS: payment_order_id=%s tx_id=%s",
+                ksa_payment_order_id,
+                provider_transaction_id,
+            )
     if not payment_order:
         logger.error(
-            "WEBHOOK_ORDER_NOT_FOUND: merchant_ref=%s provider_order_id=%s tx_id=%s",
+            "WEBHOOK_ORDER_NOT_FOUND: merchant_ref=%s provider_order_id=%s tx_id=%s ksa_po_id=%s",
             merchant_reference,
             provider_order_id,
             provider_transaction_id,
+            ksa_payment_order_id,
         )
         webhook_event.status = PaymentWebhookEventStatus.FAILED
         webhook_event.processing_error = "Payment order not found for Paymob webhook."
