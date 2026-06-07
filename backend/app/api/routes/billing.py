@@ -360,6 +360,44 @@ def verify_all_pending(
     return {"activated": activated}
 
 
+@router.get("/debug-pending", response_model=list)
+def debug_pending_orders(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list:
+    """Diagnostic: return pending orders with their Paymob lookup results."""
+    from app.models.enums import PaymentOrderStatus as _POS
+    from app.models.payment_order import PaymentOrder as _PO
+    from app.services.paymob_service import query_paymob_transactions_by_order as _q
+
+    orders = db.scalars(
+        select(_PO).where(
+            _PO.user_id == str(current_user.id),
+            _PO.status.in_([_POS.PAYMENT_KEY_ISSUED, _POS.PENDING]),
+        )
+    ).all()
+
+    result = []
+    for o in orders:
+        try:
+            txns = _q(merchant_reference=o.merchant_reference, paymob_order_id=o.provider_order_id)
+        except Exception as exc:
+            txns = [{"error": str(exc)}]
+        result.append({
+            "order_id": str(o.id),
+            "status": o.status.value,
+            "amount": o.amount_minor,
+            "merchant_reference": o.merchant_reference,
+            "provider_order_id": o.provider_order_id,
+            "provider_transaction_id": o.provider_transaction_id,
+            "created_at": o.created_at.isoformat() if o.created_at else None,
+            "paymob_transactions_found": len([t for t in txns if not t.get("error")]),
+            "paymob_successful": len([t for t in txns if t.get("success") and not t.get("pending")]),
+            "paymob_raw": txns[:2],  # first 2 transactions only
+        })
+    return result
+
+
 @router.post("/promo/validate", response_model=BillingPromoValidateResponse)
 def validate_promo_code(
     body: BillingPromoValidateRequest,

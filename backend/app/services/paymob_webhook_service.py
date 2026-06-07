@@ -673,12 +673,20 @@ def verify_and_activate_payment_order(
 
     tx_id = paymob_transaction_id or order.provider_transaction_id
     if not tx_id:
-        # Fall back to merchant_reference lookup — finds the transaction even without a stored tx ID
-        from app.services.paymob_service import query_paymob_transactions_by_merchant_ref as _query_by_ref
+        # Fall back to Paymob order lookup using provider_order_id and merchant_reference
+        from app.services.paymob_service import query_paymob_transactions_by_order as _query_by_order
         try:
-            txns = _query_by_ref(order.merchant_reference)
-        except Exception:
+            txns = _query_by_order(
+                merchant_reference=order.merchant_reference,
+                paymob_order_id=order.provider_order_id,
+            )
+        except Exception as exc:
+            logger.warning("Paymob fallback lookup failed for order %s: %s", order.id, exc)
             txns = []
+        logger.info(
+            "Paymob fallback lookup: order_id=%s merchant_ref=%s paymob_order_id=%s → %d txn(s)",
+            order.id, order.merchant_reference, order.provider_order_id, len(txns),
+        )
         successful = [t for t in txns if t.get("success") and not t.get("pending")]
         if not successful:
             return order.status  # not paid at Paymob — nothing to activate

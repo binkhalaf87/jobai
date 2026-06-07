@@ -314,27 +314,72 @@ def query_paymob_transaction(transaction_id: str) -> dict[str, Any]:
     return cast(dict[str, Any], result)
 
 
-def query_paymob_transactions_by_merchant_ref(merchant_reference: str) -> list[dict[str, Any]]:
-    """Return all Paymob transactions for a given merchant_order_id (our merchant_reference)."""
+def _fetch_paymob_transactions(params: dict[str, Any]) -> list[dict[str, Any]]:
+    """Internal helper: query Paymob transaction list with arbitrary filter params."""
+    import logging as _log
+    _logger = _log.getLogger(__name__)
     with httpx.Client(base_url=PAYMOB_BASE_URL, timeout=PAYMOB_TIMEOUT) as client:
         response = client.get(
             "/api/acceptance/transactions/",
             headers=_paymob_headers(),
-            params={"merchant_order_id": merchant_reference},
+            params=params,
         )
+    _logger.debug("Paymob tx query params=%s status=%s body=%s", params, response.status_code, response.text[:500])
     try:
         response.raise_for_status()
     except httpx.HTTPStatusError as exc:
         raise RuntimeError(
             f"Paymob transactions query failed ({response.status_code}): {_extract_paymob_error(response)}"
         ) from exc
-
     result = response.json()
     if isinstance(result, list):
         return result
     if isinstance(result, dict):
         return result.get("results") or []
     return []
+
+
+def query_paymob_transactions_by_order(
+    *,
+    merchant_reference: str | None = None,
+    paymob_order_id: str | None = None,
+) -> list[dict[str, Any]]:
+    """Return Paymob transactions for a given order, trying multiple lookup strategies."""
+    import logging as _log
+    _logger = _log.getLogger(__name__)
+
+    txns: list[dict[str, Any]] = []
+
+    # Strategy 1: Paymob internal order ID (most reliable)
+    if paymob_order_id:
+        try:
+            txns = _fetch_paymob_transactions({"order_id": paymob_order_id})
+            _logger.info("Paymob lookup by order_id=%s → %d txn(s)", paymob_order_id, len(txns))
+        except Exception as exc:
+            _logger.warning("Paymob order_id lookup failed: %s", exc)
+
+    # Strategy 2: our merchant_reference as merchant_order_id
+    if not txns and merchant_reference:
+        try:
+            txns = _fetch_paymob_transactions({"merchant_order_id": merchant_reference})
+            _logger.info("Paymob lookup by merchant_order_id=%s → %d txn(s)", merchant_reference, len(txns))
+        except Exception as exc:
+            _logger.warning("Paymob merchant_order_id lookup failed: %s", exc)
+
+    # Strategy 3: special_reference (same value, different Paymob field)
+    if not txns and merchant_reference:
+        try:
+            txns = _fetch_paymob_transactions({"special_reference": merchant_reference})
+            _logger.info("Paymob lookup by special_reference=%s → %d txn(s)", merchant_reference, len(txns))
+        except Exception as exc:
+            _logger.warning("Paymob special_reference lookup failed: %s", exc)
+
+    return txns
+
+
+# Keep old name for backwards compat
+def query_paymob_transactions_by_merchant_ref(merchant_reference: str) -> list[dict[str, Any]]:
+    return query_paymob_transactions_by_order(merchant_reference=merchant_reference)
 
 
 def _post_intention(payload: dict[str, Any]) -> dict[str, Any]:
