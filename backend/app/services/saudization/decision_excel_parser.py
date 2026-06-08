@@ -11,9 +11,12 @@ logger = logging.getLogger(__name__)
 # ── Column aliases ─────────────────────────────────────────────────────────────
 
 _PROF_ALIASES       = {"المهنة", "اسم المهنة", "مهنة", "النشاط", "القطاع", "الوظيفة",
-                        "profession", "job title", "activity", "sector", "occupation"}
+                        "profession", "profession ar", "profession arabic", "profession en",
+                        "profession name", "job title", "activity", "sector", "occupation"}
 _TARGET_ALIASES     = {"نسبة التوطين", "النسبة المستهدفة", "نسبة", "هدف", "الهدف",
-                        "target", "target %", "percentage", "target percentage", "نسبة التوطين %"}
+                        "target", "target %", "percentage", "target percentage", "نسبة التوطين %",
+                        "localized%", "localized %", "localization%", "localization %",
+                        "localization", "localized"}
 _MIN_EMP_ALIASES    = {"الحد الأدنى للموظفين", "الحد الأدنى", "عدد الموظفين", "حد ادنى",
                         "min employees", "minimum employees", "minimum"}
 _MIN_SAL_ALIASES    = {"الراتب الأدنى", "أدنى راتب", "الحد الأدنى للراتب", "راتب",
@@ -38,6 +41,12 @@ def _match(header: str, aliases: set[str]) -> bool:
 
 
 def _find_col(headers: list[str], aliases: set[str]) -> int | None:
+    norm_aliases = {_norm(a) for a in aliases}
+    # Exact match first (prevents "Professional Group" stealing "Profession AR")
+    for i, h in enumerate(headers):
+        if _norm(h) in norm_aliases:
+            return i
+    # Substring fallback
     for i, h in enumerate(headers):
         if _match(h, aliases):
             return i
