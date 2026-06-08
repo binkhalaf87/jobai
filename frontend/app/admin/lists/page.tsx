@@ -1,16 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Plus, Trash2, ChevronDown, ChevronUp, Upload } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Download, FileSpreadsheet, Plus, Trash2, ChevronDown, ChevronUp, Upload } from "lucide-react";
 
 import {
   addContact,
-  bulkAddContacts,
   createList,
   deleteContact,
   deleteList,
+  downloadContactsTemplate,
   getListContacts,
   getLists,
+  importContactsExcel,
   type AdminContactItem,
   type AdminListItem,
 } from "@/lib/admin";
@@ -54,11 +55,13 @@ function ContactsTable({ listId, onCountChange }: { listId: string; onCountChang
   const [contacts, setContacts] = useState<AdminContactItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [showBulk, setShowBulk] = useState(false);
+  const [showExcel, setShowExcel] = useState(false);
   const [addForm, setAddForm] = useState({ email: "", full_name: "", company_name: "", job_title: "" });
-  const [bulkText, setBulkText] = useState("");
+  const [excelFile, setExcelFile] = useState<File | null>(null);
+  const [excelResult, setExcelResult] = useState<{ added: number; skipped: number } | null>(null);
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     getListContacts(listId).then(setContacts).catch(() => {}).finally(() => setLoading(false));
@@ -78,20 +81,23 @@ function ContactsTable({ listId, onCountChange }: { listId: string; onCountChang
     finally { setAddLoading(false); }
   }
 
-  async function handleBulk(e: React.FormEvent) {
-    e.preventDefault();
-    const emails = bulkText.split(/[\n,;]+/).map((s) => s.trim()).filter(Boolean);
-    if (emails.length === 0) return;
-    setAddLoading(true); setAddError("");
+  async function handleExcelUpload() {
+    if (!excelFile) return;
+    setAddLoading(true); setAddError(""); setExcelResult(null);
     try {
-      const { added } = await bulkAddContacts(listId, emails);
-      onCountChange(added);
-      setBulkText("");
-      setShowBulk(false);
+      const result = await importContactsExcel(listId, excelFile);
+      setExcelResult(result);
+      onCountChange(result.added);
+      setExcelFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       const fresh = await getListContacts(listId);
       setContacts(fresh);
     } catch (err) { setAddError(err instanceof Error ? err.message : "Failed"); }
     finally { setAddLoading(false); }
+  }
+
+  async function handleDownloadTemplate() {
+    try { await downloadContactsTemplate(); } catch { /* ignore */ }
   }
 
   async function handleDelete(contactId: string) {
@@ -105,11 +111,14 @@ function ContactsTable({ listId, onCountChange }: { listId: string; onCountChang
   return (
     <div className="border-t border-slate-100">
       <div className="flex gap-2 px-4 py-3">
-        <button onClick={() => { setShowAddForm(!showAddForm); setShowBulk(false); }} className="flex items-center gap-1 rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white">
+        <button onClick={() => { setShowAddForm(!showAddForm); setShowExcel(false); }} className="flex items-center gap-1 rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white">
           <Plus size={11} /> Add Contact
         </button>
-        <button onClick={() => { setShowBulk(!showBulk); setShowAddForm(false); }} className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-slate-50">
-          <Upload size={11} /> Bulk Import
+        <button onClick={() => { setShowExcel(!showExcel); setShowAddForm(false); setExcelResult(null); setAddError(""); }} className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-slate-50">
+          <FileSpreadsheet size={11} /> Excel Import
+        </button>
+        <button onClick={() => void handleDownloadTemplate()} className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-slate-50">
+          <Download size={11} /> Template
         </button>
       </div>
 
@@ -124,12 +133,41 @@ function ContactsTable({ listId, onCountChange }: { listId: string; onCountChang
         </form>
       )}
 
-      {showBulk && (
-        <form onSubmit={(e) => void handleBulk(e)} className="px-4 pb-3 space-y-2">
-          <textarea rows={5} placeholder={"Paste emails separated by newline, comma, or semicolon:\nhr@company1.com\nrecruiter@company2.com"} value={bulkText} onChange={(e) => setBulkText(e.target.value)} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs outline-none resize-none" />
+      {showExcel && (
+        <div className="px-4 pb-3 space-y-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            className="hidden"
+            onChange={(e) => { setExcelFile(e.target.files?.[0] ?? null); setExcelResult(null); setAddError(""); }}
+          />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+            >
+              <Upload size={11} /> {excelFile ? excelFile.name : "Choose File (.xlsx)"}
+            </button>
+            {excelFile && (
+              <button
+                type="button"
+                onClick={() => void handleExcelUpload()}
+                disabled={addLoading}
+                className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+              >
+                {addLoading ? "Uploading…" : "Upload"}
+              </button>
+            )}
+          </div>
           {addError && <p className="text-xs text-rose-600">{addError}</p>}
-          <button type="submit" disabled={addLoading} className="w-full rounded-lg bg-slate-900 py-1.5 text-xs font-semibold text-white disabled:opacity-50">{addLoading ? "Importing…" : "Import"}</button>
-        </form>
+          {excelResult && (
+            <p className="text-xs text-emerald-600">
+              Added {excelResult.added} contact{excelResult.added !== 1 ? "s" : ""}{excelResult.skipped > 0 ? `, skipped ${excelResult.skipped}` : ""}.
+            </p>
+          )}
+        </div>
       )}
 
       {contacts.length === 0 ? (

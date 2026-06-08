@@ -231,6 +231,35 @@ export async function deleteContact(listId: string, contactId: string): Promise<
   if (!res.ok && res.status !== 204) throw new Error("Failed to delete contact");
 }
 
+export async function downloadContactsTemplate(): Promise<void> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/lists/contacts/template`, { headers: authHeaders() });
+  if (!res.ok) throw new Error("Failed to download template");
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "contacts_template.xlsx";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export async function importContactsExcel(listId: string, file: File): Promise<{ added: number; skipped: number }> {
+  const form = new FormData();
+  form.append("file", file);
+  const csrf = typeof document !== "undefined"
+    ? (document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/) ?? [])[1]
+    : undefined;
+  const headers: Record<string, string> = { Authorization: `Bearer ${getToken()}` };
+  if (csrf) headers["X-CSRF-Token"] = decodeURIComponent(csrf);
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/lists/${listId}/contacts/import-excel`, {
+    method: "POST",
+    headers,
+    body: form,
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to import Excel file"));
+  return res.json();
+}
+
 // ── Gmail Connection Requests ──────────────────────────────────────────────────
 
 export type AdminGmailRequestItem = {

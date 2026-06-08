@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import io
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from fastapi.responses import FileResponse, Response
+import openpyxl
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -760,6 +762,85 @@ def bulk_add_contacts(
     rl.total_count += added
     db.commit()
     return {"added": added}
+
+
+@router.get("/lists/contacts/template")
+def download_contacts_template(
+    admin: User = Depends(get_current_admin),
+) -> StreamingResponse:
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Contacts"
+    ws.append(["email", "full_name", "company_name", "job_title"])
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return StreamingResponse(
+        buf,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=contacts_template.xlsx"},
+    )
+
+
+@router.post("/lists/{list_id}/contacts/import-excel", response_model=dict)
+async def import_contacts_excel(
+    list_id: str,
+    file: UploadFile = File(...),
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> dict:
+    filename = (file.filename or "").lower()
+    if not (filename.endswith(".xlsx") or filename.endswith(".xls")):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only .xlsx or .xls files are accepted.")
+    rl = db.scalar(select(RecipientList).where(RecipientList.id == list_id, RecipientList.user_id == admin.id))
+    if not rl:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="List not found.")
+    raw = await file.read()
+    try:
+        wb = openpyxl.load_workbook(io.BytesIO(raw), read_only=True, data_only=True)
+        ws = wb.active
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Could not read Excel file.")
+    rows = list(ws.iter_rows(values_only=True))
+    if not rows:
+        return {"added": 0, "skipped": 0}
+    header = [str(c).strip().lower() if c else "" for c in rows[0]]
+    col = {name: header.index(name) for name in ("email", "full_name", "company_name", "job_title") if name in header}
+    if "email" not in col:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Excel must have an 'email' column.")
+    added = skipped = 0
+    for row in rows[1:]:
+        email_val = row[col["email"]] if col["email"] < len(row) else None
+        if not email_val:
+            skipped += 1
+            continue
+        email_str = str(email_val).strip().lower()
+        if "@" not in email_str:
+            skipped += 1
+            continue
+        existing = db.scalar(select(Recipient).where(Recipient.list_id == list_id, Recipient.email == email_str))
+        if existing:
+            skipped += 1
+            continue
+        def _get(key: str) -> str | None:
+            idx = col.get(key)
+            if idx is None or idx >= len(row):
+                return None
+            v = row[idx]
+            return str(v).strip() if v else None
+        db.add(Recipient(
+            id=str(uuid.uuid4()),
+            list_id=list_id,
+            user_id=admin.id,
+            email=email_str,
+            full_name=_get("full_name"),
+            company_name=_get("company_name"),
+            job_title=_get("job_title"),
+        ))
+        added += 1
+    rl.total_count += added
+    db.commit()
+    return {"added": added, "skipped": skipped}
 
 
 @router.delete("/lists/{list_id}/contacts/{contact_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
