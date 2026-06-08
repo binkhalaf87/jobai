@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Download, FileSpreadsheet, Plus, Trash2, ChevronDown, ChevronUp, Upload } from "lucide-react";
+import { Check, Download, FileSpreadsheet, Pencil, Plus, Trash2, ChevronDown, ChevronUp, Upload, X } from "lucide-react";
 
 import {
   addContact,
@@ -12,6 +12,7 @@ import {
   getListContacts,
   getLists,
   importContactsExcel,
+  renameList,
   type AdminContactItem,
   type AdminListItem,
 } from "@/lib/admin";
@@ -210,6 +211,9 @@ export default function AdminListsPage() {
   const [error, setError] = useState<string | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [renameLoading, setRenameLoading] = useState(false);
 
   useEffect(() => {
     getLists().then(setLists).catch((e: unknown) => setError(e instanceof Error ? e.message : "Failed")).finally(() => setLoading(false));
@@ -218,6 +222,22 @@ export default function AdminListsPage() {
   async function handleDelete(id: string) {
     await deleteList(id).catch(() => {});
     setLists((p) => p.filter((l) => l.id !== id));
+  }
+
+  function startRename(list: AdminListItem) {
+    setRenamingId(list.id);
+    setRenameValue(list.name);
+  }
+
+  async function handleRename(id: string) {
+    if (!renameValue.trim()) return;
+    setRenameLoading(true);
+    try {
+      const updated = await renameList(id, { name: renameValue.trim() });
+      setLists((p) => p.map((l) => l.id === id ? { ...l, name: updated.name } : l));
+      setRenamingId(null);
+    } catch { /* ignore */ }
+    finally { setRenameLoading(false); }
   }
 
   if (loading) return <p className="text-sm text-slate-400">Loading…</p>;
@@ -247,7 +267,30 @@ export default function AdminListsPage() {
             <div key={list.id} className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
               <div className="flex items-center justify-between px-5 py-4">
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-slate-900">{list.name}</p>
+                  {renamingId === list.id ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        autoFocus
+                        value={renameValue}
+                        onChange={(e) => setRenameValue(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") void handleRename(list.id); if (e.key === "Escape") setRenamingId(null); }}
+                        className="rounded-lg border border-slate-300 px-2 py-1 text-sm font-semibold text-slate-900 outline-none focus:border-slate-500 w-48"
+                      />
+                      <button onClick={() => void handleRename(list.id)} disabled={renameLoading} className="text-emerald-600 hover:text-emerald-700 disabled:opacity-40">
+                        <Check size={14} />
+                      </button>
+                      <button onClick={() => setRenamingId(null)} className="text-slate-400 hover:text-slate-600">
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 group">
+                      <p className="text-sm font-semibold text-slate-900">{list.name}</p>
+                      <button onClick={() => startRename(list)} className="opacity-0 group-hover:opacity-100 transition text-slate-400 hover:text-slate-600">
+                        <Pencil size={12} />
+                      </button>
+                    </div>
+                  )}
                   {list.description && <p className="text-xs text-slate-500 mt-0.5">{list.description}</p>}
                   <p className="text-xs text-slate-400 mt-0.5">{list.total_count} contacts</p>
                 </div>

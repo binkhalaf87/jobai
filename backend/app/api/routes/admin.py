@@ -55,6 +55,7 @@ from app.schemas.admin import (
     AdminGmailRequestReject,
     AdminListCreate,
     AdminListItem,
+    AdminListRename,
     AdminMonthlyRevenue,
     AdminPlanItem,
     AdminPromoCodeCreate,
@@ -682,6 +683,23 @@ def create_admin_list(
         total_count=0,
     )
     db.add(rl)
+    db.commit()
+    db.refresh(rl)
+    return AdminListItem.model_validate(rl)
+
+
+@router.patch("/lists/{list_id}", response_model=AdminListItem)
+def rename_admin_list(
+    list_id: str,
+    body: AdminListRename,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> AdminListItem:
+    rl = db.scalar(select(RecipientList).where(RecipientList.id == list_id, RecipientList.user_id == admin.id))
+    if not rl:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="List not found.")
+    rl.name = body.name.strip()
+    rl.description = body.description
     db.commit()
     db.refresh(rl)
     return AdminListItem.model_validate(rl)

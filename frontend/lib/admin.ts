@@ -195,6 +195,16 @@ export async function createList(data: { name: string; description?: string }): 
   return res.json();
 }
 
+export async function renameList(id: string, data: { name: string; description?: string }): Promise<AdminListItem> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/lists/${id}`, {
+    method: "PATCH",
+    headers: mutationHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to rename list"));
+  return res.json();
+}
+
 export async function deleteList(id: string): Promise<void> {
   const res = await fetch(`${getApiBaseUrl()}${BASE}/lists/${id}`, { method: "DELETE", headers: mutationHeaders() });
   if (!res.ok && res.status !== 204) throw new Error("Failed to delete list");

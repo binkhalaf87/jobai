@@ -75,6 +75,11 @@ class AdminListCreate(BaseModel):
     description: str | None = None
 
 
+class AdminListRename(BaseModel):
+    name: str
+    description: str | None = None
+
+
 class AdminContactCreate(BaseModel):
     email: str
     full_name: str | None = None
