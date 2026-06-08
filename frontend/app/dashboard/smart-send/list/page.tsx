@@ -28,12 +28,12 @@ export default function ListPage() {
   function handleNext() {
     const list = lists.find((l) => l.id === selectedId);
     saveWizard({ list_id: selectedId, list_name: list?.name ?? "", list_count: list?.total_count ?? 0 });
-    router.push("/dashboard/smart-send/settings");
+    router.push("/dashboard/smart-send/connect");
   }
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8 space-y-6" dir="rtl">
-      <StepBar current={3} />
+      <StepBar current={1} />
 
       <div>
         <h1 className="text-xl font-bold text-slate-800">{t("listStep.title")}</h1>
@@ -77,7 +77,7 @@ export default function ListPage() {
       )}
 
       <div className="flex items-center justify-between pt-2">
-        <Link href="/dashboard/smart-send/letter" className="text-sm text-slate-500 hover:text-slate-700">{t("wizard.back")}</Link>
+        <Link href="/dashboard/smart-send" className="text-sm text-slate-500 hover:text-slate-700">{t("wizard.back")}</Link>
         <button
           onClick={handleNext}
           disabled={!selectedId}

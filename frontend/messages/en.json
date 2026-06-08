@@ -2047,7 +2047,7 @@
       }
     },
     "wizard": {
-      "steps": ["Resume", "Letter", "List", "Settings", "Review", "Launch"],
+      "steps": ["List", "Connect Email", "Balance", "Letter", "Preview", "Launch"],
       "stepOf": "Step {current} of {total}",
       "back": "← Back",
       "next": "Next →",
@@ -2057,6 +2057,12 @@
       "activeCampaignsDesc": "Track sending status and pause or resume campaigns",
       "sendHistory": "Send History",
       "sendHistoryDesc": "All messages sent via Smart Send"
+    },
+    "connectStep": {
+      "title": "Connect Email Account",
+      "description": "Connect your Gmail account to send messages directly from your email address",
+      "connectedHint": "Email connected successfully, you can proceed to the next step",
+      "requiredHint": "You must connect a Gmail account before proceeding"
     },
     "resumeStep": {
       "title": "Select Resume",

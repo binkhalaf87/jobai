@@ -7,6 +7,8 @@ import { useTranslations } from "next-intl";
 import { StepBar } from "@/components/smart-send/StepBar";
 import { generateLetter, getLetters, saveLetter } from "@/lib/smart-send";
 import { getWizard, saveWizard } from "@/lib/wizard";
+import { listResumes } from "@/lib/resumes";
+import type { ResumeListItem } from "@/types";
 import type { UserLetter } from "@/types";
 
 type Mode = "targeted" | "general";
@@ -18,6 +20,8 @@ export default function LetterPage() {
   const [loadingLetters, setLoadingLetters] = useState(true);
   const [resumeName, setResumeName] = useState<string>("");
   const [resumeId, setResumeId] = useState<string>("");
+  const [resumes, setResumes] = useState<ResumeListItem[]>([]);
+  const [showResumePicker, setShowResumePicker] = useState(false);
 
   const [selected, setSelected] = useState<UserLetter | null>(null);
 
@@ -41,6 +45,14 @@ export default function LetterPage() {
       .then(setLetters)
       .catch(() => {})
       .finally(() => setLoadingLetters(false));
+    listResumes().then((r) => {
+      setResumes(r);
+      if (!w.resume_id && r.length === 1) {
+        setResumeId(r[0].id);
+        setResumeName(r[0].source_filename ?? r[0].file_type ?? "سيرة ذاتية");
+        saveWizard({ resume_id: r[0].id, resume_name: r[0].source_filename ?? r[0].file_type ?? "سيرة ذاتية" });
+      }
+    }).catch(() => {});
   }, []);
 
   async function handleGenerate() {
@@ -86,12 +98,12 @@ export default function LetterPage() {
   function handleNext() {
     if (!selected) return;
     saveWizard({ subject: selected.subject, body: selected.body, job_title: selected.job_title ?? "", company_name: selected.company_name ?? "" });
-    router.push("/dashboard/smart-send/list");
+    router.push("/dashboard/smart-send/preview");
   }
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8 space-y-6" dir="rtl">
-      <StepBar current={2} />
+      <StepBar current={4} />
 
       <div>
         <h1 className="text-xl font-bold text-slate-800">{t("letterStep.title")}</h1>
@@ -99,6 +111,50 @@ export default function LetterPage() {
           {resumeName ? t("letterStep.descriptionWithResume", { resumeName }) : t("letterStep.descriptionGeneric")}
         </p>
       </div>
+
+      {/* Resume selector */}
+      {resumes.length > 0 && (
+        <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span>📄</span>
+              <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">{t("resumeStep.title")}</p>
+            </div>
+            <button onClick={() => setShowResumePicker((v) => !v)} className="text-xs text-brand-600 hover:underline">
+              {resumeName ? t("previewStep.editLabel") : t("resumeStep.uploadBtn")}
+            </button>
+          </div>
+          {resumeName ? (
+            <div className="flex items-center gap-2 text-sm text-slate-700">
+              <span className="w-5 h-5 bg-teal rounded-full flex items-center justify-center text-white text-[10px] font-bold">✓</span>
+              <span className="truncate">{resumeName}</span>
+            </div>
+          ) : (
+            <p className="text-xs text-amber-600">{t("resumeStep.noResumes")}</p>
+          )}
+          {showResumePicker && (
+            <div className="space-y-2 pt-1">
+              {resumes.map((resume) => (
+                <button
+                  key={resume.id}
+                  onClick={() => {
+                    const name = resume.source_filename ?? resume.file_type ?? "سيرة ذاتية";
+                    setResumeId(resume.id);
+                    setResumeName(name);
+                    saveWizard({ resume_id: resume.id, resume_name: name });
+                    setShowResumePicker(false);
+                  }}
+                  className={`w-full text-right rounded-lg border p-3 flex items-center gap-2 transition-all text-sm ${resumeId === resume.id ? "border-brand-500 bg-brand-50 ring-1 ring-brand-300" : "border-slate-200 hover:border-brand-200"}`}
+                >
+                  <span className="text-base">📄</span>
+                  <span className="truncate font-medium text-slate-800">{resume.source_filename ?? `سيرة ذاتية.${resume.file_type}`}</span>
+                  <span className="text-xs text-slate-400 uppercase mr-auto flex-shrink-0">{resume.file_type}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* New letter form toggle */}
       {!showForm && (
@@ -229,7 +285,7 @@ export default function LetterPage() {
       )}
 
       <div className="flex items-center justify-between pt-2">
-        <Link href="/dashboard/smart-send/resume" className="text-sm text-slate-500 hover:text-slate-700">{t("wizard.back")}</Link>
+        <Link href="/dashboard/smart-send/settings" className="text-sm text-slate-500 hover:text-slate-700">{t("wizard.back")}</Link>
         <button
           onClick={handleNext}
           disabled={!selected}

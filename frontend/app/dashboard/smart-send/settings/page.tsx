@@ -25,12 +25,12 @@ export default function SettingsPage() {
 
   function handleNext() {
     saveWizard({ daily_limit: dailyLimit });
-    router.push("/dashboard/smart-send/preview");
+    router.push("/dashboard/smart-send/letter");
   }
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8 space-y-6" dir="rtl">
-      <StepBar current={4} />
+      <StepBar current={3} />
 
       <div>
         <h1 className="text-xl font-bold text-slate-800">{t("settingsStep.title")}</h1>
@@ -85,7 +85,7 @@ export default function SettingsPage() {
       </div>
 
       <div className="flex items-center justify-between pt-2">
-        <Link href="/dashboard/smart-send/list" className="text-sm text-slate-500 hover:text-slate-700">{t("wizard.back")}</Link>
+        <Link href="/dashboard/smart-send/connect" className="text-sm text-slate-500 hover:text-slate-700">{t("wizard.back")}</Link>
         <button
           onClick={handleNext}
           className="bg-brand-800 text-white rounded-xl px-6 py-2.5 text-sm font-semibold hover:bg-brand-700"

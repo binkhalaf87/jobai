@@ -180,7 +180,7 @@ export default function PreviewPage() {
                 <span className="text-slate-300">·</span>
                 <Link href="/dashboard/smart-send/list" className="text-brand-600 hover:underline">{t("previewStep.changeList")}</Link>
                 <span className="text-slate-300">·</span>
-                <Link href="/dashboard/smart-send/resume" className="text-brand-600 hover:underline">{t("previewStep.changeAttachment")}</Link>
+                <Link href="/dashboard/smart-send/letter" className="text-brand-600 hover:underline">{t("previewStep.changeAttachment")}</Link>
               </div>
               <button
                 onClick={handleStartEdit}
@@ -205,7 +205,7 @@ export default function PreviewPage() {
             <p className="text-sm font-semibold text-slate-800">
               {wizard.resume_name || (wizard.resume_id ? t("previewStep.noResumeSelected") : <span className="text-amber-600">{t("previewStep.noResumeSelected")}</span>)}
             </p>
-            <Link href="/dashboard/smart-send/resume" className="text-xs text-brand-600 hover:underline mt-1 inline-block">{t("previewStep.editLabel")}</Link>
+            <Link href="/dashboard/smart-send/letter" className="text-xs text-brand-600 hover:underline mt-1 inline-block">{t("previewStep.editLabel")}</Link>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-xl p-4">
@@ -232,6 +232,7 @@ export default function PreviewPage() {
               </p>
             )}
             <Link href="/dashboard/smart-send/settings" className="text-xs text-brand-600 hover:underline mt-1 inline-block">{t("previewStep.editLabel")}</Link>
+
           </div>
         </div>
       )}
@@ -247,7 +248,7 @@ export default function PreviewPage() {
       )}
 
       <div className="flex items-center justify-between pt-2">
-        <Link href="/dashboard/smart-send/settings" className="text-sm text-slate-500 hover:text-slate-700">{t("wizard.back")}</Link>
+        <Link href="/dashboard/smart-send/letter" className="text-sm text-slate-500 hover:text-slate-700">{t("wizard.back")}</Link>
         <button
           onClick={handleLaunch}
           disabled={launching || editing || !wizard.list_id || !wizard.subject}
