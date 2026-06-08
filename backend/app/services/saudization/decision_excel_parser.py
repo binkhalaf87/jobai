@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 # ── Column aliases ─────────────────────────────────────────────────────────────
 
 _PROF_ALIASES       = {"المهنة", "اسم المهنة", "مهنة", "النشاط", "القطاع", "الوظيفة",
-                        "profession", "profession ar", "profession arabic", "profession en",
-                        "profession name", "job title", "activity", "sector", "occupation"}
+                        "profession ar", "profession arabic", "profession en", "profession name",
+                        "job title", "occupation title", "profession ar name"}
 _TARGET_ALIASES     = {"نسبة التوطين", "النسبة المستهدفة", "نسبة", "هدف", "الهدف",
                         "target", "target %", "percentage", "target percentage", "نسبة التوطين %",
                         "localized%", "localized %", "localization%", "localization %",
@@ -23,9 +23,11 @@ _MIN_SAL_ALIASES    = {"الراتب الأدنى", "أدنى راتب", "الح
                         "min salary", "minimum salary", "salary"}
 _CALC_ALIASES       = {"طريقة الاحتساب", "الاحتساب", "طريقة", "كيفية الاحتساب",
                         "calculation", "calculation method", "method"}
-_DEC_NUM_ALIASES    = {"رقم القرار", "القرار", "رقم", "decision number", "decision #", "decision no",
-                        "professional group", "group", "category", "مجموعة", "المجموعة",
-                        "المجموعة المهنية", "مجموعة مهنية", "القطاع المهني", "التصنيف"}
+_GROUP_ALIASES      = {"professional group", "group", "category", "مجموعة", "المجموعة",
+                        "المجموعة المهنية", "مجموعة مهنية", "القطاع المهني", "التصنيف",
+                        "professional category"}
+_DEC_NUM_ALIASES    = {"رقم القرار", "القرار", "decision number", "decision #", "decision no",
+                        "nitaqat decision", "decision id"}
 _DEC_DATE_ALIASES   = {"تاريخ القرار", "التاريخ", "decision date", "date"}
 _DEC_AUTH_ALIASES   = {"الجهة المصدرة", "الجهة", "issuing authority", "authority", "issued by"}
 _DEC_TITLE_ALIASES  = {"عنوان القرار", "العنوان", "الموضوع", "title", "subject"}
@@ -39,18 +41,22 @@ def _norm(v: Any) -> str:
 
 def _match(header: str, aliases: set[str]) -> bool:
     h = _norm(header)
+    # Require at least 2 chars — prevents "م" / "#" from matching long Arabic aliases
+    if len(h) < 2:
+        return False
     return any(a in h or h in a for a in aliases)
 
 
 def _find_col(headers: list[str], aliases: set[str]) -> int | None:
     norm_aliases = {_norm(a) for a in aliases}
-    # Exact match first (prevents "Professional Group" stealing "Profession AR")
+    # Pass 1 — exact match (e.g. "profession ar" == alias)
     for i, h in enumerate(headers):
         if _norm(h) in norm_aliases:
             return i
-    # Substring fallback
+    # Pass 2 — substring, but only when header is meaningful (>= 3 chars)
     for i, h in enumerate(headers):
-        if _match(h, aliases):
+        hn = _norm(h)
+        if len(hn) >= 3 and _match(h, aliases):
             return i
     return None
 
@@ -59,7 +65,23 @@ def _val(row: tuple, idx: int | None) -> str | None:
     if idx is None or idx >= len(row):
         return None
     v = row[idx]
-    return str(v).strip() if v is not None else None
+    if v is None:
+        return None
+    # openpyxl returns date/datetime as Python objects — format as ISO date string
+    import datetime
+    if isinstance(v, (datetime.date, datetime.datetime)):
+        return v.strftime("%Y-%m-%d")
+    return str(v).strip()
+
+
+def _clean_date(raw: str | None) -> str | None:
+    """Strip time component from Excel datetime strings like '2025-11-30 00:00:00'."""
+    if not raw:
+        return raw
+    # openpyxl may return datetime objects rendered as "YYYY-MM-DD HH:MM:SS"
+    if " " in raw and raw.count("-") >= 2:
+        return raw.split(" ")[0]
+    return raw
 
 
 def parse_decision_excel(file_bytes: bytes) -> list[dict[str, Any]]:
@@ -104,7 +126,8 @@ def parse_decision_excel(file_bytes: bytes) -> list[dict[str, Any]]:
         "min_emp":      _find_col(headers, _MIN_EMP_ALIASES),
         "min_sal":      _find_col(headers, _MIN_SAL_ALIASES),
         "calc":         _find_col(headers, _CALC_ALIASES),
-        "dec_num":      _find_col(headers, _DEC_NUM_ALIASES),
+        "group":        _find_col(headers, _GROUP_ALIASES),    # Professional Group → title
+        "dec_num":      _find_col(headers, _DEC_NUM_ALIASES),  # Decision Number → stored number
         "dec_date":     _find_col(headers, _DEC_DATE_ALIASES),
         "dec_auth":     _find_col(headers, _DEC_AUTH_ALIASES),
         "dec_title":    _find_col(headers, _DEC_TITLE_ALIASES),
@@ -119,7 +142,12 @@ def parse_decision_excel(file_bytes: bytes) -> list[dict[str, Any]]:
         )
 
     # Parse data rows
-    decisions: dict[str, dict] = {}   # keyed by decision_number (or "_default")
+    # Grouping key: Professional Group if available, else Decision Number, else "_default"
+    def _group_key(row: tuple) -> str:
+        g = _val(row, col["group"]) or _val(row, col["dec_num"]) or "_default"
+        return g
+
+    decisions: dict[str, dict] = {}
 
     for row in all_rows[header_idx + 1:]:
         if not any(row):
@@ -129,10 +157,11 @@ def parse_decision_excel(file_bytes: bytes) -> list[dict[str, Any]]:
         if not prof_name:
             continue  # skip rows without a profession name
 
-        # Parse target percentage
+        # Parse target percentage (handle Excel decimal: 0.3 → 30.0)
         raw_target = _val(row, col["target"])
         try:
-            target_pct = float(str(raw_target).replace("%", "").replace("٪", "").strip()) if raw_target else 0.0
+            t = float(str(raw_target).replace("%", "").replace("٪", "").strip()) if raw_target else 0.0
+            target_pct = t * 100 if 0 < t <= 1 else t  # normalise 0.30 → 30
         except ValueError:
             target_pct = 0.0
 
@@ -159,16 +188,18 @@ def parse_decision_excel(file_bytes: bytes) -> list[dict[str, Any]]:
             "notes":              _val(row, col["notes"]),
         }
 
-        # Decision grouping key
-        dec_num  = _val(row, col["dec_num"])  or "_default"
-        dec_date = _val(row, col["dec_date"])
-        dec_auth = _val(row, col["dec_auth"])
-        dec_title= _val(row, col["dec_title"])
-        dec_def  = _val(row, col["dec_def"])
+        # Decision grouping
+        group_key = _group_key(row)
+        dec_num   = _val(row, col["dec_num"])
+        dec_date  = _clean_date(_val(row, col["dec_date"]))
+        dec_auth  = _val(row, col["dec_auth"])
+        # decision_title: prefer explicit title col, fall back to group column value
+        dec_title = _val(row, col["dec_title"]) or (_val(row, col["group"]) if col["group"] != col["dec_num"] else None)
+        dec_def   = _val(row, col["dec_def"])
 
-        if dec_num not in decisions:
-            decisions[dec_num] = {
-                "decision_number":    dec_num if dec_num != "_default" else None,
+        if group_key not in decisions:
+            decisions[group_key] = {
+                "decision_number":    dec_num,
                 "decision_date":      dec_date,
                 "decision_title":     dec_title,
                 "issuing_authority":  dec_auth,
@@ -177,12 +208,13 @@ def parse_decision_excel(file_bytes: bytes) -> list[dict[str, Any]]:
             }
         else:
             # Fill in any missing decision-level metadata from later rows
-            d = decisions[dec_num]
+            d = decisions[group_key]
+            if not d["decision_number"]    and dec_num:   d["decision_number"]     = dec_num
             if not d["decision_date"]      and dec_date:  d["decision_date"]       = dec_date
             if not d["issuing_authority"]  and dec_auth:  d["issuing_authority"]   = dec_auth
             if not d["decision_title"]     and dec_title: d["decision_title"]      = dec_title
             if not d["decision_definition"]and dec_def:   d["decision_definition"] = dec_def
 
-        decisions[dec_num]["targeted_professions"].append(profession_entry)
+        decisions[group_key]["targeted_professions"].append(profession_entry)
 
     return list(decisions.values())
