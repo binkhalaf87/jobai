@@ -40,11 +40,22 @@ type Decision = {
   created_at: string;
 };
 
+type GosiEmployee = {
+  name: string | null; national_id: string | null; nationality: string;
+  job_title: string | null; gender: string | null;
+  hire_date: string | null; birth_date: string | null;
+  basic_salary: number | null; housing: number | null;
+  variables: number | null; allowances: number | null;
+  total_wage: number | null; special_wage: number | null;
+  is_saudi: boolean;
+};
+
 type Report = {
   id: string; company_id: string; company_name: string;
   source_filename: string | null; report_date: string | null;
   report_label: string | null;
   summary: GosiSummary | null;
+  employees?: GosiEmployee[] | null;
   processing_status: string; created_at: string;
 };
 
@@ -638,67 +649,74 @@ function DecisionAccordion({ decision }: { decision: Decision }) {
   );
 }
 
-// ── Report Summary Modal ───────────────────────────────────────────────────────
+// ── Report Accordion (inline employee table) ──────────────────────────────────
 
-function ReportModal({ report, onClose }: { report: Report; onClose: () => void }) {
+function ReportAccordion({
+  report,
+  employees,
+  loading,
+}: {
+  report: Report;
+  employees: GosiEmployee[] | null;
+  loading: boolean;
+}) {
   const summary = report.summary;
+  const fmt = (n: number | null | undefined) =>
+    n != null ? n.toLocaleString("ar-SA") : "—";
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h3 className="text-base font-bold text-slate-900">ملخص التقرير</h3>
-            <p className="text-[12px] text-slate-400">{report.source_filename}</p>
-          </div>
-          <button onClick={onClose} className="rounded-lg p-1.5 hover:bg-slate-100"><X size={16}/></button>
-        </div>
-        {summary ? (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {[
-                { label: "الإجمالي",     value: summary.total,                            cls: "text-slate-800" },
-                { label: "السعوديون",    value: summary.saudi_count,                      cls: "text-emerald-700" },
-                { label: "غير السعوديين",value: summary.non_saudi_count,                  cls: "text-slate-600" },
-                { label: "نسبة التوطين",  value: `${summary.saudization_pct?.toFixed(1)}%`, cls: pctColor(summary.saudization_pct) },
-              ].map(({ label, value, cls }) => (
-                <div key={label} className="rounded-xl bg-slate-50 p-3 text-center">
-                  <p className={`text-xl font-bold ${cls}`}>{value}</p>
-                  <p className="text-[11px] text-slate-500">{label}</p>
-                </div>
-              ))}
+    <div className="border-t border-slate-100 bg-slate-50/60 px-4 pb-4 pt-3">
+      {/* KPI row */}
+      {summary && (
+        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {[
+            { label: "الإجمالي",      value: summary.total,                              cls: "text-slate-800" },
+            { label: "السعوديون",     value: summary.saudi_count,                        cls: "text-emerald-700" },
+            { label: "غير سعوديين",   value: summary.non_saudi_count,                    cls: "text-slate-600" },
+            { label: "نسبة التوطين",   value: `${summary.saudization_pct?.toFixed(1)}%`, cls: pctColor(summary.saudization_pct) },
+          ].map(({ label, value, cls }) => (
+            <div key={label} className="rounded-xl bg-white p-3 text-center shadow-sm">
+              <p className={`text-lg font-bold ${cls}`}>{value}</p>
+              <p className="text-[11px] text-slate-500">{label}</p>
             </div>
-            {Object.keys(summary.by_profession).length > 0 && (
-              <div>
-                <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">توزيع المهن</p>
-                <div className="max-h-60 overflow-y-auto rounded-xl border border-slate-100">
-                  <table className="w-full text-sm">
-                    <thead className="sticky top-0 bg-slate-50">
-                      <tr>
-                        <th className="px-3 py-2 text-right text-[11px] text-slate-500">المهنة</th>
-                        <th className="px-3 py-2 text-center text-[11px] text-slate-500">الإجمالي</th>
-                        <th className="px-3 py-2 text-center text-[11px] text-slate-500">سعودي</th>
-                        <th className="px-3 py-2 text-center text-[11px] text-slate-500">النسبة</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
-                      {Object.entries(summary.by_profession).map(([title, stats]) => (
-                        <tr key={title} className="hover:bg-slate-50/60">
-                          <td className="px-3 py-2 text-slate-700" dir="rtl">{title}</td>
-                          <td className="px-3 py-2 text-center text-slate-600">{stats.total}</td>
-                          <td className="px-3 py-2 text-center text-emerald-700">{stats.saudi}</td>
-                          <td className={`px-3 py-2 text-center font-semibold ${pctColor(stats.pct)}`}>{stats.pct?.toFixed(1)}%</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <p className="py-6 text-center text-sm text-slate-400">لا تتوفر بيانات ملخص</p>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
+
+      {/* Employee table */}
+      {loading ? (
+        <div className="flex justify-center py-6"><Loader2 size={18} className="animate-spin text-slate-400"/></div>
+      ) : employees && employees.length > 0 ? (
+        <div className="overflow-x-auto rounded-xl border border-slate-100 bg-white shadow-sm">
+          <table className="w-full text-xs">
+            <thead className="sticky top-0 bg-slate-50">
+              <tr>
+                {["اسم المشترك","الجنسية","المهنة","الجنس","تاريخ الميلاد","الأجر الأساسي","السكن","البدلات","الأجر الإجمالي","تاريخ الإلتحاق"].map(h => (
+                  <th key={h} className="whitespace-nowrap px-3 py-2 text-right text-[11px] text-slate-500">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {employees.map((e, i) => (
+                <tr key={i} className={`hover:bg-slate-50/60 ${e.is_saudi ? "" : "opacity-80"}`}>
+                  <td className="px-3 py-2 font-medium text-slate-800 whitespace-nowrap" dir="rtl">{e.name || "—"}</td>
+                  <td className="px-3 py-2 text-slate-600 whitespace-nowrap">{e.nationality || "—"}</td>
+                  <td className="px-3 py-2 text-slate-600 whitespace-nowrap" dir="rtl">{e.job_title || "—"}</td>
+                  <td className="px-3 py-2 text-slate-600 text-center">{e.gender || "—"}</td>
+                  <td className="px-3 py-2 text-slate-500 text-center">{e.birth_date || "—"}</td>
+                  <td className="px-3 py-2 text-center text-slate-700">{fmt(e.basic_salary)}</td>
+                  <td className="px-3 py-2 text-center text-slate-600">{fmt(e.housing)}</td>
+                  <td className="px-3 py-2 text-center text-slate-600">{fmt(e.allowances)}</td>
+                  <td className="px-3 py-2 text-center font-semibold text-slate-800">{fmt(e.total_wage)}</td>
+                  <td className="px-3 py-2 text-center text-slate-500">{e.hire_date || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p className="py-4 text-center text-[12px] text-slate-400">لا توجد بيانات موظفين</p>
+      )}
     </div>
   );
 }
@@ -740,12 +758,14 @@ export default function SaudizationPage() {
   const decisionFileRef = useRef<HTMLInputElement>(null);
 
   // Reports upload
-  const [uploadingReport, setUploadingReport] = useState(false);
-  const [reportCompany,   setReportCompany]   = useState("");
-  const [reportDate,      setReportDate]      = useState("");
-  const [reportLabel,     setReportLabel]     = useState("");
-  const [selectedReport,  setSelectedReport]  = useState<Report | null>(null);
-  const [uploadError,     setUploadError]     = useState<string[]>([]);
+  const [uploadingReport,      setUploadingReport]      = useState(false);
+  const [reportCompany,        setReportCompany]        = useState("");
+  const [reportDate,           setReportDate]           = useState("");
+  const [reportLabel,          setReportLabel]          = useState("");
+  const [uploadError,          setUploadError]          = useState<string[]>([]);
+  const [expandedReportId,     setExpandedReportId]     = useState<string | null>(null);
+  const [reportEmployees,      setReportEmployees]      = useState<Record<string, GosiEmployee[]>>({});
+  const [loadingReportEmp,     setLoadingReportEmp]     = useState<string | null>(null);
   const reportFileRef = useRef<HTMLInputElement>(null);
 
   // Analysis
@@ -788,6 +808,25 @@ export default function SaudizationPage() {
   async function loadAnalyses() {
     try { setAnalyses(await api.get<Analysis[]>("/recruiter/saudization/analyses")); }
     catch {} finally { setAnalysesLoading(false); }
+  }
+
+  async function toggleReport(reportId: string) {
+    if (expandedReportId === reportId) {
+      setExpandedReportId(null);
+      return;
+    }
+    setExpandedReportId(reportId);
+    if (!reportEmployees[reportId]) {
+      setLoadingReportEmp(reportId);
+      try {
+        const data = await api.get<Report>(`/recruiter/saudization/reports/${reportId}`);
+        setReportEmployees((prev) => ({ ...prev, [reportId]: data.employees || [] }));
+      } catch {
+        setReportEmployees((prev) => ({ ...prev, [reportId]: [] }));
+      } finally {
+        setLoadingReportEmp(null);
+      }
+    }
   }
 
   async function addCompany(name: string, cr: string) {
@@ -1082,53 +1121,66 @@ export default function SaudizationPage() {
             <EmptyState icon={<FileSpreadsheet size={24}/>} title="لا توجد تقارير بعد" sub="ارفع ملف Excel من التأمينات الاجتماعية"/>
           ) : (
             <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-4 py-3 text-right text-[11px] text-slate-500">التقرير</th>
-                    <th className="px-4 py-3 text-right text-[11px] text-slate-500">الشركة</th>
-                    <th className="px-4 py-3 text-center text-[11px] text-slate-500">الموظفون</th>
-                    <th className="px-4 py-3 text-center text-[11px] text-slate-500">التوطين</th>
-                    <th className="px-4 py-3 text-center text-[11px] text-slate-500">الحالة</th>
-                    <th className="px-4 py-3 text-center text-[11px] text-slate-500">إجراءات</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {reports.map((r) => (
-                    <tr key={r.id} className="hover:bg-slate-50/60">
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-slate-800">{r.report_label || r.source_filename || "تقرير"}</p>
-                        {r.report_date && <p className="text-[11px] text-slate-400">{r.report_date}</p>}
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">{r.company_name}</td>
-                      <td className="px-4 py-3 text-center text-slate-700">{r.summary?.total ?? "—"}</td>
-                      <td className="px-4 py-3 text-center">
+              {reports.map((r, idx) => {
+                const isExpanded = expandedReportId === r.id;
+                const isReady = r.processing_status === "extracted";
+                return (
+                  <div key={r.id} className={idx > 0 ? "border-t border-slate-100" : ""}>
+                    <div
+                      className={`flex items-center gap-3 px-4 py-3 ${isReady ? "cursor-pointer hover:bg-slate-50/60" : ""}`}
+                      onClick={isReady ? () => toggleReport(r.id) : undefined}
+                    >
+                      {/* Expand chevron */}
+                      <div className="flex-shrink-0 text-slate-400">
+                        {isReady
+                          ? isExpanded
+                            ? <ChevronDown size={15}/>
+                            : <ChevronRight size={15}/>
+                          : <span className="w-4 inline-block"/>}
+                      </div>
+
+                      {/* Report name + upload date */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-slate-800 truncate">{r.report_label || r.source_filename || "تقرير"}</p>
+                        <p className="text-[11px] text-slate-400">
+                          تاريخ الرفع: {r.created_at ? r.created_at.split("T")[0] : "—"}
+                          {r.report_date && <span> · {r.report_date}</span>}
+                        </p>
+                      </div>
+
+                      {/* Company */}
+                      <div className="hidden sm:block text-[13px] text-slate-600 flex-shrink-0 w-36 truncate text-right">{r.company_name}</div>
+
+                      {/* Employees count */}
+                      <div className="text-center text-slate-700 flex-shrink-0 w-16 text-[13px]">{r.summary?.total ?? "—"}</div>
+
+                      {/* Saudization pct */}
+                      <div className="text-center flex-shrink-0 w-20">
                         {r.summary
                           ? <span className={`text-base font-black ${pctColor(r.summary.saudization_pct)}`}>{r.summary.saudization_pct?.toFixed(1)}%</span>
-                          : "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <StatusIcon s={r.processing_status}/>
-                          <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${PROC_BADGE[r.processing_status] || PROC_BADGE.uploaded}`}>
-                            {PROC_LABEL[r.processing_status] || r.processing_status}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        {r.processing_status === "extracted" && (
-                          <button
-                            onClick={() => setSelectedReport(r)}
-                            className="flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-[12px] font-semibold text-emerald-700 hover:bg-emerald-100"
-                          >
-                            <Eye size={12}/> عرض البيانات
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                          : <span className="text-slate-400">—</span>}
+                      </div>
+
+                      {/* Status badge */}
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <StatusIcon s={r.processing_status}/>
+                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${PROC_BADGE[r.processing_status] || PROC_BADGE.uploaded}`}>
+                          {PROC_LABEL[r.processing_status] || r.processing_status}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Accordion body */}
+                    {isExpanded && isReady && (
+                      <ReportAccordion
+                        report={r}
+                        employees={reportEmployees[r.id] ?? null}
+                        loading={loadingReportEmp === r.id}
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -1273,9 +1325,6 @@ export default function SaudizationPage() {
       {/* Modals */}
       {showCompanyModal && (
         <CompanyModal companies={companies} onAdd={addCompany} onClose={() => setShowCompanyModal(false)}/>
-      )}
-      {selectedReport && (
-        <ReportModal report={selectedReport} onClose={() => setSelectedReport(null)}/>
       )}
     </div>
   );

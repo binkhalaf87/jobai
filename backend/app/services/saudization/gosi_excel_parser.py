@@ -9,12 +9,20 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 # Common Arabic/English column name aliases for GOSI exports
-_NAME_ALIASES = {"الاسم", "اسم الموظف", "name", "employee name", "full name"}
+_NAME_ALIASES = {"الاسم", "اسم الموظف", "اسم المشترك", "المشترك", "name", "employee name", "full name", "subscriber name"}
 _ID_ALIASES = {"رقم الهوية", "رقم الإقامة", "هوية", "national id", "iqama", "id number", "رقم الوثيقة"}
 _NATIONALITY_ALIASES = {"الجنسية", "nationality", "جنسية"}
 _JOB_ALIASES = {"المهنة", "المسمى الوظيفي", "job title", "profession", "occupation", "وظيفة", "مهنة"}
 _GENDER_ALIASES = {"الجنس", "gender", "sex", "جنس"}
-_HIRE_DATE_ALIASES = {"تاريخ التعيين", "تاريخ الالتحاق", "hire date", "start date", "joining date"}
+_HIRE_DATE_ALIASES = {"تاريخ التعيين", "تاريخ الالتحاق", "تاريخ الإلتحاق", "تاريخ الالتحاق بالعمل",
+                       "hire date", "start date", "joining date", "join date"}
+_BIRTH_DATE_ALIASES = {"تاريخ الميلاد", "الميلاد", "birth date", "date of birth", "dob"}
+_BASIC_SALARY_ALIASES = {"الأجر الأساسي", "الراتب الأساسي", "أجر أساسي", "basic salary", "basic wage", "basic"}
+_HOUSING_ALIASES = {"السكن", "بدل سكن", "housing", "housing allowance"}
+_VARIABLES_ALIASES = {"المتغيرات", "متغيرات", "variables", "variable pay"}
+_ALLOWANCES_ALIASES = {"البدلات", "بدلات", "allowances", "other allowances"}
+_TOTAL_WAGE_ALIASES = {"الأجر الإجمالي", "الراتب الإجمالي", "إجمالي الراتب", "total wage", "total salary", "gross salary"}
+_SPECIAL_WAGE_ALIASES = {"الأجر الخاص", "راتب خاص", "special wage", "special salary"}
 
 SAUDI_NATIONALITY_VALUES = {"سعودي", "سعودية", "saudi", "saudi arabia", "sa", "سعودي/ة"}
 
@@ -62,7 +70,7 @@ def validate_gosi_excel_bytes(file_bytes: bytes) -> list[str]:
         if has_name or has_nat or has_job:
             errors: list[str] = []
             if not has_name:
-                errors.append("عمود اسم الموظف غير موجود — المتوقع: «الاسم» أو «اسم الموظف» أو «Employee Name»")
+                errors.append("عمود اسم الموظف/المشترك غير موجود — المتوقع: «اسم المشترك» أو «الاسم» أو «Employee Name»")
             if not has_nat:
                 errors.append("عمود الجنسية غير موجود — المتوقع: «الجنسية» أو «Nationality»")
             if not has_job:
@@ -72,7 +80,7 @@ def validate_gosi_excel_bytes(file_bytes: bytes) -> list[str]:
     return [
         "لم يُعثر على صف رؤوس الأعمدة في أول 12 صفاً. "
         "تأكد أن الملف يحتوي على بيانات موظفين من التأمينات الاجتماعية (GOSI) "
-        "وأن الأعمدة المطلوبة هي: الاسم، الجنسية، المهنة."
+        "وأن الأعمدة المطلوبة هي: اسم المشترك، الجنسية، المهنة."
     ]
 
 
@@ -116,12 +124,40 @@ def parse_gosi_excel(file_path: Path) -> dict[str, Any]:
     else:
         headers = [str(c) if c is not None else f"col_{i}" for i, c in enumerate(rows[0])]
 
-    name_idx = _find_column(headers, _NAME_ALIASES)
-    id_idx = _find_column(headers, _ID_ALIASES)
-    nat_idx = _find_column(headers, _NATIONALITY_ALIASES)
-    job_idx = _find_column(headers, _JOB_ALIASES)
-    gender_idx = _find_column(headers, _GENDER_ALIASES)
-    hire_idx = _find_column(headers, _HIRE_DATE_ALIASES)
+    name_idx         = _find_column(headers, _NAME_ALIASES)
+    id_idx           = _find_column(headers, _ID_ALIASES)
+    nat_idx          = _find_column(headers, _NATIONALITY_ALIASES)
+    job_idx          = _find_column(headers, _JOB_ALIASES)
+    gender_idx       = _find_column(headers, _GENDER_ALIASES)
+    hire_idx         = _find_column(headers, _HIRE_DATE_ALIASES)
+    birth_idx        = _find_column(headers, _BIRTH_DATE_ALIASES)
+    basic_sal_idx    = _find_column(headers, _BASIC_SALARY_ALIASES)
+    housing_idx      = _find_column(headers, _HOUSING_ALIASES)
+    variables_idx    = _find_column(headers, _VARIABLES_ALIASES)
+    allowances_idx   = _find_column(headers, _ALLOWANCES_ALIASES)
+    total_wage_idx   = _find_column(headers, _TOTAL_WAGE_ALIASES)
+    special_wage_idx = _find_column(headers, _SPECIAL_WAGE_ALIASES)
+
+    import datetime as _dt
+
+    def _fmt_date(v: Any) -> str | None:
+        if v is None:
+            return None
+        if isinstance(v, (_dt.date, _dt.datetime)):
+            return v.strftime("%Y-%m-%d")
+        s = str(v).strip()
+        # strip time portion "2025-01-01 00:00:00"
+        if " " in s and s.count("-") >= 2:
+            return s.split(" ")[0]
+        return s or None
+
+    def _fmt_num(v: Any) -> float | None:
+        if v is None:
+            return None
+        try:
+            return float(str(v).replace(",", "").strip())
+        except (ValueError, TypeError):
+            return None
 
     employees: list[dict] = []
     for row in rows[header_row_idx + 1:]:
@@ -132,16 +168,32 @@ def parse_gosi_excel(file_path: Path) -> dict[str, Any]:
             if idx is None or idx >= len(row):
                 return None
             v = row[idx]
-            return str(v).strip() if v is not None else None
+            if v is None:
+                return None
+            if isinstance(v, (_dt.date, _dt.datetime)):
+                return v.strftime("%Y-%m-%d")
+            return str(v).strip() or None
+
+        def getr(idx: int | None) -> Any:
+            if idx is None or idx >= len(row):
+                return None
+            return row[idx]
 
         nationality = get(nat_idx) or ""
         employees.append({
-            "name": get(name_idx),
-            "national_id": get(id_idx),
-            "nationality": nationality,
-            "job_title": get(job_idx),
-            "gender": get(gender_idx),
-            "hire_date": get(hire_idx),
+            "name":         get(name_idx),
+            "national_id":  get(id_idx),
+            "nationality":  nationality,
+            "job_title":    get(job_idx),
+            "gender":       get(gender_idx),
+            "hire_date":    _fmt_date(getr(hire_idx)),
+            "birth_date":   _fmt_date(getr(birth_idx)),
+            "basic_salary": _fmt_num(getr(basic_sal_idx)),
+            "housing":      _fmt_num(getr(housing_idx)),
+            "variables":    _fmt_num(getr(variables_idx)),
+            "allowances":   _fmt_num(getr(allowances_idx)),
+            "total_wage":   _fmt_num(getr(total_wage_idx)),
+            "special_wage": _fmt_num(getr(special_wage_idx)),
             "is_saudi": _normalize(nationality) in {_normalize(v) for v in SAUDI_NATIONALITY_VALUES},
         })
 

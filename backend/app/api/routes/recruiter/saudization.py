@@ -60,6 +60,7 @@ class ReportOut(BaseModel):
     report_date: str | None
     report_label: str | None
     summary: dict | None
+    employees: list | None = None   # only populated in GET /reports/{id}
     processing_status: str
     created_at: str
 
@@ -340,6 +341,19 @@ async def upload_report(
 
     company = db.get(RecruiterCompany, company_id)
     return _report_out(report, company.name if company else "")
+
+
+@router.get("/reports/{report_id}", response_model=ReportOut)
+def get_report(
+    report_id: str,
+    current_user: User = Depends(get_current_recruiter),
+    db: Session = Depends(get_db),
+):
+    report = _get_owned_report(report_id, current_user.id, db)
+    company = db.get(RecruiterCompany, report.company_id) if report.company_id else None
+    out = _report_out(report, company.name if company else "")
+    out.employees = report.employees or []
+    return out
 
 
 @router.get("/reports", response_model=list[ReportOut])
