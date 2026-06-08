@@ -35,6 +35,47 @@ def _find_column(headers: list[str], aliases: set[str]) -> int | None:
     return None
 
 
+def validate_gosi_excel_bytes(file_bytes: bytes) -> list[str]:
+    """
+    Quickly validate that file_bytes looks like a GOSI Excel with required columns.
+    Returns a list of Arabic error strings (empty list = valid).
+    """
+    try:
+        import openpyxl
+        from io import BytesIO
+        wb = openpyxl.load_workbook(BytesIO(file_bytes), read_only=True, data_only=True)
+        ws = wb.active
+        rows = list(ws.iter_rows(max_row=12, values_only=True))
+        wb.close()
+    except Exception as e:
+        return [f"لا يمكن قراءة الملف: {e}"]
+
+    if not rows:
+        return ["الملف فارغ."]
+
+    # Look for a header row in first 12 rows
+    for row in rows:
+        row_strs = [str(c) if c is not None else "" for c in row]
+        has_name = any(_match_column(h, _NAME_ALIASES) for h in row_strs)
+        has_nat  = any(_match_column(h, _NATIONALITY_ALIASES) for h in row_strs)
+        has_job  = any(_match_column(h, _JOB_ALIASES) for h in row_strs)
+        if has_name or has_nat or has_job:
+            errors: list[str] = []
+            if not has_name:
+                errors.append("عمود اسم الموظف غير موجود — المتوقع: «الاسم» أو «اسم الموظف» أو «Employee Name»")
+            if not has_nat:
+                errors.append("عمود الجنسية غير موجود — المتوقع: «الجنسية» أو «Nationality»")
+            if not has_job:
+                errors.append("عمود المهنة غير موجود — المتوقع: «المهنة» أو «المسمى الوظيفي» أو «Job Title»")
+            return errors
+
+    return [
+        "لم يُعثر على صف رؤوس الأعمدة في أول 12 صفاً. "
+        "تأكد أن الملف يحتوي على بيانات موظفين من التأمينات الاجتماعية (GOSI) "
+        "وأن الأعمدة المطلوبة هي: الاسم، الجنسية، المهنة."
+    ]
+
+
 def parse_gosi_excel(file_path: Path) -> dict[str, Any]:
     """
     Parse a GOSI Excel file and return employees list + summary stats.

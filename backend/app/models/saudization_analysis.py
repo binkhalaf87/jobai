@@ -24,6 +24,9 @@ class SaudizationAnalysis(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     # [{profession, current_count, current_pct, target_pct, gap_pct, needed}]
     profession_gaps: Mapped[list | None] = mapped_column(JSONB, nullable=True)
 
+    # List of ALL decision IDs used in this analysis (supports multi-decision)
+    decision_ids: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+
     ai_recommendations: Mapped[str | None] = mapped_column(Text, nullable=True)
     ai_status: Mapped[SaudizationAIStatus] = mapped_column(
         SqlEnum(SaudizationAIStatus, name="saudization_ai_status", create_type=False, values_callable=lambda e: [m.value for m in e]),

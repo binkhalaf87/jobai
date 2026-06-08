@@ -39,13 +39,15 @@ class CompanyOut(BaseModel):
 
 class DecisionOut(BaseModel):
     id: str
-    company_id: str
-    company_name: str
+    company_id: str | None
+    company_name: str | None
     source_filename: str | None
     decision_number: str | None
     decision_date: str | None
     decision_title: str | None
     issuing_authority: str | None
+    decision_definition: str | None = None
+    general_notes: str | None = None
     targeted_professions: list | None
     processing_status: str
     created_at: str
@@ -62,17 +64,26 @@ class ReportOut(BaseModel):
     created_at: str
 
 class AnalysisCreate(BaseModel):
-    decision_id: str
+    decision_ids: list[str]   # one or more decision IDs
     report_id: str
 
 class AnalysisOut(BaseModel):
     id: str
     decision_id: str
+    decision_ids: list[str] | None = None
     report_id: str
     current_pct: float | None
     target_pct: float | None
     gap_pct: float | None
     profession_gaps: list | None
+    active_sectors: list | None = None
+    future_sectors: list | None = None
+    compliant_count: int | None = None
+    violation_count: int | None = None
+    below_limit_count: int | None = None
+    active_sector_count: int | None = None
+    unclassified_total: int | None = None
+    unclassified_saudi: int | None = None
     ai_status: str
     ai_recommendations: str | None
     decision: DecisionOut | None = None
@@ -115,9 +126,9 @@ async def upload_decision(
     current_user: User = Depends(get_current_recruiter),
     db: Session = Depends(get_db),
 ):
-    if not company_id:
-        raise HTTPException(status_code=400, detail="company_id is required")
-    _assert_company_owned(company_id, current_user.id, db)
+    # company_id is optional — decisions apply to all companies
+    if company_id:
+        _assert_company_owned(company_id, current_user.id, db)
 
     file_bytes = await file.read()
     if len(file_bytes) > _MAX_PDF_SIZE:
@@ -131,7 +142,7 @@ async def upload_decision(
 
     decision = SaudizationDecision(
         recruiter_id=current_user.id,
-        company_id=company_id,
+        company_id=company_id or None,
         source_filename=file.filename,
         storage_key=storage_key,
         processing_status=SaudizationProcessingStatus.UPLOADED,
@@ -142,23 +153,24 @@ async def upload_decision(
 
     background_tasks.add_task(_extract_decision_task, decision.id, storage_key, storage)
 
-    company = db.get(RecruiterCompany, company_id)
-    return _decision_out(decision, company.name if company else "")
+    company = db.get(RecruiterCompany, company_id) if company_id else None
+    return _decision_out(decision, company.name if company else None)
 
 
 @router.get("/decisions", response_model=list[DecisionOut])
 def list_decisions(
-    company_id: str | None = None,
     current_user: User = Depends(get_current_recruiter),
     db: Session = Depends(get_db),
 ):
-    q = select(SaudizationDecision).where(SaudizationDecision.recruiter_id == current_user.id)
-    if company_id:
-        q = q.where(SaudizationDecision.company_id == company_id)
-    rows = db.execute(q.order_by(SaudizationDecision.created_at.desc())).scalars().all()
+    rows = db.execute(
+        select(SaudizationDecision)
+        .where(SaudizationDecision.recruiter_id == current_user.id)
+        .order_by(SaudizationDecision.created_at.desc())
+    ).scalars().all()
 
-    company_names = _load_company_names([r.company_id for r in rows], db)
-    return [_decision_out(r, company_names.get(r.company_id, "")) for r in rows]
+    company_ids = [r.company_id for r in rows if r.company_id]
+    company_names = _load_company_names(company_ids, db)
+    return [_decision_out(r, company_names.get(r.company_id) if r.company_id else None) for r in rows]
 
 
 @router.get("/decisions/{decision_id}", response_model=DecisionOut)
@@ -168,8 +180,8 @@ def get_decision(
     db: Session = Depends(get_db),
 ):
     decision = _get_owned_decision(decision_id, current_user.id, db)
-    company = db.get(RecruiterCompany, decision.company_id)
-    return _decision_out(decision, company.name if company else "")
+    company = db.get(RecruiterCompany, decision.company_id) if decision.company_id else None
+    return _decision_out(decision, company.name if company else None)
 
 # ── GOSI Reports ───────────────────────────────────────────────────────────────
 
@@ -194,6 +206,15 @@ async def upload_report(
     fname = (file.filename or "").lower()
     if not (fname.endswith(".xlsx") or fname.endswith(".xls")):
         raise HTTPException(status_code=400, detail="File must be an Excel (.xlsx or .xls).")
+
+    # Validate required columns before saving
+    from app.services.saudization.gosi_excel_parser import validate_gosi_excel_bytes
+    col_errors = validate_gosi_excel_bytes(file_bytes)
+    if col_errors:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": "الملف لا يحتوي على الأعمدة المطلوبة", "errors": col_errors},
+        )
 
     ext = ".xlsx" if fname.endswith(".xlsx") else ".xls"
     storage_key = f"saudization/reports/{current_user.id}/{uuid.uuid4()}{ext}"
@@ -238,42 +259,71 @@ def list_reports(
 @router.post("/analyses", response_model=AnalysisOut, status_code=status.HTTP_201_CREATED)
 def create_analysis(
     body: AnalysisCreate,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_recruiter),
     db: Session = Depends(get_db),
 ):
-    decision = _get_owned_decision(body.decision_id, current_user.id, db)
-    report = _get_owned_report(body.report_id, current_user.id, db)
+    if not body.decision_ids:
+        raise HTTPException(status_code=400, detail="يجب تحديد قرار واحد على الأقل.")
 
-    if decision.processing_status != SaudizationProcessingStatus.EXTRACTED:
-        raise HTTPException(status_code=400, detail="القرار لم يكتمل استخراجه بعد.")
+    decisions = []
+    for did in body.decision_ids:
+        dec = _get_owned_decision(did, current_user.id, db)
+        if dec.processing_status != SaudizationProcessingStatus.EXTRACTED:
+            raise HTTPException(status_code=400, detail=f"القرار {dec.decision_number or did} لم يكتمل استخراجه بعد.")
+        decisions.append(dec)
+
+    report = _get_owned_report(body.report_id, current_user.id, db)
     if report.processing_status != SaudizationProcessingStatus.EXTRACTED:
         raise HTTPException(status_code=400, detail="تقرير GOSI لم يكتمل معالجته بعد.")
+
+    # Aggregate professions from all decisions, tagging each with its decision_number
+    all_targeted: list[dict] = []
+    for dec in decisions:
+        for prof in (dec.targeted_professions or []):
+            all_targeted.append({**prof, "decision_number": dec.decision_number})
 
     summary = report.summary or {}
     total = summary.get("total", 0)
     saudi = summary.get("saudi_count", 0)
     by_profession = summary.get("by_profession", {})
-    targeted = decision.targeted_professions or []
 
-    gap = compute_gap_analysis(targeted, by_profession, total, saudi)
+    gap = compute_gap_analysis(all_targeted, by_profession, total, saudi)
 
+    # Store the rich dict in profession_gaps for the dashboard
+    rich_gaps = {
+        "active_sectors": gap["active_sectors"],
+        "future_sectors": gap["future_sectors"],
+        "profession_gaps": gap["profession_gaps"],
+        "compliant_count": gap["compliant_count"],
+        "violation_count": gap["violation_count"],
+        "below_limit_count": gap["below_limit_count"],
+        "active_sector_count": gap["active_sector_count"],
+        "unclassified_total": gap["unclassified_total"],
+        "unclassified_saudi": gap["unclassified_saudi"],
+    }
+
+    primary_decision = decisions[0]
     analysis = SaudizationAnalysis(
         recruiter_id=current_user.id,
-        decision_id=decision.id,
+        decision_id=primary_decision.id,
+        decision_ids=body.decision_ids,
         report_id=report.id,
         current_pct=gap["current_pct"],
         target_pct=gap["target_pct"],
         gap_pct=gap["gap_pct"],
-        profession_gaps=gap["profession_gaps"],
+        profession_gaps=rich_gaps,
         ai_status=SaudizationAIStatus.PENDING,
     )
     db.add(analysis)
     db.commit()
     db.refresh(analysis)
 
-    company_decision = db.get(RecruiterCompany, decision.company_id)
+    background_tasks.add_task(_generate_ai_task, analysis.id)
+
+    company_decision = db.get(RecruiterCompany, primary_decision.company_id)
     company_report = db.get(RecruiterCompany, report.company_id)
-    dec_out = _decision_out(decision, company_decision.name if company_decision else "")
+    dec_out = _decision_out(primary_decision, company_decision.name if company_decision else "")
     rep_out = _report_out(report, company_report.name if company_report else "")
 
     return _analysis_out(analysis, dec_out, rep_out)
@@ -366,6 +416,7 @@ def _extract_decision_task(decision_id: str, storage_key: str, storage) -> None:
         decision.decision_date = result.get("decision_date")
         decision.decision_title = result.get("decision_title")
         decision.issuing_authority = result.get("issuing_authority")
+        decision.decision_definition = result.get("decision_definition")
         decision.targeted_professions = result.get("targeted_professions", [])
         decision.raw_text = result.get("raw_text")
         decision.ai_extracted_data = result
@@ -443,14 +494,24 @@ def _generate_ai_task(analysis_id: str) -> None:
         report = db.get(SaudizationReport, analysis.report_id)
 
         summary = (report.summary or {}) if report else {}
+        gaps = analysis.profession_gaps
+        active_sectors = gaps.get("active_sectors", []) if isinstance(gaps, dict) else (gaps or [])
+        profession_gaps_list = gaps.get("profession_gaps", active_sectors) if isinstance(gaps, dict) else (gaps or [])
+
+        # Collect all decision titles/numbers used
+        decision_ids = analysis.decision_ids or [analysis.decision_id]
+        decisions = [db.get(SaudizationDecision, did) for did in decision_ids if did]
+        decisions = [d for d in decisions if d]
+        decision_title = "; ".join(d.decision_title for d in decisions if d.decision_title) or None
+        decision_number = "; ".join(d.decision_number for d in decisions if d.decision_number) or None
 
         text = generate_recommendations(
-            decision_title=decision.decision_title if decision else None,
-            decision_number=decision.decision_number if decision else None,
+            decision_title=decision_title,
+            decision_number=decision_number,
             current_pct=analysis.current_pct or 0,
             target_pct=analysis.target_pct or 0,
             gap_pct=analysis.gap_pct or 0,
-            profession_gaps=analysis.profession_gaps or [],
+            profession_gaps=profession_gaps_list,
             total_employees=summary.get("total", 0),
             saudi_count=summary.get("saudi_count", 0),
         )
@@ -509,7 +570,8 @@ def _load_company_names(company_ids: list[str], db: Session) -> dict[str, str]:
     return {r.id: r.name for r in rows}
 
 
-def _decision_out(d: SaudizationDecision, company_name: str = "") -> DecisionOut:
+def _decision_out(d: SaudizationDecision, company_name: str | None = None) -> DecisionOut:
+    ai_data = d.ai_extracted_data or {}
     return DecisionOut(
         id=d.id,
         company_id=d.company_id,
@@ -519,6 +581,8 @@ def _decision_out(d: SaudizationDecision, company_name: str = "") -> DecisionOut
         decision_date=d.decision_date,
         decision_title=d.decision_title,
         issuing_authority=d.issuing_authority,
+        decision_definition=d.decision_definition,
+        general_notes=ai_data.get("general_notes"),
         targeted_professions=d.targeted_professions,
         processing_status=d.processing_status.value,
         created_at=d.created_at.isoformat(),
@@ -544,14 +608,45 @@ def _analysis_out(
     decision: DecisionOut | None = None,
     report: ReportOut | None = None,
 ) -> AnalysisOut:
+    gaps = a.profession_gaps
+    if isinstance(gaps, dict):
+        active_sectors = gaps.get("active_sectors")
+        future_sectors = gaps.get("future_sectors")
+        compliant_count = gaps.get("compliant_count")
+        violation_count = gaps.get("violation_count")
+        below_limit_count = gaps.get("below_limit_count")
+        active_sector_count = gaps.get("active_sector_count")
+        unclassified_total = gaps.get("unclassified_total", 0)
+        unclassified_saudi = gaps.get("unclassified_saudi", 0)
+        legacy_gaps = gaps.get("profession_gaps")
+    else:
+        active_sectors = None
+        future_sectors = None
+        compliant_count = None
+        violation_count = None
+        below_limit_count = None
+        active_sector_count = None
+        unclassified_total = None
+        unclassified_saudi = None
+        legacy_gaps = gaps
+
     return AnalysisOut(
         id=a.id,
         decision_id=a.decision_id,
+        decision_ids=a.decision_ids,
         report_id=a.report_id,
         current_pct=a.current_pct,
         target_pct=a.target_pct,
         gap_pct=a.gap_pct,
-        profession_gaps=a.profession_gaps,
+        profession_gaps=legacy_gaps,
+        active_sectors=active_sectors,
+        future_sectors=future_sectors,
+        compliant_count=compliant_count,
+        violation_count=violation_count,
+        below_limit_count=below_limit_count,
+        active_sector_count=active_sector_count,
+        unclassified_total=unclassified_total,
+        unclassified_saudi=unclassified_saudi,
         ai_status=a.ai_status.value,
         ai_recommendations=a.ai_recommendations,
         decision=decision,
