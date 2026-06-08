@@ -16,10 +16,10 @@ class SaudizationDecision(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     recruiter_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     company_id: Mapped[str | None] = mapped_column(ForeignKey("recruiter_companies.id", ondelete="SET NULL"), nullable=True, index=True)
 
-    decision_number: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    decision_date: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    decision_number: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    decision_date: Mapped[str | None] = mapped_column(String(300), nullable=True)
     decision_title: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    issuing_authority: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    issuing_authority: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     # Full definition/description of what the decision mandates
     decision_definition: Mapped[str | None] = mapped_column(Text, nullable=True)

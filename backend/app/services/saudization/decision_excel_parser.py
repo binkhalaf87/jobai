@@ -23,7 +23,9 @@ _MIN_SAL_ALIASES    = {"الراتب الأدنى", "أدنى راتب", "الح
                         "min salary", "minimum salary", "salary"}
 _CALC_ALIASES       = {"طريقة الاحتساب", "الاحتساب", "طريقة", "كيفية الاحتساب",
                         "calculation", "calculation method", "method"}
-_DEC_NUM_ALIASES    = {"رقم القرار", "القرار", "رقم", "decision number", "decision #", "decision no"}
+_DEC_NUM_ALIASES    = {"رقم القرار", "القرار", "رقم", "decision number", "decision #", "decision no",
+                        "professional group", "group", "category", "مجموعة", "المجموعة",
+                        "المجموعة المهنية", "مجموعة مهنية", "القطاع المهني", "التصنيف"}
 _DEC_DATE_ALIASES   = {"تاريخ القرار", "التاريخ", "decision date", "date"}
 _DEC_AUTH_ALIASES   = {"الجهة المصدرة", "الجهة", "issuing authority", "authority", "issued by"}
 _DEC_TITLE_ALIASES  = {"عنوان القرار", "العنوان", "الموضوع", "title", "subject"}
