@@ -6,6 +6,7 @@ import {
   CheckCircle, AlertCircle, Clock, Sparkles, ChevronRight, X,
   TrendingUp, AlertTriangle, ChevronDown, ChevronUp, Printer,
   Download, Users, ShieldCheck, ShieldAlert, ArrowUpRight,
+  Trash2, RefreshCw,
 } from "lucide-react";
 
 import { api } from "@/lib/api";
@@ -794,6 +795,28 @@ export default function SaudizationPage() {
     setCompanies((p) => [c, ...p]);
   }
 
+  async function deleteDecision(id: string) {
+    if (!confirm("هل أنت متأكد من حذف هذا القرار؟ سيتم حذف جميع التحليلات المرتبطة به.")) return;
+    try {
+      await api.delete(`/recruiter/saudization/decisions/${id}`);
+      setDecisions((p) => p.filter((d) => d.id !== id));
+      if (expandedDecisionId === id) setExpandedDecisionId(null);
+      setSelectedDecIds((p) => p.filter((x) => x !== id));
+    } catch (e: any) {
+      alert(e?.message || "حدث خطأ أثناء الحذف");
+    }
+  }
+
+  async function reextractDecision(id: string) {
+    try {
+      const updated = await api.post<Decision>(`/recruiter/saudization/decisions/${id}/reextract`, {});
+      setDecisions((p) => p.map((d) => (d.id === id ? updated : d)));
+      setExpandedDecisionId(null);
+    } catch (e: any) {
+      alert(e?.message || "حدث خطأ أثناء إعادة الاستخراج");
+    }
+  }
+
   async function uploadDecision(file: File) {
     setUploadingDecision(true);
     try {
@@ -977,19 +1000,35 @@ export default function SaudizationPage() {
                       {PROC_LABEL[d.processing_status] || d.processing_status}
                     </span>
 
-                    {/* Expand button */}
-                    {d.processing_status === "extracted" && (
+                    {/* Action buttons */}
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      {d.processing_status === "extracted" && (
+                        <button
+                          onClick={() => setExpandedDecisionId(expandedDecisionId === d.id ? null : d.id)}
+                          className="flex items-center gap-1 rounded-lg bg-brand-50 px-2.5 py-1.5 text-[12px] font-semibold text-brand-700 hover:bg-brand-100"
+                        >
+                          <Eye size={12}/>
+                          {expandedDecisionId === d.id ? "إغلاق" : "التفاصيل"}
+                          {expandedDecisionId === d.id ? <ChevronUp size={11}/> : <ChevronDown size={11}/>}
+                        </button>
+                      )}
                       <button
-                        onClick={() => setExpandedDecisionId(expandedDecisionId === d.id ? null : d.id)}
-                        className="flex shrink-0 items-center gap-1 rounded-lg bg-brand-50 px-2.5 py-1.5 text-[12px] font-semibold text-brand-700 hover:bg-brand-100"
+                        onClick={() => reextractDecision(d.id)}
+                        title="إعادة الاستخراج بالذكاء الاصطناعي"
+                        className="flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1.5 text-[12px] font-semibold text-amber-700 hover:bg-amber-100"
                       >
-                        <Eye size={12}/>
-                        {expandedDecisionId === d.id ? "إغلاق" : "عرض التفاصيل"}
-                        {expandedDecisionId === d.id
-                          ? <ChevronUp size={11}/>
-                          : <ChevronDown size={11}/>}
+                        <RefreshCw size={12}/>
+                        إعادة الاستخراج
                       </button>
-                    )}
+                      <button
+                        onClick={() => deleteDecision(d.id)}
+                        title="حذف القرار"
+                        className="flex items-center gap-1 rounded-lg bg-rose-50 px-2.5 py-1.5 text-[12px] font-semibold text-rose-700 hover:bg-rose-100"
+                      >
+                        <Trash2 size={12}/>
+                        حذف
+                      </button>
+                    </div>
                   </div>
 
                   {/* Inline accordion */}

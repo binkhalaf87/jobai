@@ -183,6 +183,46 @@ def get_decision(
     company = db.get(RecruiterCompany, decision.company_id) if decision.company_id else None
     return _decision_out(decision, company.name if company else None)
 
+
+@router.delete("/decisions/{decision_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_decision(
+    decision_id: str,
+    current_user: User = Depends(get_current_recruiter),
+    db: Session = Depends(get_db),
+):
+    decision = _get_owned_decision(decision_id, current_user.id, db)
+    db.delete(decision)
+    db.commit()
+
+
+@router.post("/decisions/{decision_id}/reextract", response_model=DecisionOut)
+def reextract_decision(
+    decision_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_recruiter),
+    db: Session = Depends(get_db),
+):
+    decision = _get_owned_decision(decision_id, current_user.id, db)
+    if not decision.storage_key:
+        raise HTTPException(status_code=400, detail="لا يوجد ملف PDF مرتبط بهذا القرار.")
+
+    decision.processing_status = SaudizationProcessingStatus.UPLOADED
+    decision.decision_number = None
+    decision.decision_date = None
+    decision.decision_title = None
+    decision.issuing_authority = None
+    decision.decision_definition = None
+    decision.targeted_professions = None
+    decision.raw_text = None
+    decision.ai_extracted_data = None
+    db.commit()
+    db.refresh(decision)
+
+    storage = get_storage()
+    background_tasks.add_task(_extract_decision_task, decision.id, decision.storage_key, storage)
+
+    return _decision_out(decision)
+
 # ── GOSI Reports ───────────────────────────────────────────────────────────────
 
 @router.post("/reports/upload", response_model=ReportOut, status_code=status.HTTP_201_CREATED)
