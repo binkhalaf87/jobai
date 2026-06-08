@@ -6,7 +6,7 @@ import {
   CheckCircle, AlertCircle, Clock, Sparkles, ChevronRight, X,
   TrendingUp, AlertTriangle, ChevronDown, ChevronUp, Printer,
   Download, Users, ShieldCheck, ShieldAlert, ArrowUpRight,
-  Trash2, RefreshCw,
+  Trash2,
 } from "lucide-react";
 
 import { api } from "@/lib/api";
@@ -807,23 +807,13 @@ export default function SaudizationPage() {
     }
   }
 
-  async function reextractDecision(id: string) {
-    try {
-      const updated = await api.post<Decision>(`/recruiter/saudization/decisions/${id}/reextract`, {});
-      setDecisions((p) => p.map((d) => (d.id === id ? updated : d)));
-      setExpandedDecisionId(null);
-    } catch (e: any) {
-      alert(e?.message || "حدث خطأ أثناء إعادة الاستخراج");
-    }
-  }
-
   async function uploadDecision(file: File) {
     setUploadingDecision(true);
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const d = await api.post<Decision>("/recruiter/saudization/decisions/upload", fd);
-      setDecisions((p) => [d, ...p]);
+      const created = await api.post<Decision[]>("/recruiter/saudization/decisions/upload-excel", fd);
+      setDecisions((p) => [...created, ...p]);
     } catch (e: any) {
       alert(e?.message || "حدث خطأ أثناء رفع الملف");
     } finally {
@@ -936,15 +926,15 @@ export default function SaudizationPage() {
       {/* ── Decisions Tab ───────────────────────────────────────────────────── */}
       {tab === "decisions" && (
         <div className="space-y-4">
-          {/* Upload card — no company required */}
+          {/* Upload card — Excel only */}
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-5">
-            <p className="mb-1 text-sm font-bold text-slate-700">رفع قرار توطين (PDF)</p>
+            <p className="mb-1 text-sm font-bold text-slate-700">رفع قرارات التوطين (Excel)</p>
             <p className="mb-3 text-[12px] text-slate-400">
-              قرارات التوطين تنطبق على جميع الشركات — لا يلزم تحديد شركة عند الرفع
+              ارفع ملف Excel يحتوي على تفاصيل القرارات والمهن — يمكنك تعديل أو حذف أي مهنة بعد الرفع
             </p>
             <div className="flex items-center gap-3">
               <input
-                ref={decisionFileRef} type="file" accept=".pdf" className="hidden"
+                ref={decisionFileRef} type="file" accept=".xlsx,.xls" className="hidden"
                 onChange={(e) => e.target.files?.[0] && uploadDecision(e.target.files[0])}
               />
               <button
@@ -952,11 +942,11 @@ export default function SaudizationPage() {
                 disabled={uploadingDecision}
                 className="flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
               >
-                {uploadingDecision ? <Loader2 size={14} className="animate-spin"/> : <Upload size={14}/>}
-                رفع ملف PDF
+                {uploadingDecision ? <Loader2 size={14} className="animate-spin"/> : <FileSpreadsheet size={14}/>}
+                رفع ملف Excel
               </button>
               {uploadingDecision && (
-                <p className="text-[12px] text-slate-500">جارٍ الرفع... سيبدأ الاستخراج تلقائياً</p>
+                <p className="text-[12px] text-slate-500">جارٍ المعالجة...</p>
               )}
             </div>
           </div>
@@ -964,7 +954,7 @@ export default function SaudizationPage() {
           {decisionsLoading ? (
             <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-slate-400"/></div>
           ) : decisions.length === 0 ? (
-            <EmptyState icon={<Upload size={24}/>} title="لا توجد قرارات بعد" sub="ارفع ملف PDF لقرار التوطين للبدء"/>
+            <EmptyState icon={<FileSpreadsheet size={24}/>} title="لا توجد قرارات بعد" sub="ارفع ملف Excel يحتوي على تفاصيل قرارات التوطين للبدء"/>
           ) : (
             <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
               {decisions.map((d, idx) => (
@@ -1002,23 +992,13 @@ export default function SaudizationPage() {
 
                     {/* Action buttons */}
                     <div className="flex shrink-0 items-center gap-1.5">
-                      {d.processing_status === "extracted" && (
-                        <button
-                          onClick={() => setExpandedDecisionId(expandedDecisionId === d.id ? null : d.id)}
-                          className="flex items-center gap-1 rounded-lg bg-brand-50 px-2.5 py-1.5 text-[12px] font-semibold text-brand-700 hover:bg-brand-100"
-                        >
-                          <Eye size={12}/>
-                          {expandedDecisionId === d.id ? "إغلاق" : "التفاصيل"}
-                          {expandedDecisionId === d.id ? <ChevronUp size={11}/> : <ChevronDown size={11}/>}
-                        </button>
-                      )}
                       <button
-                        onClick={() => reextractDecision(d.id)}
-                        title="إعادة الاستخراج بالذكاء الاصطناعي"
-                        className="flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1.5 text-[12px] font-semibold text-amber-700 hover:bg-amber-100"
+                        onClick={() => setExpandedDecisionId(expandedDecisionId === d.id ? null : d.id)}
+                        className="flex items-center gap-1 rounded-lg bg-brand-50 px-2.5 py-1.5 text-[12px] font-semibold text-brand-700 hover:bg-brand-100"
                       >
-                        <RefreshCw size={12}/>
-                        إعادة الاستخراج
+                        <Eye size={12}/>
+                        {expandedDecisionId === d.id ? "إغلاق" : "التفاصيل"}
+                        {expandedDecisionId === d.id ? <ChevronUp size={11}/> : <ChevronDown size={11}/>}
                       </button>
                       <button
                         onClick={() => deleteDecision(d.id)}

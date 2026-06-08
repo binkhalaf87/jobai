@@ -118,43 +118,68 @@ def create_company(
 
 # ── Decisions ──────────────────────────────────────────────────────────────────
 
-@router.post("/decisions/upload", response_model=DecisionOut, status_code=status.HTTP_201_CREATED)
-async def upload_decision(
-    background_tasks: BackgroundTasks,
+class ProfessionBody(BaseModel):
+    name: str
+    target_percentage: float = 0.0
+    min_employees: int = 1
+    min_salary: float | None = None
+    calculation_method: str | None = None
+    notes: str | None = None
+
+
+class DecisionMetaUpdate(BaseModel):
+    decision_number: str | None = None
+    decision_date: str | None = None
+    decision_title: str | None = None
+    issuing_authority: str | None = None
+    decision_definition: str | None = None
+
+
+@router.post("/decisions/upload-excel", response_model=list[DecisionOut], status_code=status.HTTP_201_CREATED)
+async def upload_decisions_excel(
     file: UploadFile = File(...),
-    company_id: str = Form(""),
     current_user: User = Depends(get_current_recruiter),
     db: Session = Depends(get_db),
 ):
-    # company_id is optional — decisions apply to all companies
-    if company_id:
-        _assert_company_owned(company_id, current_user.id, db)
+    """Upload an Excel file with decision/profession rows; returns all created decisions."""
+    fname = (file.filename or "").lower()
+    if not (fname.endswith(".xlsx") or fname.endswith(".xls")):
+        raise HTTPException(status_code=400, detail="الملف يجب أن يكون Excel (.xlsx أو .xls).")
 
     file_bytes = await file.read()
-    if len(file_bytes) > _MAX_PDF_SIZE:
-        raise HTTPException(status_code=413, detail="PDF file exceeds 20 MB limit.")
-    if not (file_bytes[:4] == b"%PDF" or b"PDF" in file_bytes[:10]):
-        raise HTTPException(status_code=400, detail="File must be a PDF.")
+    if len(file_bytes) > _MAX_EXCEL_SIZE:
+        raise HTTPException(status_code=413, detail="حجم الملف يتجاوز 10 MB.")
 
-    storage_key = f"saudization/decisions/{current_user.id}/{uuid.uuid4()}.pdf"
-    storage = get_storage()
-    storage.upload(storage_key, file_bytes, content_type="application/pdf")
+    from app.services.saudization.decision_excel_parser import parse_decision_excel
+    try:
+        parsed = parse_decision_excel(file_bytes)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
-    decision = SaudizationDecision(
-        recruiter_id=current_user.id,
-        company_id=company_id or None,
-        source_filename=file.filename,
-        storage_key=storage_key,
-        processing_status=SaudizationProcessingStatus.UPLOADED,
-    )
-    db.add(decision)
+    if not parsed:
+        raise HTTPException(status_code=422, detail="لم يُعثر على بيانات في الملف.")
+
+    created = []
+    for p in parsed:
+        decision = SaudizationDecision(
+            recruiter_id=current_user.id,
+            source_filename=file.filename,
+            decision_number=p.get("decision_number"),
+            decision_date=p.get("decision_date"),
+            decision_title=p.get("decision_title"),
+            issuing_authority=p.get("issuing_authority"),
+            decision_definition=p.get("decision_definition"),
+            targeted_professions=p.get("targeted_professions", []),
+            processing_status=SaudizationProcessingStatus.EXTRACTED,
+        )
+        db.add(decision)
+        created.append(decision)
+
     db.commit()
-    db.refresh(decision)
+    for d in created:
+        db.refresh(d)
 
-    background_tasks.add_task(_extract_decision_task, decision.id, storage_key, storage)
-
-    company = db.get(RecruiterCompany, company_id) if company_id else None
-    return _decision_out(decision, company.name if company else None)
+    return [_decision_out(d) for d in created]
 
 
 @router.get("/decisions", response_model=list[DecisionOut])
@@ -167,10 +192,7 @@ def list_decisions(
         .where(SaudizationDecision.recruiter_id == current_user.id)
         .order_by(SaudizationDecision.created_at.desc())
     ).scalars().all()
-
-    company_ids = [r.company_id for r in rows if r.company_id]
-    company_names = _load_company_names(company_ids, db)
-    return [_decision_out(r, company_names.get(r.company_id) if r.company_id else None) for r in rows]
+    return [_decision_out(r) for r in rows]
 
 
 @router.get("/decisions/{decision_id}", response_model=DecisionOut)
@@ -180,8 +202,22 @@ def get_decision(
     db: Session = Depends(get_db),
 ):
     decision = _get_owned_decision(decision_id, current_user.id, db)
-    company = db.get(RecruiterCompany, decision.company_id) if decision.company_id else None
-    return _decision_out(decision, company.name if company else None)
+    return _decision_out(decision)
+
+
+@router.patch("/decisions/{decision_id}", response_model=DecisionOut)
+def update_decision_meta(
+    decision_id: str,
+    body: DecisionMetaUpdate,
+    current_user: User = Depends(get_current_recruiter),
+    db: Session = Depends(get_db),
+):
+    decision = _get_owned_decision(decision_id, current_user.id, db)
+    for field, val in body.model_dump(exclude_none=True).items():
+        setattr(decision, field, val)
+    db.commit()
+    db.refresh(decision)
+    return _decision_out(decision)
 
 
 @router.delete("/decisions/{decision_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -195,32 +231,58 @@ def delete_decision(
     db.commit()
 
 
-@router.post("/decisions/{decision_id}/reextract", response_model=DecisionOut)
-def reextract_decision(
+# ── Profession CRUD (within a decision) ───────────────────────────────────────
+
+@router.post("/decisions/{decision_id}/professions", response_model=DecisionOut)
+def add_profession(
     decision_id: str,
-    background_tasks: BackgroundTasks,
+    body: ProfessionBody,
     current_user: User = Depends(get_current_recruiter),
     db: Session = Depends(get_db),
 ):
     decision = _get_owned_decision(decision_id, current_user.id, db)
-    if not decision.storage_key:
-        raise HTTPException(status_code=400, detail="لا يوجد ملف PDF مرتبط بهذا القرار.")
-
-    decision.processing_status = SaudizationProcessingStatus.UPLOADED
-    decision.decision_number = None
-    decision.decision_date = None
-    decision.decision_title = None
-    decision.issuing_authority = None
-    decision.decision_definition = None
-    decision.targeted_professions = None
-    decision.raw_text = None
-    decision.ai_extracted_data = None
+    profs = list(decision.targeted_professions or [])
+    profs.append(body.model_dump())
+    decision.targeted_professions = profs
     db.commit()
     db.refresh(decision)
+    return _decision_out(decision)
 
-    storage = get_storage()
-    background_tasks.add_task(_extract_decision_task, decision.id, decision.storage_key, storage)
 
+@router.put("/decisions/{decision_id}/professions/{idx}", response_model=DecisionOut)
+def update_profession(
+    decision_id: str,
+    idx: int,
+    body: ProfessionBody,
+    current_user: User = Depends(get_current_recruiter),
+    db: Session = Depends(get_db),
+):
+    decision = _get_owned_decision(decision_id, current_user.id, db)
+    profs = list(decision.targeted_professions or [])
+    if idx < 0 or idx >= len(profs):
+        raise HTTPException(status_code=404, detail="المهنة غير موجودة.")
+    profs[idx] = body.model_dump()
+    decision.targeted_professions = profs
+    db.commit()
+    db.refresh(decision)
+    return _decision_out(decision)
+
+
+@router.delete("/decisions/{decision_id}/professions/{idx}", response_model=DecisionOut)
+def delete_profession(
+    decision_id: str,
+    idx: int,
+    current_user: User = Depends(get_current_recruiter),
+    db: Session = Depends(get_db),
+):
+    decision = _get_owned_decision(decision_id, current_user.id, db)
+    profs = list(decision.targeted_professions or [])
+    if idx < 0 or idx >= len(profs):
+        raise HTTPException(status_code=404, detail="المهنة غير موجودة.")
+    profs.pop(idx)
+    decision.targeted_professions = profs
+    db.commit()
+    db.refresh(decision)
     return _decision_out(decision)
 
 # ── GOSI Reports ───────────────────────────────────────────────────────────────
@@ -426,55 +488,6 @@ def generate_ai_recommendations(
     return _analysis_out(analysis)
 
 # ── Background tasks ───────────────────────────────────────────────────────────
-
-def _extract_decision_task(decision_id: str, storage_key: str, storage) -> None:
-    from app.db.session import SessionLocal
-    from app.services.saudization.pdf_decision_extractor import extract_decision_from_pdf
-    import tempfile, os
-
-    db = SessionLocal()
-    try:
-        decision = db.get(SaudizationDecision, decision_id)
-        if not decision:
-            return
-
-        decision.processing_status = SaudizationProcessingStatus.PROCESSING
-        db.commit()
-
-        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-            tmp_path = tmp.name
-        try:
-            file_bytes = storage.download(storage_key)
-            with open(tmp_path, "wb") as f:
-                f.write(file_bytes)
-
-            result = extract_decision_from_pdf(Path(tmp_path))
-        finally:
-            os.unlink(tmp_path)
-
-        decision.decision_number = result.get("decision_number")
-        decision.decision_date = result.get("decision_date")
-        decision.decision_title = result.get("decision_title")
-        decision.issuing_authority = result.get("issuing_authority")
-        decision.decision_definition = result.get("decision_definition")
-        decision.targeted_professions = result.get("targeted_professions", [])
-        decision.raw_text = result.get("raw_text")
-        decision.ai_extracted_data = result
-        decision.processing_status = SaudizationProcessingStatus.EXTRACTED
-        db.commit()
-    except Exception:
-        import logging
-        logging.getLogger(__name__).exception("Failed to extract decision %s", decision_id)
-        try:
-            decision = db.get(SaudizationDecision, decision_id)
-            if decision:
-                decision.processing_status = SaudizationProcessingStatus.FAILED
-                db.commit()
-        except Exception:
-            pass
-    finally:
-        db.close()
-
 
 def _parse_report_task(report_id: str, storage_key: str, storage) -> None:
     from app.db.session import SessionLocal
