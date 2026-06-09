@@ -142,7 +142,7 @@ export default function BrevoCampaignsPage() {
 
       {/* Info */}
       <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-xs text-blue-800 leading-relaxed">
-        <strong>كيف يعمل:</strong> اختر حملة → اضغط "حفظ النشيطين" → سيُنشأ تلقائياً قائمة جديدة في Admin → Lists تحتوي فقط من فتح الايميل. هذه القائمة هي الأعلى جودة لحملاتك القادمة.
+        <strong>كيف يعمل:</strong> اختر حملة → اضغط &quot;حفظ النشيطين&quot; → سيُنشأ تلقائياً قائمة جديدة في Admin → Lists تحتوي فقط من فتح الايميل. هذه القائمة هي الأعلى جودة لحملاتك القادمة.
       </div>
 
       {loading && (

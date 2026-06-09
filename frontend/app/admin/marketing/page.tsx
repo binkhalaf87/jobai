@@ -310,7 +310,7 @@ function AnalyticsView({ onNewCampaign }: { onNewCampaign: () => void }) {
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600 leading-relaxed">
-          <strong>كيف يعمل:</strong> اختر حملة → اضغط "حفظ النشيطين" → سيُنشأ تلقائياً قائمة جديدة في Admin → Lists تحتوي فقط من فتح الايميل.
+          <strong>كيف يعمل:</strong> اختر حملة → اضغط &quot;حفظ النشيطين&quot; → سيُنشأ تلقائياً قائمة جديدة في Admin → Lists تحتوي فقط من فتح الايميل.
         </div>
 
         {loadingBrevo && (
