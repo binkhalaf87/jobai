@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import logging
 import os
+from typing import Any
 
 import httpx
 
 logger = logging.getLogger(__name__)
 
 _BREVO_SEND_URL = "https://api.brevo.com/v3/smtp/email"
+_BREVO_BASE = "https://api.brevo.com/v3"
 
 # Automatic warm-up schedule: (min_day, max_day, daily_limit)
 # Days are counted from warmup_start_date (inclusive, 1-indexed).
@@ -75,3 +77,76 @@ async def send_marketing_email(
     except Exception as exc:
         logger.error("Brevo send error to %s: %s", to_email, exc)
         return False
+
+
+def _brevo_headers() -> dict[str, str]:
+    return {
+        "api-key": get_brevo_api_key() or "",
+        "Accept": "application/json",
+    }
+
+
+async def get_email_campaigns(limit: int = 50, offset: int = 0) -> dict[str, Any]:
+    """Fetch sent email campaigns from Brevo. Returns {campaigns: [...], count: int}."""
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        resp = await client.get(
+            f"{_BREVO_BASE}/emailCampaigns",
+            headers=_brevo_headers(),
+            params={"limit": limit, "offset": offset, "status": "sent", "sort": "desc"},
+        )
+    resp.raise_for_status()
+    return resp.json()
+
+
+async def get_campaign_openers(campaign_id: int, limit: int = 500, offset: int = 0) -> dict[str, Any]:
+    """Fetch contacts who opened a specific campaign. Returns {items: [...], count: int}."""
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        resp = await client.get(
+            f"{_BREVO_BASE}/emailCampaigns/{campaign_id}/reports/opens",
+            headers=_brevo_headers(),
+            params={"limit": limit, "offset": offset},
+        )
+    resp.raise_for_status()
+    return resp.json()
+
+
+async def get_campaign_clickers(campaign_id: int, limit: int = 500, offset: int = 0) -> dict[str, Any]:
+    """Fetch contacts who clicked links in a specific campaign. Returns {items: [...], count: int}."""
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        resp = await client.get(
+            f"{_BREVO_BASE}/emailCampaigns/{campaign_id}/reports/clicks",
+            headers=_brevo_headers(),
+            params={"limit": limit, "offset": offset},
+        )
+    resp.raise_for_status()
+    return resp.json()
+
+
+async def get_all_openers(campaign_id: int) -> list[dict[str, Any]]:
+    """Fetch ALL openers for a campaign (handles pagination automatically)."""
+    results: list[dict[str, Any]] = []
+    offset = 0
+    page_size = 500
+    while True:
+        data = await get_campaign_openers(campaign_id, limit=page_size, offset=offset)
+        items = data.get("items", [])
+        results.extend(items)
+        if len(items) < page_size:
+            break
+        offset += page_size
+    return results
+
+
+async def get_all_clickers(campaign_id: int) -> list[dict[str, Any]]:
+    """Fetch ALL clickers for a campaign (handles pagination automatically)."""
+    results: list[dict[str, Any]] = []
+    offset = 0
+    page_size = 500
+    while True:
+        data = await get_campaign_clickers(campaign_id, limit=page_size, offset=offset)
+        items = data.get("items", [])
+        results.extend(items)
+        if len(items) < page_size:
+            break
+        offset += page_size
+    return results

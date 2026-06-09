@@ -155,3 +155,47 @@ export function downloadTemplate(): void {
     })
     .catch(() => {});
 }
+
+// ── Brevo Analytics ────────────────────────────────────────────────────────────
+
+export type BrevoEmailCampaign = {
+  id: number;
+  name: string;
+  subject: string;
+  sent_date: string | null;
+  delivered: number;
+  unique_opens: number;
+  unique_clicks: number;
+  unsubscriptions: number;
+  open_rate: number;
+};
+
+export async function getBrevoEmailCampaigns(): Promise<BrevoEmailCampaign[]> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/brevo/campaigns`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to load Brevo campaigns"));
+  return res.json();
+}
+
+export async function getBrevoOpeners(campaignId: number): Promise<{ campaign_id: number; count: number }> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/brevo/campaigns/${campaignId}/openers`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to fetch openers"));
+  return res.json();
+}
+
+export async function saveOpenersToList(
+  campaignId: number,
+  listName: string,
+  includeClickers: boolean,
+): Promise<{ list_id: string; list_name: string; added: number }> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/brevo/campaigns/${campaignId}/save-openers`, {
+    method: "POST",
+    headers: mutationHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ list_name: listName, include_clickers: includeClickers }),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to save openers"));
+  return res.json();
+}

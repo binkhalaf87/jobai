@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Mail, Pause, Play, CheckCircle, AlertCircle, Clock, TrendingUp } from "lucide-react";
+import { Plus, Mail, Pause, Play, CheckCircle, AlertCircle, Clock, TrendingUp, BarChart2 } from "lucide-react";
 import {
   getCampaigns,
   pauseCampaign,
@@ -77,12 +77,20 @@ export default function MarketingPage() {
           <h1 className="text-2xl font-bold text-slate-900">Marketing Campaigns</h1>
           <p className="mt-1 text-sm text-slate-500">Bulk email with automatic domain warm-up</p>
         </div>
-        <Link
-          href="/admin/marketing/new"
-          className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
-        >
-          <Plus size={15} /> New Campaign
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/marketing/brevo"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            <BarChart2 size={15} /> Brevo Analytics
+          </Link>
+          <Link
+            href="/admin/marketing/new"
+            className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+          >
+            <Plus size={15} /> New Campaign
+          </Link>
+        </div>
       </div>
 
       {/* Warm-up info */}

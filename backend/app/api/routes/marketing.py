@@ -16,8 +16,16 @@ from sqlalchemy.orm import Session
 from app.api.deps.auth import get_current_admin
 from app.api.deps.db import get_db
 from app.models.marketing_campaign import MarketingCampaign, MarketingCampaignContact
+from app.models.mailing_list import Recipient, RecipientList
 from app.models.user import User
-from app.services.brevo_service import _WARMUP_SCHEDULE, get_warmup_daily_limit
+from app.services.brevo_service import (
+    _WARMUP_SCHEDULE,
+    get_all_clickers,
+    get_all_openers,
+    get_brevo_api_key,
+    get_email_campaigns,
+    get_warmup_daily_limit,
+)
 
 router = APIRouter(prefix="/admin/marketing", tags=["admin-marketing"])
 
@@ -266,3 +274,127 @@ def get_warmup_schedule(_: User = Depends(get_current_admin)) -> list[dict]:
         {"min_day": mn, "max_day": mx if mx < 9999 else None, "daily_limit": lim}
         for mn, mx, lim in _WARMUP_SCHEDULE
     ]
+
+
+# ── Brevo Analytics Endpoints ──────────────────────────────────────────────────
+
+@router.get("/brevo/campaigns")
+async def list_brevo_campaigns(
+    admin: User = Depends(get_current_admin),
+) -> list[dict]:
+    """Fetch all sent campaigns from Brevo with their open/click stats."""
+    if not get_brevo_api_key():
+        raise HTTPException(status_code=503, detail="BREVO_API_KEY not configured.")
+    try:
+        # Fetch up to 100 campaigns (paginate if needed)
+        data = await get_email_campaigns(limit=50, offset=0)
+        campaigns = data.get("campaigns", [])
+        total = data.get("count", 0)
+        if total > 50:
+            more = await get_email_campaigns(limit=50, offset=50)
+            campaigns.extend(more.get("campaigns", []))
+
+        result = []
+        for c in campaigns:
+            stats = (c.get("statistics") or {}).get("globalStats") or {}
+            result.append({
+                "id": c.get("id"),
+                "name": c.get("name", ""),
+                "subject": c.get("subject", ""),
+                "sent_date": c.get("sentDate"),
+                "delivered": stats.get("delivered", 0),
+                "unique_opens": stats.get("uniqueOpens", 0),
+                "unique_clicks": stats.get("uniqueClicks", 0),
+                "unsubscriptions": stats.get("unsubscriptions", 0),
+                "open_rate": round(stats.get("uniqueOpens", 0) / stats.get("delivered", 1) * 100, 1) if stats.get("delivered") else 0,
+            })
+        return result
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Brevo API error: {exc}")
+
+
+class SaveOpenersBody(BaseModel):
+    list_name: str
+    include_clickers: bool = False
+
+
+@router.get("/brevo/campaigns/{campaign_id}/openers")
+async def get_brevo_openers(
+    campaign_id: int,
+    admin: User = Depends(get_current_admin),
+) -> dict:
+    """Preview openers count for a Brevo campaign."""
+    if not get_brevo_api_key():
+        raise HTTPException(status_code=503, detail="BREVO_API_KEY not configured.")
+    try:
+        openers = await get_all_openers(campaign_id)
+        return {"campaign_id": campaign_id, "count": len(openers)}
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Brevo API error: {exc}")
+
+
+@router.post("/brevo/campaigns/{campaign_id}/save-openers")
+async def save_openers_to_list(
+    campaign_id: int,
+    body: SaveOpenersBody,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Extract openers (and optionally clickers) from a Brevo campaign and save to a new RecipientList."""
+    if not get_brevo_api_key():
+        raise HTTPException(status_code=503, detail="BREVO_API_KEY not configured.")
+    if not body.list_name.strip():
+        raise HTTPException(status_code=400, detail="list_name is required.")
+
+    try:
+        openers = await get_all_openers(campaign_id)
+        contacts: dict[str, str | None] = {
+            item["email"]: item.get("name") or None
+            for item in openers
+            if item.get("email")
+        }
+
+        if body.include_clickers:
+            clickers = await get_all_clickers(campaign_id)
+            for item in clickers:
+                email = item.get("email")
+                if email and email not in contacts:
+                    contacts[email] = item.get("name") or None
+
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Brevo API error: {exc}")
+
+    if not contacts:
+        raise HTTPException(status_code=404, detail="No openers found for this campaign.")
+
+    # Create a new RecipientList owned by the admin
+    new_list = RecipientList(
+        id=str(uuid.uuid4()),
+        user_id=admin.id,
+        name=body.list_name.strip(),
+        description=f"Extracted from Brevo campaign #{campaign_id}",
+        source="import",
+        total_count=0,
+    )
+    db.add(new_list)
+    db.flush()
+
+    added = 0
+    for email, name in contacts.items():
+        db.add(Recipient(
+            id=str(uuid.uuid4()),
+            list_id=new_list.id,
+            user_id=admin.id,
+            email=email.lower().strip(),
+            full_name=name,
+        ))
+        added += 1
+
+    new_list.total_count = added
+    db.commit()
+
+    return {
+        "list_id": new_list.id,
+        "list_name": new_list.name,
+        "added": added,
+    }
