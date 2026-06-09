@@ -158,6 +158,8 @@ class Settings:
     # Resend API key for transactional auth emails (verification, password reset)
     resend_api_key: str | None
     system_email_from: str
+    # Brevo API key for bulk marketing campaigns
+    brevo_api_key: str | None
 
     def allowed_origins(self) -> list[str]:
         """Build an explicit allowlist for frontend origins."""
@@ -227,6 +229,7 @@ def build_settings() -> Settings:
         ai_monthly_token_budget=int(get_optional_env("AI_MONTHLY_TOKEN_BUDGET", "5000000")),
         resend_api_key=get_optional_env("RESEND_API_KEY", "").strip() or None,
         system_email_from=get_optional_env("SYSTEM_EMAIL_FROM", "hello@jobai24.com"),
+        brevo_api_key=get_optional_env("BREVO_API_KEY", "").strip() or None,
     )
 
 

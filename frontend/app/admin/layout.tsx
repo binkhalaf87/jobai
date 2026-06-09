@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { LayoutDashboard, Users, LogOut, Shield, ListChecks, Mail, Tag, Activity, CreditCard, HeadphonesIcon } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, Shield, ListChecks, Mail, Tag, Activity, CreditCard, HeadphonesIcon, Megaphone } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
 import { adminGetUnreadCount } from "@/lib/support";
@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { label: "Promotions",    href: "/admin/promotions",      icon: Tag },
   { label: "Payments",      href: "/admin/payments",        icon: CreditCard },
   { label: "Support",       href: "/admin/support",         icon: HeadphonesIcon },
+  { label: "Marketing",    href: "/admin/marketing",       icon: Megaphone },
 ] as const;
 
 function isActive(pathname: string, href: string): boolean {
@@ -139,7 +140,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur px-5 py-3 md:px-6">
           <p className="text-[15px] font-bold tracking-tight text-slate-900">
-            {[...NAV_ITEMS].find((i) => isActive(pathname, i.href))?.label ?? "Admin"}
+            {[...NAV_ITEMS].find((i) => isActive(pathname, i.href))?.label ?? (pathname.startsWith("/admin/marketing") ? "Marketing" : "Admin")}
           </p>
         </header>
         <main className="flex-1 overflow-y-auto px-5 py-6 md:px-7 md:py-7">{children}</main>

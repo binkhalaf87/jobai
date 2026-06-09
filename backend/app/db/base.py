@@ -13,6 +13,7 @@ from app.models.interview import InterviewSession
 from app.models.interview_response import InterviewResponse
 from app.models.job_description import JobDescription
 from app.models.mailing_list import Recipient, RecipientList
+from app.models.marketing_campaign import MarketingCampaign, MarketingCampaignContact
 from app.models.payment_order import PaymentOrder
 from app.models.payment_webhook_event import PaymentWebhookEvent
 from app.models.plan import Plan
@@ -57,6 +58,8 @@ __all__ = [
     "Plan",
     "Recipient",
     "RecipientList",
+    "MarketingCampaign",
+    "MarketingCampaignContact",
     "RecruiterInterview",
     "RefreshToken",
     "Resume",

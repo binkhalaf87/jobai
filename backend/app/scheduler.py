@@ -222,6 +222,99 @@ async def _process_campaigns() -> None:
         db.close()
 
 
+async def _process_marketing_campaigns() -> None:
+    """Send pending marketing campaign contacts via Brevo, respecting warm-up daily limits."""
+    from app.models.marketing_campaign import MarketingCampaign, MarketingCampaignContact
+    from app.services.brevo_service import get_warmup_daily_limit, send_marketing_email
+
+    db = SessionLocal()
+    try:
+        active = db.scalars(
+            select(MarketingCampaign).where(MarketingCampaign.status == "active")
+        ).all()
+
+        now = datetime.now(timezone.utc)
+        today = now.date()
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        for campaign in active:
+            # Set warm-up start date on first run
+            if campaign.warmup_start_date is None:
+                campaign.warmup_start_date = today
+                db.commit()
+
+            days_since_start = (today - campaign.warmup_start_date).days + 1
+            daily_limit = get_warmup_daily_limit(days_since_start)
+
+            # Update stored daily limit if changed (for UI display)
+            if campaign.current_daily_limit != daily_limit:
+                campaign.current_daily_limit = daily_limit
+                db.commit()
+
+            sent_today = db.query(MarketingCampaignContact).filter(
+                MarketingCampaignContact.campaign_id == campaign.id,
+                MarketingCampaignContact.status == "sent",
+                MarketingCampaignContact.sent_at >= today_start,
+            ).count()
+
+            remaining_quota = daily_limit - sent_today
+            if remaining_quota <= 0:
+                logger.debug("Marketing campaign %s: daily quota reached (%d).", campaign.id, daily_limit)
+                continue
+
+            pending = db.scalars(
+                select(MarketingCampaignContact)
+                .where(
+                    MarketingCampaignContact.campaign_id == campaign.id,
+                    MarketingCampaignContact.status == "pending",
+                )
+                .limit(remaining_quota)
+            ).all()
+
+            if not pending:
+                campaign.status = "completed"
+                campaign.completed_at = now
+                db.commit()
+                logger.info("Marketing campaign %s completed.", campaign.id)
+                continue
+
+            sent_count = 0
+            for contact in pending:
+                success = await send_marketing_email(
+                    to_email=contact.email,
+                    to_name=contact.full_name,
+                    subject=campaign.subject,
+                    html_content=campaign.html_body,
+                    from_name=campaign.from_name,
+                    from_email=campaign.from_email,
+                )
+                if success:
+                    contact.status = "sent"
+                    contact.sent_at = now
+                    campaign.total_sent += 1
+                    campaign.last_sent_at = now
+                    sent_count += 1
+                else:
+                    contact.status = "failed"
+                    contact.error_message = "Brevo send failed"
+                    campaign.total_failed += 1
+                db.commit()
+
+                # Small delay between sends to avoid bursting
+                await asyncio.sleep(0.5)
+
+            if sent_count > 0:
+                logger.info(
+                    "Marketing campaign %s: sent %d/%d today (day %d, limit %d).",
+                    campaign.id, sent_today + sent_count, daily_limit, days_since_start, daily_limit,
+                )
+
+    except Exception as exc:
+        logger.exception("Marketing campaign scheduler error: %s", exc)
+    finally:
+        db.close()
+
+
 async def _poll_pending_payments() -> None:
     """Poll Paymob for pending orders older than 5 minutes and activate if paid."""
     from app.models.enums import PaymentOrderStatus
@@ -285,9 +378,10 @@ async def _cleanup_refresh_tokens() -> None:
 
 
 def start_scheduler() -> None:
-    _scheduler.add_job(_process_campaigns, "interval", minutes=5)  # every 5 minutes
-    _scheduler.add_job(_poll_pending_payments, "interval", minutes=10)  # every 10 minutes
-    _scheduler.add_job(_cleanup_refresh_tokens, "cron", hour="3", minute="0")  # daily at 03:00 UTC
+    _scheduler.add_job(_process_campaigns, "interval", minutes=5)
+    _scheduler.add_job(_process_marketing_campaigns, "interval", minutes=5)
+    _scheduler.add_job(_poll_pending_payments, "interval", minutes=10)
+    _scheduler.add_job(_cleanup_refresh_tokens, "cron", hour="3", minute="0")
     _scheduler.start()
     logger.info("Campaign scheduler started.")
 
