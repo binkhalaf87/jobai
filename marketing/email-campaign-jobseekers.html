@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>JobAI24 — وظيفتك القادمة بخطوة واحدة</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background-color: #f0f4f8;
+      font-family: 'Cairo', Arial, sans-serif;
+      direction: rtl;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wrapper {
+      width: 100%;
+      background-color: #f0f4f8;
+      padding: 32px 16px;
+    }
+
+    .container {
+      max-width: 620px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+
+    /* ── HEADER ── */
+    .header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0e4d92 100%);
+      padding: 48px 40px 40px;
+      text-align: center;
+      position: relative;
+    }
+
+    .header-logo {
+      display: inline-block;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 10px 20px;
+      margin-bottom: 28px;
+    }
+
+    .header-logo span {
+      font-size: 22px;
+      font-weight: 900;
+      color: #0e4d92;
+      letter-spacing: -0.5px;
+    }
+
+    .header-logo span em {
+      color: #f59e0b;
+      font-style: normal;
+    }
+
+    .header h1 {
+      font-size: 30px;
+      font-weight: 900;
+      color: #ffffff;
+      line-height: 1.4;
+      margin-bottom: 14px;
+    }
+
+    .header h1 span {
+      color: #f59e0b;
+    }
+
+    .header p {
+      font-size: 16px;
+      color: #94b8d4;
+      line-height: 1.7;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* ── HERO BADGE ── */
+    .hero-badge {
+      background: rgba(245,158,11,0.15);
+      border: 1px solid rgba(245,158,11,0.4);
+      border-radius: 50px;
+      display: inline-block;
+      padding: 6px 18px;
+      margin-bottom: 20px;
+    }
+
+    .hero-badge span {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f59e0b;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── INTRO ── */
+    .intro {
+      padding: 40px 40px 8px;
+      text-align: center;
+    }
+
+    .intro h2 {
+      font-size: 22px;
+      font-weight: 900;
+      color: #0f172a;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    .intro p {
+      font-size: 15px;
+      color: #475569;
+      line-height: 1.9;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* ── PAIN POINTS ── */
+    .pain {
+      background: #fef3c7;
+      border-right: 4px solid #f59e0b;
+      border-radius: 0 8px 8px 0;
+      margin: 28px 40px;
+      padding: 18px 20px;
+    }
+
+    .pain p {
+      font-size: 14px;
+      color: #78350f;
+      line-height: 1.8;
+    }
+
+    .pain p strong {
+      color: #92400e;
+    }
+
+    /* ── FEATURES GRID ── */
+    .features {
+      padding: 8px 40px 32px;
+    }
+
+    .features-title {
+      font-size: 18px;
+      font-weight: 900;
+      color: #0f172a;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .feature-item {
+      display: table;
+      width: 100%;
+      margin-bottom: 20px;
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 18px 20px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .feature-icon {
+      display: table-cell;
+      width: 52px;
+      vertical-align: top;
+      padding-left: 16px;
+    }
+
+    .feature-icon-inner {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      text-align: center;
+      line-height: 44px;
+      font-size: 22px;
+      display: block;
+    }
+
+    .ic-blue  { background: #dbeafe; }
+    .ic-green { background: #dcfce7; }
+    .ic-purple{ background: #ede9fe; }
+    .ic-amber { background: #fef3c7; }
+    .ic-rose  { background: #ffe4e6; }
+    .ic-teal  { background: #ccfbf1; }
+
+    .feature-body { display: table-cell; vertical-align: top; }
+
+    .feature-body h3 {
+      font-size: 15px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 5px;
+    }
+
+    .feature-body p {
+      font-size: 13px;
+      color: #64748b;
+      line-height: 1.7;
+    }
+
+    /* ── JOURNEY STEPS ── */
+    .journey {
+      background: linear-gradient(180deg, #eff6ff 0%, #f0fdf4 100%);
+      padding: 36px 40px;
+    }
+
+    .journey-title {
+      font-size: 18px;
+      font-weight: 900;
+      color: #0f172a;
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .step {
+      display: table;
+      width: 100%;
+      margin-bottom: 16px;
+    }
+
+    .step-num {
+      display: table-cell;
+      width: 36px;
+      vertical-align: top;
+      padding-left: 14px;
+    }
+
+    .step-num span {
+      display: block;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #0e4d92;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      text-align: center;
+      line-height: 32px;
+    }
+
+    .step-body { display: table-cell; vertical-align: top; padding-top: 4px; }
+
+    .step-body strong {
+      font-size: 14px;
+      font-weight: 800;
+      color: #0f172a;
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .step-body span {
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    /* ── STAT STRIP ── */
+    .stats {
+      background: #0e4d92;
+      padding: 32px 40px;
+    }
+
+    .stats-row {
+      display: table;
+      width: 100%;
+    }
+
+    .stat-cell {
+      display: table-cell;
+      width: 33.33%;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .stat-cell + .stat-cell {
+      border-right: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .stat-num {
+      font-size: 28px;
+      font-weight: 900;
+      color: #f59e0b;
+      display: block;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #93c5fd;
+      line-height: 1.4;
+    }
+
+    /* ── TESTIMONIAL ── */
+    .testimonial {
+      padding: 36px 40px;
+      text-align: center;
+    }
+
+    .testimonial blockquote {
+      font-size: 15px;
+      color: #334155;
+      font-style: italic;
+      line-height: 1.8;
+      position: relative;
+      padding: 0 24px;
+    }
+
+    .testimonial blockquote::before {
+      content: '\201C';
+      font-size: 60px;
+      color: #dbeafe;
+      position: absolute;
+      right: -4px;
+      top: -16px;
+      font-style: normal;
+      font-family: Georgia, serif;
+    }
+
+    .testimonial cite {
+      display: block;
+      margin-top: 14px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #0e4d92;
+      font-style: normal;
+    }
+
+    .testimonial cite span {
+      font-weight: 400;
+      color: #94a3b8;
+    }
+
+    /* ── CTA ── */
+    .cta-section {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+      padding: 48px 40px;
+      text-align: center;
+    }
+
+    .cta-section h2 {
+      font-size: 24px;
+      font-weight: 900;
+      color: #ffffff;
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+
+    .cta-section p {
+      font-size: 14px;
+      color: #94b8d4;
+      margin-bottom: 30px;
+      line-height: 1.7;
+    }
+
+    .cta-btn {
+      display: inline-block;
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: #0f172a;
+      font-size: 16px;
+      font-weight: 900;
+      text-decoration: none;
+      padding: 16px 48px;
+      border-radius: 50px;
+      letter-spacing: 0.3px;
+      box-shadow: 0 8px 24px rgba(245,158,11,0.35);
+    }
+
+    .cta-sub {
+      margin-top: 16px;
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .cta-sub span {
+      color: #4ade80;
+      font-weight: 700;
+    }
+
+    /* ── FOOTER ── */
+    .footer {
+      padding: 28px 40px;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .footer p {
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.8;
+    }
+
+    .footer a {
+      color: #0e4d92;
+      text-decoration: none;
+    }
+
+    .footer-links {
+      margin: 10px 0;
+    }
+
+    .footer-links a {
+      font-size: 12px;
+      color: #64748b;
+      text-decoration: none;
+      margin: 0 8px;
+    }
+
+    .footer-links a:hover { text-decoration: underline; }
+
+    /* ── MOBILE ── */
+    @media only screen and (max-width: 480px) {
+      .wrapper { padding: 16px 8px; }
+      .header  { padding: 36px 24px 32px; }
+      .header h1 { font-size: 24px; }
+      .intro, .features, .testimonial { padding-left: 24px; padding-right: 24px; }
+      .pain   { margin: 20px 24px; }
+      .journey { padding: 28px 24px; }
+      .stats  { padding: 24px 20px; }
+      .stat-num { font-size: 22px; }
+      .cta-section { padding: 36px 24px; }
+      .footer { padding: 24px 20px; }
+      .stats-row { display: block; }
+      .stat-cell { display: block; width: 100%; padding: 12px 0; border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.1); }
+      .stat-cell:last-child { border-bottom: none; }
+      .cta-btn { padding: 14px 32px; font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+
+      <!-- ══ HEADER ══ -->
+      <div class="header">
+        <div class="header-logo">
+          <span>Job<em>AI</em>24</span>
+        </div>
+        <div class="hero-badge">
+          <span>&#x2728; مدعوم بالذكاء الاصطناعي</span>
+        </div>
+        <h1>وظيفتك القادمة<br />تبدأ من هنا <span>&#x1F3AF;</span></h1>
+        <p>
+          أكثر من مجرد موقع توظيف — منصة ذكاء اصطناعي متكاملة تحلّل سيرتك الذاتية،
+          تُحسّنها، تجد لك الوظائف الأنسب، وتُعدّك للمقابلات.
+        </p>
+      </div>
+
+      <!-- ══ INTRO ══ -->
+      <div class="intro">
+        <h2>هل تبحث عن عمل وتشعر أن جهودك لا تُؤتي ثمارها؟</h2>
+        <p>
+          أنت لست وحدك. الملايين من الباحثين عن عمل يُرسلون عشرات السير الذاتية
+          دون أن يصلوا لمقابلة واحدة — ليس لأنهم غير مؤهلين،
+          بل لأن سيرتهم الذاتية لا تتخطى فلاتر ATS الآلية التي تستخدمها الشركات.
+        </p>
+      </div>
+
+      <!-- ══ PAIN CALLOUT ══ -->
+      <div class="pain">
+        <p>
+          <strong>هل تعلم؟</strong> &nbsp;أكثر من <strong>75% من السير الذاتية</strong> تُرفض تلقائياً
+          من أنظمة التتبع الآلي <strong>قبل أن تراها عينٌ بشرية واحدة.</strong>
+          &nbsp;JobAI24 يكسر هذا الحاجز لصالحك.
+        </p>
+      </div>
+
+      <!-- ══ FEATURES ══ -->
+      <div class="features">
+        <div class="features-title">&#x1F680; &nbsp;ماذا يفعل JobAI24 من أجلك؟</div>
+
+        <!-- Feature 1 -->
+        <div class="feature-item">
+          <div class="feature-icon">
+            <span class="feature-icon-inner ic-blue">&#x1F4CA;</span>
+          </div>
+          <div class="feature-body">
+            <h3>تحليل سيرتك الذاتية بدقة ATS</h3>
+            <p>
+              نحلل سيرتك الذاتية ونعطيك نقاطاً من 100 — مع تقرير تفصيلي
+              لنقاط القوة والضعف في المهارات والخبرة والتعليم، حتى تعرف
+              بالضبط ما الذي يجب تحسينه.
+            </p>
+          </div>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="feature-item">
+          <div class="feature-icon">
+            <span class="feature-icon-inner ic-green">&#x270F;&#xFE0F;</span>
+          </div>
+          <div class="feature-body">
+            <h3>محرر CV ذكي بالذكاء الاصطناعي</h3>
+            <p>
+              يقترح عليك AI تحسينات فورية لكل قسم — الملخص، الخبرة،
+              المهارات — وتحصل على نسخة محسّنة جاهزة للتحميل بصيغة
+              Word بنقرة واحدة.
+            </p>
+          </div>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="feature-item">
+          <div class="feature-icon">
+            <span class="feature-icon-inner ic-purple">&#x1F50D;</span>
+          </div>
+          <div class="feature-body">
+            <h3>مطابقة وظائف ذكية بنسبة توافق</h3>
+            <p>
+              نربطك بآلاف الوظائف المناسبة لك مع عرض <em>نسبة التوافق</em>
+              لكل وظيفة وشرح واضح "لماذا أنت مناسب" و"ما الذي يجب تحسينه"
+              قبل التقديم.
+            </p>
+          </div>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="feature-item">
+          <div class="feature-icon">
+            <span class="feature-icon-inner ic-amber">&#x1F4E7;</span>
+          </div>
+          <div class="feature-body">
+            <h3>SmartSend — أرسل لشركات بضغطة</h3>
+            <p>
+              حدّد الشركات التي تريدها، ونظامنا يُولّد رسائل تقديم
+              مخصصة لكل منها ويرسلها بشكل تلقائي — وفّر ساعات من
+              الكتابة اليدوية.
+            </p>
+          </div>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="feature-item">
+          <div class="feature-icon">
+            <span class="feature-icon-inner ic-rose">&#x1F3A4;</span>
+          </div>
+          <div class="feature-body">
+            <h3>مقابلة وظيفية تجريبية بالذكاء الاصطناعي</h3>
+            <p>
+              تدرّب على مقابلات حقيقية مع AI يُقيّم إجاباتك،
+              يُشير على نقاط الضعف، ويُعطيك درجة جاهزية للمقابلة
+              الحقيقية.
+            </p>
+          </div>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="feature-item">
+          <div class="feature-icon">
+            <span class="feature-icon-inner ic-teal">&#x1F4CB;</span>
+          </div>
+          <div class="feature-body">
+            <h3>لوحة تحكم شاملة لتتبع تقدمك</h3>
+            <p>
+              تابع نقاط ATS، عدد التقديمات، الوظائف المحفوظة،
+              ودرجة الجاهزية للمقابلات — كل شيء في مكان واحد
+              حتى تتحكم في رحلة بحثك عن عمل.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ JOURNEY ══ -->
+      <div class="journey">
+        <div class="journey-title">&#x1F5FA;&#xFE0F; &nbsp;رحلتك معنا في 6 خطوات</div>
+
+        <div class="step">
+          <div class="step-num"><span>1</span></div>
+          <div class="step-body">
+            <strong>ارفع سيرتك الذاتية</strong>
+            <span>نُحللها فوراً ونستخرج معلوماتك الكاملة</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num"><span>2</span></div>
+          <div class="step-body">
+            <strong>احصل على تقرير ATS مفصّل</strong>
+            <span>اعرف نقاط قوتك وما يجب تحسينه بالضبط</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num"><span>3</span></div>
+          <div class="step-body">
+            <strong>حسّن سيرتك بمساعدة AI</strong>
+            <span>احصل على نسخة محسّنة احترافية قابلة للتنزيل</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num"><span>4</span></div>
+          <div class="step-body">
+            <strong>اكتشف الوظائف الأنسب لك</strong>
+            <span>مطابقة ذكية مع تفسير سبب توافقك مع كل وظيفة</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num"><span>5</span></div>
+          <div class="step-body">
+            <strong>قدّم لعشرات الشركات تلقائياً</strong>
+            <span>رسائل مخصصة بالذكاء الاصطناعي لكل شركة</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num"><span>6</span></div>
+          <div class="step-body">
+            <strong>تدرّب على المقابلة وانجح فيها</strong>
+            <span>مقابلات تجريبية مع تقييم فوري وتحضير كامل</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ STATS ══ -->
+      <div class="stats">
+        <div class="stats-row">
+          <div class="stat-cell">
+            <span class="stat-num">3x</span>
+            <span class="stat-label">زيادة في فرص<br/>الحصول على مقابلة</span>
+          </div>
+          <div class="stat-cell">
+            <span class="stat-num">+40</span>
+            <span class="stat-label">نقطة زيادة متوسط<br/>في نقاط ATS</span>
+          </div>
+          <div class="stat-cell">
+            <span class="stat-num">دقائق</span>
+            <span class="stat-label">فقط لتحسين<br/>سيرتك الذاتية</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ TESTIMONIAL ══ -->
+      <div class="testimonial">
+        <blockquote>
+          كنت أبحث عن عمل 4 أشهر دون رد. بعد أسبوع من استخدام JobAI24 وتحسين سيرتي الذاتية
+          حسب توصياتهم، وصلتني 3 دعوات للمقابلة في نفس الأسبوع. التفصيل في التحليل
+          كان مذهلاً — عرفت بالضبط ما الذي كان ينقصني.
+        </blockquote>
+        <cite>أحمد الزهراني <span>— مهندس برمجيات، الرياض</span></cite>
+      </div>
+
+      <!-- ══ CTA ══ -->
+      <div class="cta-section">
+        <h2>ابدأ رحلتك نحو وظيفتك القادمة<br />&#x1F31F; الآن مجاناً</h2>
+        <p>
+          لا تحتاج إلى بطاقة ائتمان. ابدأ بتحليل سيرتك الذاتية مجاناً
+          واكتشف ما تفتقده عن مستخدمي JobAI24.
+        </p>
+        <a href="https://www.jobai24.com/?utm_source=email&utm_medium=campaign&utm_campaign=jobseekers_june2026"
+           class="cta-btn">
+          &#x1F680; &nbsp;ابدأ مجاناً الآن
+        </a>
+        <div class="cta-sub">
+          <span>&#x2713;</span> مجاني للبدء &nbsp;|&nbsp;
+          <span>&#x2713;</span> لا بطاقة مطلوبة &nbsp;|&nbsp;
+          <span>&#x2713;</span> نتائج فورية
+        </div>
+      </div>
+
+      <!-- ══ FOOTER ══ -->
+      <div class="footer">
+        <div class="footer-links">
+          <a href="https://www.jobai24.com/privacy">سياسة الخصوصية</a>
+          <a href="https://www.jobai24.com/terms">الشروط والأحكام</a>
+          <a href="{{unsubscribe_url}}">إلغاء الاشتراك</a>
+        </div>
+        <p>
+          وصلك هذا البريد لأنك سجّلت اهتمامك بفرص العمل.
+          <br />
+          &copy; 2026 JobAI24 &mdash; جميع الحقوق محفوظة
+          <br />
+          <a href="{{unsubscribe_url}}">إلغاء اشتراكك</a> في أي وقت.
+        </p>
+      </div>
+
+    </div>
+    <!-- /container -->
+  </div>
+</body>
+</html>
