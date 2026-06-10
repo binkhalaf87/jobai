@@ -629,6 +629,12 @@ function CreateCampaignWizard({ onDone, existingCampaignId }: { onDone: () => vo
               {importResult.skipped > 0 && <p className="text-emerald-600">تم تخطي (غير صالح/مكرر): {importResult.skipped.toLocaleString()}</p>}
             </div>
           )}
+          {importResult?.added === 0 && (
+            <div className="rounded-xl bg-rose-50 border border-rose-200 p-3 text-xs text-rose-700 flex items-start gap-2">
+              <AlertCircle size={13} className="shrink-0 mt-0.5" />
+              <span>لم يتم استيراد أي جهة اتصال — تحقق من صيغة الملف وتأكد أن عمود <strong>email</strong> موجود</span>
+            </div>
+          )}
           {error && <p className="text-xs text-rose-600">{error}</p>}
           <div className="flex gap-3 pt-1">
             {!existingCampaignId && (
@@ -637,7 +643,7 @@ function CreateCampaignWizard({ onDone, existingCampaignId }: { onDone: () => vo
                 ← رجوع
               </button>
             )}
-            {importResult && (
+            {importResult && importResult.added > 0 && (
               <button onClick={() => setStep("preview")}
                 className="flex-1 rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white">
                 متابعة للمعاينة →
@@ -732,8 +738,8 @@ function CreateCampaignWizard({ onDone, existingCampaignId }: { onDone: () => vo
               </tbody>
             </table>
           </div>
-          <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
-            تأكد من إعداد <strong>BREVO_API_KEY</strong> في متغيرات بيئة Railway قبل التفعيل.
+          <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-800">
+            الإرسال عبر <strong>SMTP relay (Brevo)</strong> — تأكد من ضبط <strong>SYSTEM_SMTP_*</strong> في Railway.
           </div>
           {error && <p className="text-xs text-rose-600">{error}</p>}
           <div className="flex gap-3">
