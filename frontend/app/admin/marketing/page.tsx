@@ -160,7 +160,7 @@ function SuccessToast({ message, onClose }: { message: string; onClose: () => vo
 
 const WARMUP_INFO = "Days 1–3: 500/day → Days 4–7: 1,000 → Days 8–14: 3,000 → Days 15–21: 8,000 → Days 22–28: 20,000 → Day 29+: 50,000/day";
 
-function AnalyticsView({ onNewCampaign }: { onNewCampaign: () => void }) {
+function AnalyticsView({ onNewCampaign, onSetupCampaign }: { onNewCampaign: () => void; onSetupCampaign: (id: string) => void }) {
   const [campaigns, setCampaigns] = useState<MarketingCampaign[]>([]);
   const [brevoCampaigns, setBrevoCampaigns] = useState<BrevoEmailCampaign[]>([]);
   const [loadingPlatform, setLoadingPlatform] = useState(true);
@@ -263,10 +263,10 @@ function AnalyticsView({ onNewCampaign }: { onNewCampaign: () => void }) {
                     </button>
                   )}
                   {c.status === "draft" && (
-                    <a href={`/admin/marketing/${c.id}`}
+                    <button onClick={() => onSetupCampaign(c.id)}
                       className="rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700">
                       Setup
-                    </a>
+                    </button>
                   )}
                 </div>
               </div>
@@ -424,9 +424,9 @@ const WARMUP_SCHEDULE = [
 
 type WizardStep = "details" | "import" | "activate";
 
-function CreateCampaignWizard({ onDone }: { onDone: () => void }) {
+function CreateCampaignWizard({ onDone, existingCampaignId }: { onDone: () => void; existingCampaignId?: string }) {
   const fileRef = useRef<HTMLInputElement>(null);
-  const [step, setStep] = useState<WizardStep>("details");
+  const [step, setStep] = useState<WizardStep>(existingCampaignId ? "import" : "details");
 
   const [name, setName] = useState("");
   const [subject, setSubject] = useState("");
@@ -434,7 +434,7 @@ function CreateCampaignWizard({ onDone }: { onDone: () => void }) {
   const [fromName, setFromName] = useState("JobAI24");
   const [fromEmail, setFromEmail] = useState("marketing@jobai24.com");
 
-  const [campaignId, setCampaignId] = useState("");
+  const [campaignId, setCampaignId] = useState(existingCampaignId ?? "");
   const [importResult, setImportResult] = useState<{ added: number; skipped: number } | null>(null);
 
   const [loading, setLoading] = useState(false);
@@ -852,10 +852,21 @@ const NAV: { view: View; label: string; icon: React.ElementType }[] = [
 export default function MarketingPage() {
   const [view, setView] = useState<View>("overview");
   const [analyticsKey, setAnalyticsKey] = useState(0);
+  const [setupCampaignId, setSetupCampaignId] = useState<string | undefined>();
 
   function goAnalytics() {
     setView("analytics");
     setAnalyticsKey((k) => k + 1);
+  }
+
+  function handleSetupCampaign(id: string) {
+    setSetupCampaignId(id);
+    setView("create");
+  }
+
+  function handleNewCampaign() {
+    setSetupCampaignId(undefined);
+    setView("create");
   }
 
   return (
@@ -872,7 +883,7 @@ export default function MarketingPage() {
           {NAV.map(({ view: v, label, icon: Icon }) => (
             <button
               key={v}
-              onClick={() => setView(v)}
+              onClick={() => { if (v === "create") handleNewCampaign(); else setView(v); }}
               className={`w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors text-left
                 ${view === v ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"}`}
             >
@@ -885,9 +896,9 @@ export default function MarketingPage() {
 
       {/* Content */}
       <main className="flex-1 overflow-y-auto px-6 py-8">
-        {view === "overview"  && <OverviewView onNewCampaign={() => setView("create")} onGoAnalytics={goAnalytics} />}
-        {view === "analytics" && <AnalyticsView key={analyticsKey} onNewCampaign={() => setView("create")} />}
-        {view === "create"    && <CreateCampaignWizard onDone={goAnalytics} />}
+        {view === "overview"  && <OverviewView onNewCampaign={handleNewCampaign} onGoAnalytics={goAnalytics} />}
+        {view === "analytics" && <AnalyticsView key={analyticsKey} onNewCampaign={handleNewCampaign} onSetupCampaign={handleSetupCampaign} />}
+        {view === "create"    && <CreateCampaignWizard onDone={goAnalytics} existingCampaignId={setupCampaignId} />}
       </main>
     </div>
   );
