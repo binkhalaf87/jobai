@@ -19,6 +19,10 @@ import {
   Save,
   ChevronDown,
   ChevronUp,
+  LayoutDashboard,
+  Send,
+  Eye,
+  Zap,
 } from "lucide-react";
 import {
   getCampaigns,
@@ -603,17 +607,250 @@ function CreateCampaignWizard({ onDone }: { onDone: () => void }) {
   );
 }
 
+/* ─── overview view ──────────────────────────────────────────────────── */
+
+type DateRange = "7d" | "30d" | "90d" | "all";
+
+const DATE_RANGES: { label: string; value: DateRange }[] = [
+  { label: "آخر 7 أيام",  value: "7d" },
+  { label: "آخر 30 يوم",  value: "30d" },
+  { label: "آخر 90 يوم",  value: "90d" },
+  { label: "كل الوقت",    value: "all" },
+];
+
+function cutoffDate(range: DateRange): Date | null {
+  if (range === "all") return null;
+  const days = range === "7d" ? 7 : range === "30d" ? 30 : 90;
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d;
+}
+
+function KpiCard({ icon: Icon, label, value, sub, color }: {
+  icon: React.ElementType; label: string; value: string; sub?: string; color: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex items-start gap-4">
+      <div className={`rounded-xl p-2.5 ${color}`}>
+        <Icon size={18} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs text-slate-500 font-medium">{label}</p>
+        <p className="text-2xl font-bold text-slate-900 tabular-nums leading-tight mt-0.5">{value}</p>
+        {sub && <p className="text-xs text-slate-400 mt-0.5">{sub}</p>}
+      </div>
+    </div>
+  );
+}
+
+function OverviewView({ onNewCampaign, onGoAnalytics }: {
+  onNewCampaign: () => void;
+  onGoAnalytics: () => void;
+}) {
+  const [range, setRange] = useState<DateRange>("30d");
+  const [campaigns, setCampaigns] = useState<MarketingCampaign[]>([]);
+  const [brevoCampaigns, setBrevoCampaigns] = useState<BrevoEmailCampaign[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([getCampaigns(), getBrevoEmailCampaigns()])
+      .then(([c, b]) => { setCampaigns(c); setBrevoCampaigns(b); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const cutoff = cutoffDate(range);
+
+  const filteredBrevo = brevoCampaigns.filter((c) => {
+    if (!cutoff || !c.sent_date) return true;
+    return new Date(c.sent_date) >= cutoff;
+  });
+
+  const filteredPlatform = campaigns.filter((c) => {
+    if (!cutoff || !c.warmup_start_date) return true;
+    return new Date(c.warmup_start_date) >= cutoff;
+  });
+
+  const totalDelivered     = filteredBrevo.reduce((s, c) => s + c.delivered, 0);
+  const totalOpens         = filteredBrevo.reduce((s, c) => s + c.unique_opens, 0);
+  const totalClicks        = filteredBrevo.reduce((s, c) => s + c.unique_clicks, 0);
+  const avgOpenRate        = filteredBrevo.filter((c) => c.delivered > 0).length
+    ? Math.round(filteredBrevo.filter((c) => c.delivered > 0).reduce((s, c) => s + c.open_rate, 0) / filteredBrevo.filter((c) => c.delivered > 0).length * 10) / 10
+    : 0;
+
+  const activeCampaigns    = campaigns.filter((c) => c.status === "active" || c.status === "paused");
+  const topBrevo           = [...filteredBrevo].sort((a, b) => b.unique_opens - a.unique_opens).slice(0, 5);
+
+  return (
+    <div className="space-y-8 max-w-4xl">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="text-base font-bold text-slate-900">نظرة عامة</h2>
+          <p className="text-xs text-slate-500 mt-0.5">ملخص أداء الحملات التسويقية</p>
+        </div>
+        {/* Date filter */}
+        <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1">
+          {DATE_RANGES.map((r) => (
+            <button
+              key={r.value}
+              onClick={() => setRange(r.value)}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors
+                ${range === r.value ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-50"}`}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {[1,2,3,4].map((i) => <div key={i} className="h-24 animate-pulse rounded-2xl bg-slate-100" />)}
+        </div>
+      ) : (
+        <>
+          {/* KPI cards */}
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <KpiCard icon={Send}        label="إجمالي المُرسَل"  value={totalDelivered.toLocaleString()} sub={`${filteredBrevo.length} حملة`}  color="bg-blue-50 text-blue-600" />
+            <KpiCard icon={Eye}         label="إجمالي الفتح"    value={totalOpens.toLocaleString()}     sub="unique opens"                     color="bg-emerald-50 text-emerald-600" />
+            <KpiCard icon={MousePointer}label="إجمالي الضغط"   value={totalClicks.toLocaleString()}    sub="unique clicks"                    color="bg-violet-50 text-violet-600" />
+            <KpiCard icon={TrendingUp}  label="متوسط معدل الفتح" value={`${avgOpenRate}%`}             sub="open rate"                        color="bg-amber-50 text-amber-600" />
+          </div>
+
+          {/* Active platform campaigns */}
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-800">الحملات النشطة على المنصة</h3>
+              <button onClick={onGoAnalytics} className="text-xs text-slate-500 hover:text-slate-700 font-medium">
+                عرض الكل ←
+              </button>
+            </div>
+
+            {activeCampaigns.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-200 py-8 text-center">
+                <Zap size={24} className="mx-auto mb-2 text-slate-300" />
+                <p className="text-xs text-slate-500">لا توجد حملات نشطة حالياً</p>
+                <button onClick={onNewCampaign} className="mt-3 inline-flex items-center gap-1 rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white">
+                  <Plus size={13} /> إنشاء حملة
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {activeCampaigns.map((c) => (
+                  <div key={c.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-bold text-slate-900 truncate">{c.name}</p>
+                          <StatusBadge status={c.status} />
+                        </div>
+                        <p className="text-xs text-slate-400 mt-0.5 truncate">{c.subject}</p>
+                      </div>
+                      <div className="flex items-center gap-4 text-center shrink-0">
+                        {[
+                          { label: "جهة اتصال", val: c.total_contacts.toLocaleString() },
+                          { label: "مُرسَل",     val: c.total_sent.toLocaleString() },
+                          { label: "الحد اليومي", val: c.current_daily_limit.toLocaleString() },
+                        ].map(({ label, val }) => (
+                          <div key={label}>
+                            <p className="text-sm font-bold text-slate-900 tabular-nums">{val}</p>
+                            <p className="text-[10px] text-slate-400">{label}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    {c.total_contacts > 0 && (
+                      <div className="mt-3">
+                        <div className="mb-1 flex justify-between text-[10px] text-slate-400">
+                          <span>التقدم</span><span>{c.progress_pct}%</span>
+                        </div>
+                        <ProgressBar pct={c.progress_pct} />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Top Brevo campaigns */}
+          {topBrevo.length > 0 && (
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-slate-800">أفضل حملات Brevo بالفتح</h3>
+                <button onClick={onGoAnalytics} className="text-xs text-slate-500 hover:text-slate-700 font-medium">
+                  عرض الكل ←
+                </button>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                <table className="w-full text-xs">
+                  <thead className="bg-slate-50 border-b border-slate-100">
+                    <tr>
+                      <th className="px-4 py-2.5 text-right font-semibold text-slate-500">الحملة</th>
+                      <th className="px-4 py-2.5 text-center font-semibold text-slate-500">مُرسَل</th>
+                      <th className="px-4 py-2.5 text-center font-semibold text-slate-500">فتح</th>
+                      <th className="px-4 py-2.5 text-center font-semibold text-slate-500">ضغط</th>
+                      <th className="px-4 py-2.5 text-center font-semibold text-slate-500">معدل الفتح</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {topBrevo.map((c, i) => (
+                      <tr key={c.id} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/40"}>
+                        <td className="px-4 py-2.5 font-medium text-slate-800 max-w-[180px] truncate">{c.name}</td>
+                        <td className="px-4 py-2.5 text-center tabular-nums text-slate-600">{c.delivered.toLocaleString()}</td>
+                        <td className="px-4 py-2.5 text-center tabular-nums text-emerald-700 font-semibold">{c.unique_opens.toLocaleString()}</td>
+                        <td className="px-4 py-2.5 text-center tabular-nums text-blue-700">{c.unique_clicks.toLocaleString()}</td>
+                        <td className="px-4 py-2.5 text-center">
+                          <span className={`font-bold tabular-nums ${c.open_rate >= 20 ? "text-emerald-700" : c.open_rate >= 10 ? "text-amber-600" : "text-slate-500"}`}>
+                            {c.open_rate}%
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
+          {/* Platform summary */}
+          {filteredPlatform.length > 0 && (
+            <section className="space-y-3">
+              <h3 className="text-sm font-bold text-slate-800">ملخص حملات المنصة</h3>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: "إجمالي الحملات",   value: filteredPlatform.length, color: "text-slate-900" },
+                  { label: "إجمالي جهات الاتصال", value: filteredPlatform.reduce((s,c) => s + c.total_contacts, 0).toLocaleString(), color: "text-slate-900" },
+                  { label: "إجمالي المُرسَل",   value: filteredPlatform.reduce((s,c) => s + c.total_sent, 0).toLocaleString(), color: "text-emerald-700" },
+                ].map(({ label, value, color }) => (
+                  <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm">
+                    <p className={`text-xl font-bold tabular-nums ${color}`}>{value}</p>
+                    <p className="text-xs text-slate-500 mt-1">{label}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 /* ─── page root ──────────────────────────────────────────────────────── */
 
-type View = "analytics" | "create";
+type View = "overview" | "analytics" | "create";
 
 const NAV: { view: View; label: string; icon: React.ElementType }[] = [
+  { view: "overview",  label: "نظرة عامة",  icon: LayoutDashboard },
   { view: "analytics", label: "التحليل",    icon: BarChart2 },
   { view: "create",    label: "إنشاء حملة", icon: Plus },
 ];
 
 export default function MarketingPage() {
-  const [view, setView] = useState<View>("analytics");
+  const [view, setView] = useState<View>("overview");
   const [analyticsKey, setAnalyticsKey] = useState(0);
 
   function goAnalytics() {
@@ -648,6 +885,7 @@ export default function MarketingPage() {
 
       {/* Content */}
       <main className="flex-1 overflow-y-auto px-6 py-8">
+        {view === "overview"  && <OverviewView onNewCampaign={() => setView("create")} onGoAnalytics={goAnalytics} />}
         {view === "analytics" && <AnalyticsView key={analyticsKey} onNewCampaign={() => setView("create")} />}
         {view === "create"    && <CreateCampaignWizard onDone={goAnalytics} />}
       </main>
