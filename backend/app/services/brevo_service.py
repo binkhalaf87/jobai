@@ -96,7 +96,7 @@ async def send_marketing_email(
 
     payload = {
         "sender": {"name": from_name, "email": from_email},
-        "to": [{"email": to_email, "name": to_name or ""}],
+        "to": [{"email": to_email, **({"name": to_name} if to_name else {})}],
         "subject": subject,
         "htmlContent": html_content,
     }
