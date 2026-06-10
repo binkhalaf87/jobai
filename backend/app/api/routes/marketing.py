@@ -8,6 +8,7 @@ from datetime import date, datetime, timezone
 
 import openpyxl
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi.responses import Response
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -269,17 +270,18 @@ def resume_campaign(
     return _to_response(campaign)
 
 
-@router.delete("/campaigns/{campaign_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/campaigns/{campaign_id}")
 def delete_campaign(
     campaign_id: str,
     admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
-) -> None:
+) -> Response:
     campaign = db.get(MarketingCampaign, campaign_id)
     if not campaign:
         raise HTTPException(status_code=404, detail="Campaign not found.")
     db.delete(campaign)
     db.commit()
+    return Response(status_code=204)
 
 
 @router.get("/warmup-schedule")
