@@ -269,6 +269,19 @@ def resume_campaign(
     return _to_response(campaign)
 
 
+@router.delete("/campaigns/{campaign_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_campaign(
+    campaign_id: str,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> None:
+    campaign = db.get(MarketingCampaign, campaign_id)
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found.")
+    db.delete(campaign)
+    db.commit()
+
+
 @router.get("/warmup-schedule")
 def get_warmup_schedule(_: User = Depends(get_current_admin)) -> list[dict]:
     """Return the automatic warm-up schedule for UI display."""

@@ -129,6 +129,14 @@ export async function resumeCampaign(id: string): Promise<MarketingCampaign> {
   return res.json();
 }
 
+export async function deleteCampaign(id: string): Promise<void> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/campaigns/${id}`, {
+    method: "DELETE",
+    headers: mutationHeaders(),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to delete campaign"));
+}
+
 export async function getWarmupSchedule(): Promise<WarmupScheduleEntry[]> {
   const res = await fetch(`${getApiBaseUrl()}${BASE}/warmup-schedule`, {
     headers: authHeaders(),

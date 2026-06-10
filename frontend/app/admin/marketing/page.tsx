@@ -23,6 +23,7 @@ import {
   Send,
   Eye,
   Zap,
+  Trash2,
 } from "lucide-react";
 import {
   getCampaigns,
@@ -32,6 +33,7 @@ import {
   createCampaign,
   importContacts,
   activateCampaign,
+  deleteCampaign,
   downloadTemplate,
   getBrevoEmailCampaigns,
   saveOpenersToList,
@@ -169,6 +171,7 @@ function AnalyticsView({ onNewCampaign, onSetupCampaign }: { onNewCampaign: () =
   const [errorPlatform, setErrorPlatform] = useState("");
   const [errorBrevo, setErrorBrevo] = useState("");
   const [acting, setActing] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<MarketingCampaign | null>(null);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [saving, setSaving] = useState<BrevoEmailCampaign | null>(null);
   const [toast, setToast] = useState("");
@@ -200,6 +203,16 @@ function AnalyticsView({ onNewCampaign, onSetupCampaign }: { onNewCampaign: () =
     setActing(id);
     try { setCampaigns((p) => p.map((c) => (c.id === id ? { ...c, status: "active" } : c))); await resumeCampaign(id); }
     catch { void loadPlatform(); }
+    finally { setActing(null); }
+  }
+
+  async function handleDelete(id: string) {
+    setActing(id);
+    try {
+      await deleteCampaign(id);
+      setCampaigns((p) => p.filter((c) => c.id !== id));
+      setDeleting(null);
+    } catch { void loadPlatform(); }
     finally { setActing(null); }
   }
 
@@ -269,6 +282,14 @@ function AnalyticsView({ onNewCampaign, onSetupCampaign }: { onNewCampaign: () =
                       Setup
                     </button>
                   )}
+                  <button
+                    onClick={() => setDeleting(c)}
+                    disabled={acting === c.id}
+                    className="rounded-xl border border-rose-200 bg-rose-50 p-1.5 text-rose-600 hover:bg-rose-100 disabled:opacity-50"
+                    title="حذف الحملة"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               </div>
 
@@ -407,6 +428,38 @@ function AnalyticsView({ onNewCampaign, onSetupCampaign }: { onNewCampaign: () =
           }}
         />
       )}
+
+      {deleting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl bg-rose-100 p-2.5">
+                <Trash2 size={18} className="text-rose-600" />
+              </div>
+              <p className="text-sm font-bold text-slate-900">حذف الحملة</p>
+            </div>
+            <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-600 space-y-1">
+              <p className="font-semibold text-slate-800">{deleting.name}</p>
+              <p>{deleting.total_contacts.toLocaleString()} جهة اتصال · {deleting.total_sent.toLocaleString()} مُرسَل · {deleting.total_failed.toLocaleString()} فشل</p>
+            </div>
+            <p className="text-xs text-slate-500">سيتم حذف الحملة وجميع جهات الاتصال المرتبطة بها نهائياً. لا يمكن التراجع.</p>
+            <div className="flex gap-2 pt-1">
+              <button onClick={() => setDeleting(null)}
+                className="flex-1 rounded-xl border border-slate-200 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+                إلغاء
+              </button>
+              <button
+                onClick={() => void handleDelete(deleting.id)}
+                disabled={acting === deleting.id}
+                className="flex-1 rounded-xl bg-rose-600 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
+              >
+                {acting === deleting.id ? "جاري الحذف…" : "حذف نهائياً"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {toast && <SuccessToast message={toast} onClose={() => setToast("")} />}
     </div>
   );
