@@ -1,7 +1,8 @@
-"""Generate a single cover letter / outreach email via OpenAI JSON mode."""
+"""Generate cover letter / outreach emails via OpenAI JSON mode."""
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 import logging
@@ -193,3 +194,94 @@ async def generate_cover_letter(
     result = {"subject": letter["subject"], "body": letter["body"]}
     _store_cached_letter(db, user_id, cache_key, result["subject"], result["body"])
     return result
+
+
+_STYLE_SUFFIXES = {
+    "formal":   "Write in a formal, professional tone.",
+    "creative": "Write in a warm, creative tone that shows personality while staying professional.",
+    "concise":  "Write an ultra-concise version under 120 words — every sentence must earn its place.",
+}
+
+
+async def _generate_variant(
+    db: Session,
+    user_id: str,
+    job_title: str | None,
+    company_name: str | None,
+    job_description: str | None,
+    resume_id: str | None,
+    style: str,
+) -> dict:
+    """Generate one styled variant. Reuses the main cache infrastructure with a style suffix."""
+    is_general = not job_title or not job_title.strip()
+    effective_title = job_title.strip() if not is_general else ""
+
+    cache_key = _make_cache_key(
+        user_id + f":{style}", effective_title, company_name, job_description, resume_id
+    )
+    cached = _get_cached_letter(db, user_id, cache_key)
+    if cached:
+        return cached
+
+    resume_text = ""
+    if resume_id:
+        resume_text = _get_resume_text(db, user_id, resume_id)[:3000]
+
+    style_note = _STYLE_SUFFIXES.get(style, "")
+    if is_general:
+        system_prompt = _SYSTEM_PROMPT_GENERAL + f"\n\n{style_note}"
+        parts = ["Generate a personal marketing email based on the applicant's resume below."]
+        if resume_text:
+            parts.append(f"\nApplicant Resume:\n{sanitize_user_input(resume_text, max_length=3000)}")
+        else:
+            parts.append("No resume provided — write a polished general self-introduction.")
+    else:
+        system_prompt = _SYSTEM_PROMPT_TARGETED + f"\n\n{style_note}"
+        parts = [f"Job Title: {sanitize_user_input(effective_title)}"]
+        if company_name:
+            parts.append(f"Company: {sanitize_user_input(company_name)}")
+        if job_description:
+            parts.append(f"\nJob Description:\n{sanitize_user_input(job_description, max_length=2000)}")
+        if resume_text:
+            parts.append(f"\nApplicant Resume (for context):\n{sanitize_user_input(resume_text, max_length=3000)}")
+
+    client = get_openai_client()
+    response = await client.chat.completions.create(
+        model="gpt-4o-mini",
+        temperature=0.7,
+        response_format={"type": "json_object"},
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": "\n".join(parts)},
+        ],
+    )
+    raw = response.choices[0].message.content or "{}"
+    try:
+        letter = json.loads(raw)
+    except json.JSONDecodeError:
+        raise ValueError(f"AI returned malformed JSON for {style} variant")
+
+    if "subject" not in letter or "body" not in letter:
+        raise ValueError(f"AI response missing subject or body for {style} variant")
+
+    result = {"subject": letter["subject"], "body": letter["body"]}
+    _store_cached_letter(db, user_id, cache_key, result["subject"], result["body"])
+    return result
+
+
+async def generate_cover_letters(
+    db: Session,
+    user_id: str,
+    job_title: str | None,
+    company_name: str | None,
+    job_description: str | None,
+    resume_id: str | None,
+) -> dict:
+    """Generate 3 styled variants in parallel.
+    Returns {formal: {subject, body}, creative: {subject, body}, concise: {subject, body}}."""
+    formal, creative, concise = await asyncio.gather(
+        _generate_variant(db, user_id, job_title, company_name, job_description, resume_id, "formal"),
+        _generate_variant(db, user_id, job_title, company_name, job_description, resume_id, "creative"),
+        _generate_variant(db, user_id, job_title, company_name, job_description, resume_id, "concise"),
+    )
+    return {"formal": formal, "creative": creative, "concise": concise}
