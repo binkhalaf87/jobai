@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import {
   getCampaigns,
+  getCampaign,
   pauseCampaign,
   resumeCampaign,
   createCampaign,
@@ -422,7 +423,7 @@ const WARMUP_SCHEDULE = [
   { period: "Day 29+",    limit: "50,000 / day" },
 ];
 
-type WizardStep = "details" | "import" | "activate";
+type WizardStep = "details" | "import" | "preview" | "activate";
 
 function CreateCampaignWizard({ onDone, existingCampaignId }: { onDone: () => void; existingCampaignId?: string }) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -435,12 +436,21 @@ function CreateCampaignWizard({ onDone, existingCampaignId }: { onDone: () => vo
   const [fromEmail, setFromEmail] = useState("marketing@jobai24.com");
 
   const [campaignId, setCampaignId] = useState(existingCampaignId ?? "");
+  const [campaignData, setCampaignData] = useState<MarketingCampaign | null>(null);
   const [importResult, setImportResult] = useState<{ added: number; skipped: number } | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const STEPS: WizardStep[] = ["details", "import", "activate"];
+  useEffect(() => {
+    if (existingCampaignId) {
+      getCampaign(existingCampaignId)
+        .then(setCampaignData)
+        .catch(() => {});
+    }
+  }, [existingCampaignId]);
+
+  const STEPS: WizardStep[] = ["details", "import", "preview", "activate"];
   const stepIdx = STEPS.indexOf(step);
 
   async function handleCreate(e: React.FormEvent) {
@@ -450,6 +460,7 @@ function CreateCampaignWizard({ onDone, existingCampaignId }: { onDone: () => vo
     try {
       const c = await createCampaign({ name: name.trim(), subject: subject.trim(), html_body: htmlBody.trim(), from_name: fromName.trim(), from_email: fromEmail.trim() });
       setCampaignId(c.id);
+      setCampaignData(c);
       setStep("import");
     } catch (e) { setError(e instanceof Error ? e.message : "Failed"); }
     finally { setLoading(false); }
@@ -472,8 +483,11 @@ function CreateCampaignWizard({ onDone, existingCampaignId }: { onDone: () => vo
   const stepLabels: Record<WizardStep, string> = {
     details:  "التفاصيل",
     import:   "استيراد جهات الاتصال",
+    preview:  "المعاينة والتأكيد",
     activate: "التفعيل",
   };
+
+  const previewHtml = campaignData?.html_body ?? htmlBody;
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -483,7 +497,7 @@ function CreateCampaignWizard({ onDone, existingCampaignId }: { onDone: () => vo
       </div>
 
       {/* Step indicator */}
-      <div className="flex gap-2 items-center">
+      <div className="flex gap-2 items-center flex-wrap">
         {STEPS.map((s, i) => (
           <div key={s} className="flex items-center gap-2">
             <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold
@@ -493,12 +507,12 @@ function CreateCampaignWizard({ onDone, existingCampaignId }: { onDone: () => vo
             <span className={`text-xs font-medium ${step === s ? "text-slate-900" : "text-slate-400"}`}>
               {stepLabels[s]}
             </span>
-            {i < 2 && <div className="h-px w-6 bg-slate-200" />}
+            {i < STEPS.length - 1 && <div className="h-px w-6 bg-slate-200" />}
           </div>
         ))}
       </div>
 
-      {/* Step 1 */}
+      {/* Step 1 — details */}
       {step === "details" && (
         <form onSubmit={(e) => void handleCreate(e)} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="space-y-1">
@@ -536,7 +550,7 @@ function CreateCampaignWizard({ onDone, existingCampaignId }: { onDone: () => vo
         </form>
       )}
 
-      {/* Step 2 */}
+      {/* Step 2 — import */}
       {step === "import" && (
         <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-sm font-semibold text-slate-800">استيراد جهات الاتصال من Excel</p>
@@ -564,14 +578,77 @@ function CreateCampaignWizard({ onDone, existingCampaignId }: { onDone: () => vo
           )}
           {error && <p className="text-xs text-rose-600">{error}</p>}
           {importResult && (
-            <button onClick={() => setStep("activate")} className="w-full rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white">
-              متابعة →
+            <button onClick={() => setStep("preview")} className="w-full rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white">
+              متابعة للمعاينة →
             </button>
           )}
         </div>
       )}
 
-      {/* Step 3 */}
+      {/* Step 3 — preview & confirm */}
+      {step === "preview" && (
+        <div className="space-y-4">
+          {/* Campaign details summary */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
+            <p className="text-sm font-bold text-slate-800">ملخص الحملة</p>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              {[
+                { label: "اسم الحملة",   value: campaignData?.name    ?? name },
+                { label: "سطر الموضوع",  value: campaignData?.subject ?? subject },
+                { label: "اسم المُرسِل", value: campaignData?.from_name ?? fromName },
+                { label: "بريد المُرسِل", value: campaignData?.from_email ?? fromEmail },
+              ].map(({ label, value }) => (
+                <div key={label} className="rounded-xl bg-slate-50 px-3 py-2.5">
+                  <p className="text-[10px] text-slate-400 mb-0.5">{label}</p>
+                  <p className="font-semibold text-slate-800 truncate">{value}</p>
+                </div>
+              ))}
+            </div>
+            {importResult && (
+              <div className="flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2.5">
+                <Users size={14} className="text-emerald-600 shrink-0" />
+                <p className="text-xs font-semibold text-emerald-800">
+                  {importResult.added.toLocaleString()} جهة اتصال جاهزة للإرسال
+                  {importResult.skipped > 0 && <span className="font-normal text-emerald-600"> · تم تخطي {importResult.skipped.toLocaleString()}</span>}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* HTML email preview */}
+          {previewHtml ? (
+            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 bg-slate-50">
+                <p className="text-xs font-semibold text-slate-700">معاينة البريد الإلكتروني</p>
+                <span className="text-[10px] text-slate-400">HTML Preview</span>
+              </div>
+              <iframe
+                srcDoc={previewHtml}
+                sandbox="allow-same-origin"
+                className="w-full h-96 border-0"
+                title="email-preview"
+              />
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-200 py-8 text-center">
+              <p className="text-xs text-slate-400">لا توجد معاينة للمحتوى</p>
+            </div>
+          )}
+
+          <div className="flex gap-3">
+            <button onClick={() => setStep("import")}
+              className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+              ← رجوع
+            </button>
+            <button onClick={() => setStep("activate")}
+              className="flex-1 rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white hover:bg-slate-700">
+              تأكيد والمتابعة →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 4 — activate */}
       {step === "activate" && (
         <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-sm font-semibold text-slate-800">مراجعة جدول التسخين والتفعيل</p>
@@ -597,10 +674,16 @@ function CreateCampaignWizard({ onDone, existingCampaignId }: { onDone: () => vo
             تأكد من إعداد <strong>BREVO_API_KEY</strong> في متغيرات بيئة Railway قبل التفعيل.
           </div>
           {error && <p className="text-xs text-rose-600">{error}</p>}
-          <button onClick={() => void handleActivate()} disabled={loading}
-            className="w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
-            {loading ? "جاري التفعيل…" : "تفعيل الحملة"}
-          </button>
+          <div className="flex gap-3">
+            <button onClick={() => setStep("preview")}
+              className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+              ← رجوع
+            </button>
+            <button onClick={() => void handleActivate()} disabled={loading}
+              className="flex-1 rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
+              {loading ? "جاري التفعيل…" : "تفعيل الحملة"}
+            </button>
+          </div>
         </div>
       )}
     </div>

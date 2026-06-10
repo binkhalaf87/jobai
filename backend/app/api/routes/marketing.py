@@ -46,6 +46,7 @@ class CampaignResponse(BaseModel):
     subject: str
     from_name: str
     from_email: str
+    html_body: str
     status: str
     warmup_start_date: date | None
     current_daily_limit: int
@@ -71,6 +72,7 @@ def _to_response(c: MarketingCampaign) -> CampaignResponse:
         subject=c.subject,
         from_name=c.from_name,
         from_email=c.from_email,
+        html_body=c.html_body,
         status=c.status,
         warmup_start_date=c.warmup_start_date,
         current_daily_limit=c.current_daily_limit,

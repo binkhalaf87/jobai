@@ -33,6 +33,7 @@ export type MarketingCampaign = {
   subject: string;
   from_name: string;
   from_email: string;
+  html_body: string;
   status: "draft" | "active" | "paused" | "completed" | "error";
   warmup_start_date: string | null;
   current_daily_limit: number;
