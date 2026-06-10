@@ -296,17 +296,21 @@ async def list_brevo_campaigns(
 
         result = []
         for c in campaigns:
-            stats = (c.get("statistics") or {}).get("globalStats") or {}
+            campaign_stats = (c.get("statistics") or {}).get("campaignStats") or []
+            delivered      = sum(s.get("delivered", 0)      for s in campaign_stats)
+            unique_opens   = sum(s.get("uniqueViews", 0)    for s in campaign_stats)
+            unique_clicks  = sum(s.get("uniqueClicks", 0)   for s in campaign_stats)
+            unsubscriptions = sum(s.get("unsubscriptions", 0) for s in campaign_stats)
             result.append({
                 "id": c.get("id"),
                 "name": c.get("name", ""),
                 "subject": c.get("subject", ""),
                 "sent_date": c.get("sentDate"),
-                "delivered": stats.get("delivered", 0),
-                "unique_opens": stats.get("uniqueOpens", 0),
-                "unique_clicks": stats.get("uniqueClicks", 0),
-                "unsubscriptions": stats.get("unsubscriptions", 0),
-                "open_rate": round(stats.get("uniqueOpens", 0) / stats.get("delivered", 1) * 100, 1) if stats.get("delivered") else 0,
+                "delivered": delivered,
+                "unique_opens": unique_opens,
+                "unique_clicks": unique_clicks,
+                "unsubscriptions": unsubscriptions,
+                "open_rate": round(unique_opens / delivered * 100, 1) if delivered else 0,
             })
         return result
     except Exception as exc:
