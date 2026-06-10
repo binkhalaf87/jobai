@@ -59,19 +59,26 @@ def _send_smtp_blocking(
     from_name: str,
     from_email: str,
 ) -> None:
-    """Blocking SMTP send — called inside a thread-pool executor."""
+    """Blocking SMTP send — called inside a thread-pool executor.
+    Port 465 → implicit SSL (SMTP_SSL); all others → STARTTLS."""
     msg = email.mime.multipart.MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"] = f"{from_name} <{from_email}>"
     msg["To"] = f"{to_name} <{to_email}>" if to_name else to_email
     msg.attach(email.mime.text.MIMEText(html_content, "html", "utf-8"))
 
-    with smtplib.SMTP(smtp_cfg["host"], smtp_cfg["port"], timeout=20) as server:
-        server.ehlo()
-        server.starttls()
-        server.ehlo()
-        server.login(smtp_cfg["user"], smtp_cfg["password"])
-        server.sendmail(from_email, [to_email], msg.as_string())
+    port = int(smtp_cfg["port"])
+    if port == 465:
+        with smtplib.SMTP_SSL(smtp_cfg["host"], port, timeout=30) as server:
+            server.login(smtp_cfg["user"], smtp_cfg["password"])
+            server.sendmail(from_email, [to_email], msg.as_string())
+    else:
+        with smtplib.SMTP(smtp_cfg["host"], port, timeout=30) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(smtp_cfg["user"], smtp_cfg["password"])
+            server.sendmail(from_email, [to_email], msg.as_string())
 
 
 async def send_marketing_email(
