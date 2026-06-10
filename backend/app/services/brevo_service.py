@@ -88,18 +88,23 @@ async def send_marketing_email(
     html_content: str,
     from_name: str = "JobAI24",
     from_email: str = "marketing@jobai24.com",
-) -> str | None:
-    """Send via Brevo Transactional Email API (HTTPS). Returns None on success, error string on failure."""
+    campaign_id: str | None = None,
+) -> tuple[str | None, str | None]:
+    """Send via Brevo Transactional Email API (HTTPS).
+    Returns (error, message_id): error is None on success, message_id is Brevo's ID."""
     api_key = get_brevo_api_key()
     if not api_key:
-        return "BREVO_API_KEY غير مضبوط في Railway"
+        return ("BREVO_API_KEY غير مضبوط في Railway", None)
 
-    payload = {
+    payload: dict = {
         "sender": {"name": from_name, "email": from_email},
         "to": [{"email": to_email, **({"name": to_name} if to_name else {})}],
         "subject": subject,
         "htmlContent": html_content,
     }
+    if campaign_id:
+        payload["tags"] = [f"campaign-{campaign_id}"]
+
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             resp = await client.post(
@@ -108,12 +113,52 @@ async def send_marketing_email(
                 json=payload,
             )
         if resp.status_code in (200, 201):
-            return None
+            message_id = resp.json().get("messageId")
+            return (None, message_id)
         detail = resp.json().get("message", resp.text[:200])
-        return f"Brevo API {resp.status_code}: {detail}"
+        return (f"Brevo API {resp.status_code}: {detail}", None)
     except Exception as exc:
         logger.error("Brevo API send error to %s: %s", to_email, exc)
-        return f"Brevo API خطأ: {exc}"
+        return (f"Brevo API خطأ: {exc}", None)
+
+
+async def fetch_campaign_events(campaign_id: str, start_date: str) -> list[dict]:
+    """Fetch all opened/clicked events for a campaign tag from Brevo.
+    start_date format: YYYY-MM-DD. Returns list of {email, event, date, messageId}."""
+    api_key = get_brevo_api_key()
+    if not api_key:
+        return []
+
+    results: list[dict] = []
+    tag = f"campaign-{campaign_id}"
+    for event_type in ("opened", "clicks"):
+        offset = 0
+        while True:
+            try:
+                async with httpx.AsyncClient(timeout=20.0) as client:
+                    resp = await client.get(
+                        f"{_BREVO_BASE}/smtp/statistics/events",
+                        headers={"api-key": api_key},
+                        params={
+                            "event": event_type,
+                            "tags": tag,
+                            "startDate": start_date,
+                            "limit": 500,
+                            "offset": offset,
+                        },
+                    )
+                if resp.status_code != 200:
+                    break
+                data = resp.json()
+                events = data.get("events", [])
+                results.extend({"type": event_type, **e} for e in events)
+                if len(events) < 500:
+                    break
+                offset += 500
+            except Exception as exc:
+                logger.warning("Brevo events fetch error (campaign %s, %s): %s", campaign_id, event_type, exc)
+                break
+    return results
 
 
 def _brevo_headers() -> dict[str, str]:

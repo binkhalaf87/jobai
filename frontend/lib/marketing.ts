@@ -40,6 +40,10 @@ export type MarketingCampaign = {
   total_contacts: number;
   total_sent: number;
   total_failed: number;
+  total_opened: number;
+  total_clicked: number;
+  open_rate: number;
+  click_rate: number;
   last_sent_at: string | null;
   completed_at: string | null;
   error_message: string | null;

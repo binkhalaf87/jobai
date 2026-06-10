@@ -309,15 +309,17 @@ function AnalyticsView({ onNewCampaign, onSetupCampaign }: { onNewCampaign: () =
                 </div>
               </div>
 
-              <div className="mt-4 grid grid-cols-4 gap-3">
+              <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-6">
                 {[
-                  { label: "Contacts",    value: c.total_contacts.toLocaleString() },
-                  { label: "Sent",        value: c.total_sent.toLocaleString() },
-                  { label: "Failed",      value: c.total_failed.toLocaleString() },
-                  { label: "Daily limit", value: c.current_daily_limit.toLocaleString() },
-                ].map(({ label, value }) => (
+                  { label: "Contacts",    value: c.total_contacts.toLocaleString(),      color: "" },
+                  { label: "Sent",        value: c.total_sent.toLocaleString(),          color: "" },
+                  { label: "Failed",      value: c.total_failed.toLocaleString(),        color: c.total_failed > 0 ? "text-rose-600" : "" },
+                  { label: "Daily limit", value: c.current_daily_limit.toLocaleString(), color: "" },
+                  { label: "Open rate",   value: `${c.open_rate}%`,                      color: c.open_rate > 0 ? "text-emerald-600" : "text-slate-400" },
+                  { label: "Click rate",  value: `${c.click_rate}%`,                     color: c.click_rate > 0 ? "text-blue-600" : "text-slate-400" },
+                ].map(({ label, value, color }) => (
                   <div key={label} className="rounded-xl bg-slate-50 p-3 text-center">
-                    <p className="text-base font-bold text-slate-900 tabular-nums">{value}</p>
+                    <p className={`text-base font-bold tabular-nums ${color || "text-slate-900"}`}>{value}</p>
                     <p className="text-xs text-slate-500">{label}</p>
                   </div>
                 ))}

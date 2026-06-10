@@ -28,6 +28,9 @@ class MarketingCampaign(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     total_sent: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     total_failed: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
 
+    total_opened: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    total_clicked: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+
     last_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -50,7 +53,10 @@ class MarketingCampaignContact(UUIDPrimaryKeyMixin, Base):
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="pending", server_default="pending", index=True
     )
+    brevo_message_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    opened_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    clicked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

@@ -295,20 +295,22 @@ async def _process_marketing_campaigns() -> None:
             for contact in pending:
                 print(f"[MKTG] Sending to {contact.email} ...", flush=True)
                 try:
-                    send_error = await send_marketing_email(
+                    send_error, message_id = await send_marketing_email(
                         to_email=contact.email,
                         to_name=contact.full_name,
                         subject=campaign.subject,
                         html_content=campaign.html_body,
                         from_name=campaign.from_name,
                         from_email=campaign.from_email,
+                        campaign_id=campaign.id,
                     )
                 except Exception as exc:
-                    send_error = f"Unexpected: {exc}"
+                    send_error, message_id = f"Unexpected: {exc}", None
                     print(f"[MKTG] UNEXPECTED exception for {contact.email}: {exc}", flush=True)
                 if send_error is None:
                     contact.status = "sent"
                     contact.sent_at = now
+                    contact.brevo_message_id = message_id
                     campaign.total_sent += 1
                     campaign.last_sent_at = now
                     sent_count += 1
@@ -332,6 +334,69 @@ async def _process_marketing_campaigns() -> None:
 
     except Exception as exc:
         logger.exception("Marketing campaign scheduler error: %s", exc)
+    finally:
+        db.close()
+
+
+async def _poll_marketing_events() -> None:
+    """Fetch open/click events from Brevo for all campaigns that have sent emails."""
+    from app.models.marketing_campaign import MarketingCampaign, MarketingCampaignContact
+    from app.services.brevo_service import fetch_campaign_events
+
+    db = SessionLocal()
+    try:
+        campaigns = db.scalars(
+            select(MarketingCampaign).where(
+                MarketingCampaign.status.in_(["active", "completed"]),
+                MarketingCampaign.total_sent > 0,
+                MarketingCampaign.warmup_start_date.isnot(None),
+            )
+        ).all()
+
+        now = datetime.now(timezone.utc)
+        for campaign in campaigns:
+            start_date = str(campaign.warmup_start_date)
+            events = await fetch_campaign_events(campaign.id, start_date)
+            if not events:
+                continue
+
+            opened_emails: set[str] = set()
+            clicked_emails: set[str] = set()
+            for ev in events:
+                email = (ev.get("email") or "").lower()
+                if ev["type"] == "opened":
+                    opened_emails.add(email)
+                else:
+                    clicked_emails.add(email)
+
+            sent_contacts = db.scalars(
+                select(MarketingCampaignContact).where(
+                    MarketingCampaignContact.campaign_id == campaign.id,
+                    MarketingCampaignContact.status == "sent",
+                )
+            ).all()
+
+            new_opens = new_clicks = 0
+            for contact in sent_contacts:
+                email = contact.email.lower()
+                if email in opened_emails and contact.opened_at is None:
+                    contact.opened_at = now
+                    new_opens += 1
+                if email in clicked_emails and contact.clicked_at is None:
+                    contact.clicked_at = now
+                    new_clicks += 1
+
+            total_opened = sum(1 for c in sent_contacts if c.opened_at is not None)
+            total_clicked = sum(1 for c in sent_contacts if c.clicked_at is not None)
+            if campaign.total_opened != total_opened or campaign.total_clicked != total_clicked:
+                campaign.total_opened = total_opened
+                campaign.total_clicked = total_clicked
+                db.commit()
+                if new_opens or new_clicks:
+                    print(f"[MKTG] Campaign {campaign.id}: +{new_opens} opens, +{new_clicks} clicks", flush=True)
+
+    except Exception as exc:
+        logger.exception("Marketing events poller error: %s", exc)
     finally:
         db.close()
 
@@ -401,6 +466,7 @@ async def _cleanup_refresh_tokens() -> None:
 def start_scheduler() -> None:
     _scheduler.add_job(_process_campaigns, "interval", minutes=5)
     _scheduler.add_job(_process_marketing_campaigns, "interval", minutes=5)
+    _scheduler.add_job(_poll_marketing_events, "interval", minutes=30)
     _scheduler.add_job(_poll_pending_payments, "interval", minutes=10)
     _scheduler.add_job(_cleanup_refresh_tokens, "cron", hour="3", minute="0")
     _scheduler.start()

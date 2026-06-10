@@ -54,6 +54,10 @@ class CampaignResponse(BaseModel):
     total_contacts: int
     total_sent: int
     total_failed: int
+    total_opened: int
+    total_clicked: int
+    open_rate: float
+    click_rate: float
     last_sent_at: datetime | None
     completed_at: datetime | None
     error_message: str | None
@@ -67,6 +71,8 @@ class CampaignResponse(BaseModel):
 
 def _to_response(c: MarketingCampaign) -> CampaignResponse:
     pct = round(c.total_sent / c.total_contacts * 100, 1) if c.total_contacts else 0.0
+    open_rate = round(c.total_opened / c.total_sent * 100, 1) if c.total_sent else 0.0
+    click_rate = round(c.total_clicked / c.total_sent * 100, 1) if c.total_sent else 0.0
     return CampaignResponse(
         id=c.id,
         name=c.name,
@@ -80,6 +86,10 @@ def _to_response(c: MarketingCampaign) -> CampaignResponse:
         total_contacts=c.total_contacts,
         total_sent=c.total_sent,
         total_failed=c.total_failed,
+        total_opened=c.total_opened,
+        total_clicked=c.total_clicked,
+        open_rate=open_rate,
+        click_rate=click_rate,
         last_sent_at=c.last_sent_at,
         completed_at=c.completed_at,
         error_message=c.error_message,
