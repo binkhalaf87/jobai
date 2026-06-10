@@ -89,28 +89,31 @@ async def send_marketing_email(
     from_name: str = "JobAI24",
     from_email: str = "marketing@jobai24.com",
 ) -> str | None:
-    """Send via SMTP relay (Brevo). Returns None on success, error string on failure."""
-    smtp_cfg = _get_smtp_config()
-    if not smtp_cfg:
-        return "SMTP غير مضبوط — تحقق من SYSTEM_SMTP_HOST/USER/PASSWORD في Railway"
+    """Send via Brevo Transactional Email API (HTTPS). Returns None on success, error string on failure."""
+    api_key = get_brevo_api_key()
+    if not api_key:
+        return "BREVO_API_KEY غير مضبوط في Railway"
 
+    payload = {
+        "sender": {"name": from_name, "email": from_email},
+        "to": [{"email": to_email, "name": to_name or ""}],
+        "subject": subject,
+        "htmlContent": html_content,
+    }
     try:
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(
-            None,
-            _send_smtp_blocking,
-            smtp_cfg, to_email, to_name, subject, html_content, from_name, from_email,
-        )
-        return None
-    except smtplib.SMTPAuthenticationError as exc:
-        logger.error("SMTP auth failed: %s", exc)
-        return f"SMTP: خطأ في بيانات الاعتماد — {exc}"
-    except smtplib.SMTPRecipientsRefused as exc:
-        logger.warning("SMTP recipient refused %s: %s", to_email, exc)
-        return f"SMTP: البريد مرفوض — {exc}"
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                f"{_BREVO_BASE}/smtp/email",
+                headers={"api-key": api_key, "Content-Type": "application/json"},
+                json=payload,
+            )
+        if resp.status_code in (200, 201):
+            return None
+        detail = resp.json().get("message", resp.text[:200])
+        return f"Brevo API {resp.status_code}: {detail}"
     except Exception as exc:
-        logger.error("SMTP send error to %s: %s", to_email, exc)
-        return f"SMTP خطأ: {exc}"
+        logger.error("Brevo API send error to %s: %s", to_email, exc)
+        return f"Brevo API خطأ: {exc}"
 
 
 def _brevo_headers() -> dict[str, str]:

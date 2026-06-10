@@ -279,15 +279,15 @@ async def _process_marketing_campaigns() -> None:
                 print(f"[MKTG] Campaign {campaign.id} completed — no pending contacts.", flush=True)
                 continue
 
-            # Abort immediately if SMTP is not configured
-            from app.services.brevo_service import _get_smtp_config
-            smtp_cfg = _get_smtp_config()
-            print(f"[MKTG] Campaign {campaign.id}: SMTP configured={smtp_cfg is not None}", flush=True)
-            if not smtp_cfg:
+            # Abort immediately if Brevo API key is not configured
+            from app.services.brevo_service import get_brevo_api_key
+            api_key = get_brevo_api_key()
+            print(f"[MKTG] Campaign {campaign.id}: Brevo API key configured={api_key is not None}", flush=True)
+            if not api_key:
                 campaign.status = "error"
-                campaign.error_message = "SMTP غير مضبوط — تحقق من SYSTEM_SMTP_HOST/USER/PASSWORD في Railway ثم أعد تفعيل الحملة."
+                campaign.error_message = "BREVO_API_KEY غير مضبوط في Railway — أضفه ثم أعد تفعيل الحملة."
                 db.commit()
-                logger.error("Marketing campaign %s: SMTP not configured — marked as error.", campaign.id)
+                logger.error("Marketing campaign %s: BREVO_API_KEY not configured — marked as error.", campaign.id)
                 continue
 
             print(f"[MKTG] Campaign {campaign.id}: processing {len(pending)} pending contacts", flush=True)

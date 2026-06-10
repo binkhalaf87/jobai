@@ -290,9 +290,7 @@ async def debug_campaign(
     admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> dict:
-    """Diagnostic endpoint — shows contact statuses and tests SMTP from Railway."""
-    from app.services.brevo_service import _get_smtp_config, _send_smtp_blocking
-    import asyncio
+    """Diagnostic endpoint — shows contact statuses and tests Brevo API from Railway."""
 
     campaign = db.get(MarketingCampaign, campaign_id)
     if not campaign:
@@ -314,27 +312,24 @@ async def debug_campaign(
         if c.status == "failed" and c.error_message
     ][:5]
 
-    smtp_cfg = _get_smtp_config()
-    smtp_result: dict = {}
-    if smtp_cfg:
-        try:
-            loop = asyncio.get_running_loop()
-            await loop.run_in_executor(
-                None,
-                _send_smtp_blocking,
-                smtp_cfg,
-                admin.email or "test@example.com",
-                "Debug Test",
-                "[DEBUG] SMTP Test from Railway",
-                "<p>SMTP connectivity test from Railway container.</p>",
-                campaign.from_name,
-                campaign.from_email,
-            )
-            smtp_result = {"ok": True, "message": "SMTP send succeeded"}
-        except Exception as exc:
-            smtp_result = {"ok": False, "error": type(exc).__name__, "detail": str(exc)}
+    from app.services.brevo_service import get_brevo_api_key, send_marketing_email
+    api_key = get_brevo_api_key()
+    api_result: dict = {}
+    if api_key:
+        test_error = await send_marketing_email(
+            to_email=admin.email or "test@example.com",
+            to_name="Debug Test",
+            subject="[DEBUG] Brevo API Test from Railway",
+            html_content="<p>Brevo API connectivity test from Railway container.</p>",
+            from_name=campaign.from_name,
+            from_email=campaign.from_email,
+        )
+        if test_error is None:
+            api_result = {"ok": True, "message": "Brevo API send succeeded"}
+        else:
+            api_result = {"ok": False, "error": test_error}
     else:
-        smtp_result = {"ok": False, "error": "SMTP not configured"}
+        api_result = {"ok": False, "error": "BREVO_API_KEY not configured"}
 
     return {
         "campaign_id": campaign_id,
@@ -344,10 +339,8 @@ async def debug_campaign(
         "total_failed": campaign.total_failed,
         "contact_status_counts": contact_summary,
         "sample_errors": contact_errors,
-        "smtp_config_present": smtp_cfg is not None,
-        "smtp_host": smtp_cfg.get("host") if smtp_cfg else None,
-        "smtp_user": smtp_cfg.get("user") if smtp_cfg else None,
-        "smtp_test": smtp_result,
+        "brevo_api_key_present": api_key is not None,
+        "api_test": api_result,
     }
 
 
