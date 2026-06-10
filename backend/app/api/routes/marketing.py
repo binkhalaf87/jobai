@@ -284,6 +284,73 @@ def delete_campaign(
     return Response(status_code=204)
 
 
+@router.get("/campaigns/{campaign_id}/debug")
+async def debug_campaign(
+    campaign_id: str,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Diagnostic endpoint — shows contact statuses and tests SMTP from Railway."""
+    from app.services.brevo_service import _get_smtp_config, _send_smtp_blocking
+    import asyncio
+
+    campaign = db.get(MarketingCampaign, campaign_id)
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found.")
+
+    contacts = db.scalars(
+        select(MarketingCampaignContact).where(
+            MarketingCampaignContact.campaign_id == campaign_id
+        )
+    ).all()
+
+    contact_summary = {}
+    for c in contacts:
+        contact_summary[c.status] = contact_summary.get(c.status, 0) + 1
+
+    contact_errors = [
+        {"email": c.email, "error": c.error_message}
+        for c in contacts
+        if c.status == "failed" and c.error_message
+    ][:5]
+
+    smtp_cfg = _get_smtp_config()
+    smtp_result: dict = {}
+    if smtp_cfg:
+        try:
+            loop = asyncio.get_running_loop()
+            await loop.run_in_executor(
+                None,
+                _send_smtp_blocking,
+                smtp_cfg,
+                admin.email or "test@example.com",
+                "Debug Test",
+                "[DEBUG] SMTP Test from Railway",
+                "<p>SMTP connectivity test from Railway container.</p>",
+                campaign.from_name,
+                campaign.from_email,
+            )
+            smtp_result = {"ok": True, "message": "SMTP send succeeded"}
+        except Exception as exc:
+            smtp_result = {"ok": False, "error": type(exc).__name__, "detail": str(exc)}
+    else:
+        smtp_result = {"ok": False, "error": "SMTP not configured"}
+
+    return {
+        "campaign_id": campaign_id,
+        "campaign_status": campaign.status,
+        "total_contacts": campaign.total_contacts,
+        "total_sent": campaign.total_sent,
+        "total_failed": campaign.total_failed,
+        "contact_status_counts": contact_summary,
+        "sample_errors": contact_errors,
+        "smtp_config_present": smtp_cfg is not None,
+        "smtp_host": smtp_cfg.get("host") if smtp_cfg else None,
+        "smtp_user": smtp_cfg.get("user") if smtp_cfg else None,
+        "smtp_test": smtp_result,
+    }
+
+
 @router.get("/warmup-schedule")
 def get_warmup_schedule(_: User = Depends(get_current_admin)) -> list[dict]:
     """Return the automatic warm-up schedule for UI display."""

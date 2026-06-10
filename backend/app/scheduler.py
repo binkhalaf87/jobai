@@ -276,37 +276,48 @@ async def _process_marketing_campaigns() -> None:
                 campaign.completed_at = now
                 db.commit()
                 logger.info("Marketing campaign %s completed.", campaign.id)
+                print(f"[MKTG] Campaign {campaign.id} completed — no pending contacts.", flush=True)
                 continue
 
             # Abort immediately if SMTP is not configured
             from app.services.brevo_service import _get_smtp_config
-            if not _get_smtp_config():
+            smtp_cfg = _get_smtp_config()
+            print(f"[MKTG] Campaign {campaign.id}: SMTP configured={smtp_cfg is not None}", flush=True)
+            if not smtp_cfg:
                 campaign.status = "error"
                 campaign.error_message = "SMTP غير مضبوط — تحقق من SYSTEM_SMTP_HOST/USER/PASSWORD في Railway ثم أعد تفعيل الحملة."
                 db.commit()
                 logger.error("Marketing campaign %s: SMTP not configured — marked as error.", campaign.id)
                 continue
 
+            print(f"[MKTG] Campaign {campaign.id}: processing {len(pending)} pending contacts", flush=True)
             sent_count = 0
             for contact in pending:
-                send_error = await send_marketing_email(
-                    to_email=contact.email,
-                    to_name=contact.full_name,
-                    subject=campaign.subject,
-                    html_content=campaign.html_body,
-                    from_name=campaign.from_name,
-                    from_email=campaign.from_email,
-                )
+                print(f"[MKTG] Sending to {contact.email} ...", flush=True)
+                try:
+                    send_error = await send_marketing_email(
+                        to_email=contact.email,
+                        to_name=contact.full_name,
+                        subject=campaign.subject,
+                        html_content=campaign.html_body,
+                        from_name=campaign.from_name,
+                        from_email=campaign.from_email,
+                    )
+                except Exception as exc:
+                    send_error = f"Unexpected: {exc}"
+                    print(f"[MKTG] UNEXPECTED exception for {contact.email}: {exc}", flush=True)
                 if send_error is None:
                     contact.status = "sent"
                     contact.sent_at = now
                     campaign.total_sent += 1
                     campaign.last_sent_at = now
                     sent_count += 1
+                    print(f"[MKTG] ✓ Sent to {contact.email}", flush=True)
                 else:
                     contact.status = "failed"
                     contact.error_message = send_error
                     campaign.total_failed += 1
+                    print(f"[MKTG] ✗ Failed {contact.email}: {send_error}", flush=True)
                     logger.warning("Marketing campaign %s: send failed — %s", campaign.id, send_error)
                 db.commit()
 
