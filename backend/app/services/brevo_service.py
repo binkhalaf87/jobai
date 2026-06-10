@@ -44,12 +44,11 @@ async def send_marketing_email(
     html_content: str,
     from_name: str = "JobAI24",
     from_email: str = "marketing@jobai24.com",
-) -> bool:
-    """Send a single marketing email via Brevo API. Returns True on success."""
+) -> str | None:
+    """Send a single marketing email via Brevo API. Returns None on success, error string on failure."""
     api_key = get_brevo_api_key()
     if not api_key:
-        logger.warning("BREVO_API_KEY not set — skipping marketing email to %s", to_email)
-        return False
+        return "BREVO_API_KEY غير مضبوط في متغيرات البيئة"
 
     payload = {
         "sender": {"name": from_name, "email": from_email},
@@ -71,12 +70,13 @@ async def send_marketing_email(
                 },
             )
         if resp.status_code in (200, 201):
-            return True
+            return None
+        detail = resp.json().get("message", resp.text[:120]) if resp.text else str(resp.status_code)
         logger.warning("Brevo rejected email to %s: %s %s", to_email, resp.status_code, resp.text[:200])
-        return False
+        return f"Brevo {resp.status_code}: {detail}"
     except Exception as exc:
         logger.error("Brevo send error to %s: %s", to_email, exc)
-        return False
+        return f"خطأ في الاتصال بـ Brevo: {exc}"
 
 
 def _brevo_headers() -> dict[str, str]:

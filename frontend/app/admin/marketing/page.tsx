@@ -577,11 +577,20 @@ function CreateCampaignWizard({ onDone, existingCampaignId }: { onDone: () => vo
             </div>
           )}
           {error && <p className="text-xs text-rose-600">{error}</p>}
-          {importResult && (
-            <button onClick={() => setStep("preview")} className="w-full rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white">
-              متابعة للمعاينة →
-            </button>
-          )}
+          <div className="flex gap-3 pt-1">
+            {!existingCampaignId && (
+              <button onClick={() => setStep("details")}
+                className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+                ← رجوع
+              </button>
+            )}
+            {importResult && (
+              <button onClick={() => setStep("preview")}
+                className="flex-1 rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white">
+                متابعة للمعاينة →
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -822,7 +831,7 @@ function OverviewView({ onNewCampaign, onGoAnalytics }: {
             ) : (
               <div className="space-y-3">
                 {activeCampaigns.map((c) => (
-                  <div key={c.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div key={c.id} className={`rounded-2xl border bg-white p-4 shadow-sm ${c.total_failed > 0 && c.total_sent === 0 ? "border-rose-200" : "border-slate-200"}`}>
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -832,18 +841,32 @@ function OverviewView({ onNewCampaign, onGoAnalytics }: {
                         <p className="text-xs text-slate-400 mt-0.5 truncate">{c.subject}</p>
                       </div>
                       <div className="flex items-center gap-4 text-center shrink-0">
-                        {[
-                          { label: "جهة اتصال", val: c.total_contacts.toLocaleString() },
-                          { label: "مُرسَل",     val: c.total_sent.toLocaleString() },
-                          { label: "الحد اليومي", val: c.current_daily_limit.toLocaleString() },
-                        ].map(({ label, val }) => (
-                          <div key={label}>
-                            <p className="text-sm font-bold text-slate-900 tabular-nums">{val}</p>
-                            <p className="text-[10px] text-slate-400">{label}</p>
+                        <div>
+                          <p className="text-sm font-bold text-slate-900 tabular-nums">{c.total_contacts.toLocaleString()}</p>
+                          <p className="text-[10px] text-slate-400">جهة اتصال</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-emerald-700 tabular-nums">{c.total_sent.toLocaleString()}</p>
+                          <p className="text-[10px] text-slate-400">مُرسَل</p>
+                        </div>
+                        {c.total_failed > 0 && (
+                          <div>
+                            <p className="text-sm font-bold text-rose-600 tabular-nums">{c.total_failed.toLocaleString()}</p>
+                            <p className="text-[10px] text-slate-400">فشل</p>
                           </div>
-                        ))}
+                        )}
+                        <div>
+                          <p className="text-sm font-bold text-slate-900 tabular-nums">{c.current_daily_limit.toLocaleString()}</p>
+                          <p className="text-[10px] text-slate-400">الحد اليومي</p>
+                        </div>
                       </div>
                     </div>
+                    {c.total_failed > 0 && c.total_sent === 0 && (
+                      <div className="mt-3 flex items-start gap-2 rounded-xl bg-rose-50 border border-rose-200 px-3 py-2.5 text-xs text-rose-700">
+                        <AlertCircle size={13} className="shrink-0 mt-0.5" />
+                        <span>الإرسال يفشل — تحقق من <strong>BREVO_API_KEY</strong> في Railway وتأكد أن بريد المُرسِل مفعّل في Brevo</span>
+                      </div>
+                    )}
                     {c.total_contacts > 0 && (
                       <div className="mt-3">
                         <div className="mb-1 flex justify-between text-[10px] text-slate-400">

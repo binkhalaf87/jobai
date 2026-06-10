@@ -278,9 +278,18 @@ async def _process_marketing_campaigns() -> None:
                 logger.info("Marketing campaign %s completed.", campaign.id)
                 continue
 
+            # Abort immediately if BREVO_API_KEY is missing — no point iterating contacts
+            from app.services.brevo_service import get_brevo_api_key
+            if not get_brevo_api_key():
+                campaign.status = "error"
+                campaign.error_message = "BREVO_API_KEY غير مضبوط في متغيرات البيئة. أضفه في Railway ثم أعد تفعيل الحملة."
+                db.commit()
+                logger.error("Marketing campaign %s: BREVO_API_KEY not set — marked as error.", campaign.id)
+                continue
+
             sent_count = 0
             for contact in pending:
-                success = await send_marketing_email(
+                send_error = await send_marketing_email(
                     to_email=contact.email,
                     to_name=contact.full_name,
                     subject=campaign.subject,
@@ -288,7 +297,7 @@ async def _process_marketing_campaigns() -> None:
                     from_name=campaign.from_name,
                     from_email=campaign.from_email,
                 )
-                if success:
+                if send_error is None:
                     contact.status = "sent"
                     contact.sent_at = now
                     campaign.total_sent += 1
@@ -296,8 +305,9 @@ async def _process_marketing_campaigns() -> None:
                     sent_count += 1
                 else:
                     contact.status = "failed"
-                    contact.error_message = "Brevo send failed"
+                    contact.error_message = send_error
                     campaign.total_failed += 1
+                    logger.warning("Marketing campaign %s: send failed — %s", campaign.id, send_error)
                 db.commit()
 
                 # Small delay between sends to avoid bursting
