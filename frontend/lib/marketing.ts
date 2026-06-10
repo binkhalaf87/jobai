@@ -129,6 +129,15 @@ export async function resumeCampaign(id: string): Promise<MarketingCampaign> {
   return res.json();
 }
 
+export async function retryCampaign(id: string): Promise<MarketingCampaign> {
+  const res = await fetch(`${getApiBaseUrl()}${BASE}/campaigns/${id}/retry`, {
+    method: "PATCH",
+    headers: mutationHeaders(),
+  });
+  if (!res.ok) throw new Error(await parseDetail(res, "Failed to retry campaign"));
+  return res.json();
+}
+
 export async function deleteCampaign(id: string): Promise<void> {
   const res = await fetch(`${getApiBaseUrl()}${BASE}/campaigns/${id}`, {
     method: "DELETE",

@@ -270,6 +270,38 @@ def resume_campaign(
     return _to_response(campaign)
 
 
+@router.patch("/campaigns/{campaign_id}/retry", response_model=CampaignResponse)
+def retry_campaign(
+    campaign_id: str,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> CampaignResponse:
+    """Reset failed/completed campaign: move failed contacts back to pending and reactivate."""
+    campaign = db.get(MarketingCampaign, campaign_id)
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found.")
+    if campaign.status not in ("completed", "error", "paused", "active"):
+        raise HTTPException(status_code=400, detail="Only completed/error/paused campaigns can be retried.")
+
+    from sqlalchemy import update as sql_update
+    result = db.execute(
+        sql_update(MarketingCampaignContact)
+        .where(
+            MarketingCampaignContact.campaign_id == campaign_id,
+            MarketingCampaignContact.status == "failed",
+        )
+        .values(status="pending", error_message=None, sent_at=None)
+    )
+    reset_count = result.rowcount
+    campaign.total_failed = 0
+    campaign.status = "active"
+    campaign.error_message = None
+    campaign.completed_at = None
+    db.commit()
+    db.refresh(campaign)
+    return _to_response(campaign)
+
+
 @router.delete("/campaigns/{campaign_id}")
 def delete_campaign(
     campaign_id: str,

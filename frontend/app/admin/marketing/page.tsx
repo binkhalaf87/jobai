@@ -34,6 +34,7 @@ import {
   importContacts,
   activateCampaign,
   deleteCampaign,
+  retryCampaign,
   downloadTemplate,
   getBrevoEmailCampaigns,
   saveOpenersToList,
@@ -216,6 +217,15 @@ function AnalyticsView({ onNewCampaign, onSetupCampaign }: { onNewCampaign: () =
     finally { setActing(null); }
   }
 
+  async function handleRetry(id: string) {
+    setActing(id);
+    try {
+      const updated = await retryCampaign(id);
+      setCampaigns((p) => p.map((c) => (c.id === id ? updated : c)));
+    } catch { void loadPlatform(); }
+    finally { setActing(null); }
+  }
+
   return (
     <div className="space-y-8">
       {/* ── Platform campaigns ── */}
@@ -280,6 +290,12 @@ function AnalyticsView({ onNewCampaign, onSetupCampaign }: { onNewCampaign: () =
                     <button onClick={() => onSetupCampaign(c.id)}
                       className="rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700">
                       Setup
+                    </button>
+                  )}
+                  {(c.status === "completed" || c.status === "error") && c.total_failed > 0 && (
+                    <button onClick={() => void handleRetry(c.id)} disabled={acting === c.id}
+                      className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 disabled:opacity-50">
+                      {acting === c.id ? "…" : "إعادة المحاولة"}
                     </button>
                   )}
                   <button
