@@ -1,17 +1,30 @@
-"""Brevo (Sendinblue) transactional email service for bulk marketing sends."""
+"""Brevo service — SMTP for sending, REST API for analytics."""
 
 from __future__ import annotations
 
+import asyncio
+import email.mime.multipart
+import email.mime.text
 import logging
 import os
+import smtplib
 from typing import Any
 
 import httpx
 
 logger = logging.getLogger(__name__)
 
-_BREVO_SEND_URL = "https://api.brevo.com/v3/smtp/email"
 _BREVO_BASE = "https://api.brevo.com/v3"
+
+
+def _get_smtp_config() -> dict[str, str | int] | None:
+    host = os.getenv("SYSTEM_SMTP_HOST", "").strip()
+    user = os.getenv("SYSTEM_SMTP_USER", "").strip()
+    password = os.getenv("SYSTEM_SMTP_PASSWORD", "").strip()
+    port = int(os.getenv("SYSTEM_SMTP_PORT", "587"))
+    if not (host and user and password):
+        return None
+    return {"host": host, "port": port, "user": user, "password": password}
 
 # Automatic warm-up schedule: (min_day, max_day, daily_limit)
 # Days are counted from warmup_start_date (inclusive, 1-indexed).
@@ -37,6 +50,30 @@ def get_brevo_api_key() -> str | None:
     return os.getenv("BREVO_API_KEY", "").strip() or None
 
 
+def _send_smtp_blocking(
+    smtp_cfg: dict,
+    to_email: str,
+    to_name: str | None,
+    subject: str,
+    html_content: str,
+    from_name: str,
+    from_email: str,
+) -> None:
+    """Blocking SMTP send — called inside a thread-pool executor."""
+    msg = email.mime.multipart.MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = f"{from_name} <{from_email}>"
+    msg["To"] = f"{to_name} <{to_email}>" if to_name else to_email
+    msg.attach(email.mime.text.MIMEText(html_content, "html", "utf-8"))
+
+    with smtplib.SMTP(smtp_cfg["host"], smtp_cfg["port"], timeout=20) as server:
+        server.ehlo()
+        server.starttls()
+        server.ehlo()
+        server.login(smtp_cfg["user"], smtp_cfg["password"])
+        server.sendmail(from_email, [to_email], msg.as_string())
+
+
 async def send_marketing_email(
     to_email: str,
     to_name: str | None,
@@ -45,38 +82,28 @@ async def send_marketing_email(
     from_name: str = "JobAI24",
     from_email: str = "marketing@jobai24.com",
 ) -> str | None:
-    """Send a single marketing email via Brevo API. Returns None on success, error string on failure."""
-    api_key = get_brevo_api_key()
-    if not api_key:
-        return "BREVO_API_KEY غير مضبوط في متغيرات البيئة"
-
-    payload = {
-        "sender": {"name": from_name, "email": from_email},
-        "to": [{"email": to_email, "name": to_name or ""}],
-        "subject": subject,
-        "htmlContent": html_content,
-        "headers": {"X-Mailin-custom": "marketing"},
-    }
+    """Send via SMTP relay (Brevo). Returns None on success, error string on failure."""
+    smtp_cfg = _get_smtp_config()
+    if not smtp_cfg:
+        return "SMTP غير مضبوط — تحقق من SYSTEM_SMTP_HOST/USER/PASSWORD في Railway"
 
     try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            resp = await client.post(
-                _BREVO_SEND_URL,
-                json=payload,
-                headers={
-                    "api-key": api_key,
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                },
-            )
-        if resp.status_code in (200, 201):
-            return None
-        detail = resp.json().get("message", resp.text[:120]) if resp.text else str(resp.status_code)
-        logger.warning("Brevo rejected email to %s: %s %s", to_email, resp.status_code, resp.text[:200])
-        return f"Brevo {resp.status_code}: {detail}"
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(
+            None,
+            _send_smtp_blocking,
+            smtp_cfg, to_email, to_name, subject, html_content, from_name, from_email,
+        )
+        return None
+    except smtplib.SMTPAuthenticationError as exc:
+        logger.error("SMTP auth failed: %s", exc)
+        return f"SMTP: خطأ في بيانات الاعتماد — {exc}"
+    except smtplib.SMTPRecipientsRefused as exc:
+        logger.warning("SMTP recipient refused %s: %s", to_email, exc)
+        return f"SMTP: البريد مرفوض — {exc}"
     except Exception as exc:
-        logger.error("Brevo send error to %s: %s", to_email, exc)
-        return f"خطأ في الاتصال بـ Brevo: {exc}"
+        logger.error("SMTP send error to %s: %s", to_email, exc)
+        return f"SMTP خطأ: {exc}"
 
 
 def _brevo_headers() -> dict[str, str]:

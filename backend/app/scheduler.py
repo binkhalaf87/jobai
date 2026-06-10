@@ -278,13 +278,13 @@ async def _process_marketing_campaigns() -> None:
                 logger.info("Marketing campaign %s completed.", campaign.id)
                 continue
 
-            # Abort immediately if BREVO_API_KEY is missing — no point iterating contacts
-            from app.services.brevo_service import get_brevo_api_key
-            if not get_brevo_api_key():
+            # Abort immediately if SMTP is not configured
+            from app.services.brevo_service import _get_smtp_config
+            if not _get_smtp_config():
                 campaign.status = "error"
-                campaign.error_message = "BREVO_API_KEY غير مضبوط في متغيرات البيئة. أضفه في Railway ثم أعد تفعيل الحملة."
+                campaign.error_message = "SMTP غير مضبوط — تحقق من SYSTEM_SMTP_HOST/USER/PASSWORD في Railway ثم أعد تفعيل الحملة."
                 db.commit()
-                logger.error("Marketing campaign %s: BREVO_API_KEY not set — marked as error.", campaign.id)
+                logger.error("Marketing campaign %s: SMTP not configured — marked as error.", campaign.id)
                 continue
 
             sent_count = 0
