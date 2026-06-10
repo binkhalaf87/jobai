@@ -7,6 +7,7 @@ Create Date: 2026-06-09
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 revision = "0038"
 down_revision = "0037"
@@ -17,7 +18,7 @@ depends_on = None
 def upgrade() -> None:
     op.create_table(
         "marketing_campaigns",
-        sa.Column("id", sa.String(), nullable=False),
+        sa.Column("id", postgresql.UUID(as_uuid=False), nullable=False),
         sa.Column("name", sa.String(255), nullable=False),
         sa.Column("subject", sa.String(500), nullable=False),
         sa.Column("html_body", sa.Text(), nullable=False),
@@ -40,8 +41,8 @@ def upgrade() -> None:
 
     op.create_table(
         "marketing_campaign_contacts",
-        sa.Column("id", sa.String(), nullable=False),
-        sa.Column("campaign_id", sa.String(), nullable=False),
+        sa.Column("id", postgresql.UUID(as_uuid=False), nullable=False),
+        sa.Column("campaign_id", postgresql.UUID(as_uuid=False), nullable=False),
         sa.Column("email", sa.String(255), nullable=False),
         sa.Column("full_name", sa.String(255), nullable=True),
         sa.Column("status", sa.String(20), nullable=False, server_default="pending"),

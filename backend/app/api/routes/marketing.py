@@ -6,17 +6,12 @@ import io
 import uuid
 from datetime import date, datetime, timezone
 
-import logging
-
 import openpyxl
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import select
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-
-logger = logging.getLogger(__name__)
 
 from app.api.deps.auth import get_current_admin
 from app.api.deps.db import get_db
@@ -108,17 +103,9 @@ def create_campaign(
         from_email=body.from_email,
         status="draft",
     )
-    try:
-        db.add(campaign)
-        db.commit()
-        db.refresh(campaign)
-    except SQLAlchemyError as exc:
-        db.rollback()
-        logger.exception("Failed to create marketing campaign: %s", exc)
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Database error: {type(exc).__name__}: {str(exc)[:300]}",
-        )
+    db.add(campaign)
+    db.commit()
+    db.refresh(campaign)
     return _to_response(campaign)
 
 
