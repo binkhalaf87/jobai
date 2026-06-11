@@ -8,6 +8,7 @@ import email.mime.text
 import logging
 import os
 import smtplib
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import httpx
@@ -131,6 +132,9 @@ async def fetch_campaign_events(campaign_id: str, start_date: str) -> list[dict]
 
     results: list[dict] = []
     tag = f"campaign-{campaign_id}"
+    # Brevo requires startDate and endDate together (400 otherwise).
+    # +1 day because Brevo timestamps events in +03:00, ahead of UTC.
+    end_date = str((datetime.now(timezone.utc) + timedelta(days=1)).date())
     for event_type in ("opened", "clicks"):
         offset = 0
         while True:
@@ -143,11 +147,16 @@ async def fetch_campaign_events(campaign_id: str, start_date: str) -> list[dict]
                             "event": event_type,
                             "tags": tag,
                             "startDate": start_date,
+                            "endDate": end_date,
                             "limit": 500,
                             "offset": offset,
                         },
                     )
                 if resp.status_code != 200:
+                    logger.warning(
+                        "Brevo events fetch HTTP %s (campaign %s, %s): %s",
+                        resp.status_code, campaign_id, event_type, resp.text[:200],
+                    )
                     break
                 data = resp.json()
                 events = data.get("events", [])
