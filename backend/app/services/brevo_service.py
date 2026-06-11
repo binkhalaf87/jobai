@@ -132,9 +132,9 @@ async def fetch_campaign_events(campaign_id: str, start_date: str) -> list[dict]
 
     results: list[dict] = []
     tag = f"campaign-{campaign_id}"
-    # Brevo requires startDate and endDate together (400 otherwise).
-    # +1 day because Brevo timestamps events in +03:00, ahead of UTC.
-    end_date = str((datetime.now(timezone.utc) + timedelta(days=1)).date())
+    # Brevo requires startDate and endDate together, and rejects future dates.
+    # Use today's date in the account timezone (+03:00) — matches event timestamps.
+    end_date = str(datetime.now(timezone(timedelta(hours=3))).date())
     for event_type in ("opened", "clicks"):
         offset = 0
         while True:
