@@ -466,7 +466,10 @@ async def _cleanup_refresh_tokens() -> None:
 def start_scheduler() -> None:
     _scheduler.add_job(_process_campaigns, "interval", minutes=5)
     _scheduler.add_job(_process_marketing_campaigns, "interval", minutes=5)
-    _scheduler.add_job(_poll_marketing_events, "interval", minutes=30)
+    _scheduler.add_job(
+        _poll_marketing_events, "interval", minutes=30,
+        next_run_time=datetime.now(timezone.utc),  # run once at startup too
+    )
     _scheduler.add_job(_poll_pending_payments, "interval", minutes=10)
     _scheduler.add_job(_cleanup_refresh_tokens, "cron", hour="3", minute="0")
     _scheduler.start()
