@@ -14,13 +14,13 @@ export async function SiteHeader() {
       ? [
           { label: "كيف يعمل", href: "/#how-it-works" },
           { label: "المميزات", href: "/#features" },
-          { label: "للشركات", href: "/#for-recruiters" },
+          { label: "للشركات", href: "/register?role=recruiter" },
           { label: "الأسعار", href: "/pricing" },
         ]
       : [
           { label: "How It Works", href: "/#how-it-works" },
           { label: "Features", href: "/#features" },
-          { label: "For HR Teams", href: "/#for-recruiters" },
+          { label: "For HR Teams", href: "/register?role=recruiter" },
           { label: "Pricing", href: "/pricing" },
         ],
     login: isAr ? "تسجيل الدخول" : "Sign In",

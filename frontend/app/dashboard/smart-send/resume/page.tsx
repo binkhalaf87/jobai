@@ -48,7 +48,7 @@ export default function ResumePage() {
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-center space-y-3">
           <p className="text-sm text-amber-800 font-semibold">{t("resumeStep.noResumes")}</p>
           <p className="text-xs text-amber-700">{t("resumeStep.noResumesDesc")}</p>
-          <Link href="/dashboard/resume" className="inline-block bg-brand-800 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-brand-700">
+          <Link href="/dashboard/resumes" className="inline-block bg-brand-800 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-brand-700">
             {t("resumeStep.uploadBtn")}
           </Link>
         </div>

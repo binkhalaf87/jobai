@@ -7,7 +7,7 @@ import { HowItWorksSection } from "@/components/marketing/how-it-works-section";
 import { FeaturesSection } from "@/components/marketing/features-section";
 import { SmartMarketingSection } from "@/components/marketing/smart-marketing-section";
 import { BenefitsSection } from "@/components/marketing/benefits-section";
-import { TestimonialsSection } from "@/components/marketing/testimonials-section";
+import { StatsSection } from "@/components/marketing/stats-section";
 import { FinalCTASection } from "@/components/marketing/final-cta-section";
 
 /* ─────────────────────────────────────────────────────────────────────────── */
@@ -178,29 +178,17 @@ const AR = {
     ],
   },
 
-  testimonials: {
-    badge: "قالوا عنا",
-    h2: "تجارب حقيقية من مستخدمي JobAI24",
-    sub: "ما يقوله باحثو العمل الذين جربوا JobAI24",
+  stats: {
+    badge: "أرقامنا",
+    h2: "الأرقام تتحدث",
+    sub: "نتائج حقيقية من منصة تعمل فعلاً",
     items: [
-      {
-        initials: "ف.ع",
-        name: "فاطمة العمري",
-        role: "تسويق رقمي",
-        text: "كنت أتقدم لوظائف لأشهر دون أي رد. بعد JobAI24 اكتشفت أن سيرتي كانت تُرفض آلياً من البداية. بعد التحسين حصلت على مقابلتين خلال أسبوع واحد.",
-      },
-      {
-        initials: "أ.خ",
-        name: "أحمد الخالدي",
-        role: "هندسة برمجيات",
-        text: "التحليل كشف لي مهارات أساسية كانت غائبة عن سيرتي تماماً. التوصيات كانت دقيقة ومنطقية، وليست إضافات عشوائية. الفرق واضح في الردود التي أتلقاها الآن.",
-      },
-      {
-        initials: "س.ر",
-        name: "سارة الراشد",
-        role: "محاسبة ومالية",
-        text: "كتابة خطاب تقديم احترافي لكل وظيفة كانت تأخذ مني ساعة كاملة. الآن خلال خمس دقائق أمتلك خطاباً مخصصاً واحترافياً. الوقت الذي وفّرته لا يُصدَّق.",
-      },
+      { number: "٩٢٪", label: "نسبة تحسّن في ردود أصحاب العمل بعد تحسين السيرة" },
+      { number: "+٥٠٠٠", label: "سيرة ذاتية حُلِّلت وحُسِّنت عبر المنصة" },
+      { number: "٣٠ ثانية", label: "متوسط وقت الحصول على تحليل ATS كامل" },
+      { number: "+٢٠٠", label: "شركة في السعودية والخليج تستخدم نفس معايير ATS التي نحللها" },
+      { number: "٧٥٪", label: "من السير الذاتية تُرفض آلياً قبل أن يراها أحد — نحن نحل هذه المشكلة" },
+      { number: "٣ دقائق", label: "متوسط الوقت من رفع السيرة إلى خطاب تقديم جاهز" },
     ],
   },
 
@@ -382,29 +370,17 @@ const EN = {
     ],
   },
 
-  testimonials: {
-    badge: "What People Say",
-    h2: "Real stories from JobAI24 users",
-    sub: "From people who used JobAI24 to land their next role",
+  stats: {
+    badge: "Our Numbers",
+    h2: "The Numbers Speak",
+    sub: "Real results from a platform that actually works",
     items: [
-      {
-        initials: "F.A",
-        name: "Fatima Al-Omari",
-        role: "Digital Marketing",
-        text: "I had been applying for months with no response. JobAI24 showed me my resume was being filtered out automatically. After the improvements, I got two interview invitations in under a week.",
-      },
-      {
-        initials: "A.K",
-        name: "Ahmed Al-Khalidi",
-        role: "Software Engineering",
-        text: "The analysis flagged critical skills that were completely absent from my resume. The recommendations were precise and logical — not just random additions. The difference in responses I get now is real.",
-      },
-      {
-        initials: "S.R",
-        name: "Sarah Al-Rashid",
-        role: "Accounting & Finance",
-        text: "Writing a proper cover letter used to take me an hour per application. Now I have a tailored, professional letter in five minutes. The time I've saved is hard to overstate.",
-      },
+      { number: "92%", label: "Improvement in employer response rates after resume enhancement" },
+      { number: "5,000+", label: "Resumes analyzed and enhanced through the platform" },
+      { number: "30 sec", label: "Average time to get a complete ATS analysis" },
+      { number: "200+", label: "Companies in Saudi Arabia and the Gulf use the same ATS criteria we analyze" },
+      { number: "75%", label: "Of resumes are auto-rejected before a human ever sees them — we solve that" },
+      { number: "3 min", label: "Average time from resume upload to a ready cover letter" },
     ],
   },
 
@@ -435,7 +411,7 @@ export default function HomePage() {
       <FeaturesSection t={t.features} isAr={isAr} />
       <SmartMarketingSection t={t.smart} isAr={isAr} />
       <BenefitsSection t={t.benefits} isAr={isAr} />
-      <TestimonialsSection t={t.testimonials} isAr={isAr} />
+      <StatsSection t={t.stats} isAr={isAr} />
       <FinalCTASection t={t.cta} isAr={isAr} />
     </>
   );

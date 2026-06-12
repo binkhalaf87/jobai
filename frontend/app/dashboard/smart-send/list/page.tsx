@@ -48,7 +48,7 @@ export default function ListPage() {
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-center space-y-3">
           <p className="text-sm text-amber-800 font-semibold">{t("listStep.noLists")}</p>
           <p className="text-xs text-amber-700">{t("listStep.noListsDesc")}</p>
-          <Link href="/dashboard/contacts" className="inline-block bg-brand-800 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-brand-700">
+          <Link href="/dashboard/smart-send" className="inline-block bg-brand-800 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-brand-700">
             {t("listStep.manageContactsBtn")}
           </Link>
         </div>
