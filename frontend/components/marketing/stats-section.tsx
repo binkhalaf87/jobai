@@ -9,6 +9,7 @@ type StatsT = {
   badge: string;
   h2: string;
   sub: string;
+  sourceNote: string;
   items: readonly StatItem[];
 };
 
@@ -46,6 +47,11 @@ export function StatsSection({ t, isAr }: { t: StatsT; isAr: boolean }) {
             </FadeUp>
           ))}
         </div>
+
+        {/* Data source note */}
+        <FadeUp>
+          <p className="mt-8 text-center text-xs text-slate-400">{t.sourceNote}</p>
+        </FadeUp>
       </div>
     </section>
   );

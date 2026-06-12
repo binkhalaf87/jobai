@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Send, Rocket, ArrowRight, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Send, Rocket, ArrowRight, ArrowLeft, CheckCircle2, ShieldCheck, ChevronDown } from "lucide-react";
 import { FadeUp } from "./fade-up";
 
 type SmartT = {
@@ -11,9 +12,56 @@ type SmartT = {
   desc: string;
   steps: readonly { num: string; title: string }[];
   benefits: readonly string[];
+  trust: {
+    title: string;
+    points: readonly string[];
+    learnMore: string;
+  };
   cta: string;
   ctaNote: string;
 };
+
+function TrustAccordion({ t, isAr }: { t: SmartT["trust"]; isAr: boolean }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="mb-8 rounded-2xl border border-white/10 bg-white/5">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className={`flex w-full items-center gap-3 p-4 text-sm font-bold text-white ${
+          isAr ? "flex-row-reverse text-right" : "text-left"
+        }`}
+      >
+        <ShieldCheck className="h-5 w-5 shrink-0 text-teal" />
+        <span className="flex-1">{t.title}</span>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open && (
+        <div className={`border-t border-white/10 p-4 pt-3 ${isAr ? "text-right" : ""}`}>
+          <ul className="space-y-2.5">
+            {t.points.map((point, i) => (
+              <li key={i} className={`flex items-start gap-2 ${isAr ? "flex-row-reverse" : ""}`}>
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-teal" />
+                <span className="text-sm leading-relaxed text-slate-300">{point}</span>
+              </li>
+            ))}
+          </ul>
+          <Link
+            href="/how-smart-send-works"
+            className="mt-4 inline-block text-sm font-bold text-teal hover:underline"
+          >
+            {t.learnMore}
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function CampaignCard({ isAr }: { isAr: boolean }) {
   const stats = isAr
@@ -150,6 +198,9 @@ export function SmartMarketingSection({ t, isAr }: { t: SmartT; isAr: boolean })
                   </li>
                 ))}
               </ul>
+
+              {/* Trust accordion */}
+              <TrustAccordion t={t.trust} isAr={isAr} />
 
               {/* CTA */}
               <Link

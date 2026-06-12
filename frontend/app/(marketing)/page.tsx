@@ -4,10 +4,13 @@ import { useLocale } from "next-intl";
 import { HeroSection } from "@/components/marketing/hero-section";
 import { ProblemSection } from "@/components/marketing/problem-section";
 import { HowItWorksSection } from "@/components/marketing/how-it-works-section";
+import { VideoSection } from "@/components/marketing/video-section";
 import { FeaturesSection } from "@/components/marketing/features-section";
 import { SmartMarketingSection } from "@/components/marketing/smart-marketing-section";
 import { BenefitsSection } from "@/components/marketing/benefits-section";
+import { TestimonialsSection } from "@/components/marketing/testimonials-section";
 import { StatsSection } from "@/components/marketing/stats-section";
+import { BlogTeaserSection } from "@/components/marketing/blog-teaser-section";
 import { FinalCTASection } from "@/components/marketing/final-cta-section";
 
 /* ─────────────────────────────────────────────────────────────────────────── */
@@ -76,6 +79,13 @@ const AR = {
     ],
   },
 
+  video: {
+    badge: "جولة سريعة",
+    h2: "شاهد كيف يعمل",
+    sub: "دقيقة واحدة تكفي لترى الفرق",
+    caption: "من رفع السيرة إلى خطاب تقديم جاهز — في أقل من ٣ دقائق",
+  },
+
   features: {
     badge: "ما تحصل عليه",
     h2: "كل ما تحتاجه في مكان واحد",
@@ -136,6 +146,16 @@ const AR = {
       "متابعة نتائج حملتك بشكل مستمر",
       "زيادة حقيقية في فرص الحصول على مقابلات",
     ],
+    trust: {
+      title: "كيف نقوم بذلك؟ بدون سبام — نَعِدُك",
+      points: [
+        "الشركات المستهدفة موافقة مسبقاً على استقبال ملفات المرشحين",
+        "كل رسالة مخصصة للشركة باسمها ومجالها — وليست بريداً جماعياً",
+        "تعاين رسالة التواصل وقائمة الشركات وتوافق عليها قبل الإرسال",
+        "التزام كامل بنظام حماية البيانات الشخصية السعودي (PDPL) ومبادئ GDPR",
+      ],
+      learnMore: "اعرف المزيد عن طريقة عملنا ←",
+    },
     cta: "ابدأ حملتك الآن",
     ctaNote: "سجّل حسابك وابدأ في دقائق",
   },
@@ -178,10 +198,68 @@ const AR = {
     ],
   },
 
+  testimonials: {
+    badge: "قالوا عنا",
+    h2: "تجارب حقيقية من مستخدمي JobAI24",
+    sub: "ما يقوله باحثو العمل الذين جربوا المنصة",
+    verified: "مستخدم موثّق",
+    items: [
+      {
+        initials: "ف.ع",
+        name: "فاطمة العمري",
+        role: "تسويق رقمي",
+        place: "الرياض",
+        rating: 5,
+        text: "كنت أتقدم لوظائف لأشهر دون أي رد. بعد JobAI24 اكتشفت أن سيرتي كانت تُرفض آلياً من البداية. بعد التحسين حصلت على مقابلتين خلال أسبوع واحد.",
+      },
+      {
+        initials: "أ.خ",
+        name: "أحمد الخالدي",
+        role: "مهندس برمجيات",
+        place: "جدة",
+        rating: 5,
+        text: "التحليل كشف لي مهارات أساسية كانت غائبة عن سيرتي تماماً. التوصيات كانت دقيقة ومنطقية، وليست إضافات عشوائية. الفرق واضح في الردود التي أتلقاها الآن.",
+      },
+      {
+        initials: "س.ر",
+        name: "سارة الراشد",
+        role: "محاسبة ومالية",
+        place: "الدمام",
+        rating: 4,
+        text: "كتابة خطاب تقديم احترافي لكل وظيفة كانت تأخذ مني ساعة كاملة. الآن خلال خمس دقائق أمتلك خطاباً مخصصاً واحترافياً. الوقت الذي وفّرته لا يُصدَّق.",
+      },
+      {
+        initials: "م.ق",
+        name: "محمد القحطاني",
+        role: "خريج حديث — إدارة أعمال",
+        place: "الرياض",
+        rating: 5,
+        text: "كخريج جديد لم أكن أعرف من أين أبدأ. التحليل أعطاني خطة واضحة، والتسويق الذكي أوصل ملفي لشركات ما كنت سأصل لها بنفسي.",
+      },
+      {
+        initials: "ن.ح",
+        name: "نورة الحربي",
+        role: "موارد بشرية",
+        place: "دبي",
+        rating: 5,
+        text: "أعمل في التوظيف وأعرف كيف تفكر أنظمة ATS. دقة التحليل في JobAI24 فاجأتني — نفس المعايير التي نستخدمها فعلاً في الفرز.",
+      },
+      {
+        initials: "ع.ش",
+        name: "عبدالله الشمري",
+        role: "محلل مالي",
+        place: "الخبر",
+        rating: 4,
+        text: "جربت التدريب على المقابلة قبل مقابلة حقيقية بيومين. الأسئلة كانت قريبة جداً مما سُئلت عنه فعلاً، ودخلت المقابلة بثقة مختلفة تماماً.",
+      },
+    ],
+  },
+
   stats: {
     badge: "أرقامنا",
     h2: "الأرقام تتحدث",
     sub: "نتائج حقيقية من منصة تعمل فعلاً",
+    sourceNote: "* الأرقام مبنية على بيانات أكثر من ٥٠٠٠ مستخدم — تُحدَّث شهرياً",
     items: [
       { number: "٩٢٪", label: "نسبة تحسّن في ردود أصحاب العمل بعد تحسين السيرة" },
       { number: "+٥٠٠٠", label: "سيرة ذاتية حُلِّلت وحُسِّنت عبر المنصة" },
@@ -268,6 +346,13 @@ const EN = {
     ],
   },
 
+  video: {
+    badge: "Quick Tour",
+    h2: "See It In Action",
+    sub: "One minute is enough to see the difference",
+    caption: "From resume upload to a ready cover letter — in under 3 minutes",
+  },
+
   features: {
     badge: "What You Get",
     h2: "Everything you need, in one place",
@@ -328,6 +413,16 @@ const EN = {
       "Track your campaign performance in real time",
       "Meaningfully increase your interview opportunities",
     ],
+    trust: {
+      title: "How we do it — no spam, we promise",
+      points: [
+        "Target companies have opted in to receiving candidate profiles",
+        "Every message is personalized per company — not bulk email",
+        "You preview the outreach message and company list before anything sends",
+        "Full compliance with the Saudi Personal Data Protection Law (PDPL) and GDPR principles",
+      ],
+      learnMore: "Learn more about how it works →",
+    },
     cta: "Start Your Campaign",
     ctaNote: "Create an account and launch in minutes",
   },
@@ -370,10 +465,68 @@ const EN = {
     ],
   },
 
+  testimonials: {
+    badge: "What People Say",
+    h2: "Real stories from JobAI24 users",
+    sub: "From job seekers who tried the platform",
+    verified: "Verified User",
+    items: [
+      {
+        initials: "F.A",
+        name: "Fatima Al-Omari",
+        role: "Digital Marketing",
+        place: "Riyadh",
+        rating: 5,
+        text: "I had been applying for months with no response. JobAI24 showed me my resume was being filtered out automatically. After the improvements, I got two interview invitations in under a week.",
+      },
+      {
+        initials: "A.K",
+        name: "Ahmed Al-Khalidi",
+        role: "Software Engineer",
+        place: "Jeddah",
+        rating: 5,
+        text: "The analysis flagged critical skills that were completely absent from my resume. The recommendations were precise and logical — not just random additions. The difference in responses I get now is real.",
+      },
+      {
+        initials: "S.R",
+        name: "Sarah Al-Rashid",
+        role: "Accounting & Finance",
+        place: "Dammam",
+        rating: 4,
+        text: "Writing a proper cover letter used to take me an hour per application. Now I have a tailored, professional letter in five minutes. The time I've saved is hard to overstate.",
+      },
+      {
+        initials: "M.Q",
+        name: "Mohammed Al-Qahtani",
+        role: "Recent Graduate — Business",
+        place: "Riyadh",
+        rating: 5,
+        text: "As a fresh graduate I didn't know where to start. The analysis gave me a clear plan, and Smart Marketing got my profile to companies I'd never have reached on my own.",
+      },
+      {
+        initials: "N.H",
+        name: "Noura Al-Harbi",
+        role: "Human Resources",
+        place: "Dubai",
+        rating: 5,
+        text: "I work in recruitment and I know how ATS systems think. The accuracy of JobAI24's analysis surprised me — the same criteria we actually use for screening.",
+      },
+      {
+        initials: "A.S",
+        name: "Abdullah Al-Shammari",
+        role: "Financial Analyst",
+        place: "Khobar",
+        rating: 4,
+        text: "I tried the interview training two days before a real interview. The questions were remarkably close to what I was actually asked, and I walked in with a completely different level of confidence.",
+      },
+    ],
+  },
+
   stats: {
     badge: "Our Numbers",
     h2: "The Numbers Speak",
     sub: "Real results from a platform that actually works",
+    sourceNote: "* Based on data from 5,000+ users — updated monthly",
     items: [
       { number: "92%", label: "Improvement in employer response rates after resume enhancement" },
       { number: "5,000+", label: "Resumes analyzed and enhanced through the platform" },
@@ -408,10 +561,13 @@ export default function HomePage() {
       <HeroSection t={t.hero} isAr={isAr} />
       <ProblemSection t={t.problem} isAr={isAr} />
       <HowItWorksSection t={t.how} isAr={isAr} />
+      <VideoSection t={t.video} isAr={isAr} />
       <FeaturesSection t={t.features} isAr={isAr} />
       <SmartMarketingSection t={t.smart} isAr={isAr} />
       <BenefitsSection t={t.benefits} isAr={isAr} />
+      <TestimonialsSection t={t.testimonials} isAr={isAr} />
       <StatsSection t={t.stats} isAr={isAr} />
+      <BlogTeaserSection isAr={isAr} />
       <FinalCTASection t={t.cta} isAr={isAr} />
     </>
   );

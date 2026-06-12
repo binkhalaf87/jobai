@@ -16,14 +16,16 @@ async function SiteFooter() {
         ? [
             { label: "كيف يعمل JobAI", href: "/#how-it-works" },
             { label: "المميزات", href: "/#features" },
-            { label: "للشركات والـ HR", href: "/register?role=recruiter" },
+            { label: "للشركات والـ HR", href: "/for-hr" },
             { label: "الأسعار", href: "/pricing" },
+            { label: "المدونة", href: "/blog" },
           ]
         : [
             { label: "How It Works", href: "/#how-it-works" },
             { label: "Features", href: "/#features" },
-            { label: "For HR Teams", href: "/register?role=recruiter" },
+            { label: "For HR Teams", href: "/for-hr" },
             { label: "Pricing", href: "/pricing" },
+            { label: "Blog", href: "/blog" },
           ],
     },
     company: {
@@ -33,12 +35,14 @@ async function SiteFooter() {
             { label: "من نحن", href: "/about" },
             { label: "سياسة الخصوصية", href: "/privacy" },
             { label: "شروط الاستخدام", href: "/terms" },
+            { label: "سياسة ملفات الارتباط", href: "/cookies" },
             { label: "تواصل معنا", href: "mailto:hello@jobai24.com" },
           ]
         : [
             { label: "About Us", href: "/about" },
             { label: "Privacy Policy", href: "/privacy" },
             { label: "Terms of Service", href: "/terms" },
+            { label: "Cookie Policy", href: "/cookies" },
             { label: "Contact Us", href: "mailto:hello@jobai24.com" },
           ],
     },
@@ -77,6 +81,34 @@ async function SiteFooter() {
                 aria-label="Email"
               >
                 <svg className="h-4 w-4 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+              </a>
+              {/* Social placeholders — point to real profiles once created */}
+              <a
+                href="https://www.linkedin.com/company/jobai24"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-slate-300 hover:bg-brand-600/30 hover:text-brand-400 transition-colors"
+                aria-label="LinkedIn"
+              >
+                <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.07 2.07 0 110-4.13 2.07 2.07 0 010 4.13zM7.12 20.45H3.55V9h3.57v11.45z"/></svg>
+              </a>
+              <a
+                href="https://x.com/jobai24"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-slate-300 hover:bg-brand-600/30 hover:text-brand-400 transition-colors"
+                aria-label="X (Twitter)"
+              >
+                <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24"><path d="M18.9 1.15h3.68l-8.04 9.19L24 22.85h-7.4l-5.8-7.58-6.64 7.58H.47l8.6-9.83L0 1.15h7.6l5.24 6.93 6.06-6.93zm-1.29 19.5h2.04L6.49 3.24H4.3l13.31 17.41z"/></svg>
+              </a>
+              <a
+                href="https://www.instagram.com/jobai24"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-slate-300 hover:bg-brand-600/30 hover:text-brand-400 transition-colors"
+                aria-label="Instagram"
+              >
+                <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24"><path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41a3.72 3.72 0 01-1.38-.9c-.42-.42-.68-.82-.9-1.38-.16-.42-.36-1.06-.41-2.23-.06-1.27-.07-1.65-.07-4.85s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41 1.27-.06 1.65-.07 4.85-.07zM12 0C8.74 0 8.33.01 7.05.07 5.78.13 4.9.33 4.14.63a5.88 5.88 0 00-2.13 1.38A5.88 5.88 0 00.63 4.14C.33 4.9.13 5.78.07 7.05.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.06 1.27.26 2.15.56 2.91.31.81.72 1.49 1.38 2.13a5.88 5.88 0 002.13 1.38c.76.3 1.64.5 2.91.56 1.28.06 1.69.07 4.95.07s3.67-.01 4.95-.07c1.27-.06 2.15-.26 2.91-.56a5.88 5.88 0 002.13-1.38 5.88 5.88 0 001.38-2.13c.3-.76.5-1.64.56-2.91.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.06-1.27-.26-2.15-.56-2.91a5.88 5.88 0 00-1.38-2.13A5.88 5.88 0 0019.86.63c-.76-.3-1.64-.5-2.91-.56C15.67.01 15.26 0 12 0zm0 5.84A6.16 6.16 0 1018.16 12 6.16 6.16 0 0012 5.84zm0 10.15A4 4 0 1116 12a4 4 0 01-4 4zm7.85-10.4a1.44 1.44 0 11-1.44-1.44 1.44 1.44 0 011.44 1.44z"/></svg>
               </a>
             </div>
           </div>
