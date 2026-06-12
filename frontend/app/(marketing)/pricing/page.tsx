@@ -16,6 +16,19 @@ const SMART_SEND_PLANS_DATA = [
   { companies: 3000, price: 269, highlight: "value" as const },
 ];
 
+/* Columns: Resume Analysis | Resume Improvement | Interview Training */
+type ComparisonValue = "yes" | "no" | "partial";
+const COMPARISON_ROWS: { key: string; values: [ComparisonValue, ComparisonValue, ComparisonValue] }[] = [
+  { key: "atsScore", values: ["yes", "yes", "no"] },
+  { key: "keywordGap", values: ["yes", "yes", "no"] },
+  { key: "rewrittenResume", values: ["no", "yes", "no"] },
+  { key: "coverLetter", values: ["no", "partial", "no"] },
+  { key: "interviewQuestions", values: ["no", "no", "yes"] },
+  { key: "aiAnswerScoring", values: ["no", "no", "yes"] },
+  { key: "pdfDownload", values: ["yes", "yes", "partial"] },
+  { key: "arabicSupport", values: ["yes", "yes", "yes"] },
+];
+
 /* ─── types ───────────────────────────────────────────────────────────── */
 type PricingContent = {
   meta: { title: string; description: string };
@@ -39,6 +52,14 @@ type PricingContent = {
     bestValue: string;
     oneTime: string;
     numLocale: string;
+  };
+  comparison: {
+    title: string;
+    sub: string;
+    featureCol: string;
+    columns: [string, string, string];
+    partial: string;
+    rows: Record<string, string>;
   };
   faq: { title: string; items: { q: string; a: string }[] };
   finalCta: { title: string; sub: string; cta: string };
@@ -80,6 +101,23 @@ const AR: PricingContent = {
     bestValue: "الأفضل قيمة",
     oneTime: "دفعة واحدة",
     numLocale: "ar-SA",
+  },
+  comparison: {
+    title: "قارن بين الخدمات",
+    sub: "ما الذي تشمله كل خدمة بالتفصيل؟",
+    featureCol: "الميزة",
+    columns: ["تحليل السيرة", "تحسين السيرة", "تدريب المقابلة"],
+    partial: "جزئي",
+    rows: {
+      atsScore: "درجة توافق ATS",
+      keywordGap: "تقرير الكلمات المفتاحية المفقودة",
+      rewrittenResume: "إعادة كتابة السيرة",
+      coverLetter: "خطاب تقديم مرفق",
+      interviewQuestions: "أسئلة مقابلة مخصصة",
+      aiAnswerScoring: "تقييم الإجابات بالذكاء الاصطناعي",
+      pdfDownload: "تحميل بصيغة PDF",
+      arabicSupport: "دعم اللغة العربية",
+    },
   },
   faq: {
     title: "أسئلة شائعة",
@@ -131,6 +169,23 @@ const EN: PricingContent = {
     bestValue: "Best Value",
     oneTime: "One-time",
     numLocale: "en-US",
+  },
+  comparison: {
+    title: "Compare Services",
+    sub: "Exactly what each service includes",
+    featureCol: "Feature",
+    columns: ["Resume Analysis", "Resume Improvement", "Interview Training"],
+    partial: "Partial",
+    rows: {
+      atsScore: "ATS Score",
+      keywordGap: "Keyword Gap Report",
+      rewrittenResume: "Rewritten Resume",
+      coverLetter: "Cover Letter Included",
+      interviewQuestions: "Interview Questions",
+      aiAnswerScoring: "AI Answer Scoring",
+      pdfDownload: "Download as PDF",
+      arabicSupport: "Arabic Support",
+    },
   },
   faq: {
     title: "FAQ",
@@ -245,6 +300,48 @@ export default async function PricingPage() {
                 </p>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* Feature comparison */}
+        <section>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">{c.comparison.title}</h2>
+          <p className="text-slate-500 mb-8">{c.comparison.sub}</p>
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+            <table className="w-full min-w-[560px] text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-100">
+                  <th className={`px-5 py-3.5 font-bold text-slate-900 ${locale === "ar" ? "text-right" : "text-left"}`}>
+                    {c.comparison.featureCol}
+                  </th>
+                  {c.comparison.columns.map((col) => (
+                    <th key={col} className="px-5 py-3.5 text-center font-bold text-slate-900">
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {COMPARISON_ROWS.map((row, i) => (
+                  <tr key={row.key} className={i % 2 === 1 ? "bg-slate-50" : "bg-white"}>
+                    <td className={`px-5 py-3.5 font-medium text-slate-700 ${locale === "ar" ? "text-right" : "text-left"}`}>
+                      {c.comparison.rows[row.key]}
+                    </td>
+                    {row.values.map((value, j) => (
+                      <td key={j} className="px-5 py-3.5 text-center">
+                        {value === "yes" ? (
+                          <span className="font-bold text-emerald-600" aria-label="yes">✓</span>
+                        ) : value === "no" ? (
+                          <span className="text-slate-300" aria-label="no">✗</span>
+                        ) : (
+                          <span className="text-xs font-semibold text-amber-600">{c.comparison.partial}</span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
 
