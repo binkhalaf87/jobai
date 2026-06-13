@@ -87,7 +87,7 @@ export function AuthForm({ mode, googleError }: AuthFormProps) {
 
       <div className="mt-8">
         <a
-          href={`${process.env.NEXT_PUBLIC_API_URL}/auth/google`}
+          href={`${(process.env.NEXT_PUBLIC_API_URL ?? '').trimEnd()}/auth/google`}
           className="flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:border-slate-400"
         >
           <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
