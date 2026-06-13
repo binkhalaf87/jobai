@@ -290,6 +290,11 @@ export async function listGmailRequests(status?: string): Promise<AdminGmailRequ
   return res.json();
 }
 
+export async function getGmailPendingCount(): Promise<{ count: number }> {
+  const items = await listGmailRequests("pending");
+  return { count: items.length };
+}
+
 export async function approveGmailRequest(id: string): Promise<AdminGmailRequestItem> {
   const res = await fetch(`${getApiBaseUrl()}${BASE}/gmail-requests/${id}/approve`, {
     method: "POST",

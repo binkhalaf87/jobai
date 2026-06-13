@@ -7,6 +7,7 @@ import { LayoutDashboard, Users, LogOut, Shield, ListChecks, Mail, Tag, Activity
 
 import { useAuth } from "@/hooks/use-auth";
 import { adminGetUnreadCount } from "@/lib/support";
+import { getGmailPendingCount } from "@/lib/admin";
 
 const NAV_ITEMS = [
   { label: "Overview",       href: "/admin",                 icon: LayoutDashboard },
@@ -30,6 +31,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { user, isLoading, hasSession, signOut } = useAuth();
   const [supportUnread, setSupportUnread] = useState(0);
+  const [gmailPending, setGmailPending] = useState(0);
 
   useEffect(() => {
     if (!isLoading && !hasSession) router.replace("/login");
@@ -38,14 +40,20 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user || user.role !== "admin") return;
     let cancelled = false;
-    async function fetchUnread() {
+    async function fetchCounts() {
       try {
-        const { count } = await adminGetUnreadCount();
-        if (!cancelled) setSupportUnread(count);
+        const [support, gmail] = await Promise.all([
+          adminGetUnreadCount(),
+          getGmailPendingCount(),
+        ]);
+        if (!cancelled) {
+          setSupportUnread(support.count);
+          setGmailPending(gmail.count);
+        }
       } catch { /* ignore */ }
     }
-    fetchUnread();
-    const interval = setInterval(fetchUnread, 30_000);
+    fetchCounts();
+    const interval = setInterval(fetchCounts, 30_000);
     return () => { cancelled = true; clearInterval(interval); };
   }, [user]);
 
@@ -105,6 +113,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                     {item.href === "/admin/support" && supportUnread > 0 && (
                       <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-teal-600 px-1 text-[9px] font-bold text-white">
                         {supportUnread > 9 ? "9+" : supportUnread}
+                      </span>
+                    )}
+                    {item.href === "/admin/gmail-requests" && gmailPending > 0 && (
+                      <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold text-white">
+                        {gmailPending > 9 ? "9+" : gmailPending}
                       </span>
                     )}
                   </Link>
