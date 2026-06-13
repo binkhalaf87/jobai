@@ -136,10 +136,17 @@ def consume_password_reset_token(db: Session, token: str, new_password: str) -> 
 
 def authenticate_user(db: Session, payload: LoginRequest) -> User | None:
     """Validate login credentials and update login metadata when successful."""
+    from fastapi import HTTPException, status as http_status
     from app.models.enums import UsageEventType
     from app.services.audit_log import emit
 
     user = get_user_by_email(db, payload.email)
+
+    if user and user.google_id and not user.password_hash:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail="google_account_no_password",
+        )
 
     if not user or not verify_password(payload.password, user.password_hash) or not user.is_active:
         return None

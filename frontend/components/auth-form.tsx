@@ -60,7 +60,9 @@ export function AuthForm({ mode, googleError }: AuthFormProps) {
     } catch (error) {
       if (error instanceof ApiError) {
         const detail = error.detail?.toLowerCase() ?? "";
-        if (detail.includes("already exists") || detail.includes("email taken")) {
+        if (detail.includes("google_account_no_password")) {
+          setErrorMessage(t("errors.googleAccountNoPassword"));
+        } else if (detail.includes("already exists") || detail.includes("email taken")) {
           setErrorMessage(t("errors.emailTaken"));
         } else if (detail.includes("not verified") || detail.includes("verify") || detail.includes("confirm")) {
           setErrorMessage(t("errors.emailNotVerified"));

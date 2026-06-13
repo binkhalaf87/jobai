@@ -64,7 +64,8 @@
       "emailTaken": "This email is already registered. Would you like to sign in instead?",
       "emailNotVerified": "Please verify your email first — check your inbox and try again.",
       "serverError": "An unexpected error occurred. Please try again in a moment.",
-      "googleAuthFailed": "Google sign-in failed. Please try again."
+      "googleAuthFailed": "Google sign-in failed. Please try again.",
+      "googleAccountNoPassword": "This account was created with Google. Please use the \"Continue with Google\" button above."
     },
     "orContinueWith": "or",
     "googleButton": "Continue with Google"
