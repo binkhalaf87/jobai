@@ -226,9 +226,10 @@ def google_callback(
         return _Redirect(error_dest)
 
     auth_data = build_auth_response(user, db)
+    role = user.role if isinstance(user.role, str) else user.role.value
     resp = _Redirect(
-        f"{frontend_url}/dashboard" if user.role.value == "jobseeker"
-        else f"{frontend_url}/recruiter" if user.role.value == "recruiter"
+        f"{frontend_url}/dashboard" if role == "jobseeker"
+        else f"{frontend_url}/recruiter" if role == "recruiter"
         else f"{frontend_url}/admin"
     )
     _set_auth_cookies(resp, auth_data["access_token"], auth_data["refresh_token"])
