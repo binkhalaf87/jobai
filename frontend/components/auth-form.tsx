@@ -205,19 +205,19 @@ export function AuthForm({ mode, googleError }: AuthFormProps) {
       </form>
 
       <div className="mt-6 flex items-center justify-between text-sm text-slate-500">
-        <Link href="/" className="font-medium text-slate-700 hover:text-slate-950">
+        <Link href="/" prefetch={false} className="font-medium text-slate-700 hover:text-slate-950">
           {t(`${ns}.backHome`)}
         </Link>
         {isRegister ? (
-          <Link href="/login" className="font-medium text-slate-700 hover:text-slate-950">
+          <Link href="/login" prefetch={false} className="font-medium text-slate-700 hover:text-slate-950">
             {t("register.hasAccount")}
           </Link>
         ) : (
           <div className="flex flex-col items-end gap-1">
-            <Link href="/forgot-password" className="font-medium text-slate-700 hover:text-slate-950">
+            <Link href="/forgot-password" prefetch={false} className="font-medium text-slate-700 hover:text-slate-950">
               Forgot password?
             </Link>
-            <Link href="/register" className="font-medium text-slate-700 hover:text-slate-950">
+            <Link href="/register" prefetch={false} className="font-medium text-slate-700 hover:text-slate-950">
               {t("login.noAccount")}
             </Link>
           </div>

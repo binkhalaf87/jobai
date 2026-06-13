@@ -8,6 +8,14 @@ if (dsn) {
     tracesSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
     replaysSessionSampleRate: 0.01,
-    integrations: [Sentry.replayIntegration()],
+    integrations: [
+      Sentry.replayIntegration({
+        // Mask all input values so the replay serializer doesn't process
+        // rapid keystroke mutations (e.g. password-strength meter updates)
+        // which can overflow the call stack on some browsers.
+        maskAllInputs: true,
+        blockAllMedia: false,
+      }),
+    ],
   });
 }

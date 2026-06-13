@@ -70,10 +70,11 @@ export default function DashboardEnhancementPage() {
     ]);
     setResumes(resumeList);
     setReports(reportList);
-    if (resumeList.length > 0 && !selectedResume) {
-      setSelectedResume(resumeList[0].id);
-    }
-  }, [selectedResume]);
+    // Use functional update so we don't need selectedResume in deps (which
+    // would re-create loadData on every selection change and re-trigger
+    // the effect unnecessarily).
+    setSelectedResume((prev) => prev || resumeList[0]?.id || "");
+  }, []);
 
   useEffect(() => { void loadData(); }, [loadData]);
 
@@ -206,18 +207,16 @@ export default function DashboardEnhancementPage() {
       </style>
     </head><body>${html}</body></html>`;
 
-    // Use a hidden same-origin iframe to avoid cross-origin SecurityError on Mobile Safari
-    const iframe = document.createElement("iframe");
-    iframe.style.cssText = "position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0;border:0";
-    document.body.appendChild(iframe);
-    const doc = iframe.contentDocument ?? iframe.contentWindow?.document;
-    if (!doc) { document.body.removeChild(iframe); return; }
-    doc.open();
-    doc.write(fullHtml);
-    doc.close();
+    // window.open on a synchronous click event is allowed by popup blockers and
+    // avoids the SecurityError that iframe.contentDocument throws in some browsers.
+    const win = window.open("", "_blank");
+    if (!win) return;
+    win.document.open();
+    win.document.write(fullHtml);
+    win.document.close();
     setTimeout(() => {
-      iframe.contentWindow?.print();
-      setTimeout(() => { if (document.body.contains(iframe)) document.body.removeChild(iframe); }, 1000);
+      win.print();
+      setTimeout(() => win.close(), 1000);
     }, 300);
   }
 
