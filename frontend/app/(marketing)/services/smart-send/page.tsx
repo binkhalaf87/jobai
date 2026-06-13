@@ -1,24 +1,7 @@
 import Link from "next/link";
 import { getLocale } from "next-intl/server";
 import type { Metadata } from "next";
-import {
-  Send,
-  CheckCircle2,
-  UserCheck,
-  MailCheck,
-  Eye,
-  Shield,
-  Zap,
-  TrendingUp,
-  Users,
-  GraduationCap,
-  Briefcase,
-  ArrowRight,
-  ArrowLeft,
-  Clock,
-  Target,
-} from "lucide-react";
-
+import { CheckCircle2, X } from "lucide-react";
 import { SectionBadge } from "@/components/marketing/section-badge";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -26,554 +9,249 @@ export async function generateMetadata(): Promise<Metadata> {
   const isAr = locale === "ar";
   return {
     title: isAr
-      ? "التسويق الذكي للسيرة الذاتية — JobAI24"
-      : "Smart CV Marketing — JobAI24",
+      ? "التقديم الذكي على الوظائف — JobAI24"
+      : "Smart Job Applications — JobAI24",
     description: isAr
-      ? "لا تنتظر أن يجدك أصحاب العمل. وصّل سيرتك الذاتية مباشرة لمسؤولي التوظيف في شركات موافقة على الاستقبال — برسائل مخصصة وشخصية لكل شركة."
-      : "Stop waiting for employers to find you. Deliver your CV directly to hiring managers at opted-in companies — with a personalized message written for each one.",
+      ? "لا تنتظر الوظائف — اصنع فرصك بنفسك. أنشئ حملات تقديم احترافية توصل سيرتك لجهات التوظيف المناسبة برسائل مخصصة."
+      : "Don't wait for job posts — create your own opportunities. Launch professional outreach campaigns that deliver your CV to the right employers with personalized messages.",
   };
 }
 
 const AR = {
   hero: {
-    badge: "التسويق الذكي للسيرة الذاتية",
-    h1: "لا تنتظر — وصّل سيرتك لمديري التوظيف مباشرة",
-    sub: "معظم المتقدمين يرسلون طلباتهم ثم ينتظرون ولا يسمعون شيئاً. JobAI24 يُغيّر المعادلة — يُرسل سيرتك مباشرة لشركات تبحث عن مرشحين مثلك، برسالة مخصصة لكل جهة.",
-    cta: "أطلق حملتي الآن",
-    trust: ["شركات موافقة على الاستقبال فقط", "رسالة مخصصة لكل شركة", "أنت تعاين قبل الإرسال"],
+    badge: "التقديم الذكي على الوظائف",
+    h1: "لا تنتظر الوظائف...",
+    h1Highlight: "اصنع فرصك بنفسك",
+    sub: "المرشحون الأذكى لا ينتظرون نشر الإعلان. يصلون إلى صانعي القرار مباشرة.",
+    cta: "ابدأ حملة التقديم الآن",
   },
-  what: {
-    title: "ما هذه الخدمة؟",
-    paras: [
-      "التسويق الذكي للسيرة الذاتية هو حملة تواصل مهني نشط — بدلاً من انتظار إعلانات الوظائف، ترسل سيرتك مباشرة لشركات سجّلت معنا وأبدت رغبتها في استقبال ملفات المرشحين المناسبين.",
-      "لكل شركة في قائمتك، يكتب الذكاء الاصطناعي رسالة تواصل مخصصة باسم الشركة ومجالها واحتياجها — وليست رسالة جماعية واحدة تُرسل للجميع. أنت تُراجع الرسائل وقائمة الشركات وتوافق عليها قبل أي إرسال.",
-      "هذا ليس بريداً مزعجاً. هذا تواصل احترافي مستهدف يُشبه ما يفعله المحترفون يدوياً — ولكن بسرعة وكفاءة لا يمكن تحقيقها بدون مساعدة ذكاء اصطناعي.",
-    ],
+  narrative: {
+    p1: "معظم الباحثين عن عمل يجلسون ينتظرون نشر الوظائف. ينتظرون الإعلان، ينتظرون الرد، ينتظرون الفرصة.",
+    p2: "لكن الفرص النادرة والمراكز المميزة كثيراً ما تُملأ قبل أن يُعلَن عنها. الشركات تُفضّل التوظيف عبر الشبكات والتوصيات والمرشحين الذين يُبادرون — لأن المبادرة نفسها تكشف عن المهارات التي تريدها في موظفيها.",
+    bridge: "حوّل انتظارك إلى حركة",
   },
-  benefits: {
-    title: "ماذا ستحصل؟",
-    cards: [
-      {
-        icon: "userCheck",
-        title: "قائمة شركات موافقة على الاستقبال",
-        desc: "نصل فقط لشركات سجّلت لدينا ووافقت على استقبال ملفات المرشحين.",
-      },
-      {
-        icon: "mailCheck",
-        title: "رسالة مخصصة لكل شركة",
-        desc: "كل رسالة تُكتب بالذكاء الاصطناعي خصيصاً لاسم الشركة ومجالها — لا نسخ جماعي.",
-      },
-      {
-        icon: "eye",
-        title: "معاينة كاملة قبل الإرسال",
-        desc: "تشوف كل رسالة وكل شركة في القائمة — ولا يُرسل شيء قبل موافقتك.",
-      },
-      {
-        icon: "target",
-        title: "استثناء أي شركة تريدها",
-        desc: "احذف جهة عملك الحالية أو أي شركة لا تريد الوصول إليها.",
-      },
-      {
-        icon: "zap",
-        title: "تتبع حالة الإرسال",
-        desc: "تعرف أي رسالة أُرسلت بنجاح وأيها احتاجت إعادة محاولة.",
-      },
-      {
-        icon: "shield",
-        title: "امتثال كامل لحماية البيانات",
-        desc: "الحملة تسير وفق نظام PDPL السعودي — بياناتك وبيانات جهات التواصل محمية.",
-      },
-    ],
+  reach: {
+    title: "دع سيرتك الذاتية تعمل بينما تركز أنت على مستقبلك",
+    p1: "JobAI24 يساعدك على إنشاء وإدارة حملات تقديم احترافية — رسائل مخصصة لكل شركة أو جهة توظيف تستهدفها، مع متابعة منظّمة لكل خطوة.",
+    p2: "بدلاً من إرسال نفس الرسالة العامة للجميع وانتظار معجزة، تحصل على رسائل مُصممة تُظهر اهتمامك الحقيقي بكل جهة — وهذا وحده يجعلك تبرز بين عشرات المتقدمين.",
   },
-  howItWorks: {
-    title: "كيف يعمل؟",
-    steps: [
-      {
-        n: "١",
-        title: "أدخل بياناتك والوظيفة المستهدفة",
-        desc: "حدد مجالك والمسمى الوظيفي والموقع الجغرافي — النظام يُطابق الشركات المناسبة.",
-      },
-      {
-        n: "٢",
-        title: "راجع القائمة والرسائل ووافق عليها",
-        desc: "شاهد كل شركة مستهدفة ورسالتها المخصصة — اعدّل أو احذف ما لا يناسبك.",
-      },
-      {
-        n: "٣",
-        title: "أطلق الحملة وتابع النتائج",
-        desc: "الحملة تنطلق تلقائياً بمعدل إرسال طبيعي — تتابع التقدم من لوحة التحكم.",
-      },
-    ],
-  },
-  results: {
-    title: "ما الذي يمكن أن تتوقعه؟",
+  oldway: {
+    title: "ما كنت تفعله يدوياً... أصبح يتم بذكاء",
+    sub: "ما كان يستغرق ساعات أصبح يتم في دقائق:",
     items: [
-      "الوصول لفرص وظيفية لم تُعلن على الإنترنت بعد",
-      "تواصل مهني نشط بدلاً من الانتظار السلبي",
-      "ظهور مباشر أمام مسؤولي توظيف يبحثون عن مرشحين",
-      "رسائل تبدو احترافية وشخصية لا آلية",
-      "توفير أسابيع من التواصل اليدوي في أيام",
+      "البحث عن معلومات الشركة وتخصيص كل رسالة يدوياً",
+      "نسخ ولصق معلومات الاتصال من مصادر متعددة",
+      "متابعة كل تقديم في ملف Excel منفصل",
+      "كتابة رسائل متكررة بأسلوب مختلف لكل مرسَل إليه",
     ],
   },
-  audience: {
-    title: "من يستفيد من هذه الخدمة؟",
-    cards: [
-      {
-        icon: "graduationCap",
-        title: "الخريجون الجدد",
-        desc: "لا خبرة كافية تجعلك مرئياً؟ ابدأ بالوصول للشركات مباشرة.",
-      },
-      {
-        icon: "briefcase",
-        title: "الباحثون عن فرص غير معلنة",
-        desc: "كثير من الوظائف تُملأ قبل الإعلان — هذه الخدمة تضعك هناك مبكراً.",
-      },
-      {
-        icon: "users",
-        title: "من لا يحصل على ردود من التقديم العادي",
-        desc: "إذا أرسلت عشرات الطلبات ولم تتلق ردوداً — غيّر الاستراتيجية.",
-      },
-    ],
+  urgency: {
+    title: "لأن الفرص لا تأتي دائماً لمن ينتظر",
+    p1: "الشركات التي تبحث عن موهبة معينة لا تنشر دائماً إعلاناً رسمياً. أحياناً تبدأ بالبحث في شبكاتها وبين من تقدموا بمبادرتهم.",
+    p2: "وجود سيرتك الذاتية عند الشخص الصحيح، في الوقت الصحيح، هو ما يُحوّل 'ربما لاحقاً' إلى 'يمكنك البدء الأسبوع القادم'.",
   },
-  why: {
-    title: "لماذا JobAI24؟",
-    items: [
-      "شركات موافقة حقيقية — لا إرسال لعناوين عشوائية",
-      "رسائل مخصصة يكتبها ذكاء اصطناعي — لا نسخ جماعي",
-      "أنت تتحكم في كل شيء قبل الإرسال",
-      "امتثال كامل لنظام حماية البيانات السعودي PDPL",
-      "تتبع كامل لحالة كل رسالة",
-      "يمكن تكرار الحملة أو تعديلها في أي وقت",
+  outcome: {
+    title: "لا مزيد من الانتظار السلبي",
+    nots: [
+      "لا مزيد من التحديق في صفحات الوظائف يومياً دون نتيجة",
+      "لا مزيد من الرسائل العامة التي يتجاهلها الجميع",
+      "لا مزيد من الشعور بأنك تفقد السيطرة على مسار توظيفك",
     ],
-  },
-  faq: {
-    title: "أسئلة شائعة",
-    items: [
-      {
-        q: "هل سيبدو كأنه بريد مزعج؟",
-        a: "لا. الرسائل فردية ومخصصة وتُرسل لشركات اختارت استقبال ملفات المرشحين — وبمعدل إرسال طبيعي يُحاكي التواصل البشري.",
-      },
-      {
-        q: "هل يمكنني استثناء شركات معينة؟",
-        a: "نعم. قبل إطلاق الحملة تراجع القائمة الكاملة وتحذف أي جهة لا تريد الوصول إليها.",
-      },
-      {
-        q: "هل أستطيع رؤية الرسائل قبل إرسالها؟",
-        a: "نعم. تشاهد كل رسالة لكل شركة قبل الإرسال — ولا يُرسل شيء باسمك دون علمك.",
-      },
-      {
-        q: "ما عدد الشركات في الحملة الواحدة؟",
-        a: "يعتمد على باقتك ومجالك — يمكنك الاطلاع على الأرقام الدقيقة في صفحة الأسعار.",
-      },
-      {
-        q: "ماذا لو أردت إيقاف الحملة؟",
-        a: "يمكنك إيقاف أي حملة نشطة في أي وقت من لوحة التحكم.",
-      },
-      {
-        q: "هل ستعرف الشركة أنني استخدمت ذكاءً اصطناعياً؟",
-        a: "لا. الرسائل تبدو احترافية وشخصية — لا يوجد ما يُشير إلى استخدام الذكاء الاصطناعي.",
-      },
-      {
-        q: "هل بيانات الشركات في القائمة سرية؟",
-        a: "بيانات جهات التواصل تُستخدم فقط لأغراض الحملة وتُعالج وفق نظام PDPL.",
-      },
-      {
-        q: "ما الفرق بين هذه الخدمة والتقديم العادي على الوظائف؟",
-        a: "التقديم العادي يعني المنافسة مع مئات المتقدمين على وظيفة معلنة. هذه الخدمة تُوصلك مباشرة لمسؤول التوظيف قبل أن تُعلن الوظيفة أصلاً.",
-      },
-    ],
-  },
-  finalCta: {
-    h2: "جاهز للتوقف عن الانتظار؟",
-    sub: "أطلق حملتك الآن وابدأ بالوصول المباشر لمسؤولي التوظيف.",
-    cta: "أطلق حملتي الآن",
-    note: "بدون بطاقة ائتمانية — أنت تتحكم في كل شيء",
+    goal: "أنت من يصنع الفرصة — لا من ينتظرها",
+    cta: "ابدأ حملة التقديم الذكي الآن",
+    trust: ["مجاني للبدء", "حملات مخصصة", "لا بطاقة ائتمانية"],
   },
 };
 
 const EN = {
   hero: {
-    badge: "Smart CV Marketing",
-    h1: "Stop Waiting. Get Your CV in Front of Hiring Managers Directly",
-    sub: "Most applicants submit and hear nothing back. JobAI24 changes that equation — sending your CV directly to companies actively looking for candidates like you, with a personalized message written for each one.",
-    cta: "Launch My Campaign Now",
-    trust: ["Opted-in companies only", "Personalized message per company", "You preview before anything sends"],
+    badge: "Smart Job Applications",
+    h1: "Don't wait for jobs...",
+    h1Highlight: "create your own opportunities",
+    sub: "Smart candidates don't wait for job posts. They reach decision-makers directly.",
+    cta: "Launch Your Outreach Campaign",
   },
-  what: {
-    title: "What is this service?",
-    paras: [
-      "Smart CV Marketing is an active professional outreach campaign — instead of waiting for job postings, your CV is sent directly to companies that have registered with us and expressed interest in receiving matched candidate profiles.",
-      "For each company on your list, the AI writes a personalized outreach message using that company's name, industry, and needs — not a mass template sent to everyone. You review all messages and the company list before anything is sent.",
-      "This is not spam. This is targeted professional outreach that mirrors what top professionals do manually — but at a speed and scale that's impossible without AI assistance.",
-    ],
+  narrative: {
+    p1: "Most job seekers sit and wait for job postings. They wait for the announcement, wait for a reply, wait for the opportunity.",
+    p2: "But rare opportunities and coveted positions are often filled before they're ever posted. Companies prefer hiring through networks, referrals, and proactive candidates — because that initiative itself reveals the very skills they want in their employees.",
+    bridge: "Turn your waiting into action",
   },
-  benefits: {
-    title: "What will I get?",
-    cards: [
-      {
-        icon: "userCheck",
-        title: "Opted-In Company List",
-        desc: "We only reach companies that registered with us and agreed to receive candidate profiles.",
-      },
-      {
-        icon: "mailCheck",
-        title: "Personalized Message Per Company",
-        desc: "Every message is AI-written for that company's name and industry — no mass copying.",
-      },
-      {
-        icon: "eye",
-        title: "Full Preview Before Sending",
-        desc: "You see every message and every company on the list — nothing sends without your approval.",
-      },
-      {
-        icon: "target",
-        title: "Exclude Any Company You Want",
-        desc: "Remove your current employer or any company you don't want to contact.",
-      },
-      {
-        icon: "zap",
-        title: "Send Status Tracking",
-        desc: "Know which messages were successfully sent and which need a retry.",
-      },
-      {
-        icon: "shield",
-        title: "Full Data Protection Compliance",
-        desc: "The campaign runs in line with Saudi PDPL — your data and contact data are protected.",
-      },
-    ],
+  reach: {
+    title: "Let your resume work while you focus on your future",
+    p1: "JobAI24 helps you create and manage professional outreach campaigns — personalized messages for each company or hiring contact you target, with organized follow-up tracking for every step.",
+    p2: "Instead of sending the same generic message to everyone and hoping for a miracle, you get crafted messages that show your genuine interest in each organization — and that alone makes you stand out among dozens of applicants.",
   },
-  howItWorks: {
-    title: "How does it work?",
-    steps: [
-      {
-        n: "1",
-        title: "Enter Your Profile and Target Role",
-        desc: "Specify your field, job title, and location — the system matches relevant companies.",
-      },
-      {
-        n: "2",
-        title: "Review the List and Messages",
-        desc: "See every target company and its personalized message — edit or remove anything that doesn't fit.",
-      },
-      {
-        n: "3",
-        title: "Launch and Track",
-        desc: "The campaign runs automatically at a natural sending pace — track progress from your dashboard.",
-      },
-    ],
-  },
-  results: {
-    title: "What results can you expect?",
+  oldway: {
+    title: "What you used to do manually... now done smartly",
+    sub: "What used to take hours now takes minutes:",
     items: [
-      "Access to job opportunities that haven't been posted online yet",
-      "Active professional outreach instead of passive waiting",
-      "Direct visibility with hiring managers who are looking for candidates",
-      "Messages that feel professional and personal — not automated",
-      "Save weeks of manual networking in just a few days",
+      "Researching company information and manually personalizing each message",
+      "Copying and pasting contact information from multiple sources",
+      "Tracking each application in a separate Excel file",
+      "Writing repetitive messages in different styles for each recipient",
     ],
   },
-  audience: {
-    title: "Who is this for?",
-    cards: [
-      {
-        icon: "graduationCap",
-        title: "Recent Graduates",
-        desc: "Not enough experience to stand out? Start by reaching companies directly.",
-      },
-      {
-        icon: "briefcase",
-        title: "Seekers of Unadvertised Roles",
-        desc: "Many jobs are filled before they're ever posted — this service puts you there early.",
-      },
-      {
-        icon: "users",
-        title: "Applicants Getting No Responses",
-        desc: "If you've sent dozens of applications with no replies — it's time to change strategy.",
-      },
-    ],
+  urgency: {
+    title: "Because opportunities don't always come to those who wait",
+    p1: "Companies looking for a specific talent don't always post a formal job listing. Sometimes they start by searching their networks and among those who reached out proactively.",
+    p2: "Having your resume with the right person at the right time is what turns 'maybe later' into 'you can start next week'.",
   },
-  why: {
-    title: "Why JobAI24?",
-    items: [
-      "Real opted-in companies — no sending to random email addresses",
-      "Personalized messages written by AI — not mass copying",
-      "You control everything before any message is sent",
-      "Full compliance with Saudi PDPL data protection law",
-      "Complete tracking of every message status",
-      "Campaigns can be paused, resumed, or modified at any time",
+  outcome: {
+    title: "No more passive waiting",
+    nots: [
+      "No more staring at job boards daily without results",
+      "No more generic messages that everyone ignores",
+      "No more feeling like you've lost control of your job search",
     ],
-  },
-  faq: {
-    title: "Frequently Asked Questions",
-    items: [
-      {
-        q: "Will it look like spam?",
-        a: "No. Messages are individual, personalized, and sent to companies that chose to receive candidate profiles — at a natural pace that mirrors professional human outreach.",
-      },
-      {
-        q: "Can I exclude specific companies?",
-        a: "Yes. Before launching, you review the full list and remove any company you don't want to contact.",
-      },
-      {
-        q: "Can I see the messages before they're sent?",
-        a: "Yes. You review every message for every company before sending — nothing goes out in your name without your knowledge.",
-      },
-      {
-        q: "How many companies are in one campaign?",
-        a: "It depends on your plan and field — see exact numbers on the pricing page.",
-      },
-      {
-        q: "Can I stop a campaign?",
-        a: "Yes. You can pause any active campaign at any time from your dashboard.",
-      },
-      {
-        q: "Will the company know I used AI?",
-        a: "No. The messages look professional and personal — there's no indication of AI involvement.",
-      },
-      {
-        q: "Is the company contact data confidential?",
-        a: "Contact data is used only for the campaign and processed in line with PDPL.",
-      },
-      {
-        q: "What's the difference between this and regular job applications?",
-        a: "Regular applications mean competing with hundreds of applicants for a posted role. This service gets you directly in front of a hiring manager before the job is even posted.",
-      },
-    ],
-  },
-  finalCta: {
-    h2: "Ready to stop waiting?",
-    sub: "Launch your campaign now and start reaching hiring managers directly.",
-    cta: "Launch My Campaign Now",
-    note: "No credit card required — you control everything",
+    goal: "You create the opportunity — you don't wait for it",
+    cta: "Launch Your Smart Application Campaign Now",
+    trust: ["Free to start", "Personalized campaigns", "No credit card"],
   },
 };
-
-const BENEFIT_ICONS = {
-  userCheck: UserCheck,
-  mailCheck: MailCheck,
-  eye: Eye,
-  target: Target,
-  zap: Zap,
-  shield: Shield,
-  trendingUp: TrendingUp,
-  clock: Clock,
-} as const;
-
-const AUDIENCE_ICONS = {
-  graduationCap: GraduationCap,
-  briefcase: Briefcase,
-  users: Users,
-} as const;
 
 export default async function SmartSendPage() {
   const locale = await getLocale();
   const isAr = locale === "ar";
   const t = isAr ? AR : EN;
-  const Arrow = isAr ? ArrowLeft : ArrowRight;
+  const dir = isAr ? "rtl" : "ltr";
 
   return (
-    <div dir={isAr ? "rtl" : "ltr"}>
-      {/* 1. HERO */}
-      <section className="bg-slate-950 py-20 md:py-28">
-        <div className="mx-auto max-w-3xl px-6 text-center">
-          <SectionBadge className="border-teal/30 bg-teal/10 text-teal">
+    <div dir={dir}>
+      {/* ── Hero ── */}
+      <section className="relative bg-slate-950 pb-24 pt-16 md:pb-32 md:pt-24">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute left-1/2 top-0 h-[500px] w-[700px] -translate-x-1/2 -translate-y-1/3 rounded-full bg-brand-600/10 blur-[120px]" />
+        </div>
+        <div className="relative mx-auto max-w-3xl px-6 text-center">
+          <SectionBadge className="border-brand-500/30 bg-brand-500/10 text-brand-300">
             {t.hero.badge}
           </SectionBadge>
-          <h1 className="mt-5 text-4xl font-black leading-tight tracking-tight text-white md:text-5xl">
-            {t.hero.h1}
+          <h1 className="mt-5 text-4xl font-black leading-tight tracking-tight text-white md:text-5xl lg:text-6xl">
+            {t.hero.h1}{" "}
+            <span className="bg-gradient-to-r from-teal to-brand-400 bg-clip-text text-transparent">
+              {t.hero.h1Highlight}
+            </span>
           </h1>
-          <p className="mt-5 text-lg leading-relaxed text-slate-400">{t.hero.sub}</p>
-          <Link
-            href="/dashboard/smart-send"
-            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-teal px-7 py-3.5 text-sm font-bold text-white transition hover:bg-teal/90 hover:shadow-lg hover:shadow-teal/20"
-          >
-            {t.hero.cta}
-            <Arrow className="h-4 w-4" />
-          </Link>
+          <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-slate-400">
+            {t.hero.sub}
+          </p>
+          <div className="mt-8">
+            <Link
+              href="/register"
+              className="inline-flex items-center rounded-xl bg-teal px-8 py-4 text-sm font-bold text-white transition-all hover:bg-teal/90 hover:shadow-lg hover:shadow-teal/25 active:scale-[0.98]"
+            >
+              {t.hero.cta}
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Narrative ── */}
+      <section className="bg-white py-20 md:py-28">
+        <div className="mx-auto max-w-3xl px-6">
+          <p className={`text-lg leading-relaxed text-slate-600 md:text-xl ${isAr ? "text-right" : "text-left"}`}>
+            {t.narrative.p1}
+          </p>
+          <p className={`mt-6 text-lg leading-relaxed text-slate-600 md:text-xl ${isAr ? "text-right" : "text-left"}`}>
+            {t.narrative.p2}
+          </p>
+          <div className={`mt-10 border-t border-slate-100 pt-10 ${isAr ? "text-right" : "text-left"}`}>
+            <p className="text-2xl font-black text-slate-950 md:text-3xl">
+              {t.narrative.bridge}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── More reach, less effort ── */}
+      <section className="bg-slate-50 py-20 md:py-28">
+        <div className="mx-auto max-w-3xl px-6">
+          <h2 className={`text-3xl font-black tracking-tight text-slate-950 md:text-4xl ${isAr ? "text-right" : "text-left"}`}>
+            {t.reach.title}
+          </h2>
+          <div className={`mt-8 space-y-5 ${isAr ? "text-right" : "text-left"}`}>
+            <p className="text-lg leading-relaxed text-slate-600">{t.reach.p1}</p>
+            <p className="text-lg font-semibold leading-relaxed text-slate-800">
+              {t.reach.p2}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Old way vs new way ── */}
+      <section className="bg-white py-20 md:py-28">
+        <div className="mx-auto max-w-4xl px-6">
+          <div className={isAr ? "text-right" : "text-left"}>
+            <h2 className="text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
+              {t.oldway.title}
+            </h2>
+            <p className="mt-3 text-lg text-slate-500">{t.oldway.sub}</p>
+            <ul className="mt-10 space-y-4">
+              {t.oldway.items.map((item, i) => (
+                <li
+                  key={i}
+                  className={`flex items-start gap-3 ${isAr ? "flex-row-reverse" : ""}`}
+                >
+                  <span className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-50 ${isAr ? "" : ""}`}>
+                    <X className="h-3 w-3 text-red-400" />
+                  </span>
+                  <span className="text-base leading-relaxed text-slate-500 line-through decoration-slate-300 md:text-lg">
+                    {item}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Opportunities don't wait ── */}
+      <section className="bg-brand-700 py-20 md:py-28">
+        <div className="mx-auto max-w-3xl px-6">
+          <h2 className={`text-3xl font-black tracking-tight text-white md:text-4xl ${isAr ? "text-right" : "text-left"}`}>
+            {t.urgency.title}
+          </h2>
+          <div className={`mt-8 space-y-5 ${isAr ? "text-right" : "text-left"}`}>
+            <p className="text-lg leading-relaxed text-brand-100">{t.urgency.p1}</p>
+            <p className="text-lg font-semibold leading-relaxed text-white">
+              {t.urgency.p2}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Outcome + CTA ── */}
+      <section className="bg-slate-950 py-20 md:py-28">
+        <div className="mx-auto max-w-3xl px-6 text-center">
+          <h2 className="text-3xl font-black text-white md:text-4xl">
+            {t.outcome.title}
+          </h2>
+          <ul className="mt-10 space-y-3">
+            {t.outcome.nots.map((item, i) => (
+              <li key={i} className="text-lg text-slate-500 line-through decoration-slate-600">
+                {item}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-8 text-xl font-black text-teal md:text-2xl">
+            {t.outcome.goal}
+          </p>
+          <div className="mt-10">
+            <Link
+              href="/register"
+              className="inline-flex items-center rounded-xl bg-teal px-8 py-4 text-sm font-bold text-white transition-all hover:bg-teal/90 hover:shadow-lg hover:shadow-teal/25"
+            >
+              {t.outcome.cta}
+            </Link>
+          </div>
           <div className="mt-6 flex flex-wrap justify-center gap-5">
-            {t.hero.trust.map((item) => (
-              <div key={item} className="flex items-center gap-1.5">
-                <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-teal" />
+            {t.outcome.trust.map((item) => (
+              <div key={item} className={`flex items-center gap-1.5 ${isAr ? "flex-row-reverse" : ""}`}>
+                <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-teal/60" />
                 <span className="text-xs text-slate-500">{item}</span>
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* 2. WHAT IS THIS */}
-      <section className="bg-white py-20 md:py-24">
-        <div className={`mx-auto max-w-3xl px-6 ${isAr ? "text-right" : ""}`}>
-          <SectionBadge>{t.what.title}</SectionBadge>
-          <div className="mt-6 space-y-4">
-            {t.what.paras.map((p, i) => (
-              <p key={i} className="leading-relaxed text-slate-600">
-                {p}
-              </p>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 3. BENEFIT CARDS */}
-      <section className="bg-slate-50 py-20 md:py-24">
-        <div className="mx-auto max-w-6xl px-6">
-          <h2
-            className={`mb-10 text-2xl font-black tracking-tight text-slate-950 md:text-3xl ${isAr ? "text-right" : ""}`}
-          >
-            {t.benefits.title}
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {t.benefits.cards.map((card) => {
-              const Icon = BENEFIT_ICONS[card.icon as keyof typeof BENEFIT_ICONS];
-              return (
-                <div
-                  key={card.title}
-                  className={`rounded-2xl border border-white bg-white p-6 shadow-sm transition-all hover:shadow-panel ${isAr ? "text-right" : ""}`}
-                >
-                  <div
-                    className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-teal/10 text-teal ${isAr ? "mr-auto" : ""}`}
-                  >
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <h3 className="mb-1 font-bold text-slate-950">{card.title}</h3>
-                  <p className="text-sm leading-relaxed text-slate-500">{card.desc}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* 4. HOW IT WORKS */}
-      <section className="bg-white py-20 md:py-24">
-        <div className="mx-auto max-w-4xl px-6">
-          <h2
-            className={`mb-10 text-2xl font-black tracking-tight text-slate-950 md:text-3xl ${isAr ? "text-right" : ""}`}
-          >
-            {t.howItWorks.title}
-          </h2>
-          <div className="grid gap-6 md:grid-cols-3">
-            {t.howItWorks.steps.map((step) => (
-              <div
-                key={step.n}
-                className={`flex gap-4 ${isAr ? "flex-row-reverse text-right" : ""}`}
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal text-sm font-black text-white">
-                  {step.n}
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-950">{step.title}</h3>
-                  <p className="mt-1 text-sm leading-relaxed text-slate-500">{step.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 5. EXPECTED RESULTS */}
-      <section className="bg-teal py-16 md:py-20">
-        <div className="mx-auto max-w-3xl px-6">
-          <h2
-            className={`mb-8 text-2xl font-black tracking-tight text-white md:text-3xl ${isAr ? "text-right" : ""}`}
-          >
-            {t.results.title}
-          </h2>
-          <ul className={`space-y-3 ${isAr ? "text-right" : ""}`}>
-            {t.results.items.map((item) => (
-              <li key={item} className={`flex items-start gap-3 ${isAr ? "flex-row-reverse" : ""}`}>
-                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-white/70" />
-                <span className="text-white/90">{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      {/* 6. WHO IS IT FOR */}
-      <section className="bg-slate-50 py-20 md:py-24">
-        <div className="mx-auto max-w-5xl px-6">
-          <h2
-            className={`mb-10 text-2xl font-black tracking-tight text-slate-950 md:text-3xl ${isAr ? "text-right" : ""}`}
-          >
-            {t.audience.title}
-          </h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            {t.audience.cards.map((card) => {
-              const Icon = AUDIENCE_ICONS[card.icon as keyof typeof AUDIENCE_ICONS];
-              return (
-                <div
-                  key={card.title}
-                  className={`rounded-2xl border border-slate-200 bg-white p-6 ${isAr ? "text-right" : ""}`}
-                >
-                  <div
-                    className={`mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-teal/10 text-teal ${isAr ? "mr-auto" : ""}`}
-                  >
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <h3 className="mb-1 font-bold text-slate-950">{card.title}</h3>
-                  <p className="text-sm leading-relaxed text-slate-500">{card.desc}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* 7. WHY JOBAI24 */}
-      <section className="bg-white py-20 md:py-24">
-        <div className="mx-auto max-w-3xl px-6">
-          <h2
-            className={`mb-8 text-2xl font-black tracking-tight text-slate-950 md:text-3xl ${isAr ? "text-right" : ""}`}
-          >
-            {t.why.title}
-          </h2>
-          <ul className={`space-y-3 ${isAr ? "text-right" : ""}`}>
-            {t.why.items.map((item) => (
-              <li key={item} className={`flex items-start gap-3 ${isAr ? "flex-row-reverse" : ""}`}>
-                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-teal" />
-                <span className="text-slate-700">{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      {/* 8. FAQ */}
-      <section className="bg-slate-50 py-20 md:py-24">
-        <div className="mx-auto max-w-3xl px-6">
-          <h2
-            className={`mb-8 text-2xl font-black tracking-tight text-slate-950 md:text-3xl ${isAr ? "text-right" : ""}`}
-          >
-            {t.faq.title}
-          </h2>
-          <div className={`space-y-5 ${isAr ? "text-right" : ""}`}>
-            {t.faq.items.map(({ q, a }) => (
-              <div key={q} className="border-b border-slate-200 pb-5 last:border-0">
-                <p className="font-bold text-slate-950">{q}</p>
-                <p className="mt-1.5 text-sm leading-relaxed text-slate-500">{a}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 9. FINAL CTA */}
-      <section className="bg-slate-950 py-20">
-        <div className="mx-auto max-w-2xl px-6 text-center">
-          <h2 className="text-2xl font-black tracking-tight text-white md:text-3xl">
-            {t.finalCta.h2}
-          </h2>
-          <p className="mt-3 text-slate-400">{t.finalCta.sub}</p>
-          <Link
-            href="/dashboard/smart-send"
-            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-teal px-7 py-3.5 text-sm font-bold text-white transition hover:bg-teal/90 hover:shadow-lg hover:shadow-teal/20"
-          >
-            {t.finalCta.cta}
-            <Arrow className="h-4 w-4" />
-          </Link>
-          <p className="mt-3 text-xs text-slate-500">{t.finalCta.note}</p>
         </div>
       </section>
     </div>

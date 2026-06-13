@@ -7,6 +7,17 @@ const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 const nextConfig = {
   reactStrictMode: true,
 
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "jobai-alpha.vercel.app" }],
+        destination: "https://www.jobai24.com/:path*",
+        permanent: true,
+      },
+    ];
+  },
+
   async rewrites() {
     const backendUrl = process.env.BACKEND_URL?.replace(/\/+$/, "");
     if (!backendUrl) return [];
