@@ -13,13 +13,13 @@ export async function SiteHeader() {
     nav: isAr
       ? [
           { label: "كيف يعمل", href: "/#how-it-works" },
-          { label: "المميزات", href: "/#features" },
+          { label: "الخدمات", href: "/services/cv-analysis" },
           { label: "للشركات", href: "/for-hr" },
           { label: "الأسعار", href: "/pricing" },
         ]
       : [
           { label: "How It Works", href: "/#how-it-works" },
-          { label: "Features", href: "/#features" },
+          { label: "Services", href: "/services/cv-analysis" },
           { label: "For HR Teams", href: "/for-hr" },
           { label: "Pricing", href: "/pricing" },
         ],

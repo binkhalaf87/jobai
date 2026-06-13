@@ -15,17 +15,35 @@ async function SiteFooter() {
       links: isAr
         ? [
             { label: "كيف يعمل JobAI", href: "/#how-it-works" },
-            { label: "المميزات", href: "/#features" },
             { label: "للشركات والـ HR", href: "/for-hr" },
             { label: "الأسعار", href: "/pricing" },
             { label: "المدونة", href: "/blog" },
           ]
         : [
             { label: "How It Works", href: "/#how-it-works" },
-            { label: "Features", href: "/#features" },
             { label: "For HR Teams", href: "/for-hr" },
             { label: "Pricing", href: "/pricing" },
             { label: "Blog", href: "/blog" },
+          ],
+    },
+    services: {
+      label: isAr ? "الخدمات" : "Services",
+      links: isAr
+        ? [
+            { label: "تحليل السيرة الذاتية", href: "/services/cv-analysis" },
+            { label: "تحسين السيرة الذاتية", href: "/services/resume-enhancement" },
+            { label: "تحضير المقابلات", href: "/services/ai-interview" },
+            { label: "البحث الذكي عن وظائف", href: "/services/job-search" },
+            { label: "التسويق الذكي للسيرة", href: "/services/smart-send" },
+            { label: "فحص نطاقات السعودة", href: "/services/saudization" },
+          ]
+        : [
+            { label: "CV Analysis & ATS", href: "/services/cv-analysis" },
+            { label: "Resume Enhancement", href: "/services/resume-enhancement" },
+            { label: "AI Interview Prep", href: "/services/ai-interview" },
+            { label: "AI Job Search", href: "/services/job-search" },
+            { label: "Smart CV Marketing", href: "/services/smart-send" },
+            { label: "Saudization Compliance", href: "/services/saudization" },
           ],
     },
     company: {
@@ -67,9 +85,9 @@ async function SiteFooter() {
   return (
     <footer className="border-t border-slate-200/80 bg-slate-900 text-white">
       <div className="mx-auto max-w-6xl px-6 py-14">
-        <div className="grid grid-cols-2 gap-10 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-10 md:grid-cols-5">
           {/* Brand */}
-          <div className="col-span-2 md:col-span-1">
+          <div className="col-span-2 md:col-span-2">
             <Link href="/" className="text-xl font-black text-white tracking-tight">
               JobAI
             </Link>
@@ -118,6 +136,20 @@ async function SiteFooter() {
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">{t.product.label}</h3>
             <ul className="space-y-3">
               {t.product.links.map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} className="text-sm text-slate-400 hover:text-white transition-colors">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Services */}
+          <div>
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">{t.services.label}</h3>
+            <ul className="space-y-3">
+              {t.services.links.map((link) => (
                 <li key={link.href}>
                   <Link href={link.href} className="text-sm text-slate-400 hover:text-white transition-colors">
                     {link.label}
