@@ -5,9 +5,8 @@ import { HeroSection } from "@/components/marketing/hero-section";
 import { ProblemSection } from "@/components/marketing/problem-section";
 import { HowItWorksSection } from "@/components/marketing/how-it-works-section";
 import { FeaturesSection } from "@/components/marketing/features-section";
-import { SmartMarketingSection } from "@/components/marketing/smart-marketing-section";
 import { BenefitsSection } from "@/components/marketing/benefits-section";
-import { StatsSection } from "@/components/marketing/stats-section";
+import { AudienceSection } from "@/components/marketing/audience-section";
 import { BlogTeaserSection } from "@/components/marketing/blog-teaser-section";
 import { FinalCTASection } from "@/components/marketing/final-cta-section";
 
@@ -17,200 +16,140 @@ import { FinalCTASection } from "@/components/marketing/final-cta-section";
 
 const AR = {
   hero: {
-    badge: "منصة مهنية بالذكاء الاصطناعي · أدواتك نحو فرصتك",
-    sub: "ارفع سيرتك الذاتية وخلال ثوانٍ يكشف لك JobAI24 سبب رفضها — ويعيد كتابتها لتحصل على مقابلات أكثر.",
-    cta1: "ارفع سيرتك مجاناً",
+    h1: "احصل على وظيفتك القادمة",
+    h1Highlight: "بذكاء أكبر",
+    badge: "منصة مهنية بالذكاء الاصطناعي",
+    sub: "منصة JobAI24 تساعدك على تحسين سيرتك الذاتية والتقديم بذكاء والاستعداد للمقابلات لزيادة فرص حصولك على مقابلات وعروض وظيفية.",
+    cta1: "ابدأ مجاناً",
     cta2: "كيف يعمل؟",
-    trust: ["بدون بطاقة ائتمانية", "نتائج خلال ٣٠ ثانية", "بدون تثبيت برامج"],
+    trust: ["لا حاجة لبطاقة ائتمانية", "نتائج فورية", "مخصص للسوق الخليجي"],
   },
 
   problem: {
     badge: "المشكلة الحقيقية",
-    h2: "هل هذا مألوف لك؟",
-    sub: "يمرّ بها آلاف الباحثين عن عمل كل يوم",
+    h2: "لماذا لا تحصل على رد من أصحاب العمل؟",
+    sub: "قد تكون المشكلة ليست في خبراتك.",
     items: [
       {
         icon: "x",
-        title: "سيرتك تُرفض آلياً قبل أن يراها أحد",
-        desc: "أكثر من ٧٥٪ من السير الذاتية تُصفّى بواسطة أنظمة ATS قبل أن تصل لأي مسؤول توظيف.",
+        title: "سيرة ذاتية غير متوافقة مع أنظمة الفرز ATS",
+        desc: "أكثر من ٧٥٪ من السير الذاتية تُصفّى آلياً قبل أن تصل إلى أي مسؤول توظيف.",
       },
       {
         icon: "x",
-        title: "لا تعرف ما يبحث عنه صاحب العمل",
+        title: "كلمات مفتاحية مفقودة",
         desc: "كل إعلان وظيفة يتضمن كلمات مفتاحية محددة — إذا غابت عن سيرتك، غابت فرصتك معها.",
       },
       {
         icon: "x",
-        title: "تتقدم كثيراً ولا ترى رداً",
-        desc: "ساعات تذهب في إرسال طلبات لا يعود منها إلا الصمت — بلا تغذية راجعة ولا توجيه.",
+        title: "عرض غير احترافي للخبرات والمهارات",
+        desc: "طريقة عرض خبراتك تحدد الفرق بين أن تُقرأ سيرتك أو تُتجاهل.",
       },
       {
         icon: "x",
-        title: "خطابات التقديم تستنزف وقتك",
-        desc: "كتابة خطاب احترافي مخصص لكل وظيفة مهمة مرهقة وتستغرق وقتاً لا يتناسب مع حجم الفرصة.",
+        title: "ضعف رسائل التقديم",
+        desc: "رسالة تقديم غير مخصصة تُفقدك الفرصة قبل أن يطّلع أحد على سيرتك.",
+      },
+      {
+        icon: "x",
+        title: "عدم الاستعداد الجيد للمقابلات",
+        desc: "الاستعداد الضعيف يضيّع فرصاً كانت في متناولك.",
       },
     ],
-    bridge: "حتى جاء JobAI24",
-    bridgeSub: "الأداة التي تحل كل هذه المشاكل في خطوة واحدة",
-  },
-
-  how: {
-    badge: "بسيط وسريع",
-    h2: "ثلاث خطوات إلى مقابلتك",
-    sub: "من رفع السيرة إلى التقديم بثقة — في أقل من خمس دقائق",
-    steps: [
-      {
-        num: "١",
-        title: "ارفع سيرتك الذاتية",
-        desc: "ارفع ملف PDF أو Word. لا يلزم إنشاء حساب للبدء وستحصل على نتائجك فوراً.",
-      },
-      {
-        num: "٢",
-        title: "احصل على تحليل فوري بالذكاء الاصطناعي",
-        desc: "يحلّل JobAI24 سيرتك ويكشف نقاط الضعف والكلمات المفتاحية المفقودة في ثوانٍ معدودة.",
-      },
-      {
-        num: "٣",
-        title: "قدّم بثقة وانتظر المقابلة",
-        desc: "احصل على سيرة محسّنة وخطاب تقديم مخصص وابدأ تلقّي دعوات المقابلة.",
-      },
-    ],
+    bridge: "لهذا السبب تم إنشاء JobAI24",
+    bridgeSub: "الأداة التي تحل كل هذه المشاكل في رحلة واحدة متكاملة",
   },
 
   features: {
-    badge: "ما تحصل عليه",
-    h2: "كل ما تحتاجه في مكان واحد",
-    sub: "أدوات متكاملة صُممت خصيصاً لسوق العمل في الخليج",
+    badge: "خدماتنا",
+    h2: "كل ما تحتاجه للحصول على وظيفة في منصة واحدة",
+    sub: "بدلاً من استخدام عشرات الأدوات المختلفة، يوفر لك JobAI24 رحلة متكاملة تبدأ من السيرة الذاتية وتنتهي بالمقابلة الوظيفية.",
     items: [
       {
         icon: "target",
-        title: "تحليل ATS الذكي",
-        sub: "اعرف بالضبط لماذا تُرفض سيرتك",
-        desc: "تحليل شامل وفق أكثر من ٥٠ معياراً لأنظمة تتبع المتقدمين مع درجة توافق دقيقة وتوصيات قابلة للتنفيذ.",
-        bullets: ["درجة توافق دقيقة", "كشف الكلمات المفتاحية المفقودة", "توصيات فورية"],
+        title: "تحليل السيرة الذاتية بالذكاء الاصطناعي",
+        sub: "اكتشف أسباب رفض سيرتك الذاتية",
+        desc: "ارفع سيرتك واحصل على تحليل شامل يوضح أسباب الرفض وفرص التحسين الفورية.",
+        bullets: ["نقاط القوة والضعف", "توافق السيرة مع أنظمة ATS", "الكلمات المفتاحية المفقودة", "فرص التحسين الفورية"],
       },
       {
         icon: "sparkles",
-        title: "تحسين السيرة بالذكاء الاصطناعي",
-        sub: "سيرة تستحق أن تُقرأ",
-        desc: "إعادة كتابة احترافية تبرز مهاراتك وإنجازاتك بلغة تجذب أصحاب العمل وتتجاوز المنافسة.",
-        bullets: ["صياغة احترافية ومقنعة", "تنسيق متوافق مع ATS", "قابل للتحميل والاستخدام"],
-      },
-      {
-        icon: "mail",
-        title: "مولّد خطاب التقديم",
-        sub: "خطاب مخصص لكل وظيفة في ثوانٍ",
-        desc: "خطابات تقديم مكتوبة بذكاء ومصممة بحسب كل وظيفة وشركة مستهدفة.",
-        bullets: ["مخصص لكل طلب وظيفي", "دعم ثنائي اللغة", "احترافي ومقنع"],
+        title: "تحسين السيرة الذاتية",
+        sub: "حوّل سيرتك إلى نسخة أكثر احترافية",
+        desc: "يساعدك JobAI24 على إعادة صياغة سيرتك لإبراز خبراتك وزيادة فرص ظهورها أمام مسؤولي التوظيف.",
+        bullets: ["تحسين المحتوى والصياغة", "إبراز الخبرات والإنجازات", "تحسين الكلمات المفتاحية", "رفع فرص الظهور أمام أصحاب العمل"],
       },
       {
         icon: "brain",
-        title: "التحضير للمقابلة",
-        sub: "اجتاز المقابلة بثقة حقيقية",
-        desc: "أسئلة مقابلة مُولَّدة من سيرتك والوظيفة المستهدفة، مع تقييم إجاباتك وتوصيات للتحسين.",
-        bullets: ["أسئلة مخصصة حسب الوظيفة", "تقييم الإجابات بالذكاء الاصطناعي", "تدريب متكرر وقابل للتطوير"],
+        title: "التدريب على المقابلات",
+        sub: "تدرّب قبل المقابلة الحقيقية",
+        desc: "استعد بثقة من خلال محاكاة مقابلات واقعية مع تقييم فوري للإجابات واقتراحات للتحسين.",
+        bullets: ["أسئلة مخصصة لكل وظيفة", "محاكاة مقابلات واقعية", "تقييم فوري للإجابات", "اقتراحات عملية للتحسين"],
+      },
+      {
+        icon: "mail",
+        title: "التقديم الذكي على الوظائف",
+        sub: "وفّر الوقت وقدّم باحترافية",
+        desc: "أنشئ رسائل تقديم احترافية مخصصة لكل وظيفة خلال دقائق. لا مزيد من النسخ واللصق.",
+        bullets: ["رسائل مخصصة لكل وظيفة", "لا مزيد من النسخ واللصق", "احترافية وإقناع في كل رسالة"],
       },
       {
         icon: "trending",
-        title: "رؤى مهنية",
-        sub: "افهم ما يطلبه سوق العمل منك",
-        desc: "قارن مهاراتك بمتطلبات السوق الفعلية واحصل على خارطة طريق واضحة لسد الفجوات.",
-        bullets: ["تحليل فجوات المهارات", "اتجاهات سوق العمل", "خطة تطوير مهني واضحة"],
+        title: "مطابقة الوظائف",
+        sub: "اعثر على الوظائف المناسبة لمؤهلاتك",
+        desc: "يحلل النظام خبراتك ومهاراتك ويساعدك على اكتشاف الفرص الأكثر توافقاً مع ملفك المهني.",
+        bullets: ["تحليل الخبرات والمهارات", "اكتشاف الفرص المناسبة", "توافق دقيق مع ملفك المهني"],
       },
     ],
   },
 
-  smart: {
-    badge: "ميزة حصرية",
-    h2: "التسويق الذكي للسيرة الذاتية",
-    sub: "لا تنتظر إعلان الوظيفة — وصل لأصحاب العمل مباشرة",
-    desc: "بدلاً من انتظار الإعلانات، يطلق JobAI24 حملة تواصل ذكية توصّل سيرتك إلى أصحاب العمل المناسبين تلقائياً.",
+  how: {
+    badge: "كيف يعمل",
+    h2: "خمس خطوات إلى وظيفتك القادمة",
+    sub: "رحلة متكاملة من رفع السيرة إلى التقديم بثقة",
     steps: [
-      { num: "١", title: "ارفع سيرتك وحدد الوظيفة المستهدفة" },
-      { num: "٢", title: "يحدّد JobAI24 أصحاب العمل الأنسب لملفك" },
-      { num: "٣", title: "تُطلَق حملة تواصل احترافية ومخصصة باسمك" },
+      { num: "١", title: "ارفع سيرتك الذاتية", desc: "ارفع ملف PDF أو Word وابدأ رحلتك فوراً." },
+      { num: "٢", title: "احصل على تحليل شامل", desc: "تحليل دقيق بالذكاء الاصطناعي مع توصيات واضحة وقابلة للتنفيذ." },
+      { num: "٣", title: "حسّن سيرتك وخطاباتك", desc: "أعِد صياغة سيرتك وأنشئ خطابات تقديم مخصصة لكل وظيفة." },
+      { num: "٤", title: "تدرّب على المقابلات", desc: "محاكاة مقابلات واقعية لتدخل المقابلة الحقيقية بثقة أكبر." },
+      { num: "٥", title: "قدّم بذكاء واحصل على فرصتك", desc: "قدّم على الوظائف المناسبة بأدوات ذكية توصلك لنتائج أفضل." },
     ],
-    benefits: [
-      "وصول لمئات أصحاب العمل المناسبين",
-      "توفير ساعات من التقديم اليدوي المرهق",
-      "رسائل تواصل شخصية واحترافية",
-      "متابعة نتائج حملتك بشكل مستمر",
-      "زيادة حقيقية في فرص الحصول على مقابلات",
-    ],
-    trust: {
-      title: "كيف نقوم بذلك؟ بدون سبام — نَعِدُك",
-      points: [
-        "الشركات المستهدفة موافقة مسبقاً على استقبال ملفات المرشحين",
-        "كل رسالة مخصصة للشركة باسمها ومجالها — وليست بريداً جماعياً",
-        "تعاين رسالة التواصل وقائمة الشركات وتوافق عليها قبل الإرسال",
-        "التزام كامل بنظام حماية البيانات الشخصية السعودي (PDPL) ومبادئ GDPR",
-      ],
-      learnMore: "اعرف المزيد عن طريقة عملنا ←",
-    },
-    cta: "ابدأ حملتك الآن",
-    ctaNote: "سجّل حسابك وابدأ في دقائق",
   },
 
   benefits: {
     badge: "لماذا JobAI24",
-    h2: "ما الذي ستكسبه فعلاً",
-    sub: "نتائج ملموسة لمن يريد أن يتقدم بذكاء",
+    h2: "لماذا يختار الباحثون عن عمل JobAI24؟",
+    sub: "منصة مصممة خصيصاً لاحتياجات سوق العمل السعودي والخليجي",
     items: [
-      {
-        icon: "clock",
-        title: "وفّر وقتك",
-        desc: "ما كان يأخذ ساعات أصبح يأخذ دقائق. ركّز وقتك على الفرص التي تستحق.",
-      },
-      {
-        icon: "trending",
-        title: "قدّم بذكاء",
-        desc: "استهدف الوظائف المناسبة بسيرة وخطاب تقديم مُحسَّنَين لكل فرصة على حدة.",
-      },
-      {
-        icon: "shield",
-        title: "ابنِ ثقتك",
-        desc: "اعرف نقاط قوتك وكيفية إبرازها — وادخل المقابلة بثقة مبنية على أساس حقيقي.",
-      },
-      {
-        icon: "star",
-        title: "سيرة تتميز",
-        desc: "تصميم وصياغة احترافية تضعك في مقدمة المتقدمين وتجذب انتباه أصحاب العمل.",
-      },
-      {
-        icon: "users",
-        title: "شبكة اتصالات أوسع",
-        desc: "التسويق الذكي يُوصلك لأصحاب عمل لن تجدهم في إعلانات الوظائف التقليدية.",
-      },
-      {
-        icon: "rocket",
-        title: "تطور مهني مستمر",
-        desc: "رؤى دورية عن متطلبات السوق تساعدك على البقاء في المقدمة وتطوير مهاراتك.",
-      },
+      { icon: "users",    title: "واجهة سهلة باللغة العربية",      desc: "تجربة استخدام سلسة وسهلة مصممة بالكامل للمستخدم العربي." },
+      { icon: "star",     title: "مدعوم بالذكاء الاصطناعي",        desc: "أحدث تقنيات الذكاء الاصطناعي لتحليل دقيق وتوصيات ذكية." },
+      { icon: "trending", title: "مخصص لسوق العمل الخليجي",       desc: "معايير وتوقعات سوق العمل السعودي والخليجي في صميم كل أداة." },
+      { icon: "shield",   title: "تحسين متوافق مع أنظمة ATS",      desc: "كل تحسين مبني على معايير أنظمة الفرز الفعلية المستخدمة في المنطقة." },
+      { icon: "clock",    title: "توفير الوقت والجهد",              desc: "ما كان يستغرق ساعات أصبح يتم في دقائق مع نتائج أفضل." },
+      { icon: "rocket",   title: "تطوير مستمر",                     desc: "المنصة تتطور باستمرار بناءً على احتياجات الباحثين عن عمل." },
     ],
   },
 
-  stats: {
-    badge: "أرقامنا",
-    h2: "الأرقام تتحدث",
-    sub: "نتائج حقيقية من منصة تعمل فعلاً",
-    sourceNote: "* الأرقام مبنية على بيانات أكثر من ٥٠٠٠ مستخدم — تُحدَّث شهرياً",
+  audience: {
+    badge: "لمن هذه المنصة",
+    h2: "مناسب لجميع الباحثين عن عمل",
+    sub: "سواء كنت خريجاً جديداً أو صاحب خبرة تبحث عن فرصة أفضل",
     items: [
-      { number: "٩٢٪", label: "نسبة تحسّن في ردود أصحاب العمل بعد تحسين السيرة" },
-      { number: "+٥٠٠٠", label: "سيرة ذاتية حُلِّلت وحُسِّنت عبر المنصة" },
-      { number: "٣٠ ثانية", label: "متوسط وقت الحصول على تحليل ATS كامل" },
-      { number: "+٢٠٠", label: "شركة في السعودية والخليج تستخدم نفس معايير ATS التي نحللها" },
-      { number: "٧٥٪", label: "من السير الذاتية تُرفض آلياً قبل أن يراها أحد — نحن نحل هذه المشكلة" },
-      { number: "٣ دقائق", label: "متوسط الوقت من رفع السيرة إلى خطاب تقديم جاهز" },
+      { icon: "graduation", label: "الخريجون الجدد" },
+      { icon: "search",     label: "الباحثون عن أول وظيفة" },
+      { icon: "trending",   label: "الموظفون الراغبون في تطوير مسارهم المهني" },
+      { icon: "award",      label: "المتخصصون وأصحاب الخبرات" },
+      { icon: "globe",      label: "الباحثون عن فرص أفضل داخل المملكة وخارجها" },
     ],
   },
 
   cta: {
-    badge: "ابدأ مجاناً الآن",
-    h2: "لا تدع سيرتك الذاتية تضيع بين مئات المتقدمين",
-    sub: "ارفع سيرتك في ثوانٍ وابدأ رحلتك نحو وظيفتك القادمة.",
-    cta1: "ارفع سيرتي الآن",
-    cta2: "إنشاء حساب مجاني",
-    trust: ["بدون بطاقة ائتمانية", "نتائج فورية", "آمن ومشفّر"],
+    badge: "ابدأ مجاناً",
+    h2: "ابدأ رحلتك المهنية بثقة أكبر",
+    sub: "كل وظيفة تبدأ بسيرة ذاتية قوية واستعداد أفضل. دع JobAI24 يساعدك على اكتشاف نقاط التحسين والتقديم بذكاء.",
+    cta1: "ابدأ مجاناً الآن",
+    cta2: "تعرف على المنصة",
+    trust: ["لا حاجة لبطاقة ائتمانية للبدء", "نتائج فورية", "آمن ومشفّر"],
   },
 } as const;
 
@@ -220,199 +159,139 @@ const AR = {
 
 const EN = {
   hero: {
-    badge: "AI Career Platform · Built for Ambitious Job Seekers",
-    sub: "Upload your resume and within seconds JobAI24 shows you exactly why you're being overlooked — and fixes it so you land more interviews.",
-    cta1: "Upload Your Resume — Free",
+    h1: "Land Your Next Job",
+    h1Highlight: "Smarter",
+    badge: "AI Career Platform · Built for Gulf Job Seekers",
+    sub: "JobAI24 helps you improve your resume, apply smarter, and prepare for interviews — so you get more interview invitations and job offers.",
+    cta1: "Get Started Free",
     cta2: "See How It Works",
-    trust: ["No credit card required", "Results in 30 seconds", "No software to install"],
+    trust: ["No credit card required", "Instant results", "Built for the Gulf market"],
   },
 
   problem: {
     badge: "The Real Problem",
-    h2: "Does this sound familiar?",
-    sub: "Thousands of job seekers face this every single day",
+    h2: "Why aren't employers responding?",
+    sub: "The problem might not be your experience.",
     items: [
       {
         icon: "x",
-        title: "Your resume is rejected before anyone reads it",
-        desc: "Over 75% of resumes are filtered out by ATS software before they ever reach a human recruiter.",
+        title: "Resume not compatible with ATS screening systems",
+        desc: "Over 75% of resumes are filtered out automatically before any recruiter ever sees them.",
       },
       {
         icon: "x",
-        title: "You don't know what employers are looking for",
-        desc: "Every job post contains specific keywords. If they're missing from your resume, so is your chance.",
+        title: "Missing keywords",
+        desc: "Every job post has specific keywords. If they're missing from your resume, so is your opportunity.",
       },
       {
         icon: "x",
-        title: "You apply everywhere and hear back from nowhere",
-        desc: "Hours spent sending applications into silence — no feedback, no direction, no idea what went wrong.",
+        title: "Unprofessional presentation of experience and skills",
+        desc: "How you present your experience determines whether your resume gets read or ignored.",
       },
       {
         icon: "x",
-        title: "Cover letters eat up your time",
-        desc: "Writing a strong, tailored cover letter for each job is exhausting and takes time you could spend elsewhere.",
+        title: "Weak application messages",
+        desc: "A generic cover letter costs you the opportunity before anyone even reads your resume.",
+      },
+      {
+        icon: "x",
+        title: "Poor interview preparation",
+        desc: "Weak preparation wastes opportunities that were within your reach.",
       },
     ],
-    bridge: "Then came JobAI24",
-    bridgeSub: "The tool that solves all of this in one step",
-  },
-
-  how: {
-    badge: "Simple & Fast",
-    h2: "Three steps to your next interview",
-    sub: "From resume upload to confident application — in under five minutes",
-    steps: [
-      {
-        num: "1",
-        title: "Upload Your Resume",
-        desc: "Upload a PDF or Word file. No account needed to get started and your results arrive instantly.",
-      },
-      {
-        num: "2",
-        title: "Get Instant AI Analysis",
-        desc: "JobAI24 scans your resume, flags weaknesses, and pinpoints every missing keyword in seconds.",
-      },
-      {
-        num: "3",
-        title: "Apply With Confidence",
-        desc: "Receive an enhanced resume, a tailored cover letter, and start getting interview invitations.",
-      },
-    ],
+    bridge: "That's why we built JobAI24",
+    bridgeSub: "The tool that solves all of this in one integrated journey",
   },
 
   features: {
-    badge: "What You Get",
-    h2: "Everything you need, in one place",
-    sub: "A complete toolkit built to get you hired faster",
+    badge: "Our Services",
+    h2: "Everything you need to get a job — in one platform",
+    sub: "Instead of juggling dozens of tools, JobAI24 gives you an integrated journey from resume to interview.",
     items: [
       {
         icon: "target",
-        title: "ATS Resume Analysis",
-        sub: "Know exactly why you're being rejected",
-        desc: "Comprehensive analysis against 50+ ATS criteria with a precise match score and recommendations you can act on today.",
-        bullets: ["Precise match score", "Keyword gap detection", "Instant recommendations"],
+        title: "AI Resume Analysis",
+        sub: "Discover why your resume is being rejected",
+        desc: "Upload your resume and get a comprehensive analysis revealing weaknesses and immediate improvement opportunities.",
+        bullets: ["Strengths and weaknesses", "ATS compatibility score", "Missing keywords", "Immediate improvement opportunities"],
       },
       {
         icon: "sparkles",
-        title: "AI Resume Enhancement",
-        sub: "A resume worth reading",
-        desc: "Professional rewriting that highlights your skills and achievements in language that attracts employers and outshines competition.",
-        bullets: ["Professional, compelling language", "ATS-friendly formatting", "Download-ready output"],
-      },
-      {
-        icon: "mail",
-        title: "Cover Letter Generator",
-        sub: "A tailored letter for every job in seconds",
-        desc: "Intelligent cover letters crafted specifically for each role and company you target.",
-        bullets: ["Job-specific tailoring", "Bilingual support", "Professional & persuasive"],
+        title: "Resume Enhancement",
+        sub: "Transform your resume into a more professional version",
+        desc: "JobAI24 helps you rewrite your resume to showcase your experience and increase visibility with recruiters.",
+        bullets: ["Content and phrasing improvement", "Highlighting experience and achievements", "Keyword optimization", "Increased employer visibility"],
       },
       {
         icon: "brain",
-        title: "Interview Preparation",
-        sub: "Walk in ready to impress",
-        desc: "Interview questions generated from your resume and target role, with AI-powered answer evaluation and improvement tips.",
-        bullets: ["Personalized questions", "AI answer scoring", "Repeated practice mode"],
+        title: "Interview Training",
+        sub: "Practice before the real interview",
+        desc: "Prepare with confidence through realistic interview simulations with instant answer evaluation.",
+        bullets: ["Job-specific questions", "Realistic interview simulations", "Instant answer evaluation", "Practical improvement suggestions"],
+      },
+      {
+        icon: "mail",
+        title: "Smart Job Applications",
+        sub: "Save time and apply professionally",
+        desc: "Create professional, tailored cover letters for each job in minutes. No more copy-pasting.",
+        bullets: ["Customized for each job", "No more copy-pasting", "Professional and persuasive every time"],
       },
       {
         icon: "trending",
-        title: "Career Insights",
-        sub: "Understand what the market wants from you",
-        desc: "Compare your current skills against real market demand and get a clear roadmap to close the gaps and grow your career.",
-        bullets: ["Skill gap analysis", "Market trend data", "Clear development roadmap"],
+        title: "Job Matching",
+        sub: "Find jobs that match your qualifications",
+        desc: "The system analyzes your experience and skills to help you discover the most relevant opportunities.",
+        bullets: ["Experience and skills analysis", "Discover matching opportunities", "Precise fit with your profile"],
       },
     ],
   },
 
-  smart: {
-    badge: "Exclusive Feature",
-    h2: "Smart CV Marketing",
-    sub: "Stop waiting for job postings — reach employers directly",
-    desc: "Instead of waiting for the right listing, JobAI24 launches a targeted outreach campaign that connects your resume with the right employers automatically.",
+  how: {
+    badge: "How It Works",
+    h2: "Five steps to your next job",
+    sub: "An integrated journey from resume upload to applying with confidence",
     steps: [
-      { num: "1", title: "Upload your CV and select your target role" },
-      { num: "2", title: "JobAI24 identifies the right employers for your profile" },
-      { num: "3", title: "A professional, personalized outreach campaign launches in your name" },
+      { num: "1", title: "Upload Your Resume", desc: "Upload a PDF or Word file and start your journey instantly." },
+      { num: "2", title: "Get a Comprehensive Analysis", desc: "Precise AI analysis with clear, actionable recommendations." },
+      { num: "3", title: "Improve Your Resume & Cover Letters", desc: "Rewrite your resume and create tailored cover letters for each role." },
+      { num: "4", title: "Practice Interviews", desc: "Realistic interview simulations so you walk in more confident." },
+      { num: "5", title: "Apply Smarter & Get Hired", desc: "Apply to the right opportunities with smart tools that deliver results." },
     ],
-    benefits: [
-      "Reach hundreds of relevant employers",
-      "Save hours of manual applications",
-      "Personalized, professional outreach messages",
-      "Track your campaign performance in real time",
-      "Meaningfully increase your interview opportunities",
-    ],
-    trust: {
-      title: "How we do it — no spam, we promise",
-      points: [
-        "Target companies have opted in to receiving candidate profiles",
-        "Every message is personalized per company — not bulk email",
-        "You preview the outreach message and company list before anything sends",
-        "Full compliance with the Saudi Personal Data Protection Law (PDPL) and GDPR principles",
-      ],
-      learnMore: "Learn more about how it works →",
-    },
-    cta: "Start Your Campaign",
-    ctaNote: "Create an account and launch in minutes",
   },
 
   benefits: {
     badge: "Why JobAI24",
-    h2: "What you'll actually gain",
-    sub: "Real outcomes for ambitious job seekers",
+    h2: "Why job seekers choose JobAI24",
+    sub: "A platform designed specifically for Saudi and Gulf job market needs",
     items: [
-      {
-        icon: "clock",
-        title: "Save Time",
-        desc: "What used to take hours now takes minutes. Spend your time on opportunities that deserve it.",
-      },
-      {
-        icon: "trending",
-        title: "Apply Smarter",
-        desc: "Target the right roles with a resume and cover letter optimized for each specific opportunity.",
-      },
-      {
-        icon: "shield",
-        title: "Build Confidence",
-        desc: "Understand your strengths and how to articulate them. Walk into interviews grounded and prepared.",
-      },
-      {
-        icon: "star",
-        title: "Stand Out",
-        desc: "Professional design and copy that places you at the top of the pile and gets attention.",
-      },
-      {
-        icon: "users",
-        title: "Wider Reach",
-        desc: "Smart Marketing connects you with employers you'd never discover on traditional job boards.",
-      },
-      {
-        icon: "rocket",
-        title: "Keep Growing",
-        desc: "Continuous career insights to help you stay ahead of the market and develop the right skills.",
-      },
+      { icon: "users",    title: "Easy Arabic Interface",        desc: "A smooth, simple experience designed entirely for Arabic-speaking users." },
+      { icon: "star",     title: "Powered by AI",                desc: "Latest AI technology for precise analysis and smart recommendations." },
+      { icon: "trending", title: "Built for the Gulf Market",    desc: "Saudi and Gulf job market standards at the core of every tool." },
+      { icon: "shield",   title: "ATS-Compatible Optimization",  desc: "Every improvement built on the actual screening criteria used in the region." },
+      { icon: "clock",    title: "Saves Time & Effort",          desc: "What used to take hours now takes minutes — with better results." },
+      { icon: "rocket",   title: "Continuously Improving",       desc: "The platform constantly evolves based on job seeker needs." },
     ],
   },
 
-  stats: {
-    badge: "Our Numbers",
-    h2: "The Numbers Speak",
-    sub: "Real results from a platform that actually works",
-    sourceNote: "* Based on data from 5,000+ users — updated monthly",
+  audience: {
+    badge: "Who It's For",
+    h2: "Built for every job seeker",
+    sub: "Whether you're a fresh graduate or an experienced professional seeking a better opportunity",
     items: [
-      { number: "92%", label: "Improvement in employer response rates after resume enhancement" },
-      { number: "5,000+", label: "Resumes analyzed and enhanced through the platform" },
-      { number: "30 sec", label: "Average time to get a complete ATS analysis" },
-      { number: "200+", label: "Companies in Saudi Arabia and the Gulf use the same ATS criteria we analyze" },
-      { number: "75%", label: "Of resumes are auto-rejected before a human ever sees them — we solve that" },
-      { number: "3 min", label: "Average time from resume upload to a ready cover letter" },
+      { icon: "graduation", label: "Fresh graduates" },
+      { icon: "search",     label: "First-time job seekers" },
+      { icon: "trending",   label: "Employees looking to advance their careers" },
+      { icon: "award",      label: "Specialists and experienced professionals" },
+      { icon: "globe",      label: "Those seeking opportunities in Saudi Arabia and beyond" },
     ],
   },
 
   cta: {
     badge: "Start Free Today",
-    h2: "Don't let your resume get lost in the pile",
-    sub: "Upload your resume in seconds and take the first step toward your next opportunity.",
-    cta1: "Upload My Resume Now",
-    cta2: "Create Free Account",
+    h2: "Start your career journey with more confidence",
+    sub: "Every job starts with a strong resume and better preparation. Let JobAI24 help you discover improvement areas and apply smarter.",
+    cta1: "Get Started Free Now",
+    cta2: "Learn About the Platform",
     trust: ["No credit card required", "Instant results", "Secure & encrypted"],
   },
 } as const;
@@ -430,11 +309,10 @@ export default function HomePage() {
     <>
       <HeroSection t={t.hero} isAr={isAr} />
       <ProblemSection t={t.problem} isAr={isAr} />
-      <HowItWorksSection t={t.how} isAr={isAr} />
       <FeaturesSection t={t.features} isAr={isAr} />
-      <SmartMarketingSection t={t.smart} isAr={isAr} />
+      <HowItWorksSection t={t.how} isAr={isAr} />
       <BenefitsSection t={t.benefits} isAr={isAr} />
-      <StatsSection t={t.stats} isAr={isAr} />
+      <AudienceSection t={t.audience} isAr={isAr} />
       <BlogTeaserSection isAr={isAr} />
       <FinalCTASection t={t.cta} isAr={isAr} />
     </>

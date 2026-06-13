@@ -5,6 +5,8 @@ import { Upload, CheckCircle2, ArrowRight, ArrowLeft } from "lucide-react";
 import { FadeUp } from "./fade-up";
 
 type HeroT = {
+  h1: string;
+  h1Highlight: string;
   badge: string;
   sub: string;
   cta1: string;
@@ -104,21 +106,10 @@ export function HeroSection({ t, isAr }: { t: HeroT; isAr: boolean }) {
 
               {/* H1 */}
               <h1 className="mb-6 text-5xl font-black leading-tight tracking-tight text-white md:text-6xl lg:text-7xl">
-                {isAr ? (
-                  <>
-                    وظيفتك القادمة{" "}
-                    <span className="bg-gradient-to-r from-teal to-brand-400 bg-clip-text text-transparent">
-                      تبدأ هنا.
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    Your Next Job{" "}
-                    <span className="bg-gradient-to-r from-teal to-brand-400 bg-clip-text text-transparent">
-                      Starts Here.
-                    </span>
-                  </>
-                )}
+                {t.h1}{" "}
+                <span className="bg-gradient-to-r from-teal to-brand-400 bg-clip-text text-transparent">
+                  {t.h1Highlight}
+                </span>
               </h1>
 
               {/* Sub */}

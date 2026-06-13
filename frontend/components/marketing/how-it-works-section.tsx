@@ -1,6 +1,6 @@
 "use client";
 
-import { Upload, Sparkles, CheckCircle2 } from "lucide-react";
+import { Upload, Sparkles, PenLine, MessageSquare, Send } from "lucide-react";
 import { FadeUp } from "./fade-up";
 import { SectionBadge } from "./section-badge";
 import type { ElementType } from "react";
@@ -12,7 +12,7 @@ type HowT = {
   steps: readonly { num: string; title: string; desc: string }[];
 };
 
-const STEP_ICONS: ElementType[] = [Upload, Sparkles, CheckCircle2];
+const STEP_ICONS: ElementType[] = [Upload, Sparkles, PenLine, MessageSquare, Send];
 
 export function HowItWorksSection({ t, isAr }: { t: HowT; isAr: boolean }) {
   return (
@@ -30,14 +30,14 @@ export function HowItWorksSection({ t, isAr }: { t: HowT; isAr: boolean }) {
         </FadeUp>
 
         {/* Steps */}
-        <div className="grid gap-8 md:grid-cols-3 md:gap-6">
+        <div className="grid gap-8 md:grid-cols-5 md:gap-4">
           {t.steps.map((step, i) => {
-            const Icon = STEP_ICONS[i];
+            const Icon = STEP_ICONS[i] ?? Send;
             return (
-              <FadeUp key={i} delay={i * 130}>
+              <FadeUp key={i} delay={i * 100}>
                 <div className={`relative ${isAr ? "text-right" : ""}`}>
                   {/* Connector line (desktop only, between steps) */}
-                  {i < 2 && (
+                  {i < 4 && (
                     <div
                       className={`absolute top-10 hidden h-px w-full bg-gradient-to-r from-brand-200 to-brand-100 md:block ${
                         isAr ? "right-full" : "left-full"
