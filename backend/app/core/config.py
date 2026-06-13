@@ -151,6 +151,7 @@ class Settings:
     google_client_id: str | None
     google_client_secret: str | None
     google_redirect_uri: str
+    google_login_redirect_uri: str
     frontend_url: str
     backend_url: str
     ai_per_user_daily_cap: int
@@ -223,6 +224,7 @@ def build_settings() -> Settings:
         google_client_id=get_optional_env("GOOGLE_CLIENT_ID", "").strip() or None,
         google_client_secret=get_optional_env("GOOGLE_CLIENT_SECRET", "").strip() or None,
         google_redirect_uri=get_optional_env("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/v1/smart-send/gmail/callback"),
+        google_login_redirect_uri=get_optional_env("GOOGLE_LOGIN_REDIRECT_URI", "http://localhost:8000/api/v1/auth/google/callback"),
         frontend_url=get_optional_env("FRONTEND_URL", "http://localhost:3000"),
         backend_url=get_optional_env("BACKEND_URL", "http://localhost:8000"),
         ai_per_user_daily_cap=int(get_optional_env("AI_PER_USER_DAILY_CAP", "50000")),

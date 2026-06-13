@@ -63,8 +63,11 @@
       "authFailed": "Incorrect email or password. Please check your credentials and try again.",
       "emailTaken": "This email is already registered. Would you like to sign in instead?",
       "emailNotVerified": "Please verify your email first — check your inbox and try again.",
-      "serverError": "An unexpected error occurred. Please try again in a moment."
-    }
+      "serverError": "An unexpected error occurred. Please try again in a moment.",
+      "googleAuthFailed": "Google sign-in failed. Please try again."
+    },
+    "orContinueWith": "or",
+    "googleButton": "Continue with Google"
   },
   "nav": {
     "groups": {

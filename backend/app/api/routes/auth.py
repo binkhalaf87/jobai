@@ -38,6 +38,12 @@ from app.services.auth import (
     rotate_refresh_token,
     verify_email_token,
 )
+from app.services.google_auth_service import (
+    exchange_code_for_user_info,
+    get_google_login_url,
+    get_or_create_google_user,
+    verify_login_state,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -176,6 +182,58 @@ def logout(
     revoke_refresh_token(db, refresh_token_raw)
     _clear_auth_cookies(response)
     audit_emit(db, user_id=current_user.id, event_type=UsageEventType.AUTH_LOGOUT)
+
+
+@router.get("/google")
+def google_login() -> Response:
+    """Redirect the browser to Google's OAuth consent screen."""
+    try:
+        url = get_google_login_url()
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc))
+    from fastapi.responses import RedirectResponse as _Redirect
+    return _Redirect(url)
+
+
+@router.get("/google/callback")
+def google_callback(
+    request: Request,
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+    db: Session = Depends(get_db),
+) -> Response:
+    """Handle Google OAuth callback, issue session cookies, redirect to dashboard."""
+    from fastapi.responses import RedirectResponse as _Redirect
+
+    settings = get_settings()
+    frontend_url = settings.frontend_url
+    error_dest = f"{frontend_url}/login?error=google_auth_failed"
+
+    if error or not code or not state:
+        return _Redirect(error_dest)
+
+    try:
+        verify_login_state(state)
+    except ValueError:
+        return _Redirect(error_dest)
+
+    try:
+        user_info = exchange_code_for_user_info(code)
+        user = get_or_create_google_user(db, user_info)
+    except Exception:
+        logger.exception("Google OAuth callback error")
+        return _Redirect(error_dest)
+
+    auth_data = build_auth_response(user, db)
+    resp = _Redirect(
+        f"{frontend_url}/dashboard" if user.role.value == "jobseeker"
+        else f"{frontend_url}/recruiter" if user.role.value == "recruiter"
+        else f"{frontend_url}/admin"
+    )
+    _set_auth_cookies(resp, auth_data["access_token"], auth_data["refresh_token"])
+    audit_emit(db, user_id=user.id, event_type=UsageEventType.AUTH_LOGIN)
+    return resp
 
 
 @router.get("/me", response_model=UserRead)

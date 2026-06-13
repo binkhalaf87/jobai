@@ -2,12 +2,16 @@ import { AuthForm } from "@/components/auth-form";
 import { PageContainer } from "@/components/page-container";
 import { Panel } from "@/components/panel";
 
-// This route provides the connected login flow for the frontend application.
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const params = await searchParams;
   return (
     <PageContainer className="flex min-h-screen items-center justify-center">
       <Panel className="w-full max-w-md p-8">
-        <AuthForm mode="login" />
+        <AuthForm mode="login" googleError={params.error === "google_auth_failed"} />
       </Panel>
     </PageContainer>
   );
