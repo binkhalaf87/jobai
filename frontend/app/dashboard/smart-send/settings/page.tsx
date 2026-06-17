@@ -75,7 +75,7 @@ export default function SettingsPage() {
                     {tBalance("balanceInsufficient", { count: deficit.toLocaleString("ar") })}
                   </p>
                   <Link
-                    href="/pricing"
+                    href="/dashboard/billing"
                     className="inline-block bg-brand-800 text-white rounded-lg px-4 py-2 text-xs font-semibold hover:bg-brand-700"
                   >
                     {tBalance("balanceBuyMore")} ←
