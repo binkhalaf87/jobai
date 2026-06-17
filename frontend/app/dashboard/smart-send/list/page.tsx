@@ -28,7 +28,7 @@ export default function ListPage() {
   function handleNext() {
     const list = lists.find((l) => l.id === selectedId);
     saveWizard({ list_id: selectedId, list_name: list?.name ?? "", list_count: list?.total_count ?? 0 });
-    router.push("/dashboard/smart-send/connect");
+    router.push("/dashboard/smart-send/settings");
   }
 
   return (

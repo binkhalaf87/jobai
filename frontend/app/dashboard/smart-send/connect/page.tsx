@@ -34,7 +34,7 @@ export default function ConnectPage() {
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8 space-y-6" dir="rtl">
-      <StepBar current={2} />
+      <StepBar current={3} />
 
       <div>
         <h1 className="text-xl font-bold text-slate-800">{t("connectStep.title")}</h1>
@@ -71,9 +71,9 @@ export default function ConnectPage() {
       )}
 
       <div className="flex items-center justify-between pt-2">
-        <Link href="/dashboard/smart-send/list" className="text-sm text-slate-500 hover:text-slate-700">{t("wizard.back")}</Link>
+        <Link href="/dashboard/smart-send/settings" className="text-sm text-slate-500 hover:text-slate-700">{t("wizard.back")}</Link>
         <button
-          onClick={() => router.push("/dashboard/smart-send/settings")}
+          onClick={() => router.push("/dashboard/smart-send/letter")}
           disabled={!gmailStatus.is_connected}
           className="bg-brand-800 text-white rounded-xl px-6 py-2.5 text-sm font-semibold hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed"
         >

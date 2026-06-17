@@ -6,14 +6,17 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { StepBar } from "@/components/smart-send/StepBar";
 import { getWizard, saveWizard } from "@/lib/wizard";
+import { useBalance } from "@/hooks/use-balance";
 
 const LIMIT_OPTIONS = [10, 20, 50, 100, 200];
 
 export default function SettingsPage() {
   const router = useRouter();
   const t = useTranslations("smartSendPage");
+  const tBalance = useTranslations("smartSendPage.campaigns.settings");
   const [dailyLimit, setDailyLimit] = useState(50);
   const [listCount, setListCount] = useState(0);
+  const { credits, isLoading: balanceLoading } = useBalance();
 
   useEffect(() => {
     const w = getWizard();
@@ -22,21 +25,69 @@ export default function SettingsPage() {
   }, []);
 
   const estimatedDays = listCount > 0 ? Math.ceil(listCount / dailyLimit) : null;
+  const userBalance = credits?.smart_send_contacts ?? 0;
+  const isSufficient = userBalance >= listCount;
+  const deficit = listCount - userBalance;
 
   function handleNext() {
     saveWizard({ daily_limit: dailyLimit });
-    router.push("/dashboard/smart-send/letter");
+    router.push("/dashboard/smart-send/connect");
   }
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8 space-y-6" dir="rtl">
-      <StepBar current={3} />
+      <StepBar current={2} />
 
       <div>
         <h1 className="text-xl font-bold text-slate-800">{t("settingsStep.title")}</h1>
         <p className="text-sm text-slate-500 mt-1">{t("settingsStep.description")}</p>
       </div>
 
+      {/* Balance Check */}
+      <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+        <h2 className="text-sm font-bold text-slate-700">{tBalance("balanceTitle")}</h2>
+
+        {balanceLoading ? (
+          <div className="h-14 bg-slate-100 rounded-xl animate-pulse" />
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 text-center">
+                <p className="text-xs text-slate-500 mb-1">{tBalance("balanceYours")}</p>
+                <p className="text-xl font-bold text-slate-800">{userBalance.toLocaleString("ar")}</p>
+                <p className="text-xs text-slate-400">{tBalance("balanceCompanies")}</p>
+              </div>
+              <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 text-center">
+                <p className="text-xs text-slate-500 mb-1">{tBalance("balanceRequired")}</p>
+                <p className="text-xl font-bold text-slate-800">{listCount > 0 ? listCount.toLocaleString("ar") : "—"}</p>
+                <p className="text-xs text-slate-400">{tBalance("balanceCompanies")}</p>
+              </div>
+            </div>
+
+            {listCount > 0 && (
+              isSufficient ? (
+                <div className="rounded-xl bg-teal-50 border border-teal-200 px-4 py-3 text-sm text-teal-700 font-medium">
+                  {tBalance("balanceSufficient")}
+                </div>
+              ) : (
+                <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 space-y-2">
+                  <p className="text-sm text-amber-800 font-medium">
+                    {tBalance("balanceInsufficient", { count: deficit.toLocaleString("ar") })}
+                  </p>
+                  <Link
+                    href="/pricing"
+                    className="inline-block bg-brand-800 text-white rounded-lg px-4 py-2 text-xs font-semibold hover:bg-brand-700"
+                  >
+                    {tBalance("balanceBuyMore")} ←
+                  </Link>
+                </div>
+              )
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Daily Limit */}
       <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-5">
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-3">{t("settingsStep.dailyLimitLabel")}</label>
@@ -85,7 +136,7 @@ export default function SettingsPage() {
       </div>
 
       <div className="flex items-center justify-between pt-2">
-        <Link href="/dashboard/smart-send/connect" className="text-sm text-slate-500 hover:text-slate-700">{t("wizard.back")}</Link>
+        <Link href="/dashboard/smart-send/list" className="text-sm text-slate-500 hover:text-slate-700">{t("wizard.back")}</Link>
         <button
           onClick={handleNext}
           className="bg-brand-800 text-white rounded-xl px-6 py-2.5 text-sm font-semibold hover:bg-brand-700"

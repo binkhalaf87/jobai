@@ -2053,7 +2053,7 @@
       }
     },
     "wizard": {
-      "steps": ["List", "Connect Email", "Balance", "Letter", "Preview", "Launch"],
+      "steps": ["List", "Balance", "Connect Email", "Letter", "Preview", "Launch"],
       "stepOf": "Step {current} of {total}",
       "back": "← Back",
       "next": "Next →",
