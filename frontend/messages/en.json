@@ -79,11 +79,11 @@
     },
     "items": {
       "dashboard": "Dashboard",
-      "cvs": "My CVs",
-      "analyze": "Analyze",
-      "improve": "Improve",
-      "aiInterview": "AI Interview",
-      "jobs": "Job Search",
+      "cvs": "My CV",
+      "analyze": "Analyze CV",
+      "improve": "Improve CV",
+      "aiInterview": "Practice Interview",
+      "jobs": "Match Jobs",
       "send": "Smart Send",
       "billing": "Billing",
       "points": "Points",
@@ -119,15 +119,15 @@
     },
     "brandTagline": "Smart hiring platform",
     "descriptions": {
-      "dashboard": "See your CV, jobs, outreach, and interview progress in one place.",
-      "cvs": "Upload, review, and manage the CVs you use across analysis, jobs, and outreach.",
-      "analyze": "Run a fast ATS check and see what to fix next.",
-      "improve": "Rewrite weak sections and strengthen your CV fast.",
-      "aiInterview": "Practice with role-aware questions, score your answers, and improve before interviews.",
-      "jobs": "Find roles, check your fit, then move to analysis, interview, or send.",
-      "send": "Create outreach, send in batches, and track delivery.",
-      "billing": "Manage your plan, create a checkout, and review payment history.",
-      "points": "See your balance and top up when needed.",
+      "dashboard": "Track your full career journey — CV, analysis, job matching, applications, and interviews — in one place.",
+      "cvs": "Upload your CV once to power all six steps: analysis, job matching, smart applications, and interview practice.",
+      "analyze": "Get your ATS score, discover missing keywords, and receive a clear checklist to strengthen your CV.",
+      "improve": "Rewrite weak sections with AI — sharper phrasing, better keywords, and an ATS-ready format.",
+      "aiInterview": "Practice with questions tailored to your CV and target role, then get scored coaching on every answer.",
+      "jobs": "Find roles that match your profile, see your fit score, understand gaps, and save the strongest ones.",
+      "send": "Create personalized cover letters and send your CV to companies in organized batches — no random applying.",
+      "billing": "Manage your plan, buy credits, and review payment history.",
+      "points": "See your credits balance and top up when needed.",
       "profile": "Keep your account details up to date."
     }
   },
@@ -748,32 +748,32 @@
     "steps": {
       "upload": {
         "title": "Upload your CV",
-        "description": "Upload a PDF or DOCX file to start your career journey.",
+        "description": "Upload once to unlock CV analysis, job matching, smart applications, and interview practice.",
         "badge": "{count} CVs"
       },
       "analyze": {
         "title": "Analyze your CV",
-        "description": "Spot the issues blocking your applications and review your ATS readiness.",
+        "description": "Get your ATS score, discover missing keywords, and receive a clear checklist to fix your CV.",
         "badge": "Analyzed"
       },
       "improve": {
         "title": "Improve your CV",
-        "description": "Rewrite your resume professionally to align better with ATS systems.",
+        "description": "Rewrite weak sections with AI — sharper phrasing, better keywords, and an ATS-ready format.",
         "badge": "Improved"
       },
       "match": {
-        "title": "Match jobs",
-        "description": "Search roles and compare the strongest matches against your resume.",
-        "badge": "{count} saved jobs"
+        "title": "Match with Jobs",
+        "description": "Find roles that fit your profile, see your match score, understand gaps, and save the best ones.",
+        "badge": "{count} saved"
       },
       "send": {
-        "title": "Send with SmartSend",
-        "description": "Send your CV to relevant companies in one click and track delivery.",
+        "title": "Send Smart Applications",
+        "description": "Create tailored cover letters and send your CV to companies in organized campaigns — not random applying.",
         "badge": "{count} sent"
       },
       "interview": {
-        "title": "Interview practice",
-        "description": "Practice realistic questions and walk into your interview with confidence.",
+        "title": "Practice Interview",
+        "description": "Practice with questions tailored to your CV and role. Get scored feedback to sharpen every answer.",
         "badge": "{count} sessions"
       }
     },
@@ -1429,9 +1429,9 @@
     }
   },
   "analysisPage": {
-    "eyebrow": "AI Analysis",
+    "eyebrow": "Step 2 of 6",
     "title": "Analyze Your CV",
-    "description": "AI-powered report: ATS score, keyword gaps, hiring manager view, career plan, and interview prep.",
+    "description": "Get your ATS score, discover missing keywords, see how a hiring manager reads your CV, and receive a clear checklist to fix what's blocking your applications.",
     "newAnalysis": "New Analysis",
     "pickAndRun": "Pick a CV and run",
     "reportLanguageLabel": "Report Language",
@@ -1513,8 +1513,10 @@
     }
   },
   "enhancementPage": {
+    "eyebrow": "Step 3 of 6",
     "newImprovement": "New improvement",
-    "title": "Rewrite your resume with AI — ATS-optimized, STAR format",
+    "title": "Improve Your CV",
+    "description": "Rewrite weak sections with AI — sharper phrasing, better keywords, and an ATS-ready format. Get an improved CV you can use right away in job matching and applications.",
     "resumeLabel": "Resume",
     "noResumesYet": "No resumes uploaded yet.",
     "uploadFirst": "Upload one first →",
@@ -1553,9 +1555,9 @@
     "savedLabel": "Saved!"
   },
   "aiInterviewPage": {
-    "eyebrow": "AI Practice",
-    "title": "AI Interview",
-    "description": "Practice a more realistic mock interview with role-aware questions, resume context, adaptive follow-ups, and scored coaching after every answer.",
+    "eyebrow": "Step 6 of 6",
+    "title": "Practice Interview",
+    "description": "Practice with questions tailored to your CV and target role. Get scored coaching on every answer — strengths, improvements, and a readiness score to know when you're ready.",
     "readiness": {
       "label": "Readiness",
       "notScored": "Not scored yet",
@@ -1738,9 +1740,9 @@
     }
   },
   "jobSearchPage": {
-    "step": "Step 4",
-    "title": "Match roles, then act on them",
-    "description": "Search live jobs, score them against your selected resume, understand why they match, and move directly into CV analysis, SmartSend, or interview practice without losing context.",
+    "step": "Step 4 of 6",
+    "title": "Match with Jobs",
+    "description": "Find roles that fit your profile, see your match score, understand why you match and what's missing, then save the strongest ones for Smart Send or interview practice.",
     "focus": {
       "label": "Focus",
       "buildShortlist": "Build your first shortlist",
@@ -1829,9 +1831,9 @@
     }
   },
   "smartSendPage": {
-    "eyebrow": "Application Outreach",
-    "title": "Smart Send campaigns",
-    "description": "Turn a target job into a guided outreach flow: generate tailored email copy, review variants, and send in controlled batches from your Gmail account.",
+    "eyebrow": "Step 5 of 6",
+    "title": "Send Smart Applications",
+    "description": "Create personalized cover letters, send your CV to companies in organized campaigns, and track delivery — no more random applying.",
     "connection": {
       "label": "Connection",
       "setupNeeded": "Setup needed",

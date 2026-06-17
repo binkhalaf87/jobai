@@ -585,9 +585,16 @@ export default function DashboardJobSearchPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{t("step")}</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">{t("title")}</h1>
+      <div className="rounded-2xl border border-slate-200 bg-white p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="space-y-1.5">
+            <span className="inline-flex items-center rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-cyan-700">
+              {t("step")}
+            </span>
+            <h1 className="text-base font-bold text-slate-900">{t("title")}</h1>
+            <p className="max-w-xl text-sm leading-6 text-slate-500">{t("description")}</p>
+          </div>
+        </div>
       </div>
 
       <Panel className="p-5 md:p-6">

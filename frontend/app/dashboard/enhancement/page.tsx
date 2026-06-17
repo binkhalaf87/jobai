@@ -8,6 +8,7 @@ import remarkGfm from "remark-gfm";
 import Link from "next/link";
 
 import { Panel } from "@/components/panel";
+import { StepIntro } from "@/components/step-intro";
 import { ApiError } from "@/lib/api";
 import { getAIReport, listAIReports, streamAIReport, updateAIReport } from "@/lib/ai-reports";
 import { listResumes } from "@/lib/resumes";
@@ -241,6 +242,7 @@ export default function DashboardEnhancementPage() {
   const t = useTranslations("enhancementPage");
   const tBilling = useTranslations("billing");
   const tErrors = useTranslations("serviceErrors");
+  const tSteps = useTranslations("dashboardOverview.steps.improve");
   const hasOutput = streamText.length > 0;
   const canSubmit = selectedResume && pageState !== "streaming";
   const showToolbar = pageState === "done" && hasOutput;
@@ -248,6 +250,16 @@ export default function DashboardEnhancementPage() {
 
   return (
     <div className="space-y-6">
+      {/* ─── Journey step intro ───────────────────────────────────── */}
+      <StepIntro
+        step={3}
+        title={tSteps("title")}
+        description={tSteps("description")}
+        nextStepHref="/dashboard/job-search"
+        nextStepLabel="Match Jobs →"
+        accentColor="emerald"
+      />
+
       {/* ─── Payment required banner ──────────────────────────────── */}
       {paymentRequired && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">

@@ -27,11 +27,11 @@ export const DASHBOARD_NAV_GROUPS: DashboardNavGroup[] = [
     label: "Actions",
     key: "actions",
     items: [
-      { label: "Analyze", key: "analyze", href: "/dashboard/analysis", icon: "bar-chart" },
-      { label: "Improve", key: "improve", href: "/dashboard/enhancement", icon: "sparkles" },
-      { label: "AI Interview", key: "aiInterview", href: "/dashboard/ai-interview", icon: "mic" },
-      { label: "Jobs", key: "jobs", href: "/dashboard/job-search", icon: "search" },
-      { label: "Send", key: "send", href: "/dashboard/smart-send", icon: "send" },
+      { label: "Analyze CV", key: "analyze", href: "/dashboard/analysis", icon: "bar-chart" },
+      { label: "Improve CV", key: "improve", href: "/dashboard/enhancement", icon: "sparkles" },
+      { label: "Match Jobs", key: "jobs", href: "/dashboard/job-search", icon: "search" },
+      { label: "Smart Send", key: "send", href: "/dashboard/smart-send", icon: "send" },
+      { label: "Practice Interview", key: "aiInterview", href: "/dashboard/ai-interview", icon: "mic" },
     ],
   },
   {

@@ -7,6 +7,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { Panel } from "@/components/panel";
+import { StepIntro } from "@/components/step-intro";
 import { ApiError } from "@/lib/api";
 import { getAIReport, listAIReports, streamAIReport } from "@/lib/ai-reports";
 import { listResumes } from "@/lib/resumes";
@@ -971,6 +972,7 @@ export default function DashboardAnalysisPage() {
   const t = useTranslations("analysisPage");
   const tBilling = useTranslations("billing");
   const tErrors = useTranslations("serviceErrors");
+  const tSteps = useTranslations("dashboardOverview.steps.analyze");
   const [resumes, setResumes]               = useState<ResumeListItem[]>([]);
   const [selectedResume, setSelectedResume] = useState("");
   const [reportLanguage, setReportLanguage] = useState("English");
@@ -1103,6 +1105,16 @@ export default function DashboardAnalysisPage() {
 
   return (
     <div className="space-y-6">
+      {/* ─── Journey step intro ───────────────────────────────────── */}
+      <StepIntro
+        step={2}
+        title={tSteps("title")}
+        description={tSteps("description")}
+        nextStepHref="/dashboard/enhancement"
+        nextStepLabel="Improve CV →"
+        accentColor="amber"
+      />
+
       {/* ─── Hero header ──────────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-800/8 via-white to-teal/5 p-6 md:p-8" data-no-print>
         <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-brand-800/8 blur-2xl" />

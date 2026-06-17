@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { ResumeUploadCard } from "@/components/resume-upload-card";
+import { StepIntro } from "@/components/step-intro";
 import { deleteResume, getResumeFile, listResumes } from "@/lib/resumes";
 import type { ResumeListItem } from "@/types";
 
@@ -39,6 +40,7 @@ type FileState = { blobUrl: string; filename: string; fileType: string } | null;
 /* ─── page ── */
 export default function DashboardResumesPage() {
   const t = useTranslations("resumes");
+  const tSteps = useTranslations("dashboardOverview.steps.upload");
   const [resumes, setResumes]         = useState<ResumeListItem[]>([]);
   const [loading, setLoading]         = useState(true);
   const [fetchError, setFetchError]   = useState("");
@@ -126,6 +128,16 @@ export default function DashboardResumesPage() {
           {t("backToDashboard")}
         </Link>
       </div>
+
+      {/* Journey step intro */}
+      <StepIntro
+        step={1}
+        title={tSteps("title")}
+        description={tSteps("description")}
+        nextStepHref="/dashboard/analysis"
+        nextStepLabel="Analyze CV →"
+        accentColor="violet"
+      />
 
       {/* Upload card */}
       <ResumeUploadCard onUploadComplete={() => void loadResumes()} />
