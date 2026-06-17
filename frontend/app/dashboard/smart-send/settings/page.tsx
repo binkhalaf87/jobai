@@ -139,7 +139,8 @@ export default function SettingsPage() {
         <Link href="/dashboard/smart-send/list" className="text-sm text-slate-500 hover:text-slate-700">{t("wizard.back")}</Link>
         <button
           onClick={handleNext}
-          className="bg-brand-800 text-white rounded-xl px-6 py-2.5 text-sm font-semibold hover:bg-brand-700"
+          disabled={listCount > 0 && !isSufficient}
+          className="bg-brand-800 text-white rounded-xl px-6 py-2.5 text-sm font-semibold hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {t("wizard.next")}
         </button>
