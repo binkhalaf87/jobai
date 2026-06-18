@@ -1974,6 +1974,7 @@
       "step2": "Grant permission to send emails on your behalf",
       "step3": "Your emails are sent directly from your Gmail inbox",
       "connectBtn": "Sign in with Google",
+      "connecting": "Redirecting to Google…",
       "connectFailed": "Failed to get authorization URL",
       "connected": "Gmail connected",
       "composeBtn": "Compose & Send",
