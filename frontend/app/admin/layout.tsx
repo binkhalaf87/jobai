@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { LayoutDashboard, Users, LogOut, Shield, ListChecks, Mail, Tag, Activity, CreditCard, HeadphonesIcon, Megaphone } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, Shield, ListChecks, Mail, Tag, Activity, CreditCard, HeadphonesIcon, Megaphone, Smartphone } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
 import { adminGetUnreadCount } from "@/lib/support";
@@ -18,7 +18,8 @@ const NAV_ITEMS = [
   { label: "Promotions",    href: "/admin/promotions",      icon: Tag },
   { label: "Payments",      href: "/admin/payments",        icon: CreditCard },
   { label: "Support",       href: "/admin/support",         icon: HeadphonesIcon },
-  { label: "Marketing",    href: "/admin/marketing",       icon: Megaphone },
+  { label: "Marketing",          href: "/admin/marketing",          icon: Megaphone },
+  { label: "Mobile Diagnostics", href: "/admin/mobile-diagnostics", icon: Smartphone },
 ] as const;
 
 function isActive(pathname: string, href: string): boolean {
