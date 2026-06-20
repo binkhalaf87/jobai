@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">JobAI</string>
+    <string name="title_activity_main">JobAI</string>
+    <string name="package_name">com.jobai24.app</string>
+    <string name="custom_url_scheme">com.jobai24.app</string>
+</resources>

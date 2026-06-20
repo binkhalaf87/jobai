@@ -38,7 +38,7 @@ export default async function DashboardAnalysesPage() {
       </div>
 
       {/* Metric cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
         {[
           { label: t("metrics.completed.label"), value: "—", note: t("metrics.completed.note") },
           { label: t("metrics.average.label"), value: "—", note: t("metrics.average.note") },

@@ -150,6 +150,7 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
   const allItems = DASHBOARD_NAV_GROUPS.flatMap((g) => g.items);
+  const mobileNavItems = DASHBOARD_NAV_GROUPS.filter((g) => g.key !== "account").flatMap((g) => g.items);
   const currentItem = allItems.find((item) => isActive(pathname, item.href));
   const currentLabel = currentItem ? t(`items.${currentItem.key}`) : t("items.dashboard");
 
@@ -344,8 +345,8 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
 
           {/* Mobile nav pills */}
           <div className="border-t border-slate-100 px-4 py-2 md:hidden">
-            <div className="flex gap-1.5 overflow-x-auto pb-0.5">
-              {allItems.map((item) => {
+            <div className="flex gap-1.5 overflow-x-auto pb-0.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              {mobileNavItems.map((item) => {
                 const active = isActive(pathname, item.href);
                 const cfg = NAV_ICON_CFG[item.icon ?? "home"] ?? NAV_ICON_CFG.home;
                 return (
