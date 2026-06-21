@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "453311643037",
+    "project_id": "jobai24",
+    "storage_bucket": "jobai24.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:453311643037:android:132e434ff2560274b2c374",
+        "android_client_info": {
+          "package_name": "com.jobai24.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCs-4B4ynqeni_8HYVDuQkLwTfiS9amlV4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
